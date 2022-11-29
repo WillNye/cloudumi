@@ -1,16 +1,6 @@
 #!/bin/bash
 set -ex
 echo
-echo "Checking whether VIRTUALENV exists in your environment"
-echo
-if [[ -z "${VIRTUAL_ENV}" && -z "${VIRTUALENVWRAPPER_PYTHON}" && -z "${PYENV_ROOT}" ]]; then
-    echo "Definitely need to have either VIRTUAL_ENV, VIRTUALENVWRAPPER_PYTHON or PYENV_ROOT defined, which means"
-    echo "you have to choose either venv, virtualenvwrapper or pyenv to install all requirements while we"
-    echo "work on making bazel hermetic"
-    exit 1
-fi
-
-echo
 echo "Setting AWS_PROFILE=cyberdyne_demo_org/cyberdyne_admin"
 echo
 export AWS_PROFILE=cyberdyne_demo_org/cyberdyne_admin
@@ -26,23 +16,64 @@ echo
 aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 775726381634.dkr.ecr.us-west-2.amazonaws.com
 
 export VERSION=$(git describe --tags --abbrev=0)
+export BRANCH=$(git symbolic-ref --short HEAD)
+export GIT_HASH=$(git rev-parse --short HEAD)
+export GIT_DIRTY="$(git diff --quiet || echo '-dirty')"
+export UNTRACKED_FILES="$(git status -s)"
+
+# Ask user to proceed if untracked files are present
+if [ -n "$UNTRACKED_FILES" ]; then
+    echo "Untracked files: $UNTRACKED_FILES\n"
+    echo "Untracked files are present. Proceed? [y/n]"
+    read -r proceed
+    if [ "$proceed" != "y" ]; then
+        echo "Exiting"
+        exit 1
+    fi
+fi
+
+# if [ "prod" == "prod" ]; then
+#   if [ "$BRANCH" != "main" ]; then
+#     echo "Not on main branch, not deploying to prod"
+#     exit 0
+#   fi
+# fi
+
+export VERSION_PATH="$VERSION-$GIT_HASH$GIT_DIRTY/$BRANCH/"
+export UPLOAD_DIRECTORY="s3://noq-global-frontend/$VERSION_PATH"
+export PUBLIC_URL="https://d2mxcvfujf7a5q.cloudfront.net/$VERSION_PATH"
 
 echo
-echo "Updating version stamping to $VERSION"
+echo "Building and tagging docker image"
 echo
-bazel sync --configure
+
+docker build --platform=linux/amd64 \
+    --build-arg PUBLIC_URL="$PUBLIC_URL" \
+    -t cyberdyne-prod-registry-api \
+    --progress=plain \
+    .
+
+docker tag cyberdyne-prod-registry-api:latest \
+  775726381634.dkr.ecr.us-west-2.amazonaws.com/cyberdyne-prod-registry-api:latest
+
+docker tag cyberdyne-prod-registry-api:latest \
+  775726381634.dkr.ecr.us-west-2.amazonaws.com/cyberdyne-prod-registry-api:$VERSION
 
 echo
 echo "Pushing API container - $VERSION"
 echo
-bazelisk run --stamp --workspace_status_command="echo VERSION $VERSION" //deploy/infrastructure/live/cyberdyne/prod-1:api-container-deploy-prod
+docker push --all-tags 775726381634.dkr.ecr.us-west-2.amazonaws.com/cyberdyne-prod-registry-api
 
 echo
-echo "Pushing Celery container - $VERSION"
+echo "Copying Frontend from container to S3"
 echo
-bazelisk run --action_env=AWS_PROFILE="$AWS_PROFILE" --stamp --workspace_status_command="echo VERSION $VERSION" //deploy/infrastructure/live/cyberdyne/prod-1:celery-container-deploy-prod
+export PROD_ROLE_ARN=arn:aws:iam::940552945933:role/prod_admin
+noq file -p $PROD_ROLE_ARN $PROD_ROLE_ARN -f
+docker run -v "$HOME/.aws:/root/.aws" \
+    -e "AWS_PROFILE=$PROD_ROLE_ARN" 775726381634.dkr.ecr.us-west-2.amazonaws.com/cyberdyne-prod-registry-api:latest \
+    bash -c "aws s3 sync /app/frontend/dist/ $UPLOAD_DIRECTORY"
 
 echo
 echo "Deploying Service - $VERSION"
 echo
-VERSION=$VERSION bazelisk run //deploy/infrastructure/live/cyberdyne/prod-1:ecs_deployer
+python deploy/infrastructure/live/cyberdyne/prod-1/ecs_deployer.py

@@ -19,6 +19,7 @@ from tenacity import Retrying, stop_after_attempt, wait_fixed
 
 from common.config import config
 from common.config.config import get_dynamo_table_name
+from common.config.globals import ClusterConfig
 from common.exceptions.exceptions import (
     DataNotRetrievable,
     NoExistingRequest,
@@ -63,6 +64,7 @@ POSSIBLE_STATUSES = [
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger("cloudumi")
+cluster_config = ClusterConfig()
 
 
 def filter_config_secrets(d):
@@ -243,14 +245,20 @@ class BaseDynamoHandler:
             overwrite_by_pkeys = []
         with table.batch_writer(overwrite_by_pkeys=overwrite_by_pkeys) as batch:
             for item in data:
-                for attempt in Retrying(stop=stop_after_attempt(3), wait=wait_fixed(2)):
+                for attempt in Retrying(
+                    stop=stop_after_attempt(cluster_config.dynamo_retry_count),
+                    wait=wait_fixed(cluster_config.dynamo_wait_time_between_retries),
+                ):
                     with attempt:
                         batch.put_item(Item=self._data_to_dynamo_replace(item))
 
     def parallel_delete_table_entries(self, table, keys):
         with table.batch_writer() as batch:
             for key in keys:
-                for attempt in Retrying(stop=stop_after_attempt(3), wait=wait_fixed(2)):
+                for attempt in Retrying(
+                    stop=stop_after_attempt(cluster_config.dynamo_retry_count),
+                    wait=wait_fixed(cluster_config.dynamo_wait_time_between_retries),
+                ):
                     with attempt:
                         batch.delete_item(Key=self._data_to_dynamo_replace(key))
 

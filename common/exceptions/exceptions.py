@@ -401,3 +401,13 @@ class TenantNoCentralRoleConfigured(BaseException):
     def __init__(self, msg=""):
         stats.count("TenantNoCentralRoleconfigured")
         super().__init__(msg)
+
+
+class WorkOSNoOrganizationId(BaseException):
+    """
+    Tenant does not have an Organization ID in WorkOS
+    """
+
+    def __init__(self, msg=""):
+        stats.count("WorkOSNoOrganizationId")
+        super().__init__(msg)

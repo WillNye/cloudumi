@@ -187,8 +187,8 @@ def __set_primary_redis_port(terraform_config: dict) -> dict:
     return terraform_config
 
 
-def is_aws_profile_present() -> bool:
-    return "AWS_PROFILE" in os.environ
+def is_aws_profile_present(terraform_config) -> bool:
+    return bool(terraform_config.get("profile"))
 
 
 def get_terraform_workspace_name() -> str:
@@ -257,8 +257,10 @@ if __name__ == "__main__":
     if not Path(config_output_path).is_absolute():
         simple_logger("Require an absolute output path")
         sys.exit(1)
-    if not is_aws_profile_present():
-        simple_logger("AWS_PROFILE is not set, cannot upload to S3; exiting")
+    if not is_aws_profile_present(terraform_config):
+        simple_logger(
+            "`profile` is not set in the Terraform output, cannot upload to S3; exiting"
+        )
         sys.exit(1)
     if terraform_config == {}:
         simple_logger(

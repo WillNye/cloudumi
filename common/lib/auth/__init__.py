@@ -11,6 +11,7 @@ import common.lib.noq_json as json
 from common.aws.utils import ResourceAccountCache
 from common.config import config
 from common.config.models import ModelAdapter
+from common.config.tenant_config import TenantConfig
 from common.lib.crypto import CryptoSign
 from common.lib.generic import is_in_group
 from common.lib.plugins import get_plugin_by_name
@@ -159,8 +160,8 @@ async def validate_auth_token(user, ip, token, request_object):
 
 
 def is_tenant_admin(user: str, user_groups: List[str], tenant: str):
-    application_admin = config.get_tenant_specific_key("application_admin", tenant)
-    if application_admin:
+    tenant_config = TenantConfig(tenant)
+    for application_admin in tenant_config.application_admins:
         if user == application_admin or application_admin in user_groups:
             return True
     if is_in_group(
@@ -314,6 +315,7 @@ async def get_extended_request_allowed_approvers(
 
 
 async def get_account_delegated_admins(account_id, tenant):
+    tenant_config = TenantConfig(tenant)
     spoke_role_adapter = (
         ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", tenant)
@@ -329,9 +331,7 @@ async def get_account_delegated_admins(account_id, tenant):
         # Spoke account not available
         pass
 
-    application_admin = config.get_tenant_specific_key("application_admin", tenant)
-    if application_admin:
-        allowed_admins.add(application_admin)
+    allowed_admins.update(tenant_config.application_admins)
 
     admin_groups = [
         *config.get_tenant_specific_key("groups.can_admin_policies", tenant, []),

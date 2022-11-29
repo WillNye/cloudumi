@@ -102,6 +102,7 @@ from common.lib.tenant_integrations.aws import handle_tenant_integration_queue
 from common.lib.terraform import cache_terraform_resources
 from common.lib.timeout import Timeout
 from common.lib.v2.notifications import cache_notifications_to_redis_s3
+from common.lib.workos import WorkOS
 from common.models import SpokeAccount
 from identity.lib.groups.groups import (
     cache_identity_groups_for_tenant,
@@ -2784,6 +2785,22 @@ def remove_expired_requests_for_all_tenants() -> Dict:
     return log_data
 
 
+@app.task(soft_time_limit=600, **default_retry_kwargs)
+def workos_cache_users_from_directory() -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    log_data = {
+        "function": function,
+        "message": "Syncing WorkOS Users",
+    }
+    log.debug(log_data)
+    tenants = get_all_tenants()
+    for tenant in tenants:
+        workos = WorkOS(tenant)
+        async_to_sync(workos.cache_users_from_directory)()
+
+    return log_data
+
+
 run_tasks_normally = not bool(
     config.get("_global_.development", False)
     and config.get("_global_._development_run_celery_tasks_1_min", False)
@@ -2796,7 +2813,7 @@ schedule_5_minutes = timedelta(minutes=5) if run_tasks_normally else dev_schedul
 schedule_15_seconds = timedelta(seconds=15) if run_tasks_normally else dev_schedule
 
 
-def get_schedule(min_schedule: int) -> Union[timedelta | crontab]:
+def get_schedule(min_schedule: int) -> Union[timedelta, crontab]:
     """
     Will return a timedelta within 10% of the provided number.
     The goal of this is to stagger schedules.

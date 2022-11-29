@@ -17,6 +17,7 @@ from tornado import httputil
 
 import common.lib.noq_json as json
 from common.config import config
+from common.config.tenant_config import TenantConfig
 from common.exceptions.exceptions import (
     InvalidCertificateException,
     MissingCertificateException,
@@ -38,6 +39,7 @@ from common.lib.saml import authenticate_user_by_saml
 from common.lib.tenant.models import TenantDetails
 from common.lib.tracing import ConsoleMeTracer
 from common.lib.web import handle_generic_error_response
+from common.lib.workos import WorkOS
 from common.models import WebResponse
 
 log = config.get_logger()
@@ -372,6 +374,7 @@ class BaseHandler(TornadoRequestHandler):
         # TODO: Return Authentication prompt regardless of subdomain
 
         tenant = self.get_tenant_name()
+        tenant_config = TenantConfig(tenant)
         self.eula_signed = None
         self.mfa_setup = None
         self.eligible_roles = []
@@ -467,6 +470,18 @@ class BaseHandler(TornadoRequestHandler):
                     ddb = UserDynamoHandler(tenant)
                     self.user = await ddb.verify_api_key(api_key, api_user, tenant)
 
+        if not self.user:
+            if tenant_config.auth_get_user_by_workos and attempt_sso_authn:
+                workos = WorkOS(tenant)
+                res = await workos.authenticate_user_by_workos(self)
+                if not res:
+                    raise tornado.web.Finish(
+                        "Unable to authenticate the user by WorkOS OIDC. "
+                        "Redirecting to authentication endpoint"
+                    )
+                elif isinstance(res, dict):
+                    self.user = res.get("user")
+                    self.groups = res.get("groups")
         if not self.user:
             # SAML flow. If user has a JWT signed by Noq, and SAML is enabled in configuration, user will go
             # through this flow.
@@ -1078,7 +1093,7 @@ class AuthenticatedStaticFileHandler(tornado.web.StaticFileHandler, BaseHandler)
         self.kwargs = kwargs
         self.tracer = None
         self.responses = []
-        self.ctx: Union[None | RequestContext] = None
+        self.ctx: Union[None, RequestContext] = None
         super(AuthenticatedStaticFileHandler, self).initialize(**kwargs)
 
     async def prepare(self) -> None:

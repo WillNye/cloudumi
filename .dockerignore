@@ -1,0 +1,39 @@
+**/__pycache__
+**/.classpath
+**/.dockerignore
+**/.env
+**/env
+**/venv
+**/.git
+**/.certs
+**/.gitignore
+**/.project
+**/.settings
+**/.toolstarget
+**/.vs
+**/.vscode
+**/*.*proj.user
+**/*.dbmdl
+**/*.jfm
+**/bin
+**/cloudumi_tornado.lo*
+**/charts
+**/docker-compose*
+**/compose*
+**/Dockerfile*
+**/node_modules
+**/npm-debug.log
+**/obj
+**/secrets.dev.yaml
+**/values.dev.yaml
+**/.terraform
+**/htmlcov
+**/experiments
+**/dynamodb-data
+README.md
+# Don't copy Hidden files
+**/.*
+# If we copy local frontend after building frontend in container, we risk
+# having outdated frontend code in the container, as well as an incorrect
+# CDN PUBLIC_URL path
+**/dist

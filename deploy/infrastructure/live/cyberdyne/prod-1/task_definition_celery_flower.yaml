@@ -11,6 +11,10 @@ containerDefinitions:
       - hostPort: 7071
         protocol: tcp
         containerPort: 7071
+    entryPoint:
+      - /bin/sh
+      - "-c"
+      - "python /app/common/celery_tasks/run.py"
     linuxParameters:
       devices: []
       initProcessEnabled: true
@@ -28,7 +32,7 @@ containerDefinitions:
     mountPoints: []
     dockerSecurityOptions: []
     volumesFrom: []
-    image: 775726381634.dkr.ecr.us-west-2.amazonaws.com/cyberdyne-prod-registry-celery:prod
+    image: 775726381634.dkr.ecr.us-west-2.amazonaws.com/cyberdyne-prod-registry-api:prod
     essential: true
     links: []
     extraHosts: []

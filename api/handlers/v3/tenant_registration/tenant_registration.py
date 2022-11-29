@@ -314,7 +314,8 @@ headers:
   role_login:
     enabled: true
 url: {dev_domain_url}
-application_admin: {ADMIN_GROUP_NAME}
+application_admin:
+  - {ADMIN_GROUP_NAME}
 secrets:
   jwt_secret: {token_urlsafe(32)}
   auth:
