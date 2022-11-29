@@ -1093,7 +1093,7 @@ class AuthenticatedStaticFileHandler(tornado.web.StaticFileHandler, BaseHandler)
         self.kwargs = kwargs
         self.tracer = None
         self.responses = []
-        self.ctx: Union[None | RequestContext] = None
+        self.ctx: Union[None, RequestContext] = None
         super(AuthenticatedStaticFileHandler, self).initialize(**kwargs)
 
     async def prepare(self) -> None:

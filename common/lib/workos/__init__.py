@@ -1,6 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Tuple
 
 import pytz
 import workos
@@ -101,18 +101,9 @@ class WorkOS:
                 return organization["id"]
         return None
 
-    async def authenticate_user_by_workos(self, request):
-        full_host = request.request.headers.get("X-Forwarded-Host")
-        if not full_host:
-            full_host = request.get_tenant()
-        force_redirect = await should_force_redirect(request.request)
-        organization_id = await self.retrieve_organization_id()
-        if not organization_id:
-            raise WorkOSNoOrganizationId(
-                f"Could not find organization id for tenant {self.tenant}"
-            )
-        code = request.get_argument("code", None)
-        # The endpoint where the user wants to be sent after authentication. This will be stored in the state
+    async def get_after_redirect_uri(
+        self, request, force_redirect: bool
+    ) -> Tuple[str, Optional(str)]:
         after_redirect_uri = request.request.arguments.get("redirect_url", [""])[0]
         if not after_redirect_uri:
             after_redirect_uri = request.request.arguments.get("state", [""])[0]
@@ -124,12 +115,31 @@ class WorkOS:
         if not after_redirect_uri:
             after_redirect_uri = self.tenant_config.tenant_url
 
+        code = request.get_argument("code", None)
+
         if not code:
             parsed_after_redirect_uri = furl(after_redirect_uri)
             code = parsed_after_redirect_uri.args.get("code")
             if code:
                 del parsed_after_redirect_uri.args["code"]
             after_redirect_uri = parsed_after_redirect_uri.url
+
+        return (after_redirect_uri, code)
+
+    async def authenticate_user_by_workos(self, request):
+        full_host = request.request.headers.get("X-Forwarded-Host")
+        if not full_host:
+            full_host = request.get_tenant()
+        force_redirect = await should_force_redirect(request.request)
+        organization_id = await self.retrieve_organization_id()
+        if not organization_id:
+            raise WorkOSNoOrganizationId(
+                f"Could not find organization id for tenant {self.tenant}"
+            )
+
+        # The endpoint where the user wants to be sent after authentication.
+        # This will be stored in the state.
+        after_redirect_uri, code = await self.get_after_redirect_uri_and_code(request)
 
         if not code:
             authorization_url = await aio_wrapper(
@@ -190,3 +200,4 @@ class WorkOS:
                 }
             )
         request.finish()
+        return
