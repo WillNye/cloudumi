@@ -646,21 +646,10 @@ class PolicyRequestReview extends Component {
         </>
       ) : null
 
-    const rejectRequestButton = requestConfig.can_approve_reject ? (
-      <Grid.Column>
-        <Button
-          content='Reject Request'
-          negative
-          fluid
-          onClick={this.updateRequestStatus.bind(this, 'reject_request')}
-        />
-      </Grid.Column>
-    ) : null
-
     const cancelRequestButton = requestConfig.can_update_cancel ? (
       <Grid.Column>
         <Button
-          content='Cancel Request'
+          content='Close Request'
           negative
           fluid
           onClick={this.updateRequestStatus.bind(this, 'cancel_request')}
@@ -669,13 +658,12 @@ class PolicyRequestReview extends Component {
     ) : null
 
     // If none of the buttons are visible to user, then user can only view this request
-    const userCanViewOnly = !rejectRequestButton && !cancelRequestButton
+    const userCanViewOnly = !cancelRequestButton
     // If user can only view the request, but not modify, don't show any requestButtons
     const requestButtons = userCanViewOnly ? null : (
       <Grid container>
         <Grid.Row columns='equal'>
           {/* {completeRequestButton} */}
-          {rejectRequestButton}
           {cancelRequestButton}
         </Grid.Row>
       </Grid>
