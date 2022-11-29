@@ -109,7 +109,6 @@ resource "aws_subnet" "subnet_public_az1" {
   }
 }
 
-
 resource "aws_subnet" "subnet_private_az0" {
   vpc_id            = aws_vpc.main_vpc.id
   cidr_block        = "10.${var.attributes}.0.0/18"
