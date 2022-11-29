@@ -103,7 +103,7 @@ class WorkOS:
 
     async def get_after_redirect_uri(
         self, request, force_redirect: bool
-    ) -> Tuple[str, Optional(str)]:
+    ) -> Tuple[str, Optional[str]]:
         after_redirect_uri = request.request.arguments.get("redirect_url", [""])[0]
         if not after_redirect_uri:
             after_redirect_uri = request.request.arguments.get("state", [""])[0]
