@@ -15,11 +15,11 @@ import bcrypt
 import simplejson as json
 from boto3.dynamodb.conditions import Key
 from boto3.dynamodb.types import Binary  # noqa
-from config.globals import ClusterConfig
 from tenacity import Retrying, stop_after_attempt, wait_fixed
 
 from common.config import config
 from common.config.config import get_dynamo_table_name
+from common.config.globals import ClusterConfig
 from common.exceptions.exceptions import (
     DataNotRetrievable,
     NoExistingRequest,
