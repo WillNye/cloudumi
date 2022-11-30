@@ -6,7 +6,11 @@ from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
 )
-from common.user_request.utils import get_active_tra_users_tag, get_tra_config
+from common.user_request.utils import (
+    get_active_tra_users_tag,
+    get_tra_config,
+    get_tra_supported_groups_tag,
+)
 
 
 async def get_identity_arns_for_account(
@@ -107,6 +111,7 @@ async def get_user_active_tra_roles_by_tag(tenant: str, user: str) -> list[str]:
     active_tra_roles = set()
     all_iam_roles = await IAMRole.query(tenant)
     tra_users_tag = get_active_tra_users_tag(tenant)
+    tra_groups_tag = get_tra_supported_groups_tag(tenant)
     base_tra_config = await get_tra_config(tenant=tenant)
 
     for iam_role in all_iam_roles:
@@ -119,6 +124,12 @@ async def get_user_active_tra_roles_by_tag(tenant: str, user: str) -> list[str]:
             iam_role.policy, tra_users_tag, True, set()
         ):
             if user in active_tra_users:
+                active_tra_roles.add(iam_role.arn)
+
+        if active_tra_groups := get_resource_tag(
+            iam_role.policy, tra_groups_tag, True, set()
+        ):
+            if user in active_tra_groups:
                 active_tra_roles.add(iam_role.arn)
 
     return list(active_tra_roles)
