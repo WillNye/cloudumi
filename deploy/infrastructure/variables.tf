@@ -77,10 +77,6 @@ variable "noq_core" {
 variable "profile" {
   description = "The AWS PROFILE, as configured in the file ~/.aws/credentials to be used for deployment"
   type        = string
-  validation {
-    condition     = contains(["staging/staging_admin", "prod/prod_admin"], var.profile)
-    error_message = "Allowed AWS_PROFILEs are \"staging/staging_admin\" and \"prod/prod_admin\"."
-  }
 }
 
 variable "redis_node_type" {
@@ -170,18 +166,24 @@ variable "secret_manager_secret_name" {
 
 variable "dax_node_type" {
   type    = string
-  default = "dax.t2.medium"
+  default = "dax.t3.small"
 }
 
 variable "dax_node_count" {
   description = "Number of cluster nodes"
   type        = number
-  default     = 3
+  default     = 1
 }
 
 variable "global_tenant_data_account_id" {
   description = "Account ID of the AWS Tenant Data Account"
   type        = string
+}
+
+variable "global_tenant_data_role_name" {
+  description = "Role name of the AWS Tenant Data Account"
+  type        = string
+  default     = "NoqServiceConnRole"
 }
 
 variable "legal_docs_bucket_name" {
@@ -202,4 +204,38 @@ variable "api_count" {
 variable "notifications_mail_from_domain" {
   description = "Messages sent through Amazon SES will be marked as originating from noq.dev domain"
   type        = string
+}
+
+variable "notifications_sender_identity" {
+  description = "The email address that will be used to identify notification origins"
+  type        = string
+}
+
+variable "log_expiry" {
+  description = "The number of days to keep logs for"
+  type        = number
+}
+
+variable "redis_secrets" {
+  sensitive   = true
+  description = "Redis secret"
+  type        = string
+}
+
+variable "aws_secrets_manager_cluster_string" {
+  sensitive   = true
+  description = "AWS Secrets Manager secret string"
+  type        = string
+}
+
+variable "landing_page_domains" {
+  description = "The domain names that should be used for common endpoints, like tenant_registration. This should NOT be set for non-noq (self-hosted) deployments"
+  type        = list(string)
+  default     = []
+}
+
+variable "load_balancer_internal" {
+  description = "If set to true, the load balancer will be internal"
+  type        = bool
+  default     = false
 }

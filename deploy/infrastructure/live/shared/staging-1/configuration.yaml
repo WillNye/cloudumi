@@ -1,8 +1,7 @@
 extends:
   - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:259868150464:secret:shared-staging-noq_secrets-yMK1qO
 _global_:
-  landing_page_domains:
-    - shared.staging.noq.dev
+  landing_page_domains: ["shared.staging.noq.dev"]
   metrics:
     cloudwatch:
       namespace: staging-noq-dev-shared-staging-1
@@ -48,16 +47,16 @@ _global_:
   s3_buckets:
     legal_docs: noq-global-staging-legal-docs
   deployment:
-    domain_name: shared.staging.noq.dev
+    domain_name: "*.staging.noq.dev"
     namespace: shared
     zone: staging.noq.dev
     cluster_id: staging-noq-dev-shared-staging-1
   logging:
     file: ~/logs/cloudumi/cloudumi_tornado.log
   web:
-    path: "/frontend/build"
+    path: "/app/frontend/dist"
   docs:
-    path: "/api/docs"
+    path: "/app/api/docs"
   s3_cache_bucket: cloudumi-cache.staging-noq-dev-shared-staging-1
   development: false
   environment: staging
@@ -108,3 +107,5 @@ _global_:
     dsn: https://7113898274d641d3923e0b163a74e6fe@o1134078.ingest.sentry.io/6625267
   google_analytics:
     tracking_id: G-P5K1SQF3P6
+  tenant_storage:
+    base_path: /data/tenant_data/

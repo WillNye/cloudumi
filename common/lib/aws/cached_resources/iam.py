@@ -6,7 +6,11 @@ from common.lib.cache import (
     retrieve_json_data_from_redis_or_s3,
     store_json_results_in_redis_and_s3,
 )
-from common.user_request.utils import get_active_tra_users_tag, get_tra_config
+from common.user_request.utils import (
+    get_active_tra_users_tag,
+    get_tra_config,
+    get_tra_supported_groups_tag,
+)
 
 
 async def get_identity_arns_for_account(
@@ -107,6 +111,7 @@ async def get_user_active_tra_roles_by_tag(tenant: str, user: str) -> list[str]:
     active_tra_roles = set()
     all_iam_roles = await IAMRole.query(tenant)
     tra_users_tag = get_active_tra_users_tag(tenant)
+    tra_groups_tag = get_tra_supported_groups_tag(tenant)
     base_tra_config = await get_tra_config(tenant=tenant)
 
     for iam_role in all_iam_roles:
@@ -121,16 +126,23 @@ async def get_user_active_tra_roles_by_tag(tenant: str, user: str) -> list[str]:
             if user in active_tra_users:
                 active_tra_roles.add(iam_role.arn)
 
+        if active_tra_groups := get_resource_tag(
+            iam_role.policy, tra_groups_tag, True, set()
+        ):
+            if user in active_tra_groups:
+                active_tra_roles.add(iam_role.arn)
+
     return list(active_tra_roles)
 
 
 async def get_tra_supported_roles_by_tag(
-    eligible_roles: list[str], groups: list[str], tenant: str
+    eligible_roles: list[str], groups: list[str], user: str, tenant: str
 ) -> list[dict]:
     """Get TRA supported roles given a list of groups and already usable roles
 
     :param eligible_roles: Roles that are already accessible and can be ignored
     :param groups: List of groups to check against
+    :param user: User to check against
     :param tenant: The tenant to check against
 
     :return: A list of roles that can be used as part of the TRA workflow
@@ -153,7 +165,7 @@ async def get_tra_supported_roles_by_tag(
         if tra_groups := get_resource_tag(
             role, tra_config.supported_groups_tag, True, set()
         ):
-            if any(group in tra_groups for group in groups):
+            if any(group in tra_groups for group in groups) or user in tra_groups:
                 escalated_roles[iam_role.arn] = role
 
     return list(escalated_roles.values())

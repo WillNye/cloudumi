@@ -24,7 +24,7 @@ const DataTableActionsComponent = ({ filters, tableConfig }) => {
   }
 
   const generateFileDownload = (data, type, ext) => {
-    const fileName = `console_me_export_${new Date().getTime()}`
+    const fileName = `noq_export_${new Date().getTime()}`
     const blob = new Blob([data], { type: type })
     const href = URL.createObjectURL(blob)
     const link = document.createElement('a')

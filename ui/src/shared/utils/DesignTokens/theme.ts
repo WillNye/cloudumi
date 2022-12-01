@@ -175,7 +175,6 @@ export const theme: DesignTokens = {
       'input-border': themeColors.blue['100']
     },
     card: {
-      // NOTE: These are just placeholders
       'card-background': themeColors.gray['600'],
       'card-color': themeColors.gray['100'],
     },

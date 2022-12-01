@@ -17,13 +17,13 @@ from tornado import httputil
 
 import common.lib.noq_json as json
 from common.config import config
+from common.config.tenant_config import TenantConfig
 from common.exceptions.exceptions import (
     InvalidCertificateException,
     MissingCertificateException,
     MissingConfigurationValue,
     NoGroupsException,
     NoUserException,
-    SilentException,
     WebAuthNError,
 )
 from common.lib.alb_auth import authenticate_user_by_alb_auth
@@ -45,6 +45,7 @@ from common.lib.saml import authenticate_user_by_saml
 from common.lib.tenant.models import TenantDetails
 from common.lib.tracing import ConsoleMeTracer
 from common.lib.web import handle_generic_error_response
+from common.lib.workos import WorkOS
 from common.models import WebResponse
 
 log = config.get_logger()
@@ -226,7 +227,7 @@ class BaseHandler(TornadoRequestHandler):
     """Default BaseHandler."""
 
     def log_exception(self, *args, **kwargs):
-        if args[0].__name__ == "SilentException":
+        if args[0].__name__ == "Finish":
             pass
         else:
             super(BaseHandler, self).log_exception(*args, **kwargs)
@@ -257,7 +258,7 @@ class BaseHandler(TornadoRequestHandler):
         self.kwargs = kwargs
         self.tracer = None
         self.responses = []
-        self.ctx: Union[None | RequestContext] = None
+        self.ctx: Union[None, RequestContext] = None
         super(BaseHandler, self).initialize()
 
     async def prepare(self) -> None:
@@ -286,10 +287,7 @@ class BaseHandler(TornadoRequestHandler):
                 }
             )
             await self.finish()
-            raise SilentException(log_data["message"])
-
-    async def initialize_auth(self):
-        await self.check_tenant()
+            raise tornado.web.Finish(log_data["message"])
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
@@ -382,6 +380,7 @@ class BaseHandler(TornadoRequestHandler):
         # TODO: Return Authentication prompt regardless of subdomain
 
         tenant = self.get_tenant_name()
+        tenant_config = TenantConfig(tenant)
         self.eula_signed = None
         self.mfa_setup = None
         self.eligible_roles = []
@@ -509,6 +508,18 @@ class BaseHandler(TornadoRequestHandler):
                     self.user = await ddb.verify_api_key(api_key, api_user, tenant)
 
         if not self.user:
+            if tenant_config.auth_get_user_by_workos and attempt_sso_authn:
+                workos = WorkOS(tenant)
+                res = await workos.authenticate_user_by_workos(self)
+                if not res:
+                    raise tornado.web.Finish(
+                        "Unable to authenticate the user by WorkOS OIDC. "
+                        "Redirecting to authentication endpoint"
+                    )
+                elif isinstance(res, dict):
+                    self.user = res.get("user")
+                    self.groups = res.get("groups")
+        if not self.user:
             # SAML flow. If user has a JWT signed by Noq, and SAML is enabled in configuration, user will go
             # through this flow.
 
@@ -522,7 +533,7 @@ class BaseHandler(TornadoRequestHandler):
                         self.request.uri != "/saml/acs"
                         and not self.request.uri.startswith("/auth?")
                     ):
-                        raise SilentException(
+                        raise tornado.web.Finish(
                             "Unable to authenticate the user by SAML. "
                             "Redirecting to authentication endpoint"
                         )
@@ -535,7 +546,7 @@ class BaseHandler(TornadoRequestHandler):
             ):
                 res = await authenticate_user_by_oidc(self)
                 if not res:
-                    raise SilentException(
+                    raise tornado.web.Finish(
                         "Unable to authenticate the user by OIDC. "
                         "Redirecting to authentication endpoint"
                     )
@@ -572,7 +583,7 @@ class BaseHandler(TornadoRequestHandler):
                     }
                 )
                 await self.finish()
-                raise SilentException(
+                raise tornado.web.Finish(
                     "Redirecting user to authenticate by username/password."
                 )
 
@@ -957,7 +968,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 }
             )
             await self.finish()
-            raise SilentException(log_data["message"])
+            raise tornado.web.Finish(log_data["message"])
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
@@ -1119,7 +1130,7 @@ class AuthenticatedStaticFileHandler(tornado.web.StaticFileHandler, BaseHandler)
         self.kwargs = kwargs
         self.tracer = None
         self.responses = []
-        self.ctx: Union[None | RequestContext] = None
+        self.ctx: Union[None, RequestContext] = None
         super(AuthenticatedStaticFileHandler, self).initialize(**kwargs)
 
     async def prepare(self) -> None:

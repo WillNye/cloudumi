@@ -1,0 +1,47 @@
+executionRoleArn: arn:aws:iam::775726381634:role/cyberdyne-noq-dev-cyberdyne-prod-1-ecsTaskExecutionRole
+containerDefinitions:
+  - dnsSearchDomains: []
+    logConfiguration:
+      logDriver: awslogs
+      options:
+        awslogs-group: cyberdyne-noq-dev-cyberdyne-prod-1
+        awslogs-region: us-west-2
+        awslogs-stream-prefix: celery-scheduler
+    entryPoint:
+      - /bin/sh
+      - "-c"
+      - "python /app/common/celery_tasks/run.py"
+    linuxParameters:
+      devices: []
+      initProcessEnabled: true
+    cpu: 0
+    environment:
+      - name: CONFIG_LOCATION
+        value: s3://cyberdyne-noq-dev-cyberdyne-prod-1-tenant-configuration-store/cyberdyne/prod.1.config.yaml
+      - name: SETUPTOOLS_USE_DISTUTILS
+        value: stdlib
+      - name: RUNTIME_PROFILE
+        value: CELERY_SCHEDULER
+      - name: STAGE
+        value: prod
+    dnsServers: []
+    mountPoints: []
+    dockerSecurityOptions: []
+    volumesFrom: []
+    image: 775726381634.dkr.ecr.us-west-2.amazonaws.com/cyberdyne-prod-registry-api:prod
+    essential: true
+    links: []
+    extraHosts: []
+    pseudoTerminal: false
+    readonlyRootFilesystem: false
+    privileged: false
+    name: cyberdyne-noq-dev-cyberdyne-prod-1-celery-scheduler
+placementConstraints: []
+memory: "2048"
+taskRoleArn: arn:aws:iam::775726381634:role/cyberdyne-noq-dev-cyberdyne-prod-1-ecsTaskRole
+family: cyberdyne-noq-dev-cyberdyne-prod-1-celery-scheduler
+requiresCompatibilities:
+  - FARGATE
+networkMode: awsvpc
+cpu: "1024"
+volumes: []

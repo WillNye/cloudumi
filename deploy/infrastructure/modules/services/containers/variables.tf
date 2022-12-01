@@ -99,3 +99,9 @@ variable "cloudumi_files_bucket" {
   description = "The S3 bucket to store cached data for tenants"
   type        = string
 }
+
+variable "aws_secrets_manager_cluster_string" {
+  sensitive   = true
+  description = "The YAML-encoded AWS Secrets Manager secret"
+  type        = string
+}

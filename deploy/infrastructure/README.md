@@ -34,26 +34,42 @@ Ensure that your AWS profile is setup correctly in the `~/.aws/credentials` file
 
 export AWS_PROFILE=staging/staging_admin AWS_REGION=us-west-2
 terraform workspace select shared-staging-1
-terraform refresh --var-file=live/shared/staging-1/noq.dev-staging.tfvars
-terraform plan --var-file=live/shared/staging-1/noq.dev-staging.tfvars
-terraform apply --var-file=live/shared/staging-1/noq.dev-staging.tfvars
+terraform refresh --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars
+terraform plan --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars
+terraform apply --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars
 
 #### Prod
 
 export AWS_PROFILE=prod/prod_admin AWS_REGION=us-west-2
 terraform workspace select shared-prod-1
-terraform refresh --var-file=live/shared/prod-1/noq.dev-prod.tfvars
-terraform plan --var-file=live/shared/prod-1/noq.dev-prod.tfvars
-terraform apply --var-file=live/shared/prod-1/noq.dev-prod.tfvars
+terraform refresh --var-file=live/shared/prod-1/noq.dev-prod.tfvars --var-file=live/shared/prod-1/secret.tfvars
+terraform plan --var-file=live/shared/prod-1/noq.dev-prod.tfvars --var-file=live/shared/prod-1/secret.tfvars
+terraform apply --var-file=live/shared/prod-1/noq.dev-prod.tfvars --var-file=live/shared/prod-1/secret.tfvars
 
 #### Cyberdyne
 
-export AWS_PROFILE=prod/prod_admin
+export AWS_PROFILE=cyberdyne/cyberdyne_admin
 export AWS_REGION=us-west-2
 terraform workspace select cyberdyne-prod-1
-terraform refresh --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
-terraform plan --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
-terraform apply --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
+terraform refresh --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars --var-file=live/cyberdyne/prod-1/secret.tfvars
+terraform plan --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars --var-file=live/cyberdyne/prod-1/secret.tfvars
+terraform apply --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars --var-file=live/cyberdyne/prod-1/secret.tfvars
+
+#### Akasa
+
+Add this to ~/.aws/config:
+
+```
+[profile akasa_deployment_role]
+credential_process = noq credential_process arn:aws:iam::940552945933:role/deployment_role -A arn:aws:iam::277516517760:role/NoqTerraformApplyRole
+```
+
+export AWS_PROFILE=akasa_deployment_role
+export AWS_REGION=us-west-2
+terraform workspace select akasa-prod-1
+terraform refresh --var-file=live/akasa/prod-1/akasa.noq.dev-prod.tfvars --var-file=live/akasa/prod-1/secret.tfvars
+terraform plan --var-file=live/akasa/prod-1/akasa.noq.dev-prod.tfvars --var-file=live/akasa/prod-1/secret.tfvars
+terraform apply --var-file=live/akasa/prod-1/akasa.noq.dev-prod.tfvars --var-file=live/akasa/prod-1/secret.tfvars
 
 Terraform is only required when either establishing a new tenant / account or updating a current account. Each Terraform deployment is governed by a set of modules and environment specific tfvars (under the live folder hierarchy). See the `Structure` section below for a more detailed explanation.
 
@@ -65,10 +81,10 @@ To use terraform, follow the below steps:
 - Setup your workspaces: `./setup.sh`
 - Select the appropriate workspace: `terraform workspace select shared-staging-1` (for instance)
 - For the first time, initialize the environment: `terraform init --var-file=live/shared/staging-1/noq.dev-staging.tfvars`
-- Plan: `terraform plan --var-file=live/shared/staging-1/noq.dev-staging.tfvars`
-- Apply: `terraform apply --var-file=live/shared/staging-1/noq.dev-staging.tfvars`
+- Plan: `terraform plan --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars`
+- Apply: `terraform apply --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars`
 - Create the NOQ configuration files in the corresponding `live` configuration folder: `terraform output -json | bazel run //util/terraform_config_parser ~/dev/noq/cloudumi` -- see the `terraform_config_parser` section below
-- Destroy: `terraform destroy --var-file=live/shared/staging-1/noq.dev-staging.tfvars`
+- Destroy: `terraform destroy --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars`
 - Get outputs: `terraform output`
 - Refresh: `terraform refresh`
 

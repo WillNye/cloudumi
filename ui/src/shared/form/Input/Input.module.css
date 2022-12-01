@@ -10,21 +10,17 @@
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 
   &.small {
-
   }
 
   &.medium {
-
   }
 
   &:hover {
-
   }
 
   &:focus-within,
   &:focus-visible {
     outline: none;
-
   }
 
   &.error {
@@ -43,7 +39,6 @@
 }
 
 .suffix {
-
 }
 
 .input {

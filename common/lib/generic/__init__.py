@@ -345,7 +345,12 @@ async def get_principal_friendly_name(principal):
     if isinstance(principal, HoneybeeAwsResourceTemplatePrincipalModel):
         return principal.resource_identifier
     if isinstance(principal, AwsResourcePrincipalModel):
-        return principal.principal_arn
+        principal_name = (
+            principal.principal_arn
+            or principal.resource_type
+            or principal.principal_type
+        )
+        return principal_name
     raise MissingRequestParameter("Unable to determine principal")
 
 

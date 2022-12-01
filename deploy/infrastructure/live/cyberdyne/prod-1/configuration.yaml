@@ -1,6 +1,18 @@
+extends:
+  - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:775726381634:secret:cyberdyne-prod-noq_secrets-GyXrfZ
 _global_:
-  landing_page_domains:
-    - cyberdyne.noq.dev
+  landing_page_domains: []
+  metrics:
+    cloudwatch:
+      namespace: cyberdyne-noq-dev-cyberdyne-prod-1
+    fluent-bit:
+      namespace: cyberdyne-noq-dev-cyberdyne-prod-1
+      max_threads: 10
+      enabled: true
+      log_file: "/var/log/saas_output.log"
+      max_log_file_size: 6291456 # 6 megabyte
+      config: /etc/fluent-bit/fluent-bit.conf
+      exe: /opt/fluent-bit/bin/fluent-bit
   auth:
     challenge_url:
       request_ip_must_match_challenge_creation_ip: false
@@ -9,25 +21,43 @@ _global_:
       trusted_remote_ip_header: X-Forwarded-For
   integrations:
     aws:
-      account_id: 940552945933
+      account_id: "775726381634"
       central_role_name: NoqCentralRole
       spoke_role_name: NoqSpokeRole
-      node_role: arn:aws:iam::940552945933:role/noq-dev-cyberdyne-prod-1-ecsTaskRole
+      node_role: arn:aws:iam::775726381634:role/cyberdyne-noq-dev-cyberdyne-prod-1-ecsTaskRole
       stage: prod
       region: us-west-2
       attributes: 1
-      registration_topic_arn: arn:aws:sns:us-west-2:940552945933:noq-dev-cyberdyne-prod-1-registration-topic
-      registration_queue_arn: arn:aws:sqs:us-west-2:940552945933:noq-dev-cyberdyne-prod-1-registration-queue
+      registration_topic_arn: arn:aws:sns:us-west-2:775726381634:cyberdyne-noq-dev-cyberdyne-prod-1-registration-topic
+      registration_queue_arn: arn:aws:sqs:us-west-2:775726381634:cyberdyne-noq-dev-cyberdyne-prod-1-registration-queue
+      registration_central_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_central_role.yaml"
+      registration_spoke_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml"
+  accounts:
+    tenant_data:
+      name: NoqServiceConnRole
+      account_id: "615395543222"
+      role_arn: arn:aws:iam::615395543222:role/NoqServiceConnRole
+      external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
+      region: us-west-2
+    zelkova:
+      name: ZelkovaAnalysisRole
+      account_id: "894599878328"
+      account_name: "zelkova"
+      role_arn: arn:aws:iam::894599878328:role/ZelkovaAnalysisRole
+  s3_buckets:
+    legal_docs: noq-global-staging-legal-docs
   deployment:
-    domain_name: cyberdyne.noq.dev
+    domain_name: "app.cyberdyne.noq.dev"
     namespace: cyberdyne
-    zone: noq.dev
-    cluster_id: noq-dev-cyberdyne-prod-1
+    zone: cyberdyne.noq.dev
+    cluster_id: cyberdyne-noq-dev-cyberdyne-prod-1
   logging:
     file: ~/logs/cloudumi/cloudumi_tornado.log
   web:
-    path: "/templates"
-  s3_cache_bucket: cloudumi-cache.noq-dev-cyberdyne-prod-1
+    path: "/app/frontend/dist"
+  docs:
+    path: "/app/api/docs"
+  s3_cache_bucket: cloudumi-cache.cyberdyne-noq-dev-cyberdyne-prod-1
   development: false
   environment: prod
   tornado:
@@ -42,7 +72,7 @@ _global_:
     aws: cmsaas_aws
     group_mapping: cmsaas_group_mapping
     internal_celery_tasks: cmsaas_celery_tasks
-    metrics: cmsaas_metrics
+    metrics: fluent_bit
     internal_config: cmsaas_config
     internal_routes: cmsaas_internal_routes
     internal_policies: cmsaas_policies
@@ -50,24 +80,30 @@ _global_:
     clear_tasks_for_development: false
     purge: false
     broker:
-      us-east-1: redis://noq-dev-cyberdyne-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/1
-      us-west-2: redis://noq-dev-cyberdyne-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/1
-      global: redis://noq-dev-cyberdyne-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/1
+      us-east-1: rediss://:{password}@master.cyberdyne-noq-dev-cyberdyne-prod-1.thejre.usw2.cache.amazonaws.com:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      us-west-2: rediss://:{password}@master.cyberdyne-noq-dev-cyberdyne-prod-1.thejre.usw2.cache.amazonaws.com:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      global: rediss://:{password}@master.cyberdyne-noq-dev-cyberdyne-prod-1.thejre.usw2.cache.amazonaws.com:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
     backend:
-      us-east-1: redis://noq-dev-cyberdyne-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/2
-      us-west-2: redis://noq-dev-cyberdyne-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/2
-      global: redis://noq-dev-cyberdyne-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com:6379/2
+      us-east-1: rediss://:{password}@master.cyberdyne-noq-dev-cyberdyne-prod-1.thejre.usw2.cache.amazonaws.com:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      us-west-2: rediss://:{password}@master.cyberdyne-noq-dev-cyberdyne-prod-1.thejre.usw2.cache.amazonaws.com:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      global: rediss://:{password}@master.cyberdyne-noq-dev-cyberdyne-prod-1.thejre.usw2.cache.amazonaws.com:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
     debug: true
   # Saas Configuration
+  ses_notifications_sender_identity: arn:aws:ses:us-west-2:775726381634:identity/notifications@noq.dev
+  dax_endpoints:
+    - prod-cyberdyne.thejre.dax-clusters.us-west-2.amazonaws.com:8111
   redis:
     host:
-      global: noq-dev-cyberdyne-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com
+      global: master.cyberdyne-noq-dev-cyberdyne-prod-1.thejre.usw2.cache.amazonaws.com
     port: 6379
+    ssl: true
     cluster_mode:
       enabled: false
       nodes:
         global:
-          - host: noq-dev-cyberdyne-prod-1-redis-service.ph1bdh.0001.usw2.cache.amazonaws.com
+          - host: master.cyberdyne-noq-dev-cyberdyne-prod-1.thejre.usw2.cache.amazonaws.com
             port: 6379
   sentry:
-    dsn: "https://18aff06afbd941fb92905ab1bccc4bd2@sentry.noq.dev:4443/3"
+    dsn: https://f446f0f25a74440db6e211ebe73c05f9@o1134078.ingest.sentry.io/6188334
+  google_analytics:
+    tracking_id: G-P5K1SQF3P6

@@ -202,6 +202,7 @@ class TestTypeAheadHandler(NOQAsyncHTTPTestCase):
             principal=AwsResourcePrincipalModel(
                 principal_type="AwsResource",
                 principal_arn="arn:aws:iam::123456789012:role/RoleNumber5",
+                account_id="123456789012",
             ),
         )
         # Pre-existing role is in results

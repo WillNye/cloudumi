@@ -1,3 +1,8 @@
+variable "account_id" {
+  description = "AWS account ID of this account"
+  type        = string
+}
+
 variable "attributes" {
   description = "Additional attributes, e.g. `1`"
   type        = number
@@ -15,6 +20,11 @@ variable "cluster_id" {
   type        = string
 }
 
+variable "log_expiry" {
+  description = "The number of days to keep logs for."
+  type        = number
+}
+
 variable "noq_core" {
   type    = bool
   default = false
@@ -27,10 +37,5 @@ variable "tags" {
 
 variable "timeout" {
   description = "The timeout for each resource that may get stuck"
-  type        = string
-}
-
-variable "s3_access_log_bucket" {
-  description = "The S3 bucket to use for S3 access logs"
   type        = string
 }

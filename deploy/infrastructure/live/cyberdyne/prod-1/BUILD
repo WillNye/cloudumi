@@ -1,5 +1,11 @@
 load("@io_bazel_rules_docker//container:container.bzl", "container_push")
+load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
+EXT_DEPS = [
+    requirement("boto3"),
+    requirement("pyyaml"),
+    requirement("semver"),
+]
 filegroup(
     name = "prod-1-files",
     srcs = glob([
@@ -13,8 +19,8 @@ container_push(
     format = "Docker",
     repository = "cyberdyne-prod-registry-api",
     image = "//api:container",
-    registry = "940552945933.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "prod",
+    registry = "775726381634.dkr.ecr.us-west-2.amazonaws.com",
+    tag = "{VERSION}",
     visibility = ["//visibility:public"],
 )
 
@@ -23,44 +29,32 @@ container_push(
     format = "Docker",
     repository = "cyberdyne-prod-registry-celery",
     image = "//common/celery_tasks:container",
-    registry = "940552945933.dkr.ecr.us-west-2.amazonaws.com",
-    tag = "prod",
+    registry = "775726381634.dkr.ecr.us-west-2.amazonaws.com",
+    tag = "{VERSION}",
     visibility = ["//visibility:public"],
 )
 
-genrule(
-    name = "prod-1",
+py_binary(
+    name = "ecs_deployer",
+    srcs_version = "PY3",
+    data = [
+        "prod-1-files",
+    ],
     srcs = [
-        ":api-container-deploy-prod",
-        ":celery-container-deploy-prod",
-        ":prod-1-files",
+        "ecs_deployer.py",
     ],
-    executable = True,
-    exec_tools = [
-        ":api-container-deploy-prod",
-        ":celery-container-deploy-prod",
+    deps = EXT_DEPS,
+    visibility = ["//visibility:public"],
+)
+
+py_binary(
+    name = "ecs_undeployer",
+    srcs_version = "PY3",
+    srcs = [
+        "ecs_undeployer.py",
     ],
-    outs = ["run_deploy_prod"],
-    message = "Deploying CloudUmi to prod...",
-    cmd = "echo 'echo \"NOTE: This script makes certain assumptions: most have prod/prod_admin as a section in your ~/.aws/credentials (see READMEs), must have awscli installed pip install awscli\"; \
-           \
-           export AWS_PROFILE=prod/prod_admin; \
-           \
-           aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 940552945933.dkr.ecr.us-west-2.amazonaws.com; \
-           \
-           ecs-cli configure --cluster noq-dev-cyberdyne-prod-1 --default-launch-type FARGATE \
-           --config-name noq-dev-cyberdyne-prod-1 --region us-west-2; \
-           \
-           ecs-cli up --cluster-config noq-dev-cyberdyne-prod-1; \
-           \
-           ecs-cli compose -f deploy/infrastructure/live/cyberdyne/prod-1/compose.yaml \
-           --cluster-config noq-dev-cyberdyne-prod-1 \
-           --ecs-params deploy/infrastructure/live/cyberdyne/prod-1/ecs.yaml \
-           -p noq-dev-cyberdyne-prod-1 \
-           --task-role-arn arn:aws:iam::940552945933:role/noq-dev-cyberdyne-prod-1-ecsTaskRole \
-           --region us-west-2 service up --deployment-max-percent 200 --deployment-min-healthy-percent 50 --create-log-groups --timeout 15 \
-           --target-groups targetGroupArn=arn:aws:elasticloadbalancing:us-west-2:940552945933:targetgroup/tf-20220210010140147300000002/e74f50b2105b3ff5,containerName=noq-dev-cyberdyne-prod-1-api,containerPort=8092' >$@",
-    tags = ["manual"],
+    deps = EXT_DEPS,
+    visibility = ["//visibility:public"],
 )
 
 genrule(
@@ -72,8 +66,8 @@ genrule(
     outs = ["run_destroy_prod"],
     message = "Destroying CloudUmi in prod...",
     cmd = "ecs-cli compose -f deploy/infrastructure/live/cyberdyne/prod-1/compose.yaml \
-           -p noq-dev-cyberdyne-prod-1 service rm \
+           -p cyberdyne-noq-dev-cyberdyne-prod-1 service rm \
            \
-           ecs-cli down --cluster-config noq-dev-cyberdyne-prod-1; >$@",
+           ecs-cli down --cluster-config cyberdyne-noq-dev-cyberdyne-prod-1; >$@",
     tags = ["manual"],
 )
