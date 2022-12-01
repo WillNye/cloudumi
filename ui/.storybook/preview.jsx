@@ -8,13 +8,13 @@ import { theme } from '../src/shared/utils/DesignTokens';
 import '../src/index.css';
 
 export const decorators = [
-  (Story) => (
+  Story => (
     <BrowserRouter>
       <DesignTokensProvider value={theme}>
         <Story />
       </DesignTokensProvider>
     </BrowserRouter>
-  ),
+  )
 ];
 
 export const parameters = {
@@ -24,9 +24,7 @@ export const parameters = {
     theme: storybookTheme,
     container: ({ context, children }) => (
       <DocsContainer context={context}>
-        <DesignTokensProvider value={theme}>
-          {children}
-        </DesignTokensProvider>
+        <DesignTokensProvider value={theme}>{children}</DesignTokensProvider>
       </DocsContainer>
     )
   },

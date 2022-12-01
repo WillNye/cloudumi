@@ -4,14 +4,8 @@ const path = require('path');
 const { default: tsconfigPaths } = require('vite-tsconfig-paths');
 
 module.exports = {
-  stories: [
-    '../src/**/*.story.mdx',
-    '../src/**/*.story.@(js|jsx|ts|tsx)'
-  ],
-  addons: [
-    '@storybook/addon-docs/preset',
-    '@storybook/addon-essentials'
-  ],
+  stories: ['../src/**/*.story.mdx', '../src/**/*.story.@(js|jsx|ts|tsx)'],
+  addons: ['@storybook/addon-docs/preset', '@storybook/addon-essentials'],
   framework: '@storybook/react',
   core: {
     builder: '@storybook/builder-vite'

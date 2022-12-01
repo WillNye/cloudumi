@@ -13,18 +13,10 @@ export const Simple = () => {
 
   return (
     <>
-      <Button
-        type="button"
-        ref={buttonRef}
-        onClick={() => setOpen(!open)}
-      >
+      <Button type="button" ref={buttonRef} onClick={() => setOpen(!open)}>
         Open
       </Button>
-      <Menu
-        open={open}
-        onClose={() => setOpen(false)}
-        reference={buttonRef}
-      >
+      <Menu open={open} onClose={() => setOpen(false)} reference={buttonRef}>
         <ul>
           <li>Item1</li>
           <li>Item2</li>

@@ -177,7 +177,7 @@ export const theme: DesignTokens = {
     card: {
       // NOTE: These are just placeholders
       'card-background': themeColors.gray['600'],
-      'card-color': themeColors.gray['100'],
+      'card-color': themeColors.gray['100']
     }
   }
 };

@@ -26,11 +26,11 @@
 
   &:focus {
     outline: none;
-    border: solid 1px #4B5CFA;
+    border: solid 1px #4b5cfa;
   }
 
   &::selection {
     color: white;
-    background: #4B5CFA;
+    background: #4b5cfa;
   }
 }
