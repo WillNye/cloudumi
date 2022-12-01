@@ -12,7 +12,7 @@ import {
 import { theme } from './theme';
 
 export default {
-  title: 'Utils/Theme',
+  title: 'General/Theme',
   component: DesignTokensProvider
 };
 
