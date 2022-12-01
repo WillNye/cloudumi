@@ -169,12 +169,15 @@ export const theme: DesignTokens = {
       'btn-color': themeColors.slate['100']
     },
     input: {
+      // NOTE: These are just placeholders
       'input-background': themeColors.slate['500'],
       'input-color': themeColors.slate['100'],
-      'input-border': themeColors.blue['100'],
+      'input-border': themeColors.blue['100']
     },
     card: {
-      'card-background': themeColors.slate['500'],
+      // NOTE: These are just placeholders
+      'card-background': themeColors.gray['600'],
+      'card-color': themeColors.gray['100'],
     }
   }
 };
