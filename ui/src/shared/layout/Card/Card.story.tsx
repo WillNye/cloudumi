@@ -1,5 +1,4 @@
 import React from 'react';
-import { Button } from 'shared/elements/Button';
 import { Card } from './Card';
 
 export default {
