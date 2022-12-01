@@ -1,8 +1,7 @@
 extends:
   - AWS_SECRETS_MANAGER:{{ aws_secrets_manager_arn }}
 _global_:
-  landing_page_domains:
-    - {{ domain_name }}
+  landing_page_domains: {{landing_page_domains}}
   metrics:
     cloudwatch:
       namespace: {{ cluster_id_safed }}
@@ -37,7 +36,7 @@ _global_:
     tenant_data:
       name: NoqServiceConnRole
       account_id: "{{ global_tenant_data_account_id }}"
-      role_arn: arn:aws:iam::{{ global_tenant_data_account_id }}:role/NoqServiceConnRole
+      role_arn: arn:aws:iam::{{ global_tenant_data_account_id }}:role/{{ global_tenant_data_role_name }}
       external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
       region: us-west-2
     zelkova:
@@ -48,16 +47,16 @@ _global_:
   s3_buckets:
     legal_docs: {{ legal_docs_bucket_name }}
   deployment:
-    domain_name: {{ domain_name }}
+    domain_name: "{{ domain_name }}"
     namespace: {{ namespace }}
     zone: {{ zone }}
     cluster_id: {{ cluster_id_safed }}
   logging:
     file: ~/logs/cloudumi/cloudumi_tornado.log
   web:
-    path: "/frontend/build"
+    path: "/app/frontend/dist"
   docs:
-    path: "/api/docs"
+    path: "/app/api/docs"
   s3_cache_bucket: {{ bucket_name }}
   development: false
   environment: {{ stage }}
@@ -111,3 +110,5 @@ _global_:
     dsn: {{ sentry_dsn }}
   google_analytics:
     tracking_id: {{ google_analytics_tracking_id }}
+  tenant_storage:
+    base_path: /data/tenant_data/

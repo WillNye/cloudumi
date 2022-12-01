@@ -240,7 +240,7 @@ class RolesHandler(BaseAPIV2Handler):
         payload = {
             "eligible_roles": self.eligible_roles,
             "escalated_roles": await get_tra_supported_roles_by_tag(
-                self.eligible_roles, self.groups, self.ctx.tenant
+                self.eligible_roles, self.groups, self.user, self.ctx.tenant
             ),
         }
         self.set_header("Content-Type", "application/json")

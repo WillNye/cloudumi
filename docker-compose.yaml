@@ -1,0 +1,27 @@
+version: "3"
+services:
+  cloudumi-api:
+    container_name: cloudumi-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ~/.aws:/root/.aws:cached
+      - .:/app:cached
+      # Don't allow node_modules to be a volume in container
+      - /app/frontend/node_modules/
+    ports:
+      - 8092:8092
+    depends_on:
+      - cloudumi-redis
+      - cloudumi-dynamodb
+    links:
+      - cloudumi-redis
+      - cloudumi-dynamodb
+    command: bash -c 'python /app/api/__main__.py'
+    # command: tail -f /dev/null
+    environment:
+      CONFIG_LOCATION: /app/configs/development_account/saas_development.yaml
+      AWS_PROFILE: arn:aws:iam::759357822767:role/NoqSaasRoleLocalDev
+      AWS_REGION: us-west-2
+      AWS_DEFAULT_REGION: us-west-2

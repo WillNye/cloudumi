@@ -54,7 +54,7 @@ resource "aws_ecr_repository" "noq_ecr_repository-api" {
   count                = var.noq_core ? 1 : 0
 
   image_scanning_configuration {
-    scan_on_push = true
+    scan_on_push = false
   }
 
   tags = merge(
@@ -69,7 +69,7 @@ resource "aws_ecr_repository" "noq_ecr_repository-celery" {
   count                = var.noq_core ? 1 : 0
 
   image_scanning_configuration {
-    scan_on_push = true
+    scan_on_push = false
   }
 
   tags = merge(
@@ -85,7 +85,7 @@ resource "aws_secretsmanager_secret" "noq_secrets" {
 
 resource "aws_secretsmanager_secret_version" "noq_secrets" {
   secret_id     = aws_secretsmanager_secret.noq_secrets.id
-  secret_string = "placeholder" #tfsec:ignore:general-secrets-no-plaintext-exposure
+  secret_string = var.aws_secrets_manager_cluster_string
 }
 
 resource "aws_ecr_repository" "noq_ecr_repository-frontend" {
@@ -94,7 +94,7 @@ resource "aws_ecr_repository" "noq_ecr_repository-frontend" {
   count                = var.noq_core ? 1 : 0
 
   image_scanning_configuration {
-    scan_on_push = true
+    scan_on_push = false
   }
 
   tags = merge(
@@ -160,6 +160,11 @@ resource "aws_iam_role" "ecs_task_execution_role" {
     var.tags,
     {}
   )
+  managed_policy_arns = [
+    "arn:${data.aws_partition.current.partition}:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
+    "arn:${data.aws_partition.current.partition}:iam::aws:policy/AmazonSSMManagedInstanceCore",
+    "arn:${data.aws_partition.current.partition}:iam::aws:policy/CloudWatchAgentServerPolicy"
+  ]
 }
 
 resource "aws_iam_role" "ecs_task_role" {
@@ -178,7 +183,7 @@ resource "aws_iam_role" "ecs_task_role" {
       },
     ]
   })
-  tags = { "noq-authorized" : lower("${var.cluster_id}-ecsTaskRole@noq.dev") }
+  tags = var.noq_core ? { "noq-authorized" : lower("${var.cluster_id}-ecsTaskRole@noq.dev") } : {}
   inline_policy {
     name = "ecs_task_role_policy"
     policy = jsonencode({

@@ -47,3 +47,25 @@ testhtml: clean
 
 .PHONY: test-lint
 test-lint: test lint
+
+.PHONY: docker_build
+docker_build:
+	 docker buildx build --platform=linux/amd64 .
+
+.PHONY: docker_up
+docker_up:
+	noq file -p arn:aws:iam::759357822767:role/NoqSaasRoleLocalDev  arn:aws:iam::759357822767:role/NoqSaasRoleLocalDev -f
+	docker-compose -f docker-compose.yaml -f deploy/docker-compose-dependencies.yaml up -d
+
+.PHONY: docker_down
+docker_down:
+	docker-compose -f docker-compose.yaml -f deploy/docker-compose-dependencies.yaml down
+
+.PHONY: docker_deps_up
+docker_deps_up:
+	docker-compose -f deploy/docker-compose-dependencies.yaml up -d
+
+.PHONY: docker_deps_down
+docker_deps_down:
+	docker-compose -f deploy/docker-compose-dependencies.yaml down
+

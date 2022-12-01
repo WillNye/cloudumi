@@ -50,9 +50,9 @@ Each target has a name that uniquely identifies a build target. The path disambi
 - To run the API container within Docker, you can also use `docker run`: `docker run -p 8092:8092 --env CONFIG_LOCATION=/configs/development_account/saas_development.yaml --env AWS_PROFILE=NoqSaasRoleLocalDev --volume ~/.aws:/root/.aws --volume ~/.noq:/root/.noq bazel/api:container`
 - All dependencies are stored in `requirements.lock` in the root of the mono repo
 - These dependencies are used by bazel in establishing an hermetic build system - all requirements are cached in a central repository.
-- We use `pip-compile --allow-unsafe --output-file requirements.lock $( find . -iname "requirements.in" )` to generate the set of dependencies by parsing all `requirements.in` files contained in all the sub-projects of the mono repo.
+- We use `pip-compile --allow-unsafe --output-file requirements.lock $( find . -type f \( -name "requirements.in" -o -name "requirements-test.in" \))` to generate the set of dependencies by parsing all `requirements.in` and `requirements-test.in` files contained in all the sub-projects of the mono repo.
 - Because `pip-compile` optimistically caches all depdendencies, re-running the command will not update all python dependencies, but just look for newly added or freshly removed dependencies
-- To upgrade all dependencies, remove the `requirements.lock` file and re-run the `pip-compile --allow-unsafe --output-file requirements.lock $( find . -iname "requirements.in" )` command
+- To upgrade all dependencies, remove the `requirements.lock` file and re-run the `pip-compile --allow-unsafe --output-file requirements.lock $( find . -type f \( -name "requirements.in" -o -name "requirements-test.in" \))` command
 
 # Setup your dev environment
 
@@ -199,6 +199,8 @@ AWS_PROFILE=prod/prod_admin ecsgo
 ```
 
 Select the appropriate cluster, service, and tasks to connect to the container of your choice.
+
+### Deprecated Bazel Instructions
 
 It may be useful to retrieve the environment variables used by the process in a Docker container running in Fargate.
 This is so you have your CONFIG_LOCATION, bazel PYTHONPATH, and aws ECS credential environment variables set

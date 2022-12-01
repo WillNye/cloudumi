@@ -21,6 +21,7 @@ container_run_and_commit(
         "adduser -uid 1111 --gid 1111 --disabled-password --no-create-hom --gecos '' appuser && chown -R appuser /apps",
         "mkdir -p /home/appuser/.aws",
         "chown -R appuser /home/appuser",
+        "export PKG_CONFIG_PATH=/usr/local/lib/x86_64-linux-gnu/pkgconfig:/usr/local/lib/pkgconfig:/usr/local/share/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig"
     ],
     image = "@python_3.10_container//image",
     visibility = ["//visibility:public"],

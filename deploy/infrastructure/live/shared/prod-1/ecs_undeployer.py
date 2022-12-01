@@ -7,7 +7,6 @@ from distutils.version import LooseVersion
 
 ELASTIC_REGISTRIES = [
     "940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-api",
-    "940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-celery",
 ]
 
 

@@ -7,6 +7,10 @@ containerDefinitions:
         awslogs-group: {{ ecs_cluster_name }}
         awslogs-region: {{ region }}
         awslogs-stream-prefix: celery-scheduler
+    entryPoint:
+      - /bin/sh
+      - "-c"
+      - 'python /app/common/celery_tasks/run.py'
     linuxParameters:
       devices: [ ]
       initProcessEnabled: true
@@ -24,7 +28,7 @@ containerDefinitions:
     mountPoints: [ ]
     dockerSecurityOptions: [ ]
     volumesFrom: [ ]
-    image: {{ registry_repository_url_celery }}:{{ stage }}
+    image: {{ registry_repository_url_api }}:{{ stage }}
     essential: true
     links: [ ]
     extraHosts: [ ]

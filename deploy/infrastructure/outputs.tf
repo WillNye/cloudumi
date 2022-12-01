@@ -13,6 +13,11 @@ output "global_tenant_data_account_id" {
   value       = var.global_tenant_data_account_id
 }
 
+output "global_tenant_data_role_name" {
+  description = "Role name of the AWS Tenant Data Account"
+  value       = var.global_tenant_data_role_name
+}
+
 output "legal_docs_bucket_name" {
   description = "The S3 bucket containing templates for our legal documentation"
   value       = var.legal_docs_bucket_name
@@ -29,8 +34,13 @@ output "cluster_id" {
 }
 
 output "domain_name" {
-  description = "The configured domain name, which is derived from {namespace}.{zone}"
-  value       = "${var.namespace}.${var.zone}"
+  description = "The configured domain name"
+  value       = var.domain_name
+}
+
+output "landing_page_domains" {
+  description = "The domain names that should be used for common endpoints, like tenant_registration. This should NOT be set for non-noq (self-hosted) deployments"
+  value       = var.landing_page_domains
 }
 
 output "ecs_awslogs_group" {
@@ -98,6 +108,16 @@ output "private_subnets" {
   value       = module.tenant_networking.vpc_subnet_private_id
 }
 
+output "aws_efs_data_storage_access_point_id" {
+  description = "The ID of the EFS access point"
+  value       = module.tenant_storage.aws_efs_data_storage_access_point_id
+}
+
+output "aws_efs_data_storage_file_system_id" {
+  description = "The ID of the EFS file system"
+  value       = module.tenant_storage.aws_efs_data_storage_file_system_id
+}
+
 output "profile" {
   description = "The selected profile"
   value       = var.profile
@@ -116,16 +136,6 @@ output "region" {
 output "registry_repository_url_api" {
   description = "The respository URL for the API registry"
   value       = length(module.tenant_container_service.registry_repository_url_api) > 0 ? module.tenant_container_service.registry_repository_url_api[0].repository_url : ""
-}
-
-output "registry_repository_url_celery" {
-  description = "The respository URL for the Celery registry"
-  value       = length(module.tenant_container_service.registry_repository_url_celery) > 0 ? module.tenant_container_service.registry_repository_url_celery[0].repository_url : ""
-}
-
-output "registry_repository_url_frontend" {
-  description = "The respository URL for the Frontend registry"
-  value       = length(module.tenant_container_service.registry_repository_url_frontend) > 0 ? module.tenant_container_service.registry_repository_url_frontend[0].repository_url : ""
 }
 
 output "sns_registration_topic_arn" {

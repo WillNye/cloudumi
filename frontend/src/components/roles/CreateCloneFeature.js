@@ -140,6 +140,11 @@ class CreateCloneFeature extends Component {
         'No destination role name provided, please provide a destination role name'
       )
     }
+    if (!/^[a-zA-Z_0-9+=,.@-_]+$/.test(dest_role_name)) {
+      errors.push(
+        'Role name should only contain alphanumeric characters and +=,.@_-'
+      )
+    }
     if (errors.length > 0) {
       return this.setState({
         messages: errors,
@@ -173,6 +178,11 @@ class CreateCloneFeature extends Component {
     if (dest_role_name === '') {
       errors.push(
         'No destination role name provided, please provide a destination role name'
+      )
+    }
+    if (!/^[a-zA-Z_0-9+=,.@-_]+$/.test(dest_role_name)) {
+      errors.push(
+        'Role name should only contain alphanumeric characters and +=,.@_-'
       )
     }
     if (errors.length > 0) {
