@@ -1,6 +1,7 @@
+/* eslint @typescript-eslint/no-var-requires: "off" */
+
 const { mergeConfig } = require('vite');
 const svgr = require('vite-plugin-svgr');
-const path = require('path');
 const { default: tsconfigPaths } = require('vite-tsconfig-paths');
 
 module.exports = {

@@ -35,18 +35,10 @@ export const Lists = () => {
 
   return (
     <>
-      <Button
-        type="button"
-        ref={buttonRef}
-        onClick={() => setOpen(!open)}
-      >
+      <Button type="button" ref={buttonRef} onClick={() => setOpen(!open)}>
         Open
       </Button>
-      <Menu
-        open={open}
-        onClose={() => setOpen(false)}
-        reference={buttonRef}
-      >
+      <Menu open={open} onClose={() => setOpen(false)} reference={buttonRef}>
         <List>
           <ListItem>Item1</ListItem>
           <ListItem>Item2</ListItem>

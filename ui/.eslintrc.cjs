@@ -37,5 +37,6 @@ module.exports = {
     'import/no-anonymous-default-export': [0],
     'react/jsx-no-target-blank': [0],
     '@typescript-eslint/no-explicit-any': 'off'
-  }
+  },
+  ignorePatterns: ['!.storybook']
 };

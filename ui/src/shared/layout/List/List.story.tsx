@@ -19,15 +19,9 @@ export const Simple = () => (
 
 export const Dense = () => (
   <List style={{ width: '150px' }}>
-    <ListItem dense>
-      Item 1
-    </ListItem>
-    <ListItem dense>
-      Item 2
-    </ListItem>
-    <ListItem dense>
-      Item 3
-    </ListItem>
+    <ListItem dense>Item 1</ListItem>
+    <ListItem dense>Item 2</ListItem>
+    <ListItem dense>Item 3</ListItem>
   </List>
 );
 

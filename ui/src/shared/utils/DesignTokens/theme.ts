@@ -176,7 +176,7 @@ export const theme: DesignTokens = {
     },
     card: {
       'card-background': themeColors.gray['600'],
-      'card-color': themeColors.gray['100'],
+      'card-color': themeColors.gray['100']
     },
     divider: {
       'color-divider': themeColors.gray['500']
