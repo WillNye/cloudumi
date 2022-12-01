@@ -178,6 +178,9 @@ export const theme: DesignTokens = {
       // NOTE: These are just placeholders
       'card-background': themeColors.gray['600'],
       'card-color': themeColors.gray['100'],
+    },
+    divider: {
+      'color-divider': themeColors.gray['500']
     }
   }
 };

@@ -1,0 +1,21 @@
+.divider {
+  background: var(--color-divider);
+
+  &.horizontal {
+    height: 1px;
+    width: 100%;
+
+    &:not(.disableMargins) {
+      margin: var(--spacing-md) 0;
+    }
+  }
+
+  &.vertical {
+    width: 1px;
+    height: 100%;
+
+    &:not(.disableMargins) {
+      margin: 0 var(--spacing-md);
+    }
+  }
+}
