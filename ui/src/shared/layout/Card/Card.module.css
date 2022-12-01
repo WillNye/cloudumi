@@ -4,6 +4,8 @@
   display: flex;
   flex-direction: column;
   background: var(--card-background);
+  color: var(--card-color);
+  border-radius: var(--border-radius-md);
 
   &.disablePadding {
     padding: 0;
