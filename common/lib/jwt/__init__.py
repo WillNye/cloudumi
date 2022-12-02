@@ -121,7 +121,7 @@ async def generate_jwt_token(
 async def validate_and_return_jwt_token(auth_cookie, tenant):
     jwt_secret = config.get_tenant_specific_key("secrets.jwt_secret", tenant)
     if not jwt_secret:
-        raise Exception("jwt_secret is not defined")
+        raise Exception(f"jwt_secret is not defined for {tenant}")
     try:
         decoded_jwt = jwt.decode(auth_cookie, jwt_secret, algorithms="HS256")
         email = decoded_jwt.get(

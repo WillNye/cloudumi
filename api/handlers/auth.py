@@ -70,6 +70,7 @@ class AuthHandler(BaseHandler):
         except:  # noqa
             # NoUserException
             raise
+        await super(AuthHandler, self).prepare()
 
     async def get(self):
         self.write(
@@ -125,7 +126,7 @@ class CognitoAuthHandler(AuthHandler):
         )
 
     async def post(self, *args, **kwargs):
-        await self.initialize_auth()
+        await self.authorization_flow()
         try:
             body = json.loads(self.request.body)
         except json.decoder.JSONDecodeError:

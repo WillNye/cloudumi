@@ -262,7 +262,6 @@ class BaseHandler(TornadoRequestHandler):
         super(BaseHandler, self).initialize()
 
     async def prepare(self) -> None:
-        await self.initialize_auth()
         return await self.authorization_flow()
 
     async def check_tenant(self):
