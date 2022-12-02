@@ -26,6 +26,7 @@ from common.exceptions.exceptions import (
     NoMatchingRequest,
     PendingRequestAlreadyExists,
 )
+from common.iambic_request.utils import IAMBIC_REPOS_BASE_KEY
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
@@ -66,6 +67,8 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 log = config.get_logger("cloudumi")
 cluster_config = ClusterConfig()
 
+REDACTED_STR = "********"
+
 
 def filter_config_secrets(d):
     if isinstance(d, dict):
@@ -73,13 +76,13 @@ def filter_config_secrets(d):
             if isinstance(v, dict):
                 d[k] = filter_config_secrets(v)
             if isinstance(v, str):
-                d[k] = "********"
+                d[k] = REDACTED_STR
     elif isinstance(d, list):
         for v in d:
             if isinstance(v, dict) or isinstance(v, list):
                 v = filter_config_secrets(v)
     elif isinstance(d, str):
-        d = "********"
+        d = REDACTED_STR
     return d
 
 
@@ -89,7 +92,7 @@ def decode_config_secrets(original, new):
             if isinstance(v, dict) and original.get(k):
                 new[k] = decode_config_secrets(original[k], v)
             if isinstance(v, str) and original.get(k):
-                if v == "********":
+                if v == REDACTED_STR:
                     new[k] = original[k]
     elif isinstance(new, list):
         for i in range(len(new)):
@@ -98,7 +101,7 @@ def decode_config_secrets(original, new):
             ):
                 new[i] = decode_config_secrets(original[i], new[i])
     elif isinstance(new, str):
-        if new == "********":
+        if new == REDACTED_STR:
             new = original
     return new
 
@@ -1370,6 +1373,12 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         secrets = c_dict.get("secrets", {})
         if secrets and filter_secrets:
             filter_config_secrets(secrets)
+
+        iambic_repos = c_dict.get(IAMBIC_REPOS_BASE_KEY, [])
+        if iambic_repos and filter_secrets:
+            for idx in range(len(iambic_repos)):
+                iambic_repos[idx]["access_token"] = REDACTED_STR
+
         # TODO: Clean up secrets
         if return_format == "dict":
             return c_dict
@@ -1446,8 +1455,9 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         if not original_config_d:
             original_config_d = {}
         # TODO: Update all of the secrets within the configuration so it's not ****
-        if "secrets" in new_config_d:
+        if "secrets" in new_config_d or IAMBIC_REPOS_BASE_KEY in new_config_d:
             decode_config_secrets(original_config_d, new_config_d)
+
         new_config_writable = {
             "tenant": tenant,
             "id": "master",
