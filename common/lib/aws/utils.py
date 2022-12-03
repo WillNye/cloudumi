@@ -1120,8 +1120,10 @@ async def remove_expired_request_changes(
                         )
                         return
                     existing_policy = role.assume_role_policy_document
-
-                for statement in existing_policy.get("Statement", []):
+                statements = existing_policy.get("Statement", [])
+                if not isinstance(statements, list):
+                    statements = [statements]
+                for statement in statements:
                     if get_expiry_sid_str(
                         extended_request.expiration_date
                     ) in statement.get("Sid", ""):
