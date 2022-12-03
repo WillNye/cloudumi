@@ -371,6 +371,8 @@ async def _attach_sids_to_policy_statements(
     :param user: The acting user's email address
     :return: A list of IAM policy statement dictionaries with Sid entries for each
     """
+    if not isinstance(inline_iam_policy_statements, list):
+        inline_iam_policy_statements = [inline_iam_policy_statements]
     for statement in inline_iam_policy_statements:
         if not statement.get("Sid"):
             statement["Sid"] = await generate_policy_sid(user)
