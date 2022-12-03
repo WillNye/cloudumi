@@ -116,7 +116,8 @@ async def update_extended_request_expiration_date(
             new_statement = []
             old_statement_hashes = []
             statements = change.policy.policy_document.get("Statement", [])
-
+            if not isinstance(statements, list):
+                statements = [statements]
             if change.old_policy:
                 old_statement_hashes = await asyncio.gather(
                     *[

@@ -40,11 +40,11 @@
     "zustand": "^4.0.0-rc.0"
   },
   "scripts": {
-    "start": "react-scripts --openssl-legacy-provider start",
-    "start_tls": "HTTPS=true react-scripts --openssl-legacy-provider start",
-    "build": "BUILD_PATH='./dist' react-scripts --openssl-legacy-provider build",
-    "test": "react-scripts --openssl-legacy-provider test --env=jsdom",
-    "eject": "react-scripts --openssl-legacy-provider eject",
+    "start": "react-scripts --openssl-legacy-provider start || react-scripts start",
+    "start_tls": "HTTPS=true react-scripts --openssl-legacy-provider start || HTTPS=true react-scripts start",
+    "build": "BUILD_PATH='./dist' react-scripts --openssl-legacy-provider build || BUILD_PATH='./dist' react-scripts build",
+    "test": "react-scripts --openssl-legacy-provider test --env=jsdom || react-scripts test --env=jsdom",
+    "eject": "react-scripts --openssl-legacy-provider eject || react-scripts eject",
     "lint": "prettier --check './src/**/*.{jsx,js}'",
     "lint:fix": "prettier --write './src/**/*.{jsx,js}'",
     "copy": "cp -a dist/ ../api/templates",
