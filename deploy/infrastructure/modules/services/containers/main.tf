@@ -63,20 +63,6 @@ resource "aws_ecr_repository" "noq_ecr_repository-api" {
   )
 }
 
-resource "aws_ecr_repository" "noq_ecr_repository-celery" {
-  name                 = "${var.namespace}-${var.stage}-registry-celery"
-  image_tag_mutability = "MUTABLE"
-  count                = var.noq_core ? 1 : 0
-
-  image_scanning_configuration {
-    scan_on_push = false
-  }
-
-  tags = merge(
-    var.tags,
-    {}
-  )
-}
 
 resource "aws_secretsmanager_secret" "noq_secrets" {
   name       = "${var.namespace}-${var.stage}-noq_secrets"
@@ -86,21 +72,6 @@ resource "aws_secretsmanager_secret" "noq_secrets" {
 resource "aws_secretsmanager_secret_version" "noq_secrets" {
   secret_id     = aws_secretsmanager_secret.noq_secrets.id
   secret_string = var.aws_secrets_manager_cluster_string
-}
-
-resource "aws_ecr_repository" "noq_ecr_repository-frontend" {
-  name                 = "${var.namespace}-${var.stage}-registry-frontend"
-  image_tag_mutability = "MUTABLE"
-  count                = var.noq_core ? 1 : 0
-
-  image_scanning_configuration {
-    scan_on_push = false
-  }
-
-  tags = merge(
-    var.tags,
-    {}
-  )
 }
 
 resource "aws_iam_role" "ecs_task_execution_role" {
