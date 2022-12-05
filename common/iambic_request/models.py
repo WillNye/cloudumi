@@ -1,23 +1,28 @@
 import asyncio
 import os
-import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Union
 
 import aiofiles
+import aiofiles.os
+import aioshutil
 from git import Actor, Repo
 from github import Github
 from github.File import File
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic.fields import Any
 
-from common.config.config import get_logger
+from common.config import config
 from common.lib import noq_json as json
 from common.lib.asyncio import aio_wrapper
+from common.lib.storage import TenantFileStorageHandler
 
-TENANT_REPO_DIR = os.getenv("TENANT_REPO_DIR", "/data/tenant_data")
-log = get_logger(__name__)
+TENANT_REPO_DIR = Path(config.get("_global_.tenant_storage.base_path")).expanduser()
+if not TENANT_REPO_DIR:
+    raise EnvironmentError("_global_.tenant_storage.base_path must be set")
+
+log = config.get_logger(__name__)
 
 
 class IambicTemplateChange(PydanticBaseModel):
@@ -53,12 +58,14 @@ class IambicRepo:
         self.request_id = request_id
         self.requested_by = requested_by
         self.use_request_branch = use_request_branch
-        self._default_file_path = Path(
-            f"{TENANT_REPO_DIR}/{self.tenant}/iambic_template_repos/{self.repo_name}"
+        self._default_file_path = os.path.join(
+            TENANT_REPO_DIR, f"{self.tenant}/iambic_template_repos/{self.repo_name}"
         )
         self.remote_name = remote_name
         self.repo = None
         self._default_branch_name = None
+
+        self._storage_handler = TenantFileStorageHandler(self.tenant)
 
         if use_request_branch:
             assert request_id
@@ -66,9 +73,11 @@ class IambicRepo:
 
     async def set_request_branch(self):
         if os.path.exists(self.request_file_path):
-            await aio_wrapper(shutil.rmtree, self.request_file_path)
+            await aioshutil.rmtree(self.request_file_path)
 
-        await aio_wrapper(os.makedirs, self.request_file_path, exist_ok=True)
+        await aiofiles.os.makedirs(
+            os.path.dirname(self.request_file_path), exist_ok=True
+        )
         self.repo.git.worktree(
             "add", self.request_file_path, f"-b{self.request_branch_name}"
         )
@@ -101,15 +110,12 @@ class IambicRepo:
     ):
         async def _apply_template_change(change: IambicTemplateChange):
             file_path = os.path.join(self.request_file_path, change.path)
-            template_dir = "/".join(file_path.split("/")[:-1])
-            os.makedirs(template_dir, exist_ok=True)
-
             file_body = change.body
+
             if not file_body and os.path.exists(file_path):
-                os.remove(file_path)
+                await aiofiles.os.remove(file_path)
             elif file_body:
-                async with aiofiles.open(file_path, "w") as f:
-                    await f.write(file_body)
+                await self._storage_handler.write_file(file_path, "w", file_body)
 
         await asyncio.gather(
             *[
@@ -188,6 +194,10 @@ class IambicRepo:
         return await aio_wrapper(self.repo.git.show, f"{sha}:{file_path}")
 
     @property
+    def storage_handler(self):
+        return self._storage_handler
+
+    @property
     def default_file_path(self):
         return self._default_file_path
 
@@ -195,8 +205,9 @@ class IambicRepo:
     def request_file_path(self):
         assert self.request_id
         assert self.requested_by
-        return Path(
-            f"{TENANT_REPO_DIR}/{self.tenant}/iambic_template_user_workspaces/{self.requested_by}/{self.repo_name}/{self.request_branch_name}"
+        return os.path.join(
+            TENANT_REPO_DIR,
+            f"{self.tenant}/iambic_template_user_workspaces/{self.requested_by}/{self.repo_name}/{self.request_branch_name}",
         )
 
     @property
@@ -445,13 +456,13 @@ class GitHubPullRequest(BasePullRequest):
         if not self.merged_at and not self.closed_at:
             # Read from local file system if the request is still open
             path = os.path.join(self.repo.request_file_path, filename)
-            async with aiofiles.open(path, mode="r") as f:
-                body = await f.read()
+            body = await self.repo.storage_handler.read_file(path, "r")
 
             previous_path = os.path.join(self.repo.default_file_path, previous_filename)
             if os.path.exists(previous_path):
-                async with aiofiles.open(previous_path, mode="r") as f:
-                    previous_body = await f.read()
+                previous_body = await self.repo.storage_handler.read_file(
+                    previous_path, "r"
+                )
             else:
                 previous_body = ""
 

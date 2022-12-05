@@ -1,5 +1,6 @@
 # TODO: Check license on all of these
 # TODO: Install cmsaas_plugins or just get rid of the concept of plugins
+aioshutil
 aiozipkin
 asgiref # For Asyncio->Sync and Sync->Asyncio in threadpool
 atlassian-python-api # Supports creating PRs in BitBucket

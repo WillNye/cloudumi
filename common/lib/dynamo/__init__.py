@@ -19,7 +19,7 @@ from tenacity import Retrying, stop_after_attempt, wait_fixed
 
 from common.config import config
 from common.config.config import get_dynamo_table_name
-from common.config.globals import ClusterConfig
+from common.config.globals import REDACTED_STR, ClusterConfig
 from common.exceptions.exceptions import (
     DataNotRetrievable,
     NoExistingRequest,
@@ -66,8 +66,6 @@ POSSIBLE_STATUSES = [
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger("cloudumi")
 cluster_config = ClusterConfig()
-
-REDACTED_STR = "********"
 
 
 def filter_config_secrets(d):

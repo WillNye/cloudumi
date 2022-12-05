@@ -37,6 +37,19 @@ services:
     ports:
       - "8001:8001"
 
+  cloudumi-pg:
+    image: postgres:14
+    environment:
+      POSTGRES_PASSWORD: local_dev
+    volumes:
+      - ${PWD}/deploy/local/postgresql/data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  cloudumi-pg-admin:
+    image: adminer
+    ports:
+      - "8008:8080"
+
   # redis-cluster:
   #   image: noqdev/redis-cluster
   #   environment:
