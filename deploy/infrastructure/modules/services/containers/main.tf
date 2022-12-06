@@ -199,7 +199,7 @@ resource "aws_iam_role" "ecs_task_role" {
             "kms:ReEncryptTo"
           ],
           "Effect" : "Allow",
-          "Resource" : "${var.bucket_encryption_key}"
+          "Resource" : "${aws_kms_key.noq_ecs_kms_key.arn}"
         },
         {
           "Action" : [
