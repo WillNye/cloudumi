@@ -14,14 +14,6 @@ resource "aws_s3_bucket" "cloudumi_log_bucket" {
   bucket = "cloudumi-log-${var.cluster_id}"
   acl    = "private"
 
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
-      }
-    }
-  }
-
   policy = <<POLICY
   {
     "Id": "Policy",
@@ -76,14 +68,6 @@ resource "aws_s3_bucket" "cloudumi_files_bucket" {
   bucket = "${lower(var.bucket_name_prefix)}.${var.cluster_id}"
   acl    = "private"
 
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
-      }
-    }
-  }
-
   versioning {
     enabled = true
   }
@@ -137,14 +121,6 @@ resource "aws_s3_bucket" "tenant_configuration_store" {
   bucket = "${var.cluster_id}-tenant-configuration-store"
   acl    = "private"
 
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
-      }
-    }
-  }
-
   versioning {
     enabled = true
   }
@@ -188,18 +164,12 @@ resource "aws_s3_bucket" "tenant_configuration_store" {
 }
 
 # Encryption
-resource "aws_kms_key" "s3_bucket_encryption_key" {
-  description             = "This key is used to encrypt bucket objects"
-  deletion_window_in_days = 10
-  enable_key_rotation     = true
-}
-
 resource "aws_s3_bucket_server_side_encryption_configuration" "tenant_configuration_store_sse" {
   bucket = aws_s3_bucket.tenant_configuration_store.bucket
 
   rule {
     apply_server_side_encryption_by_default {
-      kms_master_key_id = aws_kms_key.s3_bucket_encryption_key.arn
+      kms_master_key_id = var.bucket_encryption_key
       sse_algorithm     = "aws:kms"
     }
   }
@@ -210,7 +180,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "cloudumi_log_buck
 
   rule {
     apply_server_side_encryption_by_default {
-      kms_master_key_id = aws_kms_key.s3_bucket_encryption_key.arn
+      kms_master_key_id = var.bucket_encryption_key
       sse_algorithm     = "aws:kms"
     }
   }
@@ -221,7 +191,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "cloudumi_files_bu
 
   rule {
     apply_server_side_encryption_by_default {
-      kms_master_key_id = aws_kms_key.s3_bucket_encryption_key.arn
+      kms_master_key_id = var.bucket_encryption_key
       sse_algorithm     = "aws:kms"
     }
   }

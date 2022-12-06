@@ -50,13 +50,14 @@ module "tenant_networking" {
 module "tenant_s3_service" {
   source = "./modules/services/s3"
 
-  account_id = var.account_id
-  attributes = var.attributes
-  cluster_id = local.cluster_id
-  log_expiry = var.log_expiry
-  noq_core   = var.noq_core
-  tags       = var.tags
-  timeout    = var.timeout
+  account_id            = var.account_id
+  attributes            = var.attributes
+  cluster_id            = local.cluster_id
+  log_expiry            = var.log_expiry
+  noq_core              = var.noq_core
+  tags                  = var.tags
+  timeout               = var.timeout
+  bucket_encryption_key = module.tenant_container_service.kms_key_id
 }
 
 module "tenant_messaging" {
@@ -124,7 +125,7 @@ module "tenant_ecs_task_role" {
   tenant_configuration_bucket_name = module.tenant_s3_service.tenant_configuration_bucket_name
   aws_secrets_manager_arn          = module.tenant_container_service.aws_secrets_manager_arn
   noq_core                         = var.noq_core
-  bucket_encryption_key            = module.tenant_s3_service.bucket_encryption_kms_key
+  bucket_encryption_key            = module.tenant_container_service.kms_key_id
 }
 
 module "tenant_container_service" {
@@ -150,7 +151,7 @@ module "tenant_container_service" {
   vpc_cidr_range                     = module.tenant_networking.vpc_cidr_range
   vpc_id                             = module.tenant_networking.vpc_id
   aws_secrets_manager_cluster_string = var.aws_secrets_manager_cluster_string
-  bucket_encryption_key              = module.tenant_s3_service.bucket_encryption_kms_key
+  bucket_encryption_key              = module.tenant_container_service.kms_key_id
 }
 
 module "tenant_storage" {
