@@ -22,4 +22,7 @@ async def get_iambic_repo(tenant: str) -> IambicRepoDetails:
         .load_config(IAMBIC_REPOS_BASE_KEY, tenant)
         .models
     )
+    if not iambic_repos:
+        raise KeyError(f"No IAMbic repos configured for {tenant}")
+
     return iambic_repos[0]
