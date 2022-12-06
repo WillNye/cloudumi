@@ -186,3 +186,43 @@ resource "aws_s3_bucket" "tenant_configuration_store" {
     target_bucket = aws_s3_bucket.cloudumi_log_bucket.id
   }
 }
+
+# Encryption
+resource "aws_kms_key" "s3_bucket_encryption_key" {
+  description             = "This key is used to encrypt bucket objects"
+  deletion_window_in_days = 10
+  enable_key_rotation     = true
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "tenant_configuration_store_sse" {
+  bucket = aws_s3_bucket.tenant_configuration_store.bucket
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = aws_kms_key.s3_bucket_encryption_key.arn
+      sse_algorithm     = "aws:kms"
+    }
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "cloudumi_log_bucket_sse" {
+  bucket = aws_s3_bucket.cloudumi_log_bucket.bucket
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = aws_kms_key.s3_bucket_encryption_key.arn
+      sse_algorithm     = "aws:kms"
+    }
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "cloudumi_files_bucket_sse" {
+  bucket = aws_s3_bucket.cloudumi_files_bucket.bucket
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = aws_kms_key.s3_bucket_encryption_key.arn
+      sse_algorithm     = "aws:kms"
+    }
+  }
+}
