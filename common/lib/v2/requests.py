@@ -2484,7 +2484,7 @@ async def apply_tra_role_change(
             iam_client.list_role_tags, RoleName=principal_name
         )
         elevated_users = get_resource_tag(role_tags, tra_users_tag, True, set())
-        elevated_users.add(user)
+        elevated_users.add(extended_request.requester_email)
 
         await aio_wrapper(
             iam_client.tag_role,
