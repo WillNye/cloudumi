@@ -15,6 +15,7 @@ class TenantFileStorageHandler:
         self.tenant_config = TenantConfig(tenant)
 
     async def get_tenant_file_path(self, file_path: Union[str, Path]) -> str:
+        file_path = str(file_path)
         tenant_storage_base_path = self.tenant_config.tenant_storage_base_path
         if not tenant_storage_base_path.startswith("/"):
             raise Exception("Tenant storage base path must start with /")
@@ -24,7 +25,7 @@ class TenantFileStorageHandler:
         else:
             if not isinstance(file_path, str) and not isinstance(file_path, Path):
                 raise Exception("File_path must be a string or a Path")
-            elif file_path.startswith("/"):
+            elif file_path.replace(tenant_storage_base_path, "").startswith("/"):
                 raise Exception("File_path must not start with /")
             elif not self.tenant_config.tenant_storage_base_path.startswith("/"):
                 raise Exception("Tenant storage base path must start with /")

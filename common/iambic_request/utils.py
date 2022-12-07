@@ -1,3 +1,4 @@
+from common.iambic_request.models import GitHubPullRequest
 from common.models import IambicRepoDetails
 
 IAMBIC_REPOS_BASE_KEY = "iambic_repos"
@@ -26,3 +27,22 @@ async def get_iambic_repo(tenant: str) -> IambicRepoDetails:
         raise KeyError(f"No IAMbic repos configured for {tenant}")
 
     return iambic_repos[0]
+
+
+async def get_iambic_pr_instance(
+    tenant: str, request_id: str, requested_by: str, pull_request_id: str = None
+):
+    iambic_repo: IambicRepoDetails = await get_iambic_repo(tenant)
+
+    if iambic_repo.git_provider == "github":
+        return GitHubPullRequest(
+            tenant=tenant,
+            request_id=str(request_id),
+            requested_by=requested_by,
+            pull_request_id=pull_request_id,
+            repo_name=iambic_repo.repo_name,
+            access_token=iambic_repo.access_token,
+            merge_on_approval=iambic_repo.merge_on_approval,
+        )
+
+    raise ValueError(f"Unsupported git provider: {iambic_repo.git_provider}")

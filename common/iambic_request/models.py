@@ -31,10 +31,6 @@ class IambicTemplateChange(PydanticBaseModel):
 
     def __init__(self, **kwargs):
         path = kwargs.get("path", "")
-
-        if path.startswith(".."):
-            raise ValueError(".. not supported in path")
-
         if not path.endswith(".yaml") or not path.endswith(".yml"):
             kwargs["path"] = f"{path}.yaml"
 
@@ -88,14 +84,21 @@ class IambicRepo:
             self.repo = Repo(self.file_path)
             return
         elif not os.path.exists(self.default_file_path):
+            # The repo isn't on disk so we need to clone it before proceeding
             log.debug(
                 "Cloning repo", dict(tenant=self.tenant, request_id=self.request_id)
             )
             self.repo = await aio_wrapper(
-                Repo.clone_from, self.repo_uri, self.default_file_path, env=env
+                Repo.clone_from,
+                self.repo_uri,
+                self.default_file_path,
+                env=env,
+                config="core.symlinks=false",
             )
         else:
             self.repo = Repo(self.default_file_path)
+            # The repo has been cloned but the worktree doesn't exist yet
+            # So, we want to pull the latest changes before we create the worktree
             await self.pull_default_branch()
 
         if self.use_request_branch:
@@ -162,12 +165,10 @@ class IambicRepo:
         self, template_changes: list[IambicTemplateChange], updated_by: str
     ):
         await self._commit_and_push_changes(template_changes, updated_by)
-        await self.pull_default_branch()
 
     async def delete_branch(self):
         remote = self.repo.remote(name=self.remote_name)
         await aio_wrapper(remote.push, refspec=f":{self.request_branch_name}")
-        await self.pull_default_branch()
 
     async def pull_default_branch(self):
         if self.use_request_branch:
@@ -390,6 +391,7 @@ class BasePullRequest(PydanticBaseModel):
         if self.mergeable and self.merge_on_approval:
             await self._merge_request()
             await self.repo.delete_branch()
+            await self.repo.pull_default_branch()
         elif self.mergeable and not self.merge_on_approval:
             # TODO: Return something to let user know they need to merge the PR manually
             pass
@@ -413,7 +415,7 @@ class BasePullRequest(PydanticBaseModel):
         await self.repo.delete_branch()
 
     async def get_request_details(self):
-        if self.pull_request_id and not self.title:
+        if self.pull_request_id and not self.files:
             await self.load_pr()
 
         return self.dict()
