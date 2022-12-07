@@ -223,22 +223,13 @@ async def handle_spoke_account_registration(body):
 
     # Assume role from noq_dev_central_role
     try:
-        sts_client = await aio_wrapper(
+        customer_central_role_sts_client = await aio_wrapper(
             boto3_cached_conn,
             "sts",
             tenant,
             None,
             session_name="noq_test_spoke_role_registration",
         )
-        for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_fixed(3)):
-            with attempt:
-                central_role_credentials = await aio_wrapper(
-                    sts_client.assume_role,
-                    RoleArn=hub_account.role_arn,
-                    RoleSessionName="noq_registration_verification",
-                    ExternalId=external_id,
-                )
-
     except RetryError as e:
         error_message = "Unable to assume customer's central account role"
         sentry_sdk.capture_exception()
@@ -256,16 +247,6 @@ async def handle_spoke_account_registration(body):
             "success": False,
             "message": error_message,
         }
-
-    customer_central_role_sts_client = await aio_wrapper(
-        boto3.client,
-        "sts",
-        aws_access_key_id=central_role_credentials["Credentials"]["AccessKeyId"],
-        aws_secret_access_key=central_role_credentials["Credentials"][
-            "SecretAccessKey"
-        ],
-        aws_session_token=central_role_credentials["Credentials"]["SessionToken"],
-    )
 
     try:
         for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_fixed(3)):
