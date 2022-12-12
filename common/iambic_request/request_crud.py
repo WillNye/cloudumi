@@ -7,8 +7,10 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import contains_eager
 
 from common.config.config import async_session
+from common.exceptions.exceptions import NoMatchingRequest, Unauthorized
 from common.iambic_request.models import Request, RequestComment
 from common.iambic_request.utils import get_iambic_pr_instance
+from common.lib import noq_json as json
 from common.pg_core.filters import create_filter_from_url_params
 
 
@@ -19,45 +21,53 @@ async def list_requests(tenant: str, **filter_kwargs) -> list[Request]:
     async with async_session() as session:
         stmt = (
             select(Request)
-            .filter(Request.deleted == False)
+            .filter(Request.deleted == False)  # noqa: E712
             .filter(Request.tenant == tenant)
         )
 
         stmt = create_filter_from_url_params(stmt, **filter_kwargs)
         items = await session.execute(stmt)
-    return list(items.scalars().all())
+    return items.scalars().all()
 
 
-async def get_request_response(request: Request, request_pr) -> dict:
+async def get_request_response(
+    request: Request, request_pr, include_comments: bool = True
+) -> dict:
     pr_details = await request_pr.get_request_details()
     pr_details["status"] = request.status
     pr_details["approved_by"] = request.approved_by
     pr_details["allowed_approvers"] = request.allowed_approvers
     pr_details["allowed_approvers"] = request.allowed_approvers
-    pr_details["comments"] = [comment.dict() for comment in request.comments]
+    if include_comments:
+        pr_details["comments"] = [comment.dict() for comment in request.comments]
+    else:
+        pr_details["comments"] = []
 
-    return pr_details
+    return json.loads(json.dumps(pr_details))
 
 
 async def get_request(tenant: str, request_id: Union[str, uuid.UUID]) -> Request:
-    async with async_session() as session:
-        stmt = (
-            select(Request)
-            .filter(Request.id == request_id)
-            .filter(Request.tenant == tenant)
-            .outerjoin(
-                RequestComment,
-                and_(
-                    RequestComment.request_id == Request.id,
-                    RequestComment.deleted == False,
-                ),
+    try:
+        async with async_session() as session:
+            stmt = (
+                select(Request)
+                .filter(Request.id == request_id)
+                .filter(Request.tenant == tenant)
+                .outerjoin(
+                    RequestComment,
+                    and_(
+                        RequestComment.request_id == Request.id,
+                        RequestComment.deleted == False,  # noqa: E712
+                    ),
+                )
+                .options(contains_eager(Request.comments))
             )
-            .options(contains_eager(Request.comments))
-        )
 
-        items = await session.execute(stmt)
-        request: Request = items.scalars().unique().one()
-        return request
+            items = await session.execute(stmt)
+            request: Request = items.scalars().unique().one()
+            return request
+    except Exception:
+        raise NoMatchingRequest
 
 
 async def request_dict(tenant: str, request_id: Union[str, uuid.UUID]) -> dict:
@@ -65,7 +75,10 @@ async def request_dict(tenant: str, request_id: Union[str, uuid.UUID]) -> dict:
     request_pr = await get_iambic_pr_instance(
         tenant, request.id, request.created_by, request.pull_request_id
     )
-    return await get_request_response(request, request_pr)
+
+    response = await get_request_response(request, request_pr, False)
+    del request_pr
+    return response
 
 
 async def create_request(
@@ -79,7 +92,7 @@ async def create_request(
     request_pr = await get_iambic_pr_instance(tenant, request_id, created_by)
     await request_pr.create_request(justification, changes)
 
-    iambic_request = Request(
+    request = Request(
         id=request_id,
         tenant=tenant,
         pull_request_id=request_pr.pull_request_id,
@@ -90,9 +103,11 @@ async def create_request(
 
     async with async_session() as session:
         async with session.begin():
-            session.add(iambic_request)
+            session.add(request)
 
-    return await get_request_response(iambic_request, request_pr)
+    response = await get_request_response(request, request_pr, False)
+    del request_pr
+    return response
 
 
 async def update_request(
@@ -111,8 +126,7 @@ async def update_request(
         or request.status != "Pending"
         or request.deleted
     ):
-        # Some type of validation error
-        raise
+        raise Unauthorized("Unable to update this request")
 
     request_pr = await get_iambic_pr_instance(
         tenant, request.id, request.created_by, request.pull_request_id
@@ -122,7 +136,10 @@ async def update_request(
     )
 
     await request_pr.load_pr()
-    return await get_request_response(request, request_pr)
+
+    response = await get_request_response(request, request_pr, False)
+    del request_pr
+    return response
 
 
 async def approve_request(
@@ -134,14 +151,14 @@ async def approve_request(
         or request.status != "Pending"
         or request.deleted
     ):
-        # Some type of validation error
-        raise
+        raise Unauthorized("Unable to approve this request")
 
     request.status = "Approved"
 
     request_pr = await get_iambic_pr_instance(
         tenant, request_id, request.created_by, request.pull_request_id
     )
+    await request_pr.load_pr()
 
     if request_pr.mergeable and request_pr.merge_on_approval:
         await request_pr.merge_request()
@@ -151,6 +168,7 @@ async def approve_request(
         # TODO: Handle this
         # request.rejected_by = ?
     elif request_pr.merged_at:
+        # TODO: Handle this
         # The PR has already been merged but the status was not updated in the DB
         # request.approved_by.append(?)
         pass
@@ -163,7 +181,9 @@ async def approve_request(
             await session.flush()
             await session.commit()
 
-    return await get_request_response(request, request_pr)
+    response = await get_request_response(request, request_pr, False)
+    del request_pr
+    return response
 
 
 async def reject_request(
@@ -178,8 +198,7 @@ async def reject_request(
         or request.status != "Pending"
         or request.deleted
     ):
-        # Some type of validation error
-        raise
+        raise Unauthorized("Unable to reject this request")
 
     request_pr = await get_iambic_pr_instance(
         tenant, request_id, request.created_by, request.pull_request_id
@@ -205,7 +224,9 @@ async def reject_request(
             await session.flush()
             await session.commit()
 
-    return await get_request_response(request, request_pr)
+    response = await get_request_response(request, request_pr, False)
+    del request_pr
+    return response
 
 
 async def can_perform_comment_operation(
@@ -223,7 +244,7 @@ async def can_perform_comment_operation(
                 .select_from(Request)
                 .filter(Request.tenant == tenant)
                 .filter(Request.id == request_id)
-                .filter(Request.deleted == False)
+                .filter(Request.deleted == False)  # noqa: E712
             )
         else:
             stmt = (
@@ -231,7 +252,7 @@ async def can_perform_comment_operation(
                 .select_from(RequestComment)
                 .join(Request)
                 .filter(Request.tenant == tenant)
-                .filter(Request.deleted == False)
+                .filter(Request.deleted == False)  # noqa: E712
                 .filter(RequestComment.id == comment_id)
                 .filter(RequestComment.created_by == user)
             )
@@ -244,8 +265,7 @@ async def create_request_comment(
     tenant: str, request_id: Union[str, uuid.UUID], created_by: str, body: str
 ):
     if not (await can_perform_comment_operation(tenant, request_id)):
-        # Some meaningful error
-        raise
+        raise Unauthorized
 
     async with async_session() as session:
         async with session.begin():
@@ -260,8 +280,7 @@ async def update_request_comment(
     if not (
         await can_perform_comment_operation(tenant, comment_id=comment_id, user=user)
     ):
-        # Some meaningful error
-        raise
+        raise Unauthorized("Unable to update this comment")
 
     async with async_session() as session:
         async with session.begin():
@@ -280,8 +299,7 @@ async def delete_request_comment(
     if not (
         await can_perform_comment_operation(tenant, comment_id=comment_id, user=user)
     ):
-        # Some meaningful error
-        raise
+        raise Unauthorized("Unable to delete this comment")
 
     async with async_session() as session:
         async with session.begin():

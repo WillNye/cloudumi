@@ -618,6 +618,25 @@ class Request(SoftDeleteMixin, Base):
         ),
     )
 
+    def dict(self):
+        response = {
+            "id": str(self.id),
+            "repo_name": self.repo_name,
+            "pull_request_id": self.pull_request_id,
+            "tenant": self.tenant,
+            "status": self.status
+            if isinstance(self.status, str)
+            else self.status.value,
+            "allowed_approvers": self.allowed_approvers,
+            "created_at": self.created_at.timestamp(),
+            "created_by": self.created_by,
+        }
+        for conditional_key in ("approved_by", "rejected_by"):
+            if val := getattr(self, conditional_key):
+                response[conditional_key] = val
+
+        return response
+
 
 class RequestComment(SoftDeleteMixin, Base):
     __tablename__ = "request_comment"
