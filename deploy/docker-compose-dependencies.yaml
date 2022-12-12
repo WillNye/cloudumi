@@ -40,6 +40,7 @@ services:
   cloudumi-pg:
     image: postgres:14
     environment:
+      POSTGRES_DB: noq
       POSTGRES_PASSWORD: local_dev
     volumes:
       - ${PWD}/deploy/local/postgresql/data:/var/lib/postgresql/data
