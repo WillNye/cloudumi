@@ -142,6 +142,7 @@ bazel-bin
 bazel-*
 
 frontend/.certs
+ui/.certs
 
 .env_github_action_secrets
 api/templates
