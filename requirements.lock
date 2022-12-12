@@ -22,6 +22,9 @@ aiomultiprocess==0.9.0
     # via checkov
 aiopath==0.6.11
     # via -r ./common/requirements.in
+aioshutil==1.2
+    # via
+    #   -r ./common/util/requirements.in
 aiosignal==1.2.0
     # via aiohttp
 aiozipkin==1.1.1
