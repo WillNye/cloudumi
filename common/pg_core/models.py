@@ -10,5 +10,3 @@ class SoftDeleteMixin:
     created_by = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
     deleted = Column(Boolean, default=False)
-    deleted_by = Column(String, nullable=True)
-    deleted_at = Column(DateTime, default=datetime.utcnow, nullable=True)

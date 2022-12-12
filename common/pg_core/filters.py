@@ -18,7 +18,7 @@ OPERATOR_MAP = {
     "istartswith": lambda c, x: c.ilike(x.replace("%", "%%") + "%"),
     "iendswith": lambda c, x: c.ilike("%" + x.replace("%", "%%")),
     "endswith": operators.endswith_op,
-    "isnull": lambda c, x: x and c != None or c == None,
+    "isnull": lambda c, x: x and c != None or c == None,  # noqa: E711, E712
     # 'range':        operators.between_op,
     "year": lambda c, x: extract("year", c) == x,
     "month": lambda c, x: extract("month", c) == x,
@@ -32,15 +32,22 @@ def create_filter_from_url_params(
     from_entity = query._filter_by_zero()
 
     for arg, val in kwargs.items():
+        val = to_list(val)
         split_arg = arg.split("__")
         namespace = _entity_namespace_key(
             from_entity, "".join(split_arg[:-1])
         )  # Right now join isn't really supported
         operation = split_arg[-1]
         if operation.startswith("~"):
-            query = query.filter(~OPERATOR_MAP[operation[1:]](namespace, *to_list(val)))
+            if "contains" in operation:
+                query = query.filter(~namespace.contains(val))
+            else:
+                query = query.filter(~OPERATOR_MAP[operation[1:]](namespace, *val))
         else:
-            query = query.filter(OPERATOR_MAP[operation](namespace, *to_list(val)))
+            if operation == "contains":
+                query = query.filter(namespace.contains(val))
+            else:
+                query = query.filter(OPERATOR_MAP[operation](namespace, *val))
 
     if order_by and order_by.startswith("-"):
         query = query.order_by(desc(_entity_namespace_key(from_entity, order_by[1:])))
