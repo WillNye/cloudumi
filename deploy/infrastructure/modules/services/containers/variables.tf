@@ -9,6 +9,11 @@ variable "attributes" {
   default     = 1
 }
 
+variable "bucket_encryption_key" {
+  description = "KMS key used to encrypt bucket objects"
+  type        = string
+}
+
 variable "container_insights" {
   description = "Controls if ECS Cluster has container insights enabled"
   type        = bool

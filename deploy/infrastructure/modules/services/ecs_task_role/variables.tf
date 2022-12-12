@@ -1,3 +1,8 @@
+variable "bucket_encryption_key" {
+  description = "KMS key used to encrypt bucket objects"
+  type        = string
+}
+
 variable "cloudumi_files_bucket" {
   description = "The S3 bucket to store cached data for tenants"
   type        = string
