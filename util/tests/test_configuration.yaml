@@ -8,6 +8,8 @@ _global_:
   environment: test
   deployment:
     cluster_id: test
+  tenant_storage:
+    base_path: /tmp/tenant_data/
   tornado:
     debug: false
     port: 8081
@@ -19,8 +21,6 @@ _global_:
       data_folder_in: .pytest_cache/celery_data_folder_in
       data_folder_out: .pytest_cache/celery_data_folder_out
       data_folder_processed: .pytest_cache/celery_data_folder_processed
-  tenant_storage:
-    base_path: /tmp/tenant_data/
 
 site_configs:
   example_com:
