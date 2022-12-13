@@ -1,3 +1,4 @@
+import asyncio
 import os
 import time
 from secrets import token_urlsafe
@@ -12,6 +13,8 @@ override_email = os.getenv("OVERRIDE_EMAIL", "user@noq.dev")
 
 import common.scripts.initialize_dynamodb  # noqa: F401, E402
 from common.lib.dynamo import RestrictedDynamoHandler  # noqa: F401, E402
+
+loop = asyncio.get_event_loop()
 
 tenant_config = f"""
 _development_user_override: {override_email}
@@ -565,7 +568,8 @@ async_to_sync(ddb.update_static_config_for_tenant)(
 )
 
 # Force rebuild SQL tables, deleting all existing data
-import common.scripts.initialize_postgres  # noqa: F401,E402
+from common.scripts.initialize_postgres import run_alembic_migrations  # noqa: F401,E402
 
+run_alembic_migrations()
 # Force a re-cache of cloud resources with updated configuration
 import common.scripts.initialize_redis  # noqa: F401,E402
