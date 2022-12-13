@@ -103,6 +103,10 @@ _global_:
         global:
           - host: master.staging-noq-dev-shared-staging-1.eb1l6j.usw2.cache.amazonaws.com
             port: 6379
+  noq_db:
+    endpoint: staging-noq-dev-shared-staging-1.cluster-ctap3hmv8c67.us-west-2.rds.amazonaws.com
+    port: 5432
+    database: noq
   sentry:
     dsn: https://7113898274d641d3923e0b163a74e6fe@o1134078.ingest.sentry.io/6625267
   google_analytics:
