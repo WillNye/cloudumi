@@ -1,3 +1,4 @@
+import { applyMode, Mode } from '@cloudscape-design/global-styles';
 import { DocsContainer } from '@storybook/addon-docs';
 import { BrowserRouter } from 'react-router-dom';
 import { DesignTokensProvider } from 'reablocks';
@@ -6,6 +7,8 @@ import { storybookTheme } from './theme';
 import { theme } from '../src/shared/utils/DesignTokens';
 
 import '../src/index.css';
+
+applyMode(Mode.Dark);
 
 export const decorators = [
   Story => (
