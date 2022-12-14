@@ -6,7 +6,7 @@ from sqlalchemy import engine_from_config, pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from common.config.globals import ClusterConfig
+from common.config.globals import ASYNC_PG_CONN_STR
 
 # We must import iambic models here for them to be recognized
 from common.iambic_request.models import Request, RequestComment  # noqa: F401,E402
@@ -32,9 +32,7 @@ target_metadata = Base.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
-config.set_main_option(
-    "sqlalchemy.url", ClusterConfig().postgres_async_sqlalchemy_string
-)
+config.set_main_option("sqlalchemy.url", ASYNC_PG_CONN_STR)
 
 
 def run_migrations_offline() -> None:

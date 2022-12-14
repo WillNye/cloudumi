@@ -627,18 +627,3 @@ is_test_environment = CONFIG.is_test_environment()
 is_development = CONFIG.is_development()
 api_spec = {}
 dir_ref = dir
-
-
-def create_pg_async_engine():
-    username = get("_global_.secrets.postgresql.username")
-    password = get("_global_.secrets.postgresql.password")
-    endpoint = get("_global_.noq_db.endpoint")
-    database = get("_global_.noq_db.database")
-    return create_async_engine(
-        f"postgresql+asyncpg://{username}:{password}@{endpoint}/{database}",
-        connect_args={"server_settings": {"jit": "off"}},
-    )
-
-
-pg_engine = create_pg_async_engine()
-async_session = sessionmaker(pg_engine, expire_on_commit=False, class_=AsyncSession)
