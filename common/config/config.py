@@ -19,8 +19,6 @@ import botocore.exceptions
 import logmatic
 import sentry_sdk
 from pytz import timezone
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
 
 import common.lib.noq_json as json
 from common.lib.aws.aws_secret_manager import get_aws_secret
