@@ -260,5 +260,5 @@ variable "noq_db_instance_count" {
 
 variable "noq_db_instance_type" {
   type    = string
-  default = "db.t3.medium"
+  default = "db.t4g.medium"
 }
