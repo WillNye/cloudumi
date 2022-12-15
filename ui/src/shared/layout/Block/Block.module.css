@@ -1,5 +1,6 @@
 .block {
   margin-bottom: var(--spacing-md);
+  color: #ffffff;
 
   &.disableMargin {
     margin-bottom: 0;

@@ -9,11 +9,13 @@
   will-change: scale, background-color, color, border-color;
   white-space: nowrap;
   background: var(--btn-background);
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm);
   color: var(--btn-color);
+  box-shadow: var(--shadow-300);
 
   &.small {
     font-size: var(--font-size-sm);
+    padding: var(--spacing-sm);
   }
 
   &.medium {

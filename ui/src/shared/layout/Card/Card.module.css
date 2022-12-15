@@ -1,14 +1,46 @@
 .card {
   padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
   position: relative;
   display: flex;
   flex-direction: column;
+  will-change: scale, background-color, color, border-color;
   background: var(--card-background);
   color: var(--card-color);
   border-radius: var(--border-radius-md);
 
   &.disablePadding {
     padding: 0;
+  }
+
+  &.outlined {
+    box-shadow: var(--shadow-300);
+    border: solid 1px var(--card-color);
+  }
+
+  &.default {
+    --card-background: transparent;
+    --card-color: var(--gray-100);
+  }
+
+  &.primary {
+    --card-background: var(--orange--100);
+    --card-color: var(--blue-100);
+  }
+
+  &.warning {
+    --card-background: var(--orange--100);
+    --card-color: var(--gray-100);
+  }
+
+  &.secondary {
+    --card-background: var(--gray--100);
+    --card-color: var(--gray-100);
+  }
+
+  &.danger {
+    --card-background: var(--red--100);
+    --card-color: var(--gray-100);
   }
 
   .header {
