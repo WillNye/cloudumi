@@ -50,6 +50,10 @@ notifications_sender_identity  = "notifications@noq.dev"
 redis_node_type            = "cache.t3.micro"
 secret_manager_secret_name = "shared-staging-noq_secrets"
 
+# RDS
+noq_db_database_name = "noq"
+noq_db_instance_type = "db.t4g.medium"
+
 # Sentry
 sentry_dsn = "https://7113898274d641d3923e0b163a74e6fe@o1134078.ingest.sentry.io/6625267"
 

@@ -6,7 +6,7 @@ from sqlalchemy import func as sql_func
 from sqlalchemy import select, update
 from sqlalchemy.orm import contains_eager
 
-from common.config.config import async_session
+from common.config.globals import ASYNC_PG_SESSION
 from common.exceptions.exceptions import NoMatchingRequest, Unauthorized
 from common.iambic_request.models import Request, RequestComment
 from common.iambic_request.utils import get_iambic_pr_instance
@@ -18,7 +18,7 @@ async def list_requests(tenant: str, **filter_kwargs) -> list[Request]:
     filter_kwargs.setdefault("order_by", "-created_at")
 
     # Figure out filters and custom ordering
-    async with async_session() as session:
+    async with ASYNC_PG_SESSION() as session:
         stmt = (
             select(Request)
             .filter(Request.deleted == False)  # noqa: E712
@@ -48,7 +48,7 @@ async def get_request_response(
 
 async def get_request(tenant: str, request_id: Union[str, uuid.UUID]) -> Request:
     try:
-        async with async_session() as session:
+        async with ASYNC_PG_SESSION() as session:
             stmt = (
                 select(Request)
                 .filter(Request.id == request_id)
@@ -101,7 +101,7 @@ async def create_request(
         allowed_approvers=allowed_approvers,
     )
 
-    async with async_session() as session:
+    async with ASYNC_PG_SESSION() as session:
         async with session.begin():
             session.add(request)
 
@@ -175,7 +175,7 @@ async def approve_request(
     else:
         request.approved_by.append(approved_by)
 
-    async with async_session() as session:
+    async with ASYNC_PG_SESSION() as session:
         async with session.begin():
             await session.merge(request)
             await session.flush()
@@ -218,7 +218,7 @@ async def reject_request(
         request.status = "Rejected"
         request.rejected_by = rejected_by
 
-    async with async_session() as session:
+    async with ASYNC_PG_SESSION() as session:
         async with session.begin():
             await session.merge(request)
             await session.flush()
@@ -237,7 +237,7 @@ async def can_perform_comment_operation(
 ):
     assert request_id or (bool(comment_id) and bool(user))
 
-    async with async_session() as session:
+    async with ASYNC_PG_SESSION() as session:
         if request_id:
             stmt = (
                 select([sql_func.count()])
@@ -267,7 +267,7 @@ async def create_request_comment(
     if not (await can_perform_comment_operation(tenant, request_id)):
         raise Unauthorized
 
-    async with async_session() as session:
+    async with ASYNC_PG_SESSION() as session:
         async with session.begin():
             session.add(
                 RequestComment(request_id=request_id, created_by=created_by, body=body)
@@ -282,7 +282,7 @@ async def update_request_comment(
     ):
         raise Unauthorized("Unable to update this comment")
 
-    async with async_session() as session:
+    async with ASYNC_PG_SESSION() as session:
         async with session.begin():
             stmt = (
                 update(RequestComment)
@@ -301,7 +301,7 @@ async def delete_request_comment(
     ):
         raise Unauthorized("Unable to delete this comment")
 
-    async with async_session() as session:
+    async with ASYNC_PG_SESSION() as session:
         async with session.begin():
             stmt = (
                 update(RequestComment)

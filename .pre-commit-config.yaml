@@ -15,12 +15,6 @@ repos:
     hooks:
       - id: flake8
         args: ["--exclude", "common/models.py,identity/lib/groups/models.py"]
-
-  - repo: https://github.com/asottile/seed-isort-config
-    rev: v2.2.0
-    hooks:
-      - id: seed-isort-config
-
   - repo: https://github.com/timothycrosley/isort
     rev: "5.10.1" # Use the revision sha / tag you want to point at
     hooks:

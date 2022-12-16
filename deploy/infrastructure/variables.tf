@@ -239,3 +239,26 @@ variable "load_balancer_internal" {
   type        = bool
   default     = false
 }
+
+variable "noq_db_username" {
+  type = string
+}
+
+variable "noq_db_password" {
+  type = string
+}
+
+variable "noq_db_database_name" {
+  type        = string
+  description = "The name of the default db on the cluster."
+}
+
+variable "noq_db_instance_count" {
+  type    = number
+  default = 1
+}
+
+variable "noq_db_instance_type" {
+  type    = string
+  default = "db.t4g.medium"
+}
