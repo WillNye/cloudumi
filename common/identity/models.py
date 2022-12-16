@@ -8,21 +8,6 @@ from sqlalchemy.types import Enum
 from common.pg_core.models import Base, SoftDeleteMixin
 
 
-class Tenant(SoftDeleteMixin, Base):
-    __tablename__ = "tenants"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String)
-
-    __table_args__ = Index("idx_tenant_name", "name", unique=True)
-
-    def dict(self):
-        return dict(
-            id=self.id,
-            name=self.name,
-        )
-
-
 class RoleAccessTypes(enum.Enum):
     credential_access = 1
     tra_supported_group = 2
@@ -33,7 +18,7 @@ class RoleAccess(SoftDeleteMixin, Base):
     __tablename__ = "role_access"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant = ForeignKey("tenants.name")
+    tenant = Column(String)
     type = Column(Enum(RoleAccessTypes))
     user_id = Column(String)  # Might become a foreign key to user table
     group_id = Column(String)  # Might become a foreign key to group table

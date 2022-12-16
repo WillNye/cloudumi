@@ -11,7 +11,7 @@ from common.exceptions.exceptions import (
     NoMatchingTenant,
     Unauthorized,
 )
-from common.identity.models import RoleAccess, RoleAccessTypes, Tenant
+from common.identity.models import RoleAccess, RoleAccessTypes
 from common.pg_core.filters import create_filter_from_url_params
 
 
@@ -20,12 +20,7 @@ async def list_role_access(tenant: str, **filter_kwargs) -> list[RoleAccess]:
 
     # Figure out filters and custom ordering
     async with ASYNC_PG_SESSION() as session:
-        stmt = (select(RoleAccess).filter(Tenant.name == tenant)).innerjoin(
-            Tenant,
-            and_(
-                RoleAccess.tenant_id == Tenant.id,
-            ),
-        )
+        stmt = select(RoleAccess).filter(RoleAccess.tenant == tenant)
 
         stmt = create_filter_from_url_params(stmt, **filter_kwargs)
         items = await session.execute(stmt)
@@ -40,12 +35,7 @@ async def get_role_access(
             stmt = (
                 select(RoleAccess)
                 .filter(RoleAccess.id == role_access_id)
-                .filter(Tenant.name == tenant)
-            ).innerjoin(
-                Tenant,
-                and_(
-                    RoleAccess.tenant_id == Tenant.id,
-                ),
+                .filter(RoleAccess.tenant == tenant)
             )
 
             items = await session.execute(stmt)
@@ -58,7 +48,6 @@ async def get_role_access(
 async def create_role_access(
     tenant: str,
     created_by: str,
-    justification: str,
     type: RoleAccessTypes,
     user_id: str,
     group_id: str,
@@ -73,7 +62,6 @@ async def create_role_access(
     role_access = RoleAccess(
         id=uuid.uuid4(),
         created_by=created_by,
-        justification=justification,
         type=type,
         user_id=user_id,
         group_id=group_id,
@@ -87,11 +75,6 @@ async def create_role_access(
 
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
-            tenant = session.execute(select(Tenant).filter(Tenant.name == tenant))
-            if not tenant:
-                raise NoMatchingTenant(f"Tenant {tenant} does not exist")
-
-            role_access.tenant_id = tenant[0].id
             session.add(role_access)
 
 
@@ -99,7 +82,6 @@ async def update_role_access(
     tenant: str,
     role_access_id: Union[str, uuid.UUID],
     updated_by: str,
-    justification: str = None,
     type: RoleAccessTypes = None,
     user_id: str = None,
     group_id: str = None,
@@ -128,21 +110,18 @@ async def update_role_access(
 
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
-            tenant = session.execute(select(Tenant).filter(Tenant.name == tenant))
-            if not tenant:
-                raise NoMatchingTenant(f"Tenant {tenant} does not exist")
-            session.execute(
+            await session.execute(
                 update(RoleAccess)
                 .where(RoleAccess.id == role_access_id)
                 .values(*updates)
             )
 
 
-asyncio.run(
+loop = asyncio.get_event_loop()
+loop.run_until_complete(
     create_role_access(
         "test_tenant",
         "created",
-        "because",
         RoleAccessTypes.credential_access,
         "user",
         "group",
@@ -152,11 +131,10 @@ asyncio.run(
         "request",
     )
 )
-asyncio.run(
+loop.run_until_complete(
     create_role_access(
         "test_tenant",
         "created",
-        "because",
         RoleAccessTypes.tra_active_user,
         "user",
         "group",
@@ -166,11 +144,10 @@ asyncio.run(
         "request",
     )
 )
-asyncio.run(
+loop.run_until_complete(
     create_role_access(
         "test_tenant",
         "created",
-        "because",
         RoleAccessTypes.tra_supported_group,
         "user",
         "group",
@@ -180,14 +157,13 @@ asyncio.run(
         "request",
     )
 )
-asyncio.run(list_role_access("test_tenant", order_by="-created_at"))
-asyncio.run(get_role_access("test_tenant", "1"))
-asyncio.run(
+loop.run_until_complete(list_role_access("test_tenant", order_by="-created_at"))
+loop.run_until_complete(get_role_access("test_tenant", "1"))
+loop.run_until_complete(
     update_role_access(
         "test_tenant",
         "1",
         "updated",
-        "because",
         RoleAccessTypes.tra_supported_group,
         "user",
         "group",

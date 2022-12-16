@@ -89,6 +89,11 @@
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
         "PYTHONASYNCIODEBUG": "1",
         "AWS_REGION": "us-west-2",
+        "POSTGRES_USER": "noq",
+        "POSTGRES_PASS": "local_dev",
+        "POSTGRES_ENDPOINT": "localhost",
+        "POSTGRES_PORT": "5432",
+        "POSTGRES_DB": "noq",
         "RUNTIME_PROFILE": "API"
       }
     },
