@@ -1,7 +1,19 @@
-from common.iambic_request.models import GitHubPullRequest
+from common.config import config
+from common.iambic_request.models import GitHubPullRequest, IambicTemplateChange
 from common.models import IambicRepoDetails
 
 IAMBIC_REPOS_BASE_KEY = "iambic_repos"
+
+
+async def get_allowed_approvers(
+    tenant: str, request_pr, changes: list[IambicTemplateChange]
+) -> list[str]:
+    """Retrieve the list of allowed approvers from the template body.
+
+    Not using template_bodies for now but may be used to resolve approvers in the future.
+    The idea being that
+    """
+    return config.get_tenant_specific_key("groups.can_admin", tenant)
 
 
 async def save_iambic_repos(tenant: str, iambic_repos: list[IambicRepoDetails]):
