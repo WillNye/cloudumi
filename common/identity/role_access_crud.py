@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import uuid
 from typing import Union
@@ -135,3 +136,64 @@ async def update_role_access(
                 .where(RoleAccess.id == role_access_id)
                 .values(*updates)
             )
+
+
+asyncio.run(
+    create_role_access(
+        "test_tenant",
+        "created",
+        "because",
+        RoleAccessTypes.credential_access,
+        "user",
+        "group",
+        "role_arn",
+        True,
+        datetime.datetime.now(),
+        "request",
+    )
+)
+asyncio.run(
+    create_role_access(
+        "test_tenant",
+        "created",
+        "because",
+        RoleAccessTypes.tra_active_user,
+        "user",
+        "group",
+        "role_arn",
+        True,
+        datetime.datetime.now(),
+        "request",
+    )
+)
+asyncio.run(
+    create_role_access(
+        "test_tenant",
+        "created",
+        "because",
+        RoleAccessTypes.tra_supported_group,
+        "user",
+        "group",
+        "role_arn",
+        True,
+        datetime.datetime.now(),
+        "request",
+    )
+)
+asyncio.run(list_role_access("test_tenant", order_by="-created_at"))
+asyncio.run(get_role_access("test_tenant", "1"))
+asyncio.run(
+    update_role_access(
+        "test_tenant",
+        "1",
+        "updated",
+        "because",
+        RoleAccessTypes.tra_supported_group,
+        "user",
+        "group",
+        "role_arn",
+        True,
+        datetime.datetime.now(),
+        "request",
+    )
+)
