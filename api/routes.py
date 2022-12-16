@@ -430,7 +430,3 @@ def make_app(jwt_validator=None):
         )
 
     return app
-
-
-# FOR TESTING ONLY:
-import common.identity.role_access_crud

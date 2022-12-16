@@ -1,16 +1,11 @@
-import asyncio
 import datetime
 import uuid
 from typing import Union
 
-from sqlalchemy import and_, select, update
+from sqlalchemy import select, update
 
 from common.config.globals import ASYNC_PG_SESSION
-from common.exceptions.exceptions import (
-    NoMatchingRequest,
-    NoMatchingTenant,
-    Unauthorized,
-)
+from common.exceptions.exceptions import NoMatchingRequest, Unauthorized
 from common.identity.models import RoleAccess, RoleAccessTypes
 from common.pg_core.filters import create_filter_from_url_params
 
@@ -63,6 +58,7 @@ async def create_role_access(
         id=uuid.uuid4(),
         created_by=created_by,
         type=type,
+        tenant=tenant,
         user_id=user_id,
         group_id=group_id,
         role_arn=role_arn,
@@ -115,61 +111,3 @@ async def update_role_access(
                 .where(RoleAccess.id == role_access_id)
                 .values(*updates)
             )
-
-
-loop = asyncio.get_event_loop()
-loop.run_until_complete(
-    create_role_access(
-        "test_tenant",
-        "created",
-        RoleAccessTypes.credential_access,
-        "user",
-        "group",
-        "role_arn",
-        True,
-        datetime.datetime.now(),
-        "request",
-    )
-)
-loop.run_until_complete(
-    create_role_access(
-        "test_tenant",
-        "created",
-        RoleAccessTypes.tra_active_user,
-        "user",
-        "group",
-        "role_arn",
-        True,
-        datetime.datetime.now(),
-        "request",
-    )
-)
-loop.run_until_complete(
-    create_role_access(
-        "test_tenant",
-        "created",
-        RoleAccessTypes.tra_supported_group,
-        "user",
-        "group",
-        "role_arn",
-        True,
-        datetime.datetime.now(),
-        "request",
-    )
-)
-loop.run_until_complete(list_role_access("test_tenant", order_by="-created_at"))
-loop.run_until_complete(get_role_access("test_tenant", "1"))
-loop.run_until_complete(
-    update_role_access(
-        "test_tenant",
-        "1",
-        "updated",
-        RoleAccessTypes.tra_supported_group,
-        "user",
-        "group",
-        "role_arn",
-        True,
-        datetime.datetime.now(),
-        "request",
-    )
-)

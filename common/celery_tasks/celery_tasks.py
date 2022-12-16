@@ -110,8 +110,6 @@ from identity.lib.groups.groups import (
 )
 from identity.lib.users.users import cache_identity_users_for_tenant
 
-####
-
 asynpool.PROC_ALIVE_TIMEOUT = config.get(
     "_global_.celery.asynpool_proc_alive_timeout", 60.0
 )
