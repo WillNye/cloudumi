@@ -30,7 +30,7 @@ async def get_iambic_repo(tenant: str) -> IambicRepoDetails:
 
 
 async def get_iambic_pr_instance(
-    tenant: str, request_id: str, requested_by: str, pull_request_id: str = None
+    tenant: str, request_id: str, requested_by: str, pull_request_id: int = None
 ):
     iambic_repo: IambicRepoDetails = await get_iambic_repo(tenant)
 

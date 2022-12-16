@@ -1,5 +1,6 @@
 import asyncio
 import os
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Union
@@ -12,17 +13,25 @@ from github import Github
 from github.File import File
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic.fields import Any
+from sqlalchemy import Column, ForeignKey, Index, Integer, String
+from sqlalchemy.dialects.postgresql import ARRAY, ENUM, UUID
+from sqlalchemy.orm import relationship
 
 from common.config import config
 from common.lib import noq_json as json
 from common.lib.asyncio import aio_wrapper
 from common.lib.storage import TenantFileStorageHandler
+from common.pg_core.models import Base, SoftDeleteMixin
 
 TENANT_REPO_DIR = Path(config.get("_global_.tenant_storage.base_path")).expanduser()
 if not TENANT_REPO_DIR:
     raise EnvironmentError("_global_.tenant_storage.base_path must be set")
 
 log = config.get_logger(__name__)
+
+RequestStatus = ENUM(
+    "Pending", "Approved", "Rejected", "Expired", name="RequestStatusEnum"
+)
 
 
 class IambicTemplateChange(PydanticBaseModel):
@@ -560,3 +569,92 @@ class GitHubPullRequest(BasePullRequest):
 
     async def _reject_request(self):
         await aio_wrapper(self.pr_obj.edit, state="closed")
+
+
+class Request(SoftDeleteMixin, Base):
+    __tablename__ = "request"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    repo_name = Column(String)
+    pull_request_id = Column(Integer)
+    tenant = Column(String)
+    status = Column(RequestStatus, default="Pending")
+
+    allowed_approvers = Column(ARRAY(String), default=dict)
+    approved_by = Column(ARRAY(String), default=dict)
+    rejected_by = Column(String, nullable=True)
+
+    comments = relationship(
+        "RequestComment",
+        back_populates="request",
+        cascade="all, delete-orphan",
+        uselist=True,
+        order_by="RequestComment.created_at",
+    )
+
+    __table_args__ = (
+        Index("request_tenant_created_at_idx", "tenant", "deleted", "created_at"),
+        Index(
+            "request_tenant_with_status_created_at_idx",
+            "tenant",
+            "status",
+            "deleted",
+            "created_at",
+        ),
+        Index(
+            "request_created_by_created_at_idx",
+            "tenant",
+            "deleted",
+            "created_by",
+            "created_at",
+        ),
+        Index(
+            "request_created_by_with_status_created_at_idx",
+            "tenant",
+            "status",
+            "deleted",
+            "created_by",
+            "created_at",
+        ),
+    )
+
+    def dict(self):
+        response = {
+            "id": str(self.id),
+            "repo_name": self.repo_name,
+            "pull_request_id": self.pull_request_id,
+            "tenant": self.tenant,
+            "status": self.status
+            if isinstance(self.status, str)
+            else self.status.value,
+            "allowed_approvers": self.allowed_approvers,
+            "created_at": self.created_at.timestamp(),
+            "created_by": self.created_by,
+        }
+        for conditional_key in ("approved_by", "rejected_by"):
+            if val := getattr(self, conditional_key):
+                response[conditional_key] = val
+
+        return response
+
+
+class RequestComment(SoftDeleteMixin, Base):
+    __tablename__ = "request_comment"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    body = Column(String)
+    request_id = Column(UUID(as_uuid=True), ForeignKey("request.id"), nullable=False)
+
+    request = relationship("Request", back_populates="comments")
+
+    __table_args__ = (
+        Index("request_comment_created_at_idx", "request_id", "deleted", "created_at"),
+    )
+
+    def dict(self):
+        return dict(
+            id=self.id,
+            body=self.body,
+            created_by=self.created_by,
+            created_at=self.created_at,
+        )
