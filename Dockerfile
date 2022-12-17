@@ -8,11 +8,14 @@ ARG TARGETVARIANT
 ARG PUBLIC_URL
 ENV PUBLIC_URL=${PUBLIC_URL:-/}
 
-RUN apt-get update && apt-get install -y software-properties-common gcc && \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata
+
+RUN apt-get install -y software-properties-common gcc && \
     add-apt-repository -y ppa:deadsnakes/ppa
 
 RUN apt-get update && apt-get install -y python3.10 python3-distutils \
-    python3-pip python3-apt python3-dev python-is-python3 pkg-config
+    python3-pip python3-apt python3-dev python-is-python3 pkg-config \
+    git-all
 
 RUN mkdir -p /app
 WORKDIR /app
