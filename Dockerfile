@@ -1,5 +1,5 @@
 # For more information, please refer to https://aka.ms/vscode-docker-python
-FROM python:3.10
+FROM ubuntu:latest
 ARG TARGETPLATFORM
 ARG TARGETARCH
 ARG TARGETVARIANT
@@ -7,6 +7,12 @@ ARG TARGETVARIANT
 # Set environment variable PUBLIC_URL from build args, uses "/" as default
 ARG PUBLIC_URL
 ENV PUBLIC_URL=${PUBLIC_URL:-/}
+
+RUN apt-get update && apt-get install -y software-properties-common gcc && \
+    add-apt-repository -y ppa:deadsnakes/ppa
+
+RUN apt-get update && apt-get install -y python3.10 python3-distutils \
+    python3-pip python3-apt python3-dev python-is-python3 pkg-config
 
 RUN mkdir -p /app
 WORKDIR /app
