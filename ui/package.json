@@ -34,7 +34,7 @@
     "graphql-tag": "^2.12.6",
     "nanoid": "^4.0.0",
     "passwordmeter": "^1.3.5",
-    "reablocks": "^1.4.1",
+    "reablocks": "^1.4.6",
     "react": "^18.2.0",
     "react-auth-code-input": "^3.2.0",
     "react-dom": "^18.2.0",

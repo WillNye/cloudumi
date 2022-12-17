@@ -38,3 +38,15 @@ export const Sizes = () => (
     <Button size="large">Large</Button>
   </>
 );
+
+export const IconButton = () => (
+  <>
+    <Button size="small" icon="pending">
+      Small
+    </Button>
+    {'  '}
+    <Button icon="signin">Medium</Button>
+    {'  '}
+    <Button icon="recents" size="large" />
+  </>
+);

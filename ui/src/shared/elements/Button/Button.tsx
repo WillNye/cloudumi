@@ -2,6 +2,7 @@ import React, { FC, forwardRef, Ref } from 'react';
 import classNames from 'classnames';
 import { motion } from 'framer-motion';
 import css from './Button.module.css';
+import { Icon } from '../Icon';
 
 export interface ButtonProps
   extends Omit<
@@ -16,6 +17,7 @@ export interface ButtonProps
   disablePadding?: boolean;
   disableAnimation?: boolean;
   size?: 'small' | 'medium' | 'large';
+  icon?: string;
 }
 
 export interface ButtonRef {
@@ -31,6 +33,7 @@ export const Button: FC<ButtonProps & ButtonRef> = forwardRef(
       type,
       fullWidth,
       size = 'medium',
+      icon,
       className,
       disableMargins,
       disableAnimation,
@@ -48,24 +51,15 @@ export const Button: FC<ButtonProps & ButtonRef> = forwardRef(
       type={type || 'button'}
       className={classNames(className, css.btn, {
         [css.fullWidth]: fullWidth,
-
-        [css.primary]: color === 'primary',
-        [css.secondary]: color === 'secondary',
-        [css.error]: color === 'error',
-
-        [css.small]: size === 'small',
-        [css.medium]: size === 'medium',
-        [css.large]: size === 'large',
-
-        [css.filled]: variant === 'filled',
-        [css.outline]: variant === 'outline',
-        [css.text]: variant === 'text',
-
+        [css[size]]: size,
+        [css[color]]: color,
+        [css[variant]]: variant,
         [css.disableMargins]: disableMargins,
         [css.disablePadding]: disablePadding
       })}
     >
       {children}
+      {icon && <Icon className={css.icon} name={icon} size={size} />}
     </motion.button>
   )
 );

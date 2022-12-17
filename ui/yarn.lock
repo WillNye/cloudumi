@@ -6561,6 +6561,11 @@ chownr@^2.0.0:
   resolved "https://registry.yarnpkg.com/chownr/-/chownr-2.0.0.tgz#15bfbe53d2eab4cf70f18a8cd68ebe5b3cb1dece"
   integrity sha512-bIomtDF5KGpdogkLd9VspvFzk9KfpyyGlS8YFVZl7TGPBHL5snIOnxeshwVgPteQ9b4Eydl+pVbIyE1DcvCWgQ==
 
+chroma-js@^2.4.2:
+  version "2.4.2"
+  resolved "https://registry.yarnpkg.com/chroma-js/-/chroma-js-2.4.2.tgz#dffc214ed0c11fa8eefca2c36651d8e57cbfb2b0"
+  integrity sha512-U9eDw6+wt7V8z5NncY2jJfZa+hUH8XEj8FQHgFJTrUFnJfXYf4Ml4adI2vXZOjqRDpFWtYVWypDfZwnJ+HIR4A==
+
 chrome-trace-event@^1.0.2:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/chrome-trace-event/-/chrome-trace-event-1.0.3.tgz#1015eced4741e15d06664a957dbbf50d041e26ac"
@@ -11947,11 +11952,12 @@ rdk@^6.1.0:
     popper.js "^1.16.1"
     react-scrolllock "^5.0.1"
 
-reablocks@^1.4.1:
-  version "1.4.1"
-  resolved "https://registry.yarnpkg.com/reablocks/-/reablocks-1.4.1.tgz#b66c9837280a83b3440ef8c06391d9a36fb65aeb"
-  integrity sha512-gJsINITna6EcacCfwT1Vs970BeLBtwXdjP5iKz6in/WZBzSzBMH9xi1StuLFvgcmvVDLa8M8roExary6U2uGwA==
+reablocks@^1.4.6:
+  version "1.4.6"
+  resolved "https://registry.yarnpkg.com/reablocks/-/reablocks-1.4.6.tgz#fd4ca6f390f971812c4983fac3f82fca99a6bca7"
+  integrity sha512-v5LOmDQEQ3iDMfWpRZ5lVz4AjQb6K8hLaEXV4uRmhsXW7EegUsVF4hdqZbxDFemVhDV686TXlX2bhZzaTi+8xQ==
   dependencies:
+    chroma-js "^2.4.2"
     classnames "^2.3.1"
     ellipsize "^0.5.1"
     framer-motion "^7.6.7"

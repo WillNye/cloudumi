@@ -1,7 +1,8 @@
 .btn {
   font-weight: normal;
-  border: solid 1px var(--btn-border-color);
-  display: inline-block;
+  border: solid 2px var(--btn-border-color);
+  display: inline-flex;
+  align-items: center;
   user-select: none;
   border-radius: var(--border-radius-md);
   font-family: var(--font-family);
@@ -27,7 +28,7 @@
   }
 
   &.primary {
-    --btn-color: #ffffff;
+    --btn-color: var(--body-color);
     --btn-background-color: var(--blue-700);
 
     &[disabled] {
@@ -41,12 +42,12 @@
   }
 
   &.secondary {
-    --btn-color: #ffffff;
+    --btn-color: var(--body-color);
     --btn-background-color: var(--gray-600);
   }
 
   &.error {
-    --btn-color: #ffffff;
+    --btn-color: var(--body-color);
     --btn-background-color: var(--red-800);
   }
 
@@ -56,9 +57,8 @@
   }
 
   &.outline {
-    --btn-background: #ffffff;
-    --btn-border-color: var(--btn-background-color);
-    --btn-color: var(--btn-background-color);
+    --btn-background: var(--btn-background-color);
+    --btn-border-color: var(--gray-300);
   }
 
   &.text {
