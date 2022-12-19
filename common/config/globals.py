@@ -17,7 +17,7 @@ class ClusterConfig:
         return config.get("_global_.dynamo.wait_time_between_retries", 5)
 
 
-ASYNC_PG_CONN_STR = f"postgresql+asyncpg://{config.get('_global_.secrets.postgres.username')}:{config.get('_global_.secrets.postgres.password')}@{config.get('_global_.noq_db.endpoint')}:{config.get('_global_.noq_db.port')}/{config.get('_global_.noq_db.database')}"
+ASYNC_PG_CONN_STR = f"postgresql+asyncpg://{config.get('_global_.secrets.postgresql.username')}:{config.get('_global_.secrets.postgresql.password')}@{config.get('_global_.noq_db.endpoint')}:{config.get('_global_.noq_db.port')}/{config.get('_global_.noq_db.database')}"
 ASYNC_PG_ENGINE = create_async_engine(
     ASYNC_PG_CONN_STR, connect_args={"server_settings": {"jit": "off"}}
 )

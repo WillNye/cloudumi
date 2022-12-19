@@ -8,8 +8,8 @@ from sqlalchemy.orm import contains_eager
 
 from common.config.globals import ASYNC_PG_SESSION
 from common.exceptions.exceptions import NoMatchingRequest, Unauthorized
-from common.iambic_request.models import Request, RequestComment
-from common.iambic_request.utils import get_iambic_pr_instance
+from common.iambic_request.models import IambicTemplateChange, Request, RequestComment
+from common.iambic_request.utils import get_allowed_approvers, get_iambic_pr_instance
 from common.lib import noq_json as json
 from common.pg_core.filters import create_filter_from_url_params
 
@@ -76,7 +76,7 @@ async def request_dict(tenant: str, request_id: Union[str, uuid.UUID]) -> dict:
         tenant, request.id, request.created_by, request.pull_request_id
     )
 
-    response = await get_request_response(request, request_pr, False)
+    response = await get_request_response(request, request_pr)
     del request_pr
     return response
 
@@ -85,8 +85,7 @@ async def create_request(
     tenant: str,
     created_by: str,
     justification: str,
-    changes: list,
-    allowed_approvers: list,
+    changes: list[IambicTemplateChange],
 ):
     request_id = uuid.uuid4()
     request_pr = await get_iambic_pr_instance(tenant, request_id, created_by)
@@ -98,7 +97,7 @@ async def create_request(
         pull_request_id=request_pr.pull_request_id,
         repo_name=request_pr.repo_name,
         created_by=created_by,
-        allowed_approvers=allowed_approvers,
+        allowed_approvers=(await get_allowed_approvers(tenant, request_pr, changes)),
     )
 
     async with ASYNC_PG_SESSION() as session:
@@ -114,14 +113,18 @@ async def update_request(
     tenant: str,
     request_id: Union[str, uuid.UUID],
     updated_by: str,
+    updater_groups: list[str],
     justification: str = None,
-    changes: list = None,
+    changes: Union[list[IambicTemplateChange], None] = None,
 ):
     request = await get_request(tenant, request_id)
     if (
         (
             request.created_by != updated_by
-            and updated_by not in request.allowed_approvers
+            and not any(
+                updater_group in request.allowed_approvers
+                for updater_group in updater_groups
+            )
         )
         or request.status != "Pending"
         or request.deleted
@@ -137,17 +140,23 @@ async def update_request(
 
     await request_pr.load_pr()
 
-    response = await get_request_response(request, request_pr, False)
+    response = await get_request_response(request, request_pr)
     del request_pr
     return response
 
 
 async def approve_request(
-    tenant: str, request_id: Union[str, uuid.UUID], approved_by: str
+    tenant: str,
+    request_id: Union[str, uuid.UUID],
+    approved_by: str,
+    approver_groups: list[str],
 ):
     request = await get_request(tenant, request_id)
     if (
-        approved_by not in request.allowed_approvers
+        not any(
+            approver_group in request.allowed_approvers
+            for approver_group in approver_groups
+        )
         or request.status != "Pending"
         or request.deleted
     ):
@@ -181,19 +190,25 @@ async def approve_request(
             await session.flush()
             await session.commit()
 
-    response = await get_request_response(request, request_pr, False)
+    response = await get_request_response(request, request_pr)
     del request_pr
     return response
 
 
 async def reject_request(
-    tenant: str, request_id: Union[str, uuid.UUID], rejected_by: str
+    tenant: str,
+    request_id: Union[str, uuid.UUID],
+    rejected_by: str,
+    rejecter_groups: list[str],
 ):
     request = await get_request(tenant, request_id)
     if (
         (
             request.created_by != rejected_by
-            and rejected_by not in request.allowed_approvers
+            and not any(
+                rejecter_group in request.allowed_approvers
+                for rejecter_group in rejecter_groups
+            )
         )
         or request.status != "Pending"
         or request.deleted
@@ -224,7 +239,7 @@ async def reject_request(
             await session.flush()
             await session.commit()
 
-    response = await get_request_response(request, request_pr, False)
+    response = await get_request_response(request, request_pr)
     del request_pr
     return response
 
