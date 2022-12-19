@@ -59,6 +59,6 @@ COPY . /app
 # Install API
 RUN python -m pip install -e .
 RUN pip cache purge
-
+RUN apt-get -y autoremove
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
 CMD ["python", "api/__main__.py"]

@@ -4,9 +4,9 @@
   "private": false,
   "dependencies": {
     "@monaco-editor/react": "^4.3.1",
-    "@sentry/react": "^7.1.1",
+    "@sentry/react": "^7.21.1",
     "@sentry/tracing": "^7.21.1",
-    "axios": "^0.26.1",
+    "axios": "^0.27.2",
     "bufferutil": "^4.0.6",
     "eslint-config-react-app": "6",
     "flowtype": "^2.0.0",
@@ -34,7 +34,7 @@
     "semantic-ui-css": "^2.4.1",
     "semantic-ui-react": "^2.1.2",
     "styled-components": "^5.3.3",
-    "survey-react": "^1.9.19",
+    "survey-react": "^1.9.60",
     "use-state-if-mounted": "^1.0.4",
     "yaml": "^1.10.2",
     "zustand": "^4.0.0-rc.0"
