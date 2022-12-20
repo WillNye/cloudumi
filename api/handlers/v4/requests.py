@@ -3,7 +3,6 @@ from tornado.web import Finish
 import common.lib.noq_json as json
 from common.exceptions.exceptions import NoMatchingRequest, Unauthorized
 from common.handlers.base import BaseHandler
-from common.iambic_request.models import IambicTemplateChange
 from common.iambic_request.request_crud import (
     approve_request,
     create_request,
@@ -15,7 +14,7 @@ from common.iambic_request.request_crud import (
     update_request,
     update_request_comment,
 )
-from common.models import WebResponse
+from common.models import IambicRequest, WebResponse
 
 
 class IambicRequestHandler(BaseHandler):
@@ -66,11 +65,13 @@ class IambicRequestHandler(BaseHandler):
 
         tenant = self.ctx.tenant
         user = self.user
-        request_data = json.loads(self.request.body)
-        request_data["changes"] = [
-            IambicTemplateChange(**item) for item in request_data["changes"]
-        ]
-        response = await create_request(tenant=tenant, created_by=user, **request_data)
+        request_data = IambicRequest(**json.loads(self.request.body))
+        response = await create_request(
+            tenant=tenant,
+            created_by=user,
+            justification=request_data.justification,
+            changes=request_data.changes,
+        )
         return self.write(
             WebResponse(
                 success="success",
@@ -88,7 +89,7 @@ class IambicRequestHandler(BaseHandler):
         tenant = self.ctx.tenant
         user = self.user
         groups = self.groups
-        request_data = json.loads(self.request.body)
+        request_data = IambicRequest(**json.loads(self.request.body))
 
         try:
             response = await update_request(
@@ -96,11 +97,8 @@ class IambicRequestHandler(BaseHandler):
                 request_id=request_id,
                 updated_by=user,
                 updater_groups=groups,
-                justification=request_data.get("justification"),
-                changes=[
-                    IambicTemplateChange(**change)
-                    for change in request_data.get("changes", [])
-                ],
+                justification=request_data.justification,
+                changes=request_data.changes,
             )
             return self.write(
                 WebResponse(

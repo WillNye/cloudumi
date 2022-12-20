@@ -36,7 +36,7 @@ async def get_request_response(
     pr_details = await request_pr.get_request_details()
     pr_details["status"] = request.status
     pr_details["approved_by"] = request.approved_by
-    pr_details["allowed_approvers"] = request.allowed_approvers
+    pr_details["rejected_by"] = request.rejected_by
     pr_details["allowed_approvers"] = request.allowed_approvers
     if include_comments:
         pr_details["comments"] = [comment.dict() for comment in request.comments]
