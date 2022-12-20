@@ -21,11 +21,27 @@ export const Suffix = () => (
 );
 
 export const PrefixAndSuffix = () => (
-  <Input defaultValue="Hello" prefix={'$'} suffix={'.00'} />
+  <Input defaultValue="Hello" prefix={'$'} suffix={'.00'} disabled />
 );
 
 export const FullWidth = () => (
   <div style={{ width: '300px' }}>
     <Input value="Hello" fullWidth={true} />
   </div>
+);
+
+export const Sizes = () => (
+  <>
+    <div style={{ width: '300px', marginBottom: '10px' }}>
+      <Input value="Small" size="small" />
+    </div>
+
+    <div style={{ width: '300px', marginBottom: '10px' }}>
+      <Input value="Medium" size="medium" />
+    </div>
+
+    <div style={{ width: '300px' }}>
+      <Input value="Large" size="large" />
+    </div>
+  </>
 );
