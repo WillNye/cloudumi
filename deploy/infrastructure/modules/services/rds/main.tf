@@ -56,6 +56,7 @@ resource "aws_rds_cluster" "postgresql" {
   cluster_identifier        = var.cluster_id
   engine                    = "aurora-postgresql"
   db_subnet_group_name      = aws_db_subnet_group.noq_rds_subnet_group.name
+  vpc_security_group_ids    = [aws_security_group.noq_rds_sg.id]
   availability_zones        = ["${var.region}a", "${var.region}b"]
   database_name             = var.database_name
   master_username           = var.master_username
