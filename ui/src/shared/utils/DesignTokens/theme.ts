@@ -169,8 +169,7 @@ export const theme: DesignTokens = {
       'btn-color': themeColors.slate['100']
     },
     input: {
-      // NOTE: These are just placeholders
-      'input-background': themeColors.slate['500'],
+      'input-background': themeColors.gray['900'],
       'input-color': themeColors.slate['100'],
       'input-border': themeColors.blue['100']
     },

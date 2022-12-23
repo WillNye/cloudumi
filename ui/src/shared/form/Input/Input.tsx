@@ -72,9 +72,9 @@ export const Input: FC<InputProps> = forwardRef(
       <div
         className={classNames(css.container, containerClassname, {
           [css.fullWidth]: fullWidth,
-          [css.error]: error
-          // [css.small]: size === 'small',
-          // [css.medium]: size === 'medium'
+          [css.error]: error,
+          [css[size]]: size,
+          [css.disabled]: disabled
         })}
         ref={containerRef}
       >
