@@ -57,7 +57,7 @@ resource "aws_lb_listener" "noq_api_balancer_front_end_443" {
   load_balancer_arn = aws_lb.noq_api_load_balancer.arn
   port              = "443"
   protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01"
+  ssl_policy        = "ELBSecurityPolicy-FS-1-2-Res-2020-10"
   certificate_arn   = aws_acm_certificate_validation.tenant_certificate_validation.certificate_arn
 
   default_action {

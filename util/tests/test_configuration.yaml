@@ -8,6 +8,8 @@ _global_:
   environment: test
   deployment:
     cluster_id: test
+  tenant_storage:
+    base_path: /tmp/tenant_data/
   tornado:
     debug: false
     port: 8081

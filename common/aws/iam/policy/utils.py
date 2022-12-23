@@ -670,7 +670,10 @@ async def calculate_policy_changes(
             computed_changes["policy_arn"] = policy["PolicyArn"]
         after_policy_statements = []
         before_policy_document_copy = copy.deepcopy(before_policy_document)
-        for statement in before_policy_document_copy["Statement"]:
+        statements = before_policy_document_copy.get("Statement", [])
+        if not isinstance(statements, list):
+            statements = [statements]
+        for statement in statements:
             all_before_policy_statements.append(copy.deepcopy(statement))
             new_actions = set()
             new_resources = set()

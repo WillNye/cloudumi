@@ -2663,6 +2663,36 @@ components:
             $ref: "#/components/schemas/TraApprovalRule"
           default: []
 
+    IambicRepoDetails:
+      type: object
+      properties:
+        repo_name:
+          type: string
+          description: Name of the repository including the organization or user. e.g. "my_company/iambic_repo"
+        access_token:
+          type: string
+          description: The access token used to access the repository.
+        remote_name:
+          type: string
+          description: |-
+            The remote name to use when pushing to the repository. Defaults to "origin".
+          default: origin
+        merge_on_approval:
+          type: boolean
+          description: |-
+            A boolean value indicating whether the PR for the request should be merged when the request is approved. Defaults to true.
+          default: true
+        git_domain:
+          type: string
+          description: |-
+            The domain of the repo.
+          default: "github.com"
+        git_provider:
+          type: string
+          description: |-
+            The git provider. Defaults to "github".
+          default: "github"
+
     Secrets:
       type: object
       properties:

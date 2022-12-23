@@ -10,6 +10,7 @@ from common.handlers.base import (
     BaseHandler,
     StaticFileHandler,
 )
+from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.aws.cached_resources.iam import (
     get_tra_supported_roles_by_tag,
     get_user_active_tra_roles_by_tag,
@@ -104,11 +105,16 @@ class EligibleRoleHandler(BaseHandler):
 
         roles = []
         active_tra_roles = await get_user_active_tra_roles_by_tag(tenant, self.user)
+        friendly_names = await get_account_id_to_name_mapping(tenant)
 
         for arn in self.eligible_roles:
             role_name = arn.split("/")[-1]
             account_id = await ResourceAccountCache.get(tenant, arn)
-            account_name = self.eligible_accounts.get(account_id, "")
+            account_name = friendly_names.get(account_id, "")
+            if account_name and isinstance(account_name, list):
+                account_name = account_name[0]
+            if not account_name:
+                continue
             formatted_account_name = config.get_tenant_specific_key(
                 "role_select_page.formatted_account_name",
                 tenant,
@@ -167,7 +173,11 @@ class EligibleRoleHandler(BaseHandler):
             arn = role["arn"]
             role_name = arn.split("/")[-1]
             account_id = await ResourceAccountCache.get(tenant, arn)
-            account_name = self.eligible_accounts.get(account_id, "")
+            account_name = friendly_names.get(account_id, "")
+            if account_name and isinstance(account_name, list):
+                account_name = account_name[0]
+            if not account_name:
+                continue
             formatted_account_name = config.get_tenant_specific_key(
                 "role_select_page.formatted_account_name",
                 tenant,

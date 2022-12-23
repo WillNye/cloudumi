@@ -348,7 +348,10 @@ async def get_resources_from_events(
         for policy_type in ["inline_policies", "managed_policies"]:
             for policy in event.get(policy_type, []):
                 policy_document = policy["policy_document"]
-                for statement in policy_document.get("Statement", []):
+                statements = policy_document.get("Statement", [])
+                if not isinstance(statements, list):
+                    statements = [statements]
+                for statement in statements:
                     resources = statement.get("Resource", [])
                     resources = (
                         resources if isinstance(resources, list) else [resources]

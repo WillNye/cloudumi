@@ -53,7 +53,10 @@ def _get_context_keys_for_custom_policy(
 ) -> Set[str]:
     context_keys = set()
     for policy_document in policy_input_list:
-        for statement in json.loads(policy_document).get("Statement", []):
+        statements = json.loads(policy_document).get("Statement", [])
+        if not isinstance(statements, list):
+            statements = [statements]
+        for statement in statements:
             for _, condition_type_map in statement.get("Condition", {}).items():
                 for context_key in condition_type_map.keys():
                     context_keys.add(context_key)

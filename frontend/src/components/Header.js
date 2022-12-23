@@ -205,8 +205,8 @@ const NavHeader = ({ showMenuItems = true }) => {
           }}
         >
           <NoqLogo
-            width={'70%'}
-            heigth={'70%'}
+            width={'100%'}
+            height={'100px'}
             style={{ marginRight: '1.5em' }}
           />
         </Menu.Item>

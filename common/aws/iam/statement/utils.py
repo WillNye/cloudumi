@@ -185,6 +185,11 @@ async def condense_statements(
             continue
 
         for inner_elem, inner_statement in enumerate(statements):
+            if not (
+                inner_statement.get("ResourceAsRegex")
+                and statement.get("ResourceAsRegex")
+            ):
+                continue
             resource_match = await is_resource_match(
                 inner_statement["ResourceAsRegex"], statement["ResourceAsRegex"]
             )
@@ -266,7 +271,7 @@ async def condense_statements(
     )
 
     for elem in range(len(statements)):  # Remove eval keys
-        statements[elem].pop("ActionMap")
-        statements[elem].pop("ResourceAsRegex")
+        statements[elem].pop("ActionMap", None)
+        statements[elem].pop("ResourceAsRegex", None)
 
     return statements

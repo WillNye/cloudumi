@@ -14,14 +14,6 @@ resource "aws_s3_bucket" "cloudumi_log_bucket" {
   bucket = "cloudumi-log-${var.cluster_id}"
   acl    = "private"
 
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
-      }
-    }
-  }
-
   policy = <<POLICY
   {
     "Id": "Policy",
@@ -76,14 +68,6 @@ resource "aws_s3_bucket" "cloudumi_files_bucket" {
   bucket = "${lower(var.bucket_name_prefix)}.${var.cluster_id}"
   acl    = "private"
 
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
-      }
-    }
-  }
-
   versioning {
     enabled = true
   }
@@ -137,14 +121,6 @@ resource "aws_s3_bucket" "tenant_configuration_store" {
   bucket = "${var.cluster_id}-tenant-configuration-store"
   acl    = "private"
 
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
-      }
-    }
-  }
-
   versioning {
     enabled = true
   }
@@ -184,5 +160,39 @@ resource "aws_s3_bucket" "tenant_configuration_store" {
 
   logging {
     target_bucket = aws_s3_bucket.cloudumi_log_bucket.id
+  }
+}
+
+# Encryption
+resource "aws_s3_bucket_server_side_encryption_configuration" "tenant_configuration_store_sse" {
+  bucket = aws_s3_bucket.tenant_configuration_store.bucket
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = var.bucket_encryption_key
+      sse_algorithm     = "aws:kms"
+    }
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "cloudumi_log_bucket_sse" {
+  bucket = aws_s3_bucket.cloudumi_log_bucket.bucket
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = var.bucket_encryption_key
+      sse_algorithm     = "aws:kms"
+    }
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "cloudumi_files_bucket_sse" {
+  bucket = aws_s3_bucket.cloudumi_files_bucket.bucket
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = var.bucket_encryption_key
+      sse_algorithm     = "aws:kms"
+    }
   }
 }
