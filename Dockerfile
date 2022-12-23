@@ -22,7 +22,6 @@ WORKDIR /app
 ADD requirements.lock requirements.lock
 ADD frontend/package.json frontend/package.json
 ADD frontend/yarn.lock frontend/yarn.lock
-COPY configs/fluent-bit/fluent-bit.conf /etc/fluent-bit/fluent-bit.conf
 
 # Install dependencies in as few layers as possible
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata && apt-get install -y software-properties-common gcc && \
@@ -51,6 +50,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y insta
     yarn --cwd frontend --dev && \
     apt-get dist-upgrade -y
 
+COPY configs/fluent-bit/fluent-bit.conf /etc/fluent-bit/fluent-bit.conf
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 COPY frontend frontend
