@@ -90,7 +90,6 @@ jobs:
           # terraform -chdir=deploy/infrastructure/ init --var-file=deploy/infrastructure/live/shared/prod-1/noq.dev-prod.tfvars
           # terraform -chdir=deploy/infrastructure/ workspace select cyberdyne-prod-1
           # terraform -chdir=deploy/infrastructure/ init --var-file=deploy/infrastructure/live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars
-          git config --unset-all core.hooksPath
           pre-commit install
           set +x
       - name: Run pre-commit
