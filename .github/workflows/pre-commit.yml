@@ -68,6 +68,7 @@ jobs:
           pip install \
             -r requirements.lock
           pip install .
+          yarn --cwd ui install
           yarn --cwd frontend install
           yarn --cwd frontend build_template
 

@@ -121,7 +121,7 @@ headers:
     enabled: false
   role_login:
     enabled: true
-url: http://localhost:8092
+url: https://localhost:3000
 application_admin: engineering@noq.dev
 secrets:
   jwt_secret: {token_urlsafe(32)}
@@ -135,6 +135,10 @@ secrets:
       user_pool_region: us-east-1
       user_pool_client_id: j14h62of81s6s5f2ivfkdfe3v
       user_pool_client_secret: 1l4g523pb7rb3iicm9jod80nlst3r92f4oitg2dijna45pegj4dh
+    jwt_auth:
+      user_pool_id: us-east-1_CNoZribID
+      user_pool_region: us-east-1
+      user_pool_client_id: 6f44pcgu8dk978njp3frkt9p1k
 account_ids_to_name:
   "759357822767": "development"
 celery:

@@ -1,0 +1,34 @@
+.listItem {
+  align-items: center;
+  display: flex;
+  padding: var(--spacing-sm) var(--spacing-md);
+  position: relative;
+  white-space: break-spaces;
+  word-break: break-all;
+  width: 100%;
+  font-size: 14px;
+
+  &.active {
+    text-decoration: underline;
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+  }
+
+  &.clickable {
+    cursor: pointer;
+  }
+
+  &.dense {
+    padding: var(--spacing-sm);
+  }
+
+  &.disableGutters {
+    padding: var(--spacing-sm) 0;
+  }
+
+  &.disablePadding {
+    padding: 0;
+  }
+}
