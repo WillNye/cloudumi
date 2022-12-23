@@ -720,6 +720,8 @@ class Aws:
 
                     # Do not approve "Deny" policies automatically
                     statements = policy_document.get("Statement", [])
+                    if not isinstance(statements, list):
+                        statements = [statements]
                     for statement in statements:
                         if statement.get("Effect") == "Deny":
                             log_data[

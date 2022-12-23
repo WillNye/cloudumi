@@ -317,7 +317,10 @@ def replace_principal_in_policy(
     original_principal: str, replacement_principal: str, policy: str
 ) -> str:
     policy_dict = json.loads(policy)
-    for statement in policy_dict.get("Statement", []):
+    statements = policy_dict.get("Statement", [])
+    if not isinstance(statements, list):
+        statements = [statements]
+    for statement in statements:
         principal_key = "Principal" if "Principal" in statement else "NotPrincipal"
         principal_value = statement.get(principal_key, {})
         if principal_value == original_principal:

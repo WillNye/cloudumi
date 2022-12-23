@@ -1,5 +1,5 @@
 # For more information, please refer to https://aka.ms/vscode-docker-python
-FROM python:3.10
+FROM ubuntu:latest
 ARG TARGETPLATFORM
 ARG TARGETARCH
 ARG TARGETVARIANT
@@ -7,6 +7,15 @@ ARG TARGETVARIANT
 # Set environment variable PUBLIC_URL from build args, uses "/" as default
 ARG PUBLIC_URL
 ENV PUBLIC_URL=${PUBLIC_URL:-/}
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata
+
+RUN apt-get install -y software-properties-common gcc && \
+    add-apt-repository -y ppa:deadsnakes/ppa
+
+RUN apt-get update && apt-get install -y python3.10 python3-distutils \
+    python3-pip python3-apt python3-dev python-is-python3 pkg-config \
+    git-all
 
 RUN mkdir -p /app
 WORKDIR /app
@@ -50,6 +59,6 @@ COPY . /app
 # Install API
 RUN python -m pip install -e .
 RUN pip cache purge
-
+RUN apt-get -y autoremove
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
 CMD ["python", "api/__main__.py"]

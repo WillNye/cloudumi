@@ -30,7 +30,10 @@ class OrganizationNode(object):
     def _create_combined_scp_policy(self) -> str:
         statement_list = []
         for policy in self.policies:
-            for statement in json.loads(policy["PolicyDocument"])["Statement"]:
+            statements = json.loads(policy["PolicyDocument"])["Statement"]
+            if not isinstance(statements, list):
+                statements = [statements]
+            for statement in statements:
                 statement["Sid"] = (
                     f"{self.id}/{policy['Id']}/{policy['Name']}/{statement['Sid']}"
                     if "Sid" in statement

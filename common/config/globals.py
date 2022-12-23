@@ -1,5 +1,7 @@
 from common.config import config
 
+REDACTED_STR = "********"
+
 
 class ClusterConfig:
     @property
