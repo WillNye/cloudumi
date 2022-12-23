@@ -5,7 +5,7 @@ import time
 import traceback
 import uuid
 from datetime import datetime, timedelta
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
 import pytz
 import redis
@@ -106,7 +106,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
     def get_tenant(self):
         if config.get("_global_.development"):
             x_forwarded_host = self.request.headers.get(
-                "X-Forwarded-Host", "localhost"
+                "X-Forwarded-Host"
             )  # Adding default of localhost for development only
             if x_forwarded_host:
                 return x_forwarded_host.split(":")[0]
@@ -371,7 +371,7 @@ class BaseHandler(TornadoRequestHandler):
         user: str = None,
         console_only: bool = True,
         refresh_cache: bool = False,
-        jwt_tokens: Dict[str, str] = {},
+        jwt_tokens: Optional[Dict[str, str]] = None,
         jwt_auth_type: JwtAuthType = None,
     ) -> None:
         """Perform high level authorization flow."""
@@ -706,7 +706,7 @@ class BaseHandler(TornadoRequestHandler):
         if not self.get_cookie(self.get_noq_auth_cookie_key()):
             await self.set_jwt_cookie(tenant)
 
-        if self.tracer:
+        if hasattr(self, "tracer") and self.tracer:
             await self.tracer.set_additional_tags({"USER": self.user})
 
         self.is_admin = is_tenant_admin(self.user, self.groups, tenant)
@@ -1144,10 +1144,19 @@ class BaseAdminHandler(BaseHandler):
         self.set_header("Content-Type", "application/json")
 
     async def authorization_flow(
-        self, user: str = None, console_only: bool = True, refresh_cache: bool = False
+        self,
+        user: str = None,
+        console_only: bool = True,
+        refresh_cache: bool = False,
+        jwt_tokens: Optional[Dict[str, str]] = None,
+        jwt_auth_type: JwtAuthType = None,
     ) -> None:
         await super(BaseAdminHandler, self).authorization_flow(
-            user, console_only, refresh_cache
+            user,
+            console_only,
+            refresh_cache,
+            jwt_tokens,
+            jwt_auth_type,
         )
 
         if not getattr(self.ctx, "tenant") or not self.is_admin:

@@ -11,7 +11,7 @@ _global_:
   tenant_storage:
     base_path: /tmp/tenant_data/
   tornado:
-    debug: false
+    debug: true
     port: 8081
     xsrf: false
   celery:
