@@ -7,16 +7,17 @@
       <env name="AWS_DEFAULT_REGION" value="us-east-1" />
       <env name="CONFIG_LOCATION" value="util/tests/test_configuration.yaml" />
       <env name="PYTEST_PLUGINS" value="util.tests.fixtures.fixtures" />
-      <env name="PYTHONPATH" value="/home/ccastrapel/localrepos/cloudumi" />
+      <env name="PYTHONPATH" value="$PROJECT_DIR$" />
     </envs>
     <option name="SDK_HOME" value="$PROJECT_DIR$/env/bin/python" />
+    <option name="SDK_NAME" value="Python 3.10 (cloudumi)" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
     <option name="IS_MODULE_SDK" value="false" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <option name="_new_keywords" value="&quot;&quot;" />
     <option name="_new_parameters" value="&quot;&quot;" />
-    <option name="_new_additionalArguments" value="&quot;-k test_apply_managed_policy_resource_change --ignore-glob \u0027bazel*\u0027&quot;" />
+    <option name="_new_additionalArguments" value="&quot;--no-cov -k test_delete_unauthorized_user --ignore-glob \u0027bazel*\u0027&quot;" />
     <option name="_new_target" value="&quot;$PROJECT_DIR$/&quot;" />
     <option name="_new_targetType" value="&quot;PATH&quot;" />
     <method v="2" />

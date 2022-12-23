@@ -1,0 +1,36 @@
+.input {
+  width: 25px;
+  padding: 8px 4px;
+  border-radius: 8px;
+  font-size: 20px;
+  text-align: center;
+  margin-right: 10px;
+  color: white;
+  background: black;
+  text-transform: uppercase;
+  border: solid 1px transparent;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &[type='number'] {
+    -moz-appearance: textfield;
+  }
+
+  &:last-of-type {
+    margin-right: 0;
+  }
+
+  &:focus {
+    outline: none;
+    border: solid 1px #4b5cfa;
+  }
+
+  &::selection {
+    color: white;
+    background: #4b5cfa;
+  }
+}

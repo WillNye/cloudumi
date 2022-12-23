@@ -1,0 +1,7 @@
+.card {
+  min-width: 112px;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-200);
+}
