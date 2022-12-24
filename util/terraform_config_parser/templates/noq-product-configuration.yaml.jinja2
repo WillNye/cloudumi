@@ -106,6 +106,10 @@ _global_:
         global:
           - host: {{ elasticache_address }}
             port: {{ elasticache_port }}
+  noq_db:
+    endpoint: {{ noq_db_endpoint }}
+    port: {{ noq_db_port }}
+    database: {{ noq_db_database_name }}
   sentry:
     dsn: {{ sentry_dsn }}
   google_analytics:

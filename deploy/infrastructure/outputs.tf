@@ -277,3 +277,18 @@ output "dax_configuration_endpoint" {
   value       = module.tenant_dax_cluster.dax_configuration_endpoint
 }
 
+output "noq_db_endpoint" {
+  description = "The endpoint of the noq db cluster"
+  value       = module.noq_db_cluster.rds_endpoint
+}
+
+output "noq_db_port" {
+  description = "The port number of the noq db cluster"
+  value       = module.noq_db_cluster.rds_port
+}
+
+output "noq_db_database_name" {
+  description = "The default database of the noq db cluster"
+  value       = module.noq_db_cluster.default_database
+}
+

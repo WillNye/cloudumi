@@ -166,3 +166,19 @@ module "tenant_storage" {
   subnet_ids            = module.tenant_networking.vpc_subnet_private_id
   ecs_task_role_arn     = module.tenant_container_service.ecs_task_role
 }
+
+module "noq_db_cluster" {
+  source                     = "./modules/services/rds"
+  cluster_id                 = local.cluster_id
+  database_name              = var.noq_db_database_name
+  rds_instance_count         = var.noq_db_instance_count
+  rds_instance_type          = var.noq_db_instance_type
+  region                     = var.region
+  tags                       = var.tags
+  vpc_id                     = module.tenant_networking.vpc_id
+  subnet_ids                 = module.tenant_networking.vpc_subnet_private_id
+  private_subnet_cidr_blocks = module.tenant_networking.vpc_subnet_private_cidr
+  master_username            = var.noq_db_username
+  master_password            = var.noq_db_password
+  kms_key_id                 = module.tenant_container_service.kms_key_id
+}

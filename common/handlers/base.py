@@ -884,6 +884,27 @@ class BaseHandler(TornadoRequestHandler):
             ),
         )
 
+    async def fte_check(self):
+        if (
+            config.get_tenant_specific_key(
+                "policy_editor.disallow_contractors", self.ctx.tenant, True
+            )
+            and self.contractor
+        ):
+            if self.user not in config.get_tenant_specific_key(
+                "groups.can_bypass_contractor_restrictions",
+                self.ctx.tenant,
+                [],
+            ):
+                self.set_status(403)
+                self.write(
+                    {
+                        "code": "403",
+                        "message": "Only Full-Time Employees are allowed access to make this request.",
+                    }
+                )
+                raise tornado.web.Finish()
+
     @classmethod
     def get_noq_auth_cookie_key(cls):
         attr_name = "noq_auth_cookie_key"

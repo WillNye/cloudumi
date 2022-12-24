@@ -138,8 +138,11 @@ from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationAwsMarketplaceHandler,
     TenantRegistrationHandler,
 )
+from api.handlers.v4.requests import IambicRequestCommentHandler, IambicRequestHandler
 from common.config import config
 from common.lib.sentry import before_send_event
+
+UUID_REGEX = "[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}"
 
 
 def make_app(jwt_validator=None):
@@ -371,6 +374,16 @@ def make_app(jwt_validator=None):
         # (r"/api/v3/api_keys/remove", RemoveApiKeyHandler),
         # (r"/api/v3/api_keys/view", ViewApiKeysHandler),
         (r"/api/v2/.*", V2NotFoundHandler),
+        (r"/api/v4/requests/?", IambicRequestHandler),
+        (
+            rf"/api/v4/requests/(?P<request_id>{UUID_REGEX})/comments/?",
+            IambicRequestCommentHandler,
+        ),
+        (
+            rf"/api/v4/requests/(?P<request_id>{UUID_REGEX})/comments/(?P<comment_id>{UUID_REGEX})",
+            IambicRequestCommentHandler,
+        ),
+        (rf"/api/v4/requests/(?P<request_id>{UUID_REGEX})", IambicRequestHandler),
     ]
 
     router = RuleRouter(routes)

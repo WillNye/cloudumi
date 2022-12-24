@@ -379,6 +379,82 @@ paths:
                 items:
                   $ref: "#/components/schemas/ConfigurationEventModel"
 
+  /api/v4/requests/:
+    get:
+      summary: get a list of IAMbic requests
+      tags:
+        - policies
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IambicListResponse"
+    post:
+      summary: Create a new IAMbic request
+      tags:
+        - policies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IambicTemplateChange"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IambicDetailResponse"
+
+  /api/v4/requests/{request_id}:
+    get:
+      summary: get a the details of an IAMbic request
+      tags:
+        - policies
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IambicDetailResponse"
+    put:
+      summary: Update an IAMbic request
+      tags:
+        - policies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IambicTemplateChange"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IambicTemplateChange"
+    patch:
+      summary: Update the status of an IAMbic request (Approve or Reject)
+      tags:
+        - policies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IambicTemplateChange"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IambicDetailResponse"
   /roles/{account_id}/{role_name}:
     get:
       summary: get details about a role
@@ -3149,3 +3225,110 @@ components:
             - applied_awaiting_execution
             - applied_and_success
             - applied_and_failure
+    IambicTemplateChange:
+      type: object
+      required:
+        - path
+      properties:
+        path:
+          type: string
+          description: The path of the template including the filename
+        body:
+          type: string
+          description: The template's content
+    IambicRequest:
+      type: object
+      required:
+        - justification
+        - changes
+      properties:
+        justification:
+          type: string
+          description: The reason for the request
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/IambicTemplateChange"
+    RequestComment:
+      type: object
+      properties:
+        id:
+          type: string
+        body:
+          type: string
+        created_by:
+          type: string
+        created_at:
+          type: integer
+    IambicDetailResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        pull_request_id:
+          type: integer
+        repo_name:
+          type: string
+        justification:
+          type: string
+          description: The reason for the request
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/IambicTemplateChange"
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/RequestComment"
+        status:
+          type: string
+        created_by:
+          type: string
+        created_at:
+          type: integer
+        mergeable:
+          type: boolean
+        is_merged:
+          type: boolean
+        merged_at:
+          type: integer
+        closed_at:
+          type: integer
+        rejected_by:
+          type: string
+        approved_by:
+          type: array
+          items:
+            type: string
+        allowed_approvers:
+          type: array
+          items:
+            type: string
+    IambicListResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        pull_request_id:
+          type: integer
+        repo_name:
+          type: string
+        justification:
+          type: string
+          description: The reason for the request
+        status:
+          type: string
+        created_by:
+          type: string
+        created_at:
+          type: integer
+        rejected_by:
+          type: string
+        approved_by:
+          type: array
+          items:
+            type: string
+        allowed_approvers:
+          type: array
+          items:
+            type: string
