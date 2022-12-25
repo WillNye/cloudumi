@@ -107,6 +107,9 @@ class ChallengeValidatorHandler(BaseHandler):
 
     """
 
+    def check_xsrf_cookie(self) -> None:
+        pass
+
     async def get(self, requested_challenge_token):
         tenant = self.ctx.tenant
         if not config.get_tenant_specific_key(
