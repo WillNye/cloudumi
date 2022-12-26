@@ -67,7 +67,7 @@ docker build --platform=linux/amd64 \
     .
 
 docker tag $DOCKER_IMAGE_TAG_LATEST \
-  $ECR_IMAGE_TAG_LATEST
+  {{ registry_repository_url_api }}:latest
 
 docker tag $DOCKER_IMAGE_TAG_LATEST \
   {{ registry_repository_url_api }}:$VERSION
@@ -87,7 +87,7 @@ noq file -p $PROD_ROLE_ARN $PROD_ROLE_ARN -f
 
 # Upload frontend files that we just built in the container to S3
 docker run -v "$HOME/.aws:/root/.aws" \
-    -e "AWS_PROFILE=$PROD_ROLE_ARN" $ECR_IMAGE_TAG_LATEST \
+    -e "AWS_PROFILE=$PROD_ROLE_ARN" {{ registry_repository_url_api }}:latest \
     bash -c "aws s3 sync /app/frontend/dist/ $UPLOAD_DIRECTORY"
 
 echo

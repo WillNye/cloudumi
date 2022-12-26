@@ -378,7 +378,101 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ConfigurationEventModel"
-
+  /api/v4/users/:
+    post:
+      summary: Admin - List all users
+      tags:
+        - user_management
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebResponse"
+                example: |-
+                  {
+                  "status_code": 200,
+                  "data": {
+                      "users": [
+                          {
+                              "id": "c41221f-4ffd-4f59-a7e3-8335fc53ee8a",
+                              "email": "user@example.com"
+                          },
+                          {
+                            ...
+                          }
+                      ]
+                    }
+                  }
+  /api/v4/users/forgot_password/:
+    post:
+      summary: Submit a Forgot Password request / Reset password flow
+      tags:
+        - user_management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserForgotPasswordRequest"
+              example: |-
+                {
+                    "command": "request",
+                    "email": "user@example.com"
+                }
+                ...
+                {
+                    "command": "reset",
+                    "email": "user@example.com",
+                    "password": "NEWPASSWORD",
+                    "token": "TOKEN_FROM_EMAIL"
+                }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebResponse"
+              example: |-
+                {
+                  "status_code": 200,
+                  "data": {
+                      "message": "Please check your email for a password reset link. It is valid for 15 minutes."
+                  }
+                }
+                ...
+                {
+                  "status_code": 200,
+                  "data": {
+                      "message": "Password reset successfully"
+                  }
+                }
+  /api/v4/users/login/:
+    post:
+      summary: Log in with credentials and MFA
+      tags:
+        - credentials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserLoginRequest"
+              example: |-
+                {
+                    "email": "user@example.com",
+                    "password": "password",
+                    "mfa_token": "123456"
+                }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebResponse"
   /api/v4/requests/:
     get:
       summary: get a list of IAMbic requests
@@ -3332,3 +3426,37 @@ components:
           type: array
           items:
             type: string
+    UserLoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        mfa_token:
+          type: string
+    UserForgotPasswordRequest:
+      type: object
+      required:
+        - command
+        - email
+      properties:
+        command:
+          type: string
+          enum:
+            - request # Request a password reset
+            - reset # Reset password with appropriate code
+        email:
+          type: string
+          format: email
+          description: Email is laways required
+        password:
+          type: string
+          description: Only required if command=reset
+        token:
+          type: string
+          description: Only required if command=reset

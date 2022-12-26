@@ -13,6 +13,7 @@ export interface AuthResetPasswordInputs {
 
 export interface AuthContextProps {
   login: (input: AuthLoginInputs) => void;
+  ssoLogin: () => void;
   changePassword: (input: AuthResetPasswordInputs) => void;
   completeNewPassword: (input: string) => void;
   verifyTotpToken: (input: string) => void;
@@ -26,6 +27,7 @@ export const AuthContext = createContext<AuthContextProps>({
   user: null,
   login: async () => undefined,
   logout: async () => undefined,
+  ssoLogin: async () => undefined,
   changePassword: async () => undefined,
   completeNewPassword: async () => undefined,
   setupTOTP: async () => undefined,

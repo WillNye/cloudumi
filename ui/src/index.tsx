@@ -20,7 +20,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <BrowserRouter>
       <ApolloProvider>
         <HelmetProvider>
-          <Helmet titleTemplate="%s | NOQ" defaultTitle="NOQ" />
+          <Helmet titleTemplate="%s | Noq" defaultTitle="Noq" />
           <DesignTokensProvider value={theme}>
             <ErrorBoundary>
               <Auth>

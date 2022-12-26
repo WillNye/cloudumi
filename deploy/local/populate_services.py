@@ -125,7 +125,9 @@ headers:
   role_login:
     enabled: true
 url: https://localhost:3000
-application_admin: engineering@noq.dev
+application_admin:
+  - engineering@noq.dev
+  - curtis@noq.dev
 secrets:
   jwt_secret: {token_urlsafe(32)}
   auth:
@@ -296,14 +298,18 @@ secrets:
   jwt_secret: {token_urlsafe(32)}
   auth:
     oidc:
-      client_id: '3vqhl3rfcfoqhl88g47norqick'
-      client_secret: 'u6k40gpgkjkltcsk03040e3n848gppp0h066nh55f1k1ftltmjp'
+      client_id: '6f44pcgu8dk978njp3frkt9p1k'
+      # client_id: '3vqhl3rfcfoqhl88g47norqick'
+      # client_secret: 'u6k40gpgkjkltcsk03040e3n848gppp0h066nh55f1k1ftltmjp'
   cognito:
     config:
-      user_pool_id: 'us-west-2_EQ5XHIluC'
-      user_pool_client_id: '3vqhl3rfcfoqhl88g47norqick'
-      user_pool_client_secret: 'u6k40gpgkjkltcsk03040e3n848gppp0h066nh55f1k1ftltmjp'
-      user_pool_region: 'us-west-2'
+      user_pool_id: 'us-east-1_CNoZribID'
+      user_pool_client_id: '6f44pcgu8dk978njp3frkt9p1k'
+      user_pool_region: 'us-east-1'
+      # user_pool_id: 'us-west-2_EQ5XHIluC'
+      # user_pool_client_id: '3vqhl3rfcfoqhl88g47norqick'
+      # user_pool_client_secret: 'u6k40gpgkjkltcsk03040e3n848gppp0h066nh55f1k1ftltmjp'
+      # user_pool_region: 'us-west-2'
 account_ids_to_name:
   "759357822767": "development"
 auth:
@@ -325,7 +331,8 @@ get_user_by_oidc_settings:
     - profile
     - aws.cognito.signin.user.admin
   resource: noq_tenant
-  metadata_url: https://cognito-idp.us-west-2.amazonaws.com/us-west-2_EQ5XHIluC/.well-known/openid-configuration
+  metadata_url: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_CNoZribID/.well-known/openid-configuration
+  # metadata_url: https://cognito-idp.us-west-2.amazonaws.com/us-west-2_EQ5XHIluC/.well-known/openid-configuration
   jwt_verify: true
   jwt_email_key: email
   jwt_groups_key: "cognito:groups"

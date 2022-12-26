@@ -24,6 +24,6 @@ export const AuthRoute: FC<PropsWithChildren> = props => {
   ) {
     return <Navigate to="/login/setup-mfa" replace />;
   }
-
+  return <>Welcome! {user}</>;
   return <Outlet />;
 };

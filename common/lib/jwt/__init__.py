@@ -1,4 +1,3 @@
-import logging
 import sys
 from datetime import datetime, timedelta
 from enum import Enum
@@ -41,9 +40,13 @@ def log_dict_func(
     if log_level.upper() in ["ERROR", "CRITICAL", "EXCEPTION"]:
         log_data["exception"] = exc
     if log_level.upper() == "EXCEPTION":
-        getattr(log, getattr(logging, log_level))(log_data, exc_info=True)
+        # getattr(log, getattr(logging, log_level))(log_data, exc_info=True)
+        log.exception(log_data, exc_info=True)
     else:
-        getattr(log, getattr(logging, log_level.upper()))(log_data)
+        # TODO (matt): This doesn't work:
+        # TypeError: getattr(): attribute name must be string
+        # getattr(log, getattr(logging, log_level.upper()))(log_data)
+        log.debug(log_data)
     sentry_sdk.capture_exception(tags={})
 
 

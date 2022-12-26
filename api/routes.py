@@ -4,6 +4,14 @@ from api.handlers.v3.automatic_policy_request_handler.aws import (
     AutomaticPolicyRequestHandler,
 )
 from api.handlers.v3.typeahead import UserAndGroupTypeAheadHandler
+from api.handlers.v4.login import LoginHandler
+from api.handlers.v4.manage_group_memberships import ManageGroupMembershipsHandler
+from api.handlers.v4.manage_users import (
+    ManageUsersHandler,
+    UnauthenticatedEmailVerificationHandler,
+    UnauthenticatedPasswordResetSelfServiceHandler,
+    UserMFASelfServiceHandler,
+)
 from common.handlers.base import AuthenticatedStaticFileHandler
 
 """Web routes."""
@@ -16,7 +24,11 @@ from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
 from tornado.routing import HostMatches, PathMatches, Rule, RuleRouter
 
-from api.handlers.auth import AuthHandler, CognitoAuthHandler
+from api.handlers.auth import (
+    AuthHandler,
+    CognitoAuthHandler,
+    UnauthenticatedAuthSettingsHandler,
+)
 from api.handlers.v1.credentials import GetCredentialsHandler
 from api.handlers.v1.health import HealthHandler
 from api.handlers.v1.policies import (
@@ -87,7 +99,6 @@ from api.handlers.v2.typeahead import (
 )
 from api.handlers.v2.user import (
     LoginConfigurationHandler,
-    LoginHandler,
     UserManagementHandler,
     UserRegistrationHandler,
 )
@@ -138,6 +149,7 @@ from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationAwsMarketplaceHandler,
     TenantRegistrationHandler,
 )
+from api.handlers.v4.manage_groups import ManageGroupsHandler
 from api.handlers.v4.requests import IambicRequestCommentHandler, IambicRequestHandler
 from common.config import config
 from common.lib.sentry import before_send_event
@@ -162,6 +174,7 @@ def make_app(jwt_validator=None):
         (r"/healthcheck", HealthHandler),
         (r"/api/v1/auth", AuthHandler),
         (r"/api/v1/auth/cognito", CognitoAuthHandler),
+        (r"/api/v1/auth/settings", UnauthenticatedAuthSettingsHandler),
         (r"/api/v1/get_credentials", GetCredentialsHandler),
         (r"/api/v3/legal/agreements/eula", EulaHandler),
         (r"/api/v3/tenant/details", TenantDetailsHandler),
@@ -384,6 +397,16 @@ def make_app(jwt_validator=None):
             IambicRequestCommentHandler,
         ),
         (rf"/api/v4/requests/(?P<request_id>{UUID_REGEX})", IambicRequestHandler),
+        (r"/api/v4/groups/?", ManageGroupsHandler),
+        (r"/api/v4/group_memberships/?", ManageGroupMembershipsHandler),
+        (r"/api/v4/users/?", ManageUsersHandler),
+        (r"/api/v4/users/login/?", LoginHandler),
+        (r"/api/v4/users/mfa/?", UserMFASelfServiceHandler),
+        (
+            r"/api/v4/users/forgot_password/?",
+            UnauthenticatedPasswordResetSelfServiceHandler,
+        ),
+        (r"/api/v4/verify/?", UnauthenticatedEmailVerificationHandler),
     ]
 
     router = RuleRouter(routes)

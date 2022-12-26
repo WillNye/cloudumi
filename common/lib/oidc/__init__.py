@@ -64,8 +64,8 @@ async def populate_oidc_config(tenant):
     client_secret = config.get_tenant_specific_key(
         "secrets.auth.oidc.client_secret", tenant
     )
-    if not (client_id or client_secret):
-        raise MissingConfigurationValue("Missing OIDC Secrets")
+    if not client_id:
+        raise MissingConfigurationValue("Missing OIDC ID")
     oidc_config["client_id"] = client_id
     oidc_config["client_secret"] = client_secret
     oidc_config["jwt_keys"] = {}
@@ -121,8 +121,18 @@ async def get_roles_from_token(tenant, token: dict[str, Any]) -> set:
     return roles
 
 
-async def authenticate_user_by_oidc(request):
+async def authenticate_user_by_oidc(request, return_200=False):
+    jwt_tokens = {}
+    try:
+        request_body: dict = json.loads(request.request.body)
+        if request_body.get("idToken").get("jwtToken", {}):
+            jwt_tokens = request_body
+    except Exception:
+        pass
+    id_token = jwt_tokens.get("idToken", {}).get("jwtToken", None)
+    access_token = jwt_tokens.get("accessToken", {}).get("jwtToken", None)
     full_host = request.request.headers.get("X-Forwarded-Host")
+    http_client = tornado.httpclient.AsyncHTTPClient()
     if not full_host:
         full_host = request.get_tenant()
     tenant = request.get_tenant_name()
@@ -143,6 +153,7 @@ async def authenticate_user_by_oidc(request):
 
     # The endpoint where we want our OIDC provider to redirect us back to perform auth
     oidc_redirect_uri = f"{protocol}://{full_host}/auth"
+    oidc_port = furl(oidc_redirect_uri).port
 
     # The endpoint where the user wants to be sent after authentication. This will be stored in the state
     after_redirect_uri = request.request.arguments.get("redirect_url", [""])[0]
@@ -158,14 +169,14 @@ async def authenticate_user_by_oidc(request):
             "url", tenant, f"{protocol}://{full_host}/"
         )
 
-    if not code:
+    if not code and not id_token:
         parsed_after_redirect_uri = furl(after_redirect_uri)
         code = parsed_after_redirect_uri.args.get("code")
         if code:
             del parsed_after_redirect_uri.args["code"]
         after_redirect_uri = parsed_after_redirect_uri.url
 
-    if not code:
+    if not code and not id_token:
         args = {"response_type": "code"}
         client_scope = config.get_tenant_specific_key(
             "get_user_by_oidc_settings.client_scopes", tenant
@@ -183,6 +194,11 @@ async def authenticate_user_by_oidc(request):
         if client_scope:
             args["scope"] = " ".join(client_scope)
         # TODO: Sign and verify redirect URI with expiration
+        if oidc_port:
+            after_redirect_uri_furl = furl(after_redirect_uri)
+            after_redirect_uri_furl.port = oidc_port
+            after_redirect_uri = after_redirect_uri_furl.url
+
         args["state"] = after_redirect_uri
 
         if force_redirect:
@@ -190,7 +206,9 @@ async def authenticate_user_by_oidc(request):
                 httputil.url_concat(oidc_config["authorization_endpoint"], args)
             )
         else:
-            request.set_status(403)
+            if not return_200:
+                # GraphQL (New UI) will not work if we return 403
+                request.set_status(403)
             request.write(
                 {
                     "type": "redirect",
@@ -203,63 +221,67 @@ async def authenticate_user_by_oidc(request):
             )
         request.finish()
         return
-    try:
-        # exchange the authorization code with the access token
-        http_client = tornado.httpclient.AsyncHTTPClient()
-        grant_type = config.get_tenant_specific_key(
-            "get_user_by_oidc_settings.grant_type",
-            tenant,
-            "authorization_code",
-        )
-        authorization_header = (
-            f"{oidc_config['client_id']}:{oidc_config['client_secret']}"
-        )
-        authorization_header_encoded = base64.b64encode(
-            authorization_header.encode("UTF-8")
-        ).decode("UTF-8")
-        url = f"{oidc_config['token_endpoint']}"
-        client_scope = config.get_tenant_specific_key(
-            "get_user_by_oidc_settings.client_scopes", tenant
-        )
-        if (
-            config.get_tenant_specific_key(
-                "get_user_by_oidc_settings.include_admin_scope", tenant, True
-            )
-            and "aws.cognito.signin.user.admin" not in client_scope
-        ):
-            client_scope.append("aws.cognito.signin.user.admin")
-        if client_scope:
-            client_scope = " ".join(client_scope)
+    if not id_token or not access_token:
         try:
-            token_exchange_response = await http_client.fetch(
-                url,
-                method="POST",
-                headers={
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Authorization": "Basic %s" % authorization_header_encoded,
-                    "Accept": "application/json",
-                },
-                body=f"grant_type={grant_type}&code={code}&redirect_uri={oidc_redirect_uri}&scope={client_scope}",
-            )
-        except tornado.httpclient.HTTPError:
-            raise
-
-        token_exchange_response_body_dict = json.loads(token_exchange_response.body)
-
-        id_token = token_exchange_response_body_dict.get(
-            config.get_tenant_specific_key(
-                "get_user_by_oidc_settings.id_token_response_key",
+            # exchange the authorization code with the access token
+            grant_type = config.get_tenant_specific_key(
+                "get_user_by_oidc_settings.grant_type",
                 tenant,
-                "id_token",
+                "authorization_code",
             )
-        )
-        access_token = token_exchange_response_body_dict.get(
-            config.get_tenant_specific_key(
-                "get_user_by_oidc_settings.access_token_response_key",
-                tenant,
-                "access_token",
+            authorization_header = (
+                f"{oidc_config['client_id']}:{oidc_config['client_secret']}"
             )
-        )
+            authorization_header_encoded = base64.b64encode(
+                authorization_header.encode("UTF-8")
+            ).decode("UTF-8")
+            url = f"{oidc_config['token_endpoint']}"
+            client_scope = config.get_tenant_specific_key(
+                "get_user_by_oidc_settings.client_scopes", tenant
+            )
+            if (
+                config.get_tenant_specific_key(
+                    "get_user_by_oidc_settings.include_admin_scope", tenant, True
+                )
+                and "aws.cognito.signin.user.admin" not in client_scope
+            ):
+                client_scope.append("aws.cognito.signin.user.admin")
+            if client_scope:
+                client_scope = " ".join(client_scope)
+            try:
+                token_exchange_response = await http_client.fetch(
+                    url,
+                    method="POST",
+                    headers={
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "Authorization": "Basic %s" % authorization_header_encoded,
+                        "Accept": "application/json",
+                    },
+                    body=f"grant_type={grant_type}&code={code}&redirect_uri={oidc_redirect_uri}&scope={client_scope}",
+                )
+            except tornado.httpclient.HTTPError:
+                raise
+
+            token_exchange_response_body_dict = json.loads(token_exchange_response.body)
+            id_token = token_exchange_response_body_dict.get(
+                config.get_tenant_specific_key(
+                    "get_user_by_oidc_settings.id_token_response_key",
+                    tenant,
+                    "id_token",
+                )
+            )
+            access_token = token_exchange_response_body_dict.get(
+                config.get_tenant_specific_key(
+                    "get_user_by_oidc_settings.access_token_response_key",
+                    tenant,
+                    "access_token",
+                )
+            )
+        except Exception as e:
+            log_data["error"] = e
+            log.error(log_data, exc_info=True)
+            return
+    try:
         header = jwt.get_unverified_header(id_token)
         key_id = header["kid"]
         algorithm = header["alg"]
@@ -461,7 +483,9 @@ async def authenticate_user_by_oidc(request):
         if force_redirect:
             request.redirect(after_redirect_uri)
         else:
-            request.set_status(403)
+            if not return_200:
+                # GraphQL (New UI) will not work if we return 403
+                request.set_status(403)
             request.write(
                 {
                     "type": "redirect",

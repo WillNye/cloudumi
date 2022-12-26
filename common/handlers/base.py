@@ -13,6 +13,7 @@ import sentry_sdk
 import tornado.httpclient
 import tornado.httputil
 import tornado.web
+from furl import furl
 from tornado import httputil
 
 import common.lib.noq_json as json
@@ -33,8 +34,6 @@ from common.lib.dynamo import UserDynamoHandler
 from common.lib.jwt import (
     JwtAuthType,
     generate_jwt_token,
-    generate_jwt_token_from_cognito,
-    validate_and_authenticate_jwt_token,
     validate_and_return_jwt_token,
 )
 from common.lib.oidc import authenticate_user_by_oidc
@@ -102,6 +101,15 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
             }
         )
         return
+
+    def get_tenant_url(self):
+        protocol = self.request.protocol
+        if "https://" in self.request.headers.get("Referer", ""):
+            protocol = "https"
+        full_host = self.request.headers.get("X-Forwarded-Host")
+        if not full_host:
+            full_host = self.get_tenant()
+        return furl(f"{protocol}://{full_host}/")
 
     def get_tenant(self):
         if config.get("_global_.development"):
@@ -368,11 +376,11 @@ class BaseHandler(TornadoRequestHandler):
 
     async def authorization_flow(
         self,
-        user: str = None,
+        user: Optional[str] = None,
         console_only: bool = True,
         refresh_cache: bool = False,
         jwt_tokens: Optional[Dict[str, str]] = None,
-        jwt_auth_type: JwtAuthType = None,
+        jwt_auth_type: Optional[JwtAuthType] = None,
     ) -> None:
         """Perform high level authorization flow."""
         # TODO: Prevent any sites being created with a subdomain that is a yaml keyword, ie: false, no, yes, true, etc
@@ -385,6 +393,16 @@ class BaseHandler(TornadoRequestHandler):
         self.eligible_roles = []
         self.eligible_accounts = []
         self.request_uuid = str(uuid.uuid4())
+        sso_signin_toggle = self.request.query_arguments.get("sso_signin") == [b"true"]
+
+        # jwt_tokens = {}
+        # try:
+        #     request_body: dict = json.loads(self.request.body)
+        #     if request_body.get("idToken").get("jwtToken", {}):
+        #         jwt_tokens = request_body
+        # except:
+        #     pass
+
         group_mapping = get_plugin_by_name(
             config.get_tenant_specific_key(
                 "plugins.group_mapping",
@@ -461,35 +479,67 @@ class BaseHandler(TornadoRequestHandler):
                 "_development_user_override", tenant
             )
 
-        if not self.user and jwt_tokens:
-            # Cognito JWT Validation / Authentication Flow
-            tenant = self.get_tenant_name()
+        if not self.user and sso_signin_toggle:
+            # Redirect to SSO provider
+            if config.get_tenant_specific_key("auth.get_user_by_saml", tenant, False):
+                res = await authenticate_user_by_saml(self, return_200=True)
+                if not res:
+                    if (
+                        self.request.uri != "/saml/acs"
+                        and not self.request.uri.startswith("/auth?")
+                    ):
+                        raise tornado.web.Finish(
+                            "Unable to authenticate the user by SAML. "
+                            "Redirecting to authentication endpoint"
+                        )
+                    return
+            if (
+                config.get_tenant_specific_key("auth.get_user_by_oidc", tenant, False)
+                and attempt_sso_authn
+            ):
+                res = await authenticate_user_by_oidc(self, return_200=True)
+                if not res:
+                    raise tornado.web.Finish(
+                        "Unable to authenticate the user by OIDC. "
+                        "Redirecting to authentication endpoint"
+                    )
+                elif isinstance(res, dict):
+                    self.user = res.get("user")
+                    self.groups = res.get("groups")
 
-            verified_claims = await validate_and_authenticate_jwt_token(
-                jwt_tokens, tenant, JwtAuthType.COGNITO
-            )
-            if verified_claims:
-                encoded_cookie = await generate_jwt_token_from_cognito(
-                    verified_claims, tenant
-                )
+            # If SAML, redirect
+            # If OIDC, redirect
+            # If AWS SSO, redirect
 
-                self.set_cookie(
-                    self.get_noq_auth_cookie_key(),
-                    encoded_cookie,
-                    expires=verified_claims.get("exp"),
-                    secure=config.get_tenant_specific_key(
-                        "auth.cookie.secure", tenant, True
-                    ),
-                    httponly=config.get_tenant_specific_key(
-                        "auth.cookie.httponly", tenant, True
-                    ),
-                    samesite=config.get_tenant_specific_key(
-                        "auth.cookie.samesite", tenant, True
-                    ),
-                )
+        # if not self.user and jwt_tokens:
+        #     # Cognito JWT Validation / Authentication Flow
+        #     tenant = self.get_tenant_name()
 
-                self.user = verified_claims.get("email")
-                self.groups = verified_claims.get("cognito:groups", [])
+        #     verified_claims = await validate_and_authenticate_jwt_token(
+        #         jwt_tokens, tenant, JwtAuthType.COGNITO
+        #     )
+        #     if verified_claims:
+        #         encoded_cookie = await generate_jwt_token_from_cognito(
+        #             verified_claims, tenant
+        #         )
+
+        #         self.set_cookie(
+        #             self.get_noq_auth_cookie_key(),
+        #             encoded_cookie,
+        #             expires=verified_claims.get("exp"),
+        #             secure=config.get_tenant_specific_key(
+        #                 "auth.cookie.secure", tenant, True
+        #             ),
+        #             httponly=config.get_tenant_specific_key(
+        #                 "auth.cookie.httponly", tenant, True
+        #             ),
+        #             samesite=config.get_tenant_specific_key(
+        #                 "auth.cookie.samesite", tenant, True
+        #             ),
+        #         )
+
+        #         self.user = verified_claims.get("email")
+        #         self.groups = verified_claims.get("cognito:groups", [])
 
         if not self.user:
             # Authenticate user by API Key
@@ -720,7 +770,7 @@ class BaseHandler(TornadoRequestHandler):
             },
         )
 
-        if self.mfa_setup:
+        if self.mfa_setup and tenant_config.require_mfa:
             # If the EULA hasn't been signed the user cannot access any AWS information.
             self.groups = []
             self.eligible_roles = []

@@ -30,7 +30,11 @@ async def handle_generic_error_response(
     """
     log.error({**log_data, "message": message, "errors": errors})
     res = WebResponse(
-        status="error", status_code=status_code, errors=errors, reason=reason
+        status="error",
+        status_code=status_code,
+        errors=errors,
+        reason=reason,
+        message=message,
     )
     request.set_status(status_code)
     request.write(res.json(exclude_unset=True))

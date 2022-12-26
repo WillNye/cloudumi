@@ -60,14 +60,14 @@ echo
 echo "Building and tagging docker image"
 echo
 
-docker build --platform=linux/amd64 \
+docker build --no-cache --platform=linux/amd64 \
     --build-arg PUBLIC_URL="$PUBLIC_URL" \
     -t $DOCKER_IMAGE_NAME \
     --progress=plain \
     .
 
 docker tag $DOCKER_IMAGE_TAG_LATEST \
-  $ECR_IMAGE_TAG_LATEST
+  259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api:latest
 
 docker tag $DOCKER_IMAGE_TAG_LATEST \
   259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api:$VERSION
@@ -87,7 +87,7 @@ noq file -p $PROD_ROLE_ARN $PROD_ROLE_ARN -f
 
 # Upload frontend files that we just built in the container to S3
 docker run -v "$HOME/.aws:/root/.aws" \
-    -e "AWS_PROFILE=$PROD_ROLE_ARN" $ECR_IMAGE_TAG_LATEST \
+    -e "AWS_PROFILE=$PROD_ROLE_ARN" 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api:latest \
     bash -c "aws s3 sync /app/frontend/dist/ $UPLOAD_DIRECTORY"
 
 echo

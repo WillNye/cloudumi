@@ -135,7 +135,7 @@ async def prepare_tornado_request_for_saml(request, tenant):
     return result
 
 
-async def authenticate_user_by_saml(request):
+async def authenticate_user_by_saml(request, return_200=False):
     log_data = {"function": f"{__name__}.{sys._getframe().f_code.co_name}"}
     # TODO: Start here
     tenant = request.get_tenant_name()
@@ -154,7 +154,9 @@ async def authenticate_user_by_saml(request):
         if force_redirect:
             return request.redirect(login_endpoint)
         else:
-            request.set_status(403)
+            if not return_200:
+                # GraphQL (New UI) will not work if we return 403
+                request.set_status(403)
             request.write(
                 {
                     "type": "redirect",
@@ -179,7 +181,9 @@ async def authenticate_user_by_saml(request):
         if force_redirect:
             return request.redirect(login_endpoint)
         else:
-            request.set_status(403)
+            if not return_200:
+                # GraphQL (New UI) will not work if we return 403
+                request.set_status(403)
             request.write(
                 {
                     "type": "redirect",

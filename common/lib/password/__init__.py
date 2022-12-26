@@ -55,23 +55,25 @@ async def check_password_strength(
 ) -> Optional[Union[Dict[str, str], Dict[str, List[str]]]]:
     password_policy_args = {
         "strength": config.get_tenant_specific_key(
-            "auth.password_policy.strength", tenant, 0.5
+            "auth.password_policy.strength", tenant
         ),
-        "entropy_bits": config.get_tenant_specific_key(
+        "entropybits": config.get_tenant_specific_key(
             "auth.password_policy.entry_bits", tenant
         ),
-        "length": config.get_tenant_specific_key("auth.password_policy.length", tenant),
+        "length": config.get_tenant_specific_key(
+            "auth.password_policy.length", tenant, 8
+        ),
         "uppercase": config.get_tenant_specific_key(
-            "auth.password_policy.uppercase", tenant
+            "auth.password_policy.uppercase", tenant, 1
         ),
         "numbers": config.get_tenant_specific_key(
-            "auth.password_policy.numbers", tenant
+            "auth.password_policy.numbers", tenant, 1
         ),
         "special": config.get_tenant_specific_key(
-            "auth.password_policy.special", tenant
+            "auth.password_policy.special", tenant, 1
         ),
         "nonletters": config.get_tenant_specific_key(
-            "auth.password_policy.nonletters", tenant
+            "auth.password_policy.nonletters", tenant, 1
         ),
     }
 
