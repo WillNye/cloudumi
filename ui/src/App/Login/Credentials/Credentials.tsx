@@ -28,7 +28,8 @@ export const Credentials: FC = () => {
     resolver: yupResolver(credentialsSchema),
     defaultValues: {
       username: '',
-      password: ''
+      password: '',
+      mfa_token: ''
     }
   });
 
@@ -85,7 +86,7 @@ export const Credentials: FC = () => {
             <br />
             {/* TODO (@kayizzi)) We must give the user an indication when sign-in has failed and why it has failed (Invalid password or invalid mfa?)  */}
 
-            {/* TODO (@kayizzi)) Add a `Sign in with your Identity Provider` button. I added it to Figma */}
+            {/* TODO (@kayizzi)) Add a `Sign in with your Identity Provider` button. I added it to Figma here: https://www.figma.com/file/u8pwOpItLV7J1H38Nh92Da/NOQ-App-Design?node-id=289%3A346&t=l5gEJ592lF2gH077-0*/}
           </form>
           <button onClick={onSubmitSSOSignIn} value="sso_provider">
             {isSubmitting

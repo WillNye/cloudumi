@@ -4,14 +4,17 @@ from api.handlers.v3.automatic_policy_request_handler.aws import (
     AutomaticPolicyRequestHandler,
 )
 from api.handlers.v3.typeahead import UserAndGroupTypeAheadHandler
-from api.handlers.v4.login import LoginHandler
-from api.handlers.v4.manage_group_memberships import ManageGroupMembershipsHandler
-from api.handlers.v4.manage_users import (
+from api.handlers.v4.groups.manage_group_memberships import (
+    ManageGroupMembershipsHandler,
+)
+from api.handlers.v4.users.login import LoginHandler
+from api.handlers.v4.users.manage_users import (
     ManageUsersHandler,
     UnauthenticatedEmailVerificationHandler,
     UnauthenticatedPasswordResetSelfServiceHandler,
     UserMFASelfServiceHandler,
 )
+from api.handlers.v4.users.password_complexity import PasswordComplexityHandler
 from common.handlers.base import AuthenticatedStaticFileHandler
 
 """Web routes."""
@@ -149,7 +152,7 @@ from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationAwsMarketplaceHandler,
     TenantRegistrationHandler,
 )
-from api.handlers.v4.manage_groups import ManageGroupsHandler
+from api.handlers.v4.groups.manage_groups import ManageGroupsHandler
 from api.handlers.v4.requests import IambicRequestCommentHandler, IambicRequestHandler
 from common.config import config
 from common.lib.sentry import before_send_event
@@ -400,6 +403,7 @@ def make_app(jwt_validator=None):
         (r"/api/v4/groups/?", ManageGroupsHandler),
         (r"/api/v4/group_memberships/?", ManageGroupMembershipsHandler),
         (r"/api/v4/users/?", ManageUsersHandler),
+        (r"/api/v4/users/password/complexity/?", PasswordComplexityHandler),
         (r"/api/v4/users/login/?", LoginHandler),
         (r"/api/v4/users/mfa/?", UserMFASelfServiceHandler),
         (

@@ -6,6 +6,7 @@ export function PasswordReset() {
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
+  const [resetSuccess, setResetSuccess] = useState(false);
   const [error, setError] = useState(null);
   const token = new URLSearchParams(window.location.search).get('token');
 
@@ -55,6 +56,7 @@ export function PasswordReset() {
               onChange={event => setNewPassword(event.target.value)}
             />
           </label>
+          {/* TODO (Kayizzi): Add a password strength meter here. */}
           <label>
             Verify New Password:
             <input
@@ -66,7 +68,8 @@ export function PasswordReset() {
           <button type="submit">Reset Password</button>
         </>
       )}
-      {isCodeValid && (
+      {/* TODO (Kayizzi): We should link the user to the login page here.  */}
+      {resetSuccess && (
         <p>
           Your password has been successfully reset. You can now log in with
           your new password.

@@ -88,4 +88,8 @@ async def check_password_strength(
     errors: List[str] = [str(e) for e in errors]
 
     if errors:
-        return {"message": "Password doesn't have enough entropy.", "errors": errors}
+        return {
+            "message": "Password doesn't have enough entropy. Try making it stronger",
+            "errors": errors,
+            "requirements": password_policy_args,
+        }
