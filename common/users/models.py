@@ -3,7 +3,7 @@ import hashlib
 import secrets
 import urllib.parse
 import uuid
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from uuid import uuid4
 
 import pyotp
@@ -25,6 +25,10 @@ from common.config.globals import ASYNC_PG_SESSION
 from common.group_memberships.models import GroupMembership  # noqa
 from common.lib.notifications import send_email_via_sendgrid
 from common.pg_core.models import Base, SoftDeleteMixin
+from common.templates import (
+    generic_email_template,
+    new_user_with_password_email_template,
+)
 
 
 class User(SoftDeleteMixin, Base):
@@ -35,12 +39,15 @@ class User(SoftDeleteMixin, Base):
     email_verified: bool = Column(Boolean, default=False)
     email_verify_token: str = Column(String, nullable=True)
     email_verify_token_expiration: datetime = Column(DateTime, nullable=True)
+    # TODO: Force password reset flow after temp password created (Or just send them a
+    # password reset)
+    password_needs_reset: bool = Column(Boolean, default=False)
     password_hash = Column(String, nullable=False)
     password_reset_token = Column(String, nullable=True)
     password_reset_token_expiration = Column(DateTime, nullable=True)
     login_attempts = Column(Integer, default=0)
     login_magic_link_token = Column(String, nullable=True)
-
+    login_magic_link_token_expiration = Column(DateTime, nullable=True)
     full_name = Column(String)
     mfa_secret = Column(String)
     mfa_enabled = Column(Boolean, default=False)
@@ -208,7 +215,12 @@ class User(SoftDeleteMixin, Base):
     @classmethod
     async def create(cls, tenant, username, email, password, **kwargs):
         user = cls(
-            id=str(uuid4()), tenant=tenant, username=username, email=email, **kwargs
+            id=str(uuid4()),
+            tenant=tenant,
+            username=username,
+            email=email,
+            password_needs_reset=True,
+            **kwargs,
         )
         await user.set_password(password)
         async with ASYNC_PG_SESSION() as session:
@@ -266,9 +278,9 @@ class User(SoftDeleteMixin, Base):
             email (str): The email address to send the verification email to.
             expiration_time (datetime.datetime): The time at which the verification link will expire.
         """
-        if (
-            User.email_verified
-            or User.email_verify_token_expiration >= datetime.utcnow()
+        if self.email_verified or (
+            self.email_verify_token_expiration
+            and self.email_verify_token_expiration >= datetime.utcnow()
         ):
             return False
         # Generate a unique ID for the verification link
@@ -293,15 +305,22 @@ class User(SoftDeleteMixin, Base):
             f"/api/v4/verify?token={email_verify_blob_j_url_safe}"
         ).url
 
+        body_text = (
+            f'Please click on <a href="{verification_url}">this link</a> within the '
+            "next 15 minutes to verify your email address "
+        )
+
+        password_reset_email = generic_email_template.render(
+            year=date.today().year,
+            header="Verify your E-mail Address",
+            body_text=body_text,
+        )
+
         # Send the email with the verification URL
-        # TODO: Create an actual e-mail template
         await send_email_via_sendgrid(
             to_addresses=[self.email],
-            subject="Verify your e-mail address with Noq",
-            body=f"""
-            Please click on the following link to verify your email address within the next
-            15 minutes: {verification_url}
-            """,
+            subject="Verify your E-mail Address",
+            body=password_reset_email,
         )
         return True
 
@@ -331,6 +350,12 @@ class User(SoftDeleteMixin, Base):
                     return False
 
     async def send_password_reset_email(self, tenant_url):
+        # There's already a password reset token, and it hasn't expired yet.
+        if (
+            self.password_reset_token_expiration
+            and self.password_reset_token_expiration >= datetime.utcnow()
+        ):
+            return True
         # Generate a unique ID for the reset link
         password_reset_token = str(uuid.uuid4())
         password_reset_blob = {
@@ -351,14 +376,35 @@ class User(SoftDeleteMixin, Base):
             f"/api/v4/users/forgot_password?token={password_reset_blob_j_url_safe}"
         ).url
 
+        body_text = (
+            "You seem to be trying to reset your password. To complete the process, "
+            f'please reset your password through <a href="{password_reset_url}">this link</a> '
+            "within the next 15 minutes. If the link expires, you will need to request a new one."
+        )
+        password_reset_email = generic_email_template.render(
+            year=date.today().year,
+            header="Password Reset",
+            body_text=body_text,
+        )
+
         # Send the email with the reset URL
         await send_email_via_sendgrid(
             to_addresses=[self.email],
             subject="Password Reset Request",
-            body=f"""
-            Please click on the following link within the next
-            15 minutes to reset your password: {password_reset_url}
-            """,
+            body=password_reset_email,
+        )
+
+    async def send_password_via_email(self, tenant_url, password: str):
+        cognito_invitation_message = new_user_with_password_email_template.render(
+            year=date.today().year,
+            domain=tenant_url.url,
+            username=self.email,
+            password=password,
+        )
+        await send_email_via_sendgrid(
+            to_addresses=[self.email],
+            subject="Your Noq Credentials",
+            body=cognito_invitation_message,
         )
 
     async def verify_password_reset_token(self, token):

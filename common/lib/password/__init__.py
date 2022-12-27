@@ -11,7 +11,7 @@ from common.lib.redis import RedisHandler
 
 async def generate_random_password(uchars=3, lchars=3, dchars=2, schars=2):
     # Generates a 10 characters long random string
-    # with 3 upper case, 3 lowe case, 2 digits and 2 special characters
+    # with 3 upper case, 3 lower case, 2 digits and 2 special characters
 
     str_uchars, str_lchars, str_dchars, str_schars = "", "", "", ""
 

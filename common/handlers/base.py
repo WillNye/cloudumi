@@ -91,7 +91,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
             "tenant": tenant,
         }
         log.debug(log_data)
-        self.set_status(403)
+        self.set_status(406)
         self.write(
             {
                 "type": "redirect",
@@ -100,7 +100,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
                 "message": "Invalid tenant specified",
             }
         )
-        return
+        raise tornado.web.Finish()
 
     def get_tenant_url(self):
         protocol = self.request.protocol
@@ -175,7 +175,7 @@ class BaseJSONHandler(TornadoRequestHandler):
                 "tenant": tenant,
             }
             log.debug(log_data)
-            self.set_status(403)
+            self.set_status(406)
             self.write(
                 {
                     "type": "redirect",
@@ -184,7 +184,7 @@ class BaseJSONHandler(TornadoRequestHandler):
                     "message": "Invalid tenant specified",
                 }
             )
-            return
+            raise tornado.web.Finish()
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
@@ -270,6 +270,28 @@ class BaseHandler(TornadoRequestHandler):
         super(BaseHandler, self).initialize()
 
     async def prepare(self) -> None:
+        tenant = self.get_tenant_name()
+        if not config.is_tenant_configured(tenant):
+            function: str = (
+                f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
+            )
+            log_data = {
+                "function": function,
+                "message": "Invalid tenant specified. Redirecting to main page",
+                "tenant": tenant,
+            }
+            log.debug(log_data)
+            self.set_status(406)
+            self.write(
+                {
+                    "type": "redirect",
+                    "redirect_url": "https://noq.dev",
+                    "reason": "unauthenticated",
+                    "message": "Invalid tenant specified",
+                }
+            )
+            raise tornado.web.Finish()
+
         return await self.authorization_flow()
 
     async def check_tenant(self):
@@ -284,7 +306,7 @@ class BaseHandler(TornadoRequestHandler):
                 "tenant": tenant,
             }
             log.debug(log_data)
-            self.set_status(403)
+            self.set_status(406)
             self.write(
                 {
                     "type": "redirect",
@@ -293,8 +315,7 @@ class BaseHandler(TornadoRequestHandler):
                     "message": "Invalid tenant specified",
                 }
             )
-            await self.finish()
-            raise tornado.web.Finish(log_data["message"])
+            raise tornado.web.Finish()
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
@@ -851,7 +872,6 @@ class BaseHandler(TornadoRequestHandler):
 
         log_data = {
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
-            "message": "Invalid tenant specified. Redirecting to main page",
             "tenant": tenant,
         }
         try:
@@ -1032,7 +1052,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 "tenant": tenant,
             }
             log.debug(log_data)
-            self.set_status(403)
+            self.set_status(406)
             self.write(
                 {
                     "type": "redirect",

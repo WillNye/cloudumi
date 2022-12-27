@@ -42,13 +42,20 @@ class ManageUsersHandler(BaseAdminHandler):
             "message": "Creating new user",
         }
 
+        tenant_url = self.get_tenant_url()
+
         # Get the username and password from the request body
         data = tornado.escape.json_decode(self.request.body)
         email = data.get("email")
         username = (
             email  # We need to support separate username/email when we support SCIM
         )
+        password_supplied = True
         password = data.get("password")
+        if not password:
+            password_supplied = False
+            password = await generate_random_password()
+
         if not validate_email(email):
             self.set_status(403)
             self.write(
@@ -90,6 +97,9 @@ class ManageUsersHandler(BaseAdminHandler):
 
         created_user = await User.create(self.ctx.tenant, username, email, password)
 
+        if not password_supplied:
+            await created_user.send_password_via_email(tenant_url, password)
+
         # Return a JSON object with the user's ID
         self.write({"user_id": created_user.id, "username": created_user.username})
 
@@ -103,7 +113,7 @@ class ManageUsersHandler(BaseAdminHandler):
             user = self.db.query(User).filter(User.id == user_id).one()
             if action == "reset_password":
                 # Generate a new random password for the user
-                new_password = generate_random_password()
+                new_password = await generate_random_password()
                 user.set_password(new_password)
                 self.write({"success": True, "new_password": new_password})
             elif action == "reset_mfa":
@@ -230,37 +240,27 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
             "that is valid for 15 minutes. "
             "Please check your email to reset your password."
         )
-        data = tornado.escape.json_decode(self.request.body)
-        command = data.get("command")
-        email = data.get("email")
-        if not email:
-            self.set_status(400)
-            self.write(
-                self.write(
-                    WebResponse(
-                        success="error",
-                        status_code=400,
-                        data={"message": "Unable to reset password"},
-                    ).dict(exclude_unset=True, exclude_none=True)
-                )
-            )
-            raise tornado.web.Finish()
-        tenant = self.get_tenant_name()
-        tenant_url = self.get_tenant_url()
-        user = await User.get_by_email(tenant, email)
         success_response = WebResponse(
             success="success",
             status_code=200,
             data={"message": success_message},
         ).dict(exclude_unset=True, exclude_none=True)
-        if not user:
-            self.set_status(200)
-            # We give an identical response to the user if the email is not found to prevent
-            # enumeration attacks.
-            self.write(success_response)
-            raise tornado.web.Finish()
+
+        data = tornado.escape.json_decode(self.request.body)
+        command = data.get("command")
+        tenant = self.get_tenant_name()
+        tenant_url = self.get_tenant_url()
+
         if command == "request":
             # Send the reset email
+            email = data.get("email")
+            user = await User.get_by_email(tenant, email)
+            if not user:
+                self.set_status(200)
+                # We give an identical response to the user if the email is not found to prevent
+                # enumeration attacks.
+                self.write(success_response)
+                raise tornado.web.Finish()
             await user.send_password_reset_email(tenant_url)
             self.write(success_response)
             raise tornado.web.Finish()

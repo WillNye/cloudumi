@@ -14,15 +14,18 @@ class GroupMembership(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
     group_id = Column(UUID(as_uuid=True), ForeignKey("groups.id", ondelete="CASCADE"))
-    user = relationship("User", back_populates="groups", lazy="subquery")
-    group = relationship("Group", back_populates="users", lazy="subquery")
+    user = relationship("User", back_populates="groups")
+    group = relationship("Group", back_populates="users")
 
     @classmethod
     async def get(cls, user, group):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 stmt = select(GroupMembership).where(
-                    and_(GroupMembership.user == user, GroupMembership.group == group)
+                    and_(
+                        GroupMembership.user_id == user.id,
+                        GroupMembership.group_id == group.id,
+                    )
                 )
                 membership = await session.execute(stmt)
                 return membership.scalars().first()

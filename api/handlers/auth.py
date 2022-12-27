@@ -54,7 +54,7 @@ class AuthHandler(BaseHandler):
         tenant = self.get_tenant_name()
         if not config.is_tenant_configured(tenant):
             log_dict_handler("debug", self, tenant=tenant)
-            self.set_status(403)
+            self.set_status(406)
             self.write(
                 {
                     "type": "redirect",

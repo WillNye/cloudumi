@@ -592,11 +592,10 @@ def create_tables():
     run_alembic_migrations()
 
 
-p = multiprocessing.Process(target=create_tables)
-# Force rebuild SQL tables, deleting all existing data.
-p.start()
-p.join()
-
-
-# Force a re-cache of cloud resources with updated configuration
-import common.scripts.initialize_redis  # noqa: F401,E402
+if __name__ == "__main__":
+    p = multiprocessing.Process(target=create_tables)
+    # Force rebuild SQL tables, deleting all existing data.
+    p.start()
+    p.join()
+    # Force a re-cache of cloud resources with updated configuration
+    import common.scripts.initialize_redis  # noqa: F401,E402
