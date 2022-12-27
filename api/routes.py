@@ -59,7 +59,6 @@ from api.handlers.v2.index import (
     FrontendHandler,
     UnauthenticatedFileHandler,
 )
-from api.handlers.v2.logout import LogOutHandler
 from api.handlers.v2.managed_policies import (
     ManagedPoliciesForAccountHandler,
     ManagedPoliciesHandler,
@@ -99,11 +98,6 @@ from api.handlers.v2.terraform_resources import TerraformResourceDetailHandler
 from api.handlers.v2.typeahead import (
     ResourceTypeAheadHandlerV2,
     SelfServiceStep1ResourceTypeahead,
-)
-from api.handlers.v2.user import (
-    LoginConfigurationHandler,
-    UserManagementHandler,
-    UserRegistrationHandler,
 )
 from api.handlers.v2.user_profile import UserProfileHandler
 from api.handlers.v3.auth import ChallengeUrlConfigurationCrudHandler
@@ -215,15 +209,10 @@ def make_app(jwt_validator=None):
             r"/api/v2/managed_policies_on_principal/(.*)",
             ManagedPoliciesOnPrincipalHandler,
         ),
-        (r"/api/v2/login", LoginHandler),
-        (r"/api/v2/login_configuration", LoginConfigurationHandler),
-        (r"/api/v2/logout", LogOutHandler),
         (
             r"/api/v2/typeahead/self_service_resources",
             SelfServiceStep1ResourceTypeahead,
         ),
-        (r"/api/v2/user", UserManagementHandler),
-        (r"/api/v2/user_registration", UserRegistrationHandler),
         (r"/api/v2/policies", PoliciesHandler),
         (r"/api/v2/request", RequestHandler),
         (r"/api/v2/requests", RequestsHandler),
