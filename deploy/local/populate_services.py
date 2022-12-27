@@ -1,4 +1,5 @@
 import asyncio
+import multiprocessing
 import os
 import time
 from secrets import token_urlsafe
@@ -293,7 +294,9 @@ headers:
   role_login:
     enabled: true
 url: https://cloudumidev.com
-application_admin: engineering@noq.dev
+application_admin:
+  - engineering@noq.dev
+  - noq_admins
 secrets:
   jwt_secret: {token_urlsafe(32)}
   auth:
@@ -578,9 +581,22 @@ async_to_sync(ddb.update_static_config_for_tenant)(
     cloudumi_saml_config, override_email, "cloudumisamldev_com"
 )
 
-# Force rebuild SQL tables, deleting all existing data
-from common.scripts.initialize_postgres import run_alembic_migrations  # noqa: F401,E402
 
-run_alembic_migrations()
+def create_tables():
+    from common.scripts.initialize_postgres import (  # noqa: F401,E402
+        rebuild_tables,
+        run_alembic_migrations,
+    )
+
+    asyncio.run(rebuild_tables())
+    run_alembic_migrations()
+
+
+p = multiprocessing.Process(target=create_tables)
+# Force rebuild SQL tables, deleting all existing data.
+p.start()
+p.join()
+
+
 # Force a re-cache of cloud resources with updated configuration
 import common.scripts.initialize_redis  # noqa: F401,E402

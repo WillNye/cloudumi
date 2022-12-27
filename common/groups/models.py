@@ -40,7 +40,7 @@ class Group(SoftDeleteMixin, Base):
                     and_(
                         Group.tenant == tenant,
                         Group.name == name,
-                        Group.deleted is False,
+                        Group.deleted == False,  # noqa
                     ),
                 )
                 group = await session.execute(stmt)
@@ -87,7 +87,7 @@ class Group(SoftDeleteMixin, Base):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 stmt = select(Group).where(
-                    Group.tenant == tenant, Group.deleted is False
+                    Group.tenant == tenant, Group.deleted == False  # noqa
                 )
                 groups = await session.execute(stmt)
                 return groups.scalars().all()

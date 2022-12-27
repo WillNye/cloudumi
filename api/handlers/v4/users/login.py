@@ -86,9 +86,10 @@ class LoginHandler(TornadoRequestHandler):
             )
             raise tornado.web.Finish()
 
+        groups = [membership.group.name for membership in db_user.groups]
         # TODO: Get EULA Signed status
         encoded_cookie = await generate_jwt_token(
-            request.email, [], tenant, mfa_setup=db_user.mfa_enabled
+            request.email, groups, tenant, mfa_setup=db_user.mfa_enabled
         )
         # TODO: Valid auth, Mint a JWT
 

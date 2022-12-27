@@ -175,7 +175,7 @@ class User(SoftDeleteMixin, Base):
                     and_(
                         User.tenant == tenant,
                         User.username == username,
-                        User.deleted is False,
+                        User.deleted == False,  # noqa
                     )
                 )
                 user = await session.execute(stmt)
@@ -189,7 +189,7 @@ class User(SoftDeleteMixin, Base):
                     and_(
                         User.tenant == tenant,
                         User.email == email,
-                        User.deleted is False,
+                        User.deleted == False,  # noqa
                     )
                 )
                 user = await session.execute(stmt)
@@ -199,13 +199,17 @@ class User(SoftDeleteMixin, Base):
     async def get_all(cls, tenant):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
-                stmt = select(User).where(User.tenant == tenant, User.deleted is False)
+                stmt = select(User).where(
+                    User.tenant == tenant, User.deleted == False  # noqa
+                )
                 users = await session.execute(stmt)
                 return users.scalars().all()
 
     @classmethod
-    async def create(cls, tenant, username, email, password):
-        user = cls(id=str(uuid4()), tenant=tenant, username=username, email=email)
+    async def create(cls, tenant, username, email, password, **kwargs):
+        user = cls(
+            id=str(uuid4()), tenant=tenant, username=username, email=email, **kwargs
+        )
         await user.set_password(password)
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
@@ -240,7 +244,7 @@ class User(SoftDeleteMixin, Base):
                         User.email == email,
                         User.email_verify_token == token,
                         User.email_verify_token_expiration >= datetime.utcnow(),
-                        User.deleted is False,
+                        User.deleted == False,  # noqa
                     )
                 )
                 user = await session.execute(stmt)
@@ -311,7 +315,7 @@ class User(SoftDeleteMixin, Base):
                         User.email == email,
                         User.password_reset_token == token,
                         User.password_reset_token_expiration >= datetime.utcnow(),
-                        User.deleted is False,
+                        User.deleted == False,  # noqa
                     )
                 )
                 user = await session.execute(stmt)

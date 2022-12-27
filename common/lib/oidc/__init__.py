@@ -121,7 +121,7 @@ async def get_roles_from_token(tenant, token: dict[str, Any]) -> set:
     return roles
 
 
-async def authenticate_user_by_oidc(request, return_200=False):
+async def authenticate_user_by_oidc(request, return_200=False, force_redirect=None):
     jwt_tokens = {}
     try:
         request_body: dict = json.loads(request.request.body)
@@ -149,7 +149,8 @@ async def authenticate_user_by_oidc(request, return_200=False):
         # If we're behind a load balancer that terminates tls for us, request.request.protocol will be "http://" and our
         # oidc redirect will be invalid
         protocol = "https"
-    force_redirect = await should_force_redirect(request.request)
+    if force_redirect is None:
+        force_redirect = await should_force_redirect(request.request)
 
     # The endpoint where we want our OIDC provider to redirect us back to perform auth
     oidc_redirect_uri = f"{protocol}://{full_host}/auth"

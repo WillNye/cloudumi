@@ -482,7 +482,9 @@ class BaseHandler(TornadoRequestHandler):
         if not self.user and sso_signin_toggle:
             # Redirect to SSO provider
             if config.get_tenant_specific_key("auth.get_user_by_saml", tenant, False):
-                res = await authenticate_user_by_saml(self, return_200=True)
+                res = await authenticate_user_by_saml(
+                    self, return_200=True, force_redirect=False
+                )
                 if not res:
                     if (
                         self.request.uri != "/saml/acs"
@@ -497,7 +499,9 @@ class BaseHandler(TornadoRequestHandler):
                 config.get_tenant_specific_key("auth.get_user_by_oidc", tenant, False)
                 and attempt_sso_authn
             ):
-                res = await authenticate_user_by_oidc(self, return_200=True)
+                res = await authenticate_user_by_oidc(
+                    self, return_200=True, force_redirect=False
+                )
                 if not res:
                     raise tornado.web.Finish(
                         "Unable to authenticate the user by OIDC. "
