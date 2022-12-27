@@ -10,13 +10,21 @@ from common.models import WebResponse
 
 class ManageGroupsHandler(BaseAdminHandler):
     async def get(self):
-        groups = Group()
-        all_groups = await groups.get_all(self.ctx.tenant)
+        all_groups = await Group.get_all(self.ctx.tenant)
+        groups = []
+        for group in all_groups:
+            groups.append(
+                {
+                    "id": str(group.id),
+                    "name": group.name,
+                    "users": [membership.user.username for membership in group.users],
+                }
+            )
         self.write(
             WebResponse(
                 success="success",
                 status_code=200,
-                data={"groups": all_groups},
+                data={"groups": groups},
             ).dict(exclude_unset=True, exclude_none=True)
         )
 
@@ -121,7 +129,7 @@ class ManageGroupsHandler(BaseAdminHandler):
             )
             raise tornado.web.Finish()
 
-        await Group.delete(db_group)
+        await db_group.delete()
         self.write(
             WebResponse(
                 success="success",

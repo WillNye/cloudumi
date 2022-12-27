@@ -17,25 +17,24 @@ from sqlalchemy import (
     UniqueConstraint,
     and_,
 )
-from sqlalchemy.ext.mutable import MutableList
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import select
 
 from common.config.globals import ASYNC_PG_SESSION
 from common.group_memberships.models import GroupMembership  # noqa
 from common.lib.notifications import send_email_via_sendgrid
-from common.pg_core.models import AsaList, Base
+from common.pg_core.models import Base, SoftDeleteMixin
 
 
-class User(Base):
+class User(SoftDeleteMixin, Base):
     __tablename__ = "users"
-    id = Column(String, primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     username = Column(String, nullable=False)
     email: str = Column(String, nullable=False)
     email_verified: bool = Column(Boolean, default=False)
     email_verify_token: str = Column(String, nullable=True)
     email_verify_token_expiration: datetime = Column(DateTime, nullable=True)
-    active: bool = Column(Boolean(), nullable=False, default=True)
     password_hash = Column(String, nullable=False)
     password_reset_token = Column(String, nullable=True)
     password_reset_token_expiration = Column(DateTime, nullable=True)
@@ -43,30 +42,52 @@ class User(Base):
     login_magic_link_token = Column(String, nullable=True)
 
     full_name = Column(String)
-    created_at = Column(DateTime, index=True, default=datetime.utcnow)
-    created_by = Column(String)
-    updated_at = Column(DateTime, index=True, default=datetime.utcnow)
     mfa_secret = Column(String)
     mfa_enabled = Column(Boolean, default=False)
     mfa_primary_method = Column(String(64), nullable=True)
     mfa_phone_number = Column(String(128), nullable=True)
     last_successful_mfa_code = Column(String(64), nullable=True)
-    # MFA - one time recovery codes - comma separated.
-    mfa_recovery_codes = Column(MutableList.as_mutable(AsaList()), nullable=True)
     tenant = Column(String, nullable=False)
-    last_login_at = Column(DateTime())
-    current_login_at = Column(DateTime())
-    last_login_ip = Column(String(64))
-    current_login_ip = Column(String(64))
-    login_count = Column(Integer)
-    groups = relationship(
-        "GroupMembership",
-        back_populates="user",
-    )
+
+    # TODO: When we're soft-deleting, we need our own methods to get these groups
+    # because `deleted=true`. Create async delete function to update the relationship
+    # object for users and groups.
+    groups = relationship("GroupMembership", back_populates="user", lazy="subquery")
     __table_args__ = (
         UniqueConstraint("tenant", "username", name="uq_tenant_username"),
         UniqueConstraint("tenant", "email", name="uq_tenant_email"),
     )
+
+    async def delete(self):
+        # Delete all group memberships
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                group_memberships = await session.execute(
+                    select(GroupMembership).where(
+                        and_(GroupMembership.user_id == self.id)
+                    )
+                )
+                for group_membership in group_memberships:
+                    await group_membership.delete()
+                await session.commit()
+                self.deleted = True
+                self.username = f"{self.username}-{self.id}"
+                self.email = f"{self.email}-{self.id}"
+                await self.write()
+                return True
+
+    # Should be soft deletes because headaches when people leave and we need auditability.
+    # users = relationship(
+    #     'User',
+    #     secondary='group_memberships',
+    #     back_populates='groups',
+    # )
+
+    async def group_delete(query):
+        # Include on query to update the user membership and set deleted to true for those as well
+        # deleted=false for group memberships and all groups impacted by that group
+        # Set groups as deleted, and memberships to groups as deleted
+        pass
 
     def __repr__(self):
         return (
@@ -151,7 +172,11 @@ class User(Base):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 stmt = select(User).where(
-                    and_(User.tenant == tenant, User.username == username)
+                    and_(
+                        User.tenant == tenant,
+                        User.username == username,
+                        User.deleted is False,
+                    )
                 )
                 user = await session.execute(stmt)
                 return user.scalars().first()
@@ -161,7 +186,11 @@ class User(Base):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 stmt = select(User).where(
-                    and_(User.tenant == tenant, User.email == email)
+                    and_(
+                        User.tenant == tenant,
+                        User.email == email,
+                        User.deleted is False,
+                    )
                 )
                 user = await session.execute(stmt)
                 return user.scalars().first()
@@ -170,18 +199,9 @@ class User(Base):
     async def get_all(cls, tenant):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
-                stmt = select(User).where(User.tenant == tenant)
+                stmt = select(User).where(User.tenant == tenant, User.deleted is False)
                 users = await session.execute(stmt)
                 return users.scalars().all()
-
-    @classmethod
-    async def delete(cls, id):
-        async with ASYNC_PG_SESSION() as session:
-            async with session.begin():
-                user = session.query(User).get(id)
-                await session.delete(user)
-                await session.commit()
-        return True
 
     @classmethod
     async def create(cls, tenant, username, email, password):
@@ -220,6 +240,7 @@ class User(Base):
                         User.email == email,
                         User.email_verify_token == token,
                         User.email_verify_token_expiration >= datetime.utcnow(),
+                        User.deleted is False,
                     )
                 )
                 user = await session.execute(stmt)
@@ -241,6 +262,11 @@ class User(Base):
             email (str): The email address to send the verification email to.
             expiration_time (datetime.datetime): The time at which the verification link will expire.
         """
+        if (
+            User.email_verified
+            or User.email_verify_token_expiration >= datetime.utcnow()
+        ):
+            return False
         # Generate a unique ID for the verification link
         email_verify_token = str(uuid.uuid4())
         email_verify_blob = {
@@ -273,6 +299,7 @@ class User(Base):
             15 minutes: {verification_url}
             """,
         )
+        return True
 
     @classmethod
     async def reset_password(cls, tenant, email, token, password):
@@ -284,6 +311,7 @@ class User(Base):
                         User.email == email,
                         User.password_reset_token == token,
                         User.password_reset_token_expiration >= datetime.utcnow(),
+                        User.deleted is False,
                     )
                 )
                 user = await session.execute(stmt)

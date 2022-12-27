@@ -1,16 +1,19 @@
+import uuid
 from uuid import uuid4
 
 from sqlalchemy import Column, String, UniqueConstraint, and_
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import select
 
 from common.config.globals import ASYNC_PG_SESSION
-from common.pg_core.models import Base
+from common.group_memberships.models import GroupMembership
+from common.pg_core.models import Base, SoftDeleteMixin
 
 
-class Group(Base):
+class Group(SoftDeleteMixin, Base):
     __tablename__ = "groups"
-    id = Column(String, primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String)
     description = Column(String)
     tenant = Column(String, nullable=False)
@@ -20,23 +23,25 @@ class Group(Base):
         UniqueConstraint("tenant", "email", name="uq_group_tenant_email"),
     )
 
-    users = relationship(
-        "GroupMembership",
-        back_populates="group",
-    )
+    users = relationship("GroupMembership", back_populates="group", lazy="subquery")
 
-    # users = relationship(
-    #     'User',
-    #     secondary='group_memberships',
-    #     back_populates='groups',
-    # )
+    async def write(self):
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                session.add(self)
+                await session.commit()
+            return True
 
     @classmethod
     async def get_by_name(cls, tenant, name):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 stmt = select(Group).where(
-                    and_(Group.tenant == tenant, Group.name == name),
+                    and_(
+                        Group.tenant == tenant,
+                        Group.name == name,
+                        Group.deleted is False,
+                    ),
                 )
                 group = await session.execute(stmt)
                 return group.scalars().first()
@@ -50,13 +55,23 @@ class Group(Base):
                 await session.commit()
         return group
 
-    @classmethod
-    async def delete(cls, group):
+    async def delete(self):
+        # Delete all group memeberships
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
-                await session.delete(group)
-                await session.commit()
-        return group
+                group_memberships = await session.execute(
+                    select(GroupMembership).where(
+                        and_(
+                            GroupMembership.group_id == self.id,
+                        )
+                    )
+                )
+                for group_membership in group_memberships:
+                    await group_membership.delete()
+                self.deleted = True
+                self.name = f"{self.name}-{self.id}"
+                self.email = f"{self.email}-{self.id}"
+                await self.write()
 
     async def update(self, group, **kwargs):
         for key, value in kwargs.items():
@@ -71,6 +86,8 @@ class Group(Base):
     async def get_all(cls, tenant):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
-                stmt = select(Group).where(Group.tenant == tenant)
+                stmt = select(Group).where(
+                    Group.tenant == tenant, Group.deleted is False
+                )
                 groups = await session.execute(stmt)
                 return groups.scalars().all()

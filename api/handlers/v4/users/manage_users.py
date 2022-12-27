@@ -21,7 +21,13 @@ class ManageUsersHandler(BaseAdminHandler):
         all_users = await users.get_all(self.ctx.tenant)
         users = []
         for user in all_users:
-            users.append({"id": user.id, "email": user.email})
+            users.append(
+                {
+                    "id": str(user.id),
+                    "email": user.email,
+                    "groups": [membership.group.name for membership in user.groups],
+                }
+            )
         self.write(
             WebResponse(
                 success="success",
@@ -35,17 +41,6 @@ class ManageUsersHandler(BaseAdminHandler):
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
             "message": "Creating new user",
         }
-        # Check if the request is being made by an admin user
-        if not self.is_admin:
-            self.set_status(403)
-            self.write(
-                WebResponse(
-                    success="error",
-                    status_code=403,
-                    data={"message": "Only admin users can create new users"},
-                ).dict(exclude_unset=True, exclude_none=True)
-            )
-            raise tornado.web.Finish()
 
         # Get the username and password from the request body
         data = tornado.escape.json_decode(self.request.body)
@@ -103,12 +98,6 @@ class ManageUsersHandler(BaseAdminHandler):
         user_id = self.get_argument("user_id")
         action = self.get_argument("action")
 
-        # Check if the current user is an administrator
-        if not self.is_admin:
-            self.set_status(403)
-            self.write({"error": "Forbidden"})
-            return
-
         # Update the user's security in the database
         try:
             user = self.db.query(User).filter(User.id == user_id).one()
@@ -129,10 +118,42 @@ class ManageUsersHandler(BaseAdminHandler):
             self.set_status(500)
             self.write({"error": str(e)})
 
+    async def delete(self):
+        data = tornado.escape.json_decode(self.request.body)
+        email = data.get("email")
+        user = await User.get_by_email(self.ctx.tenant, email)
+        if not user:
+            self.set_status(400)
+            self.write(
+                WebResponse(
+                    success="error",
+                    status_code=400,
+                    data={"message": "Invalid user"},
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            raise tornado.web.Finish()
 
-# TODO: Handle user password reset
-# Instructions for Kayizzi:
-# 1. Login page has a "forgot my password"
+        res = await user.delete()
+        if not res:
+            self.set_status(400)
+            self.write(
+                WebResponse(
+                    success="error",
+                    status_code=400,
+                    data={"message": "Unable to delete user"},
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            raise tornado.web.Finish()
+
+        self.write(
+            WebResponse(
+                success="success",
+                status_code=200,
+                data={"message": "Successfully deleted user"},
+            ).dict(exclude_unset=True, exclude_none=True)
+        )
+
+
 class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
     async def get(self):
         # The user clicked the link in the email, so we need to show them the reset form
@@ -204,6 +225,11 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
     async def post(self):
         # The user requested the reset, so we need to email them
         log_data = {}
+        success_message = (
+            "If your user exists, we have sent you an email with a password reset link "
+            "that is valid for 15 minutes. "
+            "Please check your email to reset your password."
+        )
         data = tornado.escape.json_decode(self.request.body)
         command = data.get("command")
         email = data.get("email")
@@ -225,9 +251,7 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
         success_response = WebResponse(
             success="success",
             status_code=200,
-            data={
-                "message": "Please check your email for a password reset link. It is valid for 15 minutes."
-            },
+            data={"message": success_message},
         ).dict(exclude_unset=True, exclude_none=True)
         if not user:
             self.set_status(200)

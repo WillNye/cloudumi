@@ -54,7 +54,8 @@ class LoginHandler(TornadoRequestHandler):
                     data={
                         "message": (
                             "Email is not verified. An email verification link was sent to you. "
-                            "Please verify your email within the next 15 minutes and try again."
+                            "Please verify your email within 15 minutes of receiving the e-mail "
+                            "and try again."
                         )
                     },
                 ).dict(exclude_unset=True, exclude_none=True)

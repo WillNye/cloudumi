@@ -1,6 +1,7 @@
 import uuid
 
-from sqlalchemy import Column, ForeignKey, String, and_
+from sqlalchemy import Column, ForeignKey, and_
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import select
 
@@ -10,11 +11,11 @@ from common.pg_core.models import Base
 
 class GroupMembership(Base):
     __tablename__ = "group_memberships"
-    id = Column(String, primary_key=True)
-    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"))
-    group_id = Column(String, ForeignKey("groups.id", ondelete="CASCADE"))
-    user = relationship("User", back_populates="groups")
-    group = relationship("Group", back_populates="users")
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
+    group_id = Column(UUID(as_uuid=True), ForeignKey("groups.id", ondelete="CASCADE"))
+    user = relationship("User", back_populates="groups", lazy="subquery")
+    group = relationship("Group", back_populates="users", lazy="subquery")
 
     @classmethod
     async def get(cls, user, group):
@@ -45,7 +46,7 @@ class GroupMembership(Base):
             async with session.begin():
                 await session.delete(membership)
                 await session.commit()
-        return membership
+        return True
 
 
 # User.group_memberships = relationship('GroupMembership', back_populates='user', cascade='all, delete-orphan')
