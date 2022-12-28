@@ -2,7 +2,7 @@ import uuid
 
 from sqlalchemy import Column, ForeignKey, and_
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, selectinload
 from sqlalchemy.sql import select
 
 from common.config.globals import ASYNC_PG_SESSION
@@ -29,6 +29,22 @@ class GroupMembership(Base):
                 )
                 membership = await session.execute(stmt)
                 return membership.scalars().first()
+
+    @classmethod
+    async def get_groups_by_user(cls, user):
+        # Get group memberships for a user
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = (
+                    select(GroupMembership)
+                    .where(GroupMembership.user_id == user.id)
+                    .options(selectinload(GroupMembership.group))
+                )
+                memberships = await session.execute(stmt)
+                groups = [
+                    membership.group for membership in memberships.scalars().all()
+                ]
+                return groups
 
     @classmethod
     async def create(cls, user, group):

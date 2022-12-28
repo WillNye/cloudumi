@@ -2,6 +2,7 @@ import tornado.escape
 import tornado.web
 
 from common.config.tenant_config import TenantConfig
+from common.group_memberships.models import GroupMembership
 from common.handlers.base import TornadoRequestHandler
 from common.lib.jwt import generate_jwt_token
 from common.models import UserLoginRequest, WebResponse
@@ -85,13 +86,13 @@ class LoginHandler(TornadoRequestHandler):
                 ).dict(exclude_unset=True, exclude_none=True)
             )
             raise tornado.web.Finish()
-
-        groups = [membership.group.name for membership in db_user.groups]
+        groups = [
+            group.name for group in await GroupMembership.get_groups_by_user(db_user)
+        ]
         # TODO: Get EULA Signed status
         encoded_cookie = await generate_jwt_token(
             request.email, groups, tenant, mfa_setup=db_user.mfa_enabled
         )
-        # TODO: Valid auth, Mint a JWT
 
         self.set_cookie(
             tenant_config.auth_cookie_name,
