@@ -262,9 +262,6 @@ class BaseHandler(TornadoRequestHandler):
         super(BaseHandler, self).initialize()
 
     async def prepare(self) -> None:
-        return await self.authorization_flow()
-
-    async def check_tenant(self):
         tenant = self.get_tenant_name()
         if not config.is_tenant_configured(tenant):
             function: str = (
@@ -303,6 +300,7 @@ class BaseHandler(TornadoRequestHandler):
             )
         self.request_uuid = str(uuid.uuid4())
         stats.timer("base_handler.incoming_request")
+        return await self.authorization_flow()
 
     async def configure_tracing(self):
         tenant = self.get_tenant_name()
