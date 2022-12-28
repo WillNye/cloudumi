@@ -1,5 +1,5 @@
 import { useAuth } from 'core/Auth';
-import { FC } from 'react';
+import { FC, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
@@ -9,6 +9,10 @@ import css from './Credentials.module.css';
 import { Navigate } from 'react-router-dom';
 import { MotionGroup, MotionItem } from 'reablocks';
 import { ReactComponent as Logo } from 'assets/brand/logo-bw.svg';
+import { login } from 'core/API/auth';
+import { Button } from 'shared/elements/Button';
+import { Input } from 'shared/form/Input';
+import { Block } from 'shared/layout/Block';
 
 const credentialsSchema = Yup.object().shape({
   username: Yup.string().email('Invalid email').required('Required'),
@@ -16,7 +20,7 @@ const credentialsSchema = Yup.object().shape({
 });
 
 export const Credentials: FC = () => {
-  const { login, user, ssoLogin } = useAuth();
+  const { user } = useAuth();
 
   const {
     register,
@@ -28,23 +32,22 @@ export const Credentials: FC = () => {
     resolver: yupResolver(credentialsSchema),
     defaultValues: {
       username: '',
-      password: '',
-      mfa_token: ''
+      password: ''
     }
   });
 
-  const onSubmit = async data => {
+  const onSubmit = useCallback(async data => {
     // TODO: In this `login` method here, we should detect
     // if the login needs 2fa, change password, etc and then
     // navigate the user to that route. This should NOT be in
     // this component since its a global concern.
-    await login(data);
-  };
+    const res = await login(data);
+    console.log(res.data, '-------------');
+  }, []);
 
-  const onSubmitSSOSignIn = async () => {
-    console.log('here');
-    await ssoLogin();
-  };
+  const onSubmitSSOSignIn = useCallback(async () => {
+    // TODO: Setup SSO login
+  }, []);
 
   if (user) {
     return <Navigate to="/" />;
@@ -56,43 +59,53 @@ export const Credentials: FC = () => {
         <title>Login</title>
       </Helmet>
       <MotionGroup className={css.container}>
-        {/* TODO (@kayizzi)) Need Noq favicon. This exists in current `frontend` */}
         {/* TODO (@kayizzi)) Use larget box, per Figma */}
         <MotionItem className={css.box}>
           <Logo />
           <br />
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form className={css.form} onSubmit={handleSubmit(onSubmit)}>
             {/* TODO (@kayizzi)) Add e-mail and password labels per Figma */}
 
             {/* TODO (@kayizzi)) We cannot assume the username is an e-mail. */}
             {/* Please remove regex requirement for email */}
-            <input autoFocus type="email" {...register('username')} />
-            <Link to={'password-reset'}>Forgot your password?</Link>
+            <Block label="Email">
+              <Input
+                fullWidth
+                size="small"
+                autoFocus
+                placeholder="Enter Email"
+                type="email"
+                {...register('username')}
+              />
+            </Block>
+
+            <Block label="Password">
+              <Input
+                fullWidth
+                size="small"
+                type="password"
+                placeholder="Enter Password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                {...register('password')}
+              />
+            </Block>
             <br />
-            <br />
-            <input
-              type="password"
-              autoCapitalize="none"
-              autoCorrect="off"
-              {...register('password')}
-            />
-            <br />
-            <br />
-            {/* TODO (@kayizzi)) switch to styled button */}
-            <button type="submit" disabled={isSubmitting || !isValid}>
+
+            <Button fullWidth type="submit" disabled={isSubmitting || !isValid}>
               {isSubmitting ? 'Logging in...' : 'Login'}
-            </button>
-            <br />
-            <br />
+            </Button>
             {/* TODO (@kayizzi)) We must give the user an indication when sign-in has failed and why it has failed (Invalid password or invalid mfa?)  */}
 
             {/* TODO (@kayizzi)) Add a `Sign in with your Identity Provider` button. I added it to Figma here: https://www.figma.com/file/u8pwOpItLV7J1H38Nh92Da/NOQ-App-Design?node-id=289%3A346&t=l5gEJ592lF2gH077-0*/}
           </form>
-          <button onClick={onSubmitSSOSignIn} value="sso_provider">
+          <Button fullWidth onClick={onSubmitSSOSignIn} value="sso_provider">
             {isSubmitting
               ? 'Logging in...'
-              : 'Sign in with your Identity Provider'}
-          </button>
+              : 'Sign-In with your Identity Provider'}
+          </Button>
+          <br />
+          <Link to="password-reset">Forgot your password?</Link>
         </MotionItem>
       </MotionGroup>
     </>

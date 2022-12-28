@@ -8,14 +8,11 @@ import { AuthCode } from 'shared/form/AuthCode';
 import css from './MFA.module.css';
 
 export const MFA: FC = () => {
-  const { confirmSignIn, user } = useAuth();
+  const { user } = useAuth();
 
-  const verifyTOTPCode = useCallback(
-    async (val: string) => {
-      await confirmSignIn(val);
-    },
-    [confirmSignIn]
-  );
+  const verifyTOTPCode = useCallback(async (val: string) => {
+    // TODO: verify user TOTP code
+  }, []);
 
   if (user?.challengeName !== ChallengeName.SOFTWARE_TOKEN_MFA) {
     return <Navigate to="/" />;

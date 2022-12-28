@@ -13,24 +13,21 @@ export const SetupMFA: FC = () => {
   const [totpCode, setTotpCode] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const { setupTOTP, verifyTotpToken, user } = useAuth();
+  const { user } = useAuth();
 
   // TODO: Hookup backend
   const getTOTPCode = useCallback(async () => {
-    const code = await setupTOTP();
-    setTotpCode(code);
-  }, [setupTOTP]);
+    // TODO: Get OTP MFA code
+    setTotpCode('');
+  }, []);
 
   useMount(() => {
     getTOTPCode();
   });
 
-  const verifyTOTPCode = useCallback(
-    async (val: string) => {
-      await verifyTotpToken(val);
-    },
-    [verifyTotpToken]
-  );
+  const verifyTOTPCode = useCallback(async (val: string) => {
+    // TODO verify MFA user TOTP code
+  }, []);
 
   if (
     user?.authenticationFlowType !== AuthenticationFlowType.USER_SRP_AUTH ||
