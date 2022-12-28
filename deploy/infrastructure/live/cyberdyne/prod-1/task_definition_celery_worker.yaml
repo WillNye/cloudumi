@@ -7,6 +7,10 @@ containerDefinitions:
         awslogs-group: cyberdyne-noq-dev-cyberdyne-prod-1
         awslogs-region: us-west-2
         awslogs-stream-prefix: celery-worker
+    entryPoint:
+      - /bin/sh
+      - "-c"
+      - "python /app/common/celery_tasks/run.py"
     linuxParameters:
       devices: []
       initProcessEnabled: true
@@ -26,7 +30,7 @@ containerDefinitions:
         sourceVolume: efs-server-AP
     dockerSecurityOptions: []
     volumesFrom: []
-    image: 775726381634.dkr.ecr.us-west-2.amazonaws.com/cyberdyne-prod-registry-celery:prod
+    image: 775726381634.dkr.ecr.us-west-2.amazonaws.com/cyberdyne-prod-registry-api:prod
     essential: true
     links: []
     extraHosts: []
@@ -45,8 +49,8 @@ cpu: "2048"
 volumes:
   - name: efs-server-AP
     efsVolumeConfiguration:
-      fileSystemId: fs-09159e1c426850e83
+      fileSystemId: fs-04a43ab62edb748e9
       transitEncryption: ENABLED
       authorizationConfig:
-        accessPointId: fsap-0d733700e863750cf
+        accessPointId: fsap-0f1d0dd184aee42a9
         iam: ENABLED

@@ -3,7 +3,10 @@ import os
 from api.handlers.v3.automatic_policy_request_handler.aws import (
     AutomaticPolicyRequestHandler,
 )
-from api.handlers.v3.slack.install import AsyncSlackEventsHandler, AsyncSlackOAuthHandler
+from api.handlers.v3.slack.install import (
+    AsyncSlackEventsHandler,
+    AsyncSlackOAuthHandler,
+)
 from api.handlers.v3.typeahead import UserAndGroupTypeAheadHandler
 from common.handlers.base import AuthenticatedStaticFileHandler
 
@@ -17,7 +20,7 @@ from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
 from tornado.routing import HostMatches, PathMatches, Rule, RuleRouter
 
-from api.handlers.auth import AuthHandler
+from api.handlers.auth import AuthHandler, CognitoAuthHandler
 from api.handlers.v1.credentials import GetCredentialsHandler
 from api.handlers.v1.health import HealthHandler
 from api.handlers.v1.policies import (
@@ -139,9 +142,12 @@ from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationAwsMarketplaceHandler,
     TenantRegistrationHandler,
 )
+from api.handlers.v4.requests import IambicRequestCommentHandler, IambicRequestHandler
 from common.config import config
 from common.lib.sentry import before_send_event
 from common.lib.slack.app import slack_app
+
+UUID_REGEX = "[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}"
 
 
 def make_app(jwt_validator=None):
@@ -160,6 +166,7 @@ def make_app(jwt_validator=None):
         (r"/saml/(.*)", SamlHandler),
         (r"/healthcheck", HealthHandler),
         (r"/api/v1/auth", AuthHandler),
+        (r"/api/v1/auth/cognito", CognitoAuthHandler),
         (r"/api/v1/get_credentials", GetCredentialsHandler),
         (r"/api/v3/legal/agreements/eula", EulaHandler),
         (r"/api/v3/tenant/details", TenantDetailsHandler),
@@ -372,6 +379,16 @@ def make_app(jwt_validator=None):
         # (r"/api/v3/api_keys/remove", RemoveApiKeyHandler),
         # (r"/api/v3/api_keys/view", ViewApiKeysHandler),
         (r"/api/v2/.*", V2NotFoundHandler),
+        (r"/api/v4/requests/?", IambicRequestHandler),
+        (
+            rf"/api/v4/requests/(?P<request_id>{UUID_REGEX})/comments/?",
+            IambicRequestCommentHandler,
+        ),
+        (
+            rf"/api/v4/requests/(?P<request_id>{UUID_REGEX})/comments/(?P<comment_id>{UUID_REGEX})",
+            IambicRequestCommentHandler,
+        ),
+        (rf"/api/v4/requests/(?P<request_id>{UUID_REGEX})", IambicRequestHandler),
     ]
     # TODO: fix:
 

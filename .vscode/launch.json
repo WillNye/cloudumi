@@ -84,7 +84,7 @@
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
         // "PYTHONASYNCIODEBUG": "1",
         "AWS_REGION": "us-west-2",
-        "RUNTIME_PROFILE": "API",
+        "RUNTIME_PROFILE": "API"
       }
     },
     {
@@ -156,6 +156,40 @@
       }
     },
     {
+      "name": "Local Config: Alembic Autogenerate",
+      "type": "python",
+      "request": "launch",
+      "module": "alembic",
+      "args": ["revision", "--autogenerate", "-m", "migration"],
+      "justMyCode": false,
+      "console": "integratedTerminal",
+      "env": {
+        "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
+        // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
+        "AWS_DEFALT_REGION": "us-west-2",
+        "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
+        "PYTHONASYNCIODEBUG": "1"
+      }
+    },
+    {
+      "name": "Local Config: Alembic Upgrade Head",
+      "type": "python",
+      "request": "launch",
+      "module": "alembic",
+      "args": ["upgrade", "head"],
+      "justMyCode": false,
+      "console": "integratedTerminal",
+      "env": {
+        "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
+        // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
+        "AWS_DEFALT_REGION": "us-west-2",
+        "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
+        "PYTHONASYNCIODEBUG": "1"
+      }
+    },
+    {
       "name": "Launch Chrome",
       "request": "launch",
       "type": "pwa-chrome",
@@ -215,6 +249,6 @@
         "AWS_CA_BUNDLE": "/home/ccastrapel/.config/noq/burpsuite.pem",
         "REQUESTS_CA_BUNDLE": "/home/ccastrapel/.config/noq/burpsuite.pem"
       }
-    },
+    }
   ]
 }

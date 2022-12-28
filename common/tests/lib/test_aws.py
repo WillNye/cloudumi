@@ -479,10 +479,11 @@ class TestAwsPolicyNormalizer(TestCase):
     @staticmethod
     def _get_statement_by_resource(policy: list[dict], resource: list[str]) -> dict:
         resource.sort()
+        if not isinstance(policy, list):
+            policy = [policy]
         for statement in policy:
             if statement["Resource"] == resource:
                 return statement
-
         return dict()
 
     def test_reduce_actions(self):

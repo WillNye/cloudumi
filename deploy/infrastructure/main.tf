@@ -36,6 +36,7 @@ module "tenant_networking" {
   convert_case                = var.convert_case
   delimiter                   = var.delimiter
   domain_name                 = var.domain_name
+  load_balancer_internal      = var.load_balancer_internal
   lb_port                     = var.lb_port
   namespace                   = var.namespace
   stage                       = var.stage
@@ -49,13 +50,14 @@ module "tenant_networking" {
 module "tenant_s3_service" {
   source = "./modules/services/s3"
 
-  account_id = var.account_id
-  attributes = var.attributes
-  cluster_id = local.cluster_id
-  log_expiry = var.log_expiry
-  noq_core   = var.noq_core
-  tags       = var.tags
-  timeout    = var.timeout
+  account_id            = var.account_id
+  attributes            = var.attributes
+  cluster_id            = local.cluster_id
+  log_expiry            = var.log_expiry
+  noq_core              = var.noq_core
+  tags                  = var.tags
+  timeout               = var.timeout
+  bucket_encryption_key = module.tenant_container_service.kms_key_id
 }
 
 module "tenant_messaging" {
@@ -123,6 +125,7 @@ module "tenant_ecs_task_role" {
   tenant_configuration_bucket_name = module.tenant_s3_service.tenant_configuration_bucket_name
   aws_secrets_manager_arn          = module.tenant_container_service.aws_secrets_manager_arn
   noq_core                         = var.noq_core
+  bucket_encryption_key            = module.tenant_container_service.kms_key_id
 }
 
 module "tenant_container_service" {
@@ -148,6 +151,7 @@ module "tenant_container_service" {
   vpc_cidr_range                     = module.tenant_networking.vpc_cidr_range
   vpc_id                             = module.tenant_networking.vpc_id
   aws_secrets_manager_cluster_string = var.aws_secrets_manager_cluster_string
+  bucket_encryption_key              = module.tenant_container_service.kms_key_id
 }
 
 module "tenant_storage" {
@@ -161,4 +165,20 @@ module "tenant_storage" {
   vpc_id                = module.tenant_networking.vpc_id
   subnet_ids            = module.tenant_networking.vpc_subnet_private_id
   ecs_task_role_arn     = module.tenant_container_service.ecs_task_role
+}
+
+module "noq_db_cluster" {
+  source                     = "./modules/services/rds"
+  cluster_id                 = local.cluster_id
+  database_name              = var.noq_db_database_name
+  rds_instance_count         = var.noq_db_instance_count
+  rds_instance_type          = var.noq_db_instance_type
+  region                     = var.region
+  tags                       = var.tags
+  vpc_id                     = module.tenant_networking.vpc_id
+  subnet_ids                 = module.tenant_networking.vpc_subnet_private_id
+  private_subnet_cidr_blocks = module.tenant_networking.vpc_subnet_private_cidr
+  master_username            = var.noq_db_username
+  master_password            = var.noq_db_password
+  kms_key_id                 = module.tenant_container_service.kms_key_id
 }

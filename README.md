@@ -38,7 +38,7 @@ Each target has a name that uniquely identifies a build target. The path disambi
   - Mac: `brew install bazelisk`
 - Optionally install ibazel: https://github.com/bazelbuild/bazel-watcher/releases
 - Optionally install pyenv: https://github.com/pyenv/pyenv#basic-github-checkout
-- Install python 3.9.x & dependencies (requirements-test.lock)
+- Install python 3.9.x & dependencies (requirements.lock)
 - Install tfsec: https://github.com/aquasecurity/tfsec#installation
 
 ## Quick Start
@@ -199,6 +199,8 @@ AWS_PROFILE=prod/prod_admin ecsgo
 ```
 
 Select the appropriate cluster, service, and tasks to connect to the container of your choice.
+
+### Deprecated Bazel Instructions
 
 It may be useful to retrieve the environment variables used by the process in a Docker container running in Fargate.
 This is so you have your CONFIG_LOCATION, bazel PYTHONPATH, and aws ECS credential environment variables set

@@ -15,7 +15,7 @@ const ConfigureAccount = ({
     <div className='on-boarding__configure-account'>
       <Form>
         <Form.Field>
-          <label>1. Specify AWS Account</label>
+          <label>1. Specify AWS Account Name</label>
           <input
             placeholder='Enter AWS Account Name'
             onChange={handleAccNameChange}

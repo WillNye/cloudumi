@@ -77,6 +77,8 @@ def get_accounts_from_org_struc(
     if accounts is None:
         accounts = set()
         for _, org_dict in org_struc.items():
+            if isinstance(org_dict, str):
+                continue
             if org_id and org_id not in org_dict["Arn"]:
                 continue
             get_accounts_from_org_struc(org_dict, org_id, accounts)

@@ -13,6 +13,11 @@ output "global_tenant_data_account_id" {
   value       = var.global_tenant_data_account_id
 }
 
+output "global_tenant_data_role_name" {
+  description = "Role name of the AWS Tenant Data Account"
+  value       = var.global_tenant_data_role_name
+}
+
 output "legal_docs_bucket_name" {
   description = "The S3 bucket containing templates for our legal documentation"
   value       = var.legal_docs_bucket_name
@@ -131,16 +136,6 @@ output "region" {
 output "registry_repository_url_api" {
   description = "The respository URL for the API registry"
   value       = length(module.tenant_container_service.registry_repository_url_api) > 0 ? module.tenant_container_service.registry_repository_url_api[0].repository_url : ""
-}
-
-output "registry_repository_url_celery" {
-  description = "The respository URL for the Celery registry"
-  value       = length(module.tenant_container_service.registry_repository_url_celery) > 0 ? module.tenant_container_service.registry_repository_url_celery[0].repository_url : ""
-}
-
-output "registry_repository_url_frontend" {
-  description = "The respository URL for the Frontend registry"
-  value       = length(module.tenant_container_service.registry_repository_url_frontend) > 0 ? module.tenant_container_service.registry_repository_url_frontend[0].repository_url : ""
 }
 
 output "sns_registration_topic_arn" {
@@ -280,5 +275,20 @@ output "dax_cluster_address" {
 output "dax_configuration_endpoint" {
   description = "The configuration endpoint for this DAX cluster, consisting of a DNS name and a port number"
   value       = module.tenant_dax_cluster.dax_configuration_endpoint
+}
+
+output "noq_db_endpoint" {
+  description = "The endpoint of the noq db cluster"
+  value       = module.noq_db_cluster.rds_endpoint
+}
+
+output "noq_db_port" {
+  description = "The port number of the noq db cluster"
+  value       = module.noq_db_cluster.rds_port
+}
+
+output "noq_db_database_name" {
+  description = "The default database of the noq db cluster"
+  value       = module.noq_db_cluster.default_database
 }
 

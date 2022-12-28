@@ -6,7 +6,7 @@
     <envs>
       <env name="PYTHONUNBUFFERED" value="1" />
       <env name="CONFIG_LOCATION" value="configs/development_account/saas_development.yaml" />
-      <env name="AWS_PROFILE" value="development_admin" />
+      <env name="AWS_PROFILE" value="development/NoqSaasRoleLocalDev" />
       <env name="AWS_DEFAULT_REGION" value="us-west-2" />
     </envs>
     <option name="SDK_HOME" value="" />

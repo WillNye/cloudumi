@@ -19,12 +19,14 @@ from tenacity import Retrying, stop_after_attempt, wait_fixed
 
 from common.config import config
 from common.config.config import get_dynamo_table_name
+from common.config.globals import REDACTED_STR, ClusterConfig
 from common.exceptions.exceptions import (
     DataNotRetrievable,
     NoExistingRequest,
     NoMatchingRequest,
     PendingRequestAlreadyExists,
 )
+from common.iambic_request.utils import IAMBIC_REPOS_BASE_KEY
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
@@ -63,6 +65,7 @@ POSSIBLE_STATUSES = [
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger("cloudumi")
+cluster_config = ClusterConfig()
 
 
 def filter_config_secrets(d):
@@ -71,13 +74,13 @@ def filter_config_secrets(d):
             if isinstance(v, dict):
                 d[k] = filter_config_secrets(v)
             if isinstance(v, str):
-                d[k] = "********"
+                d[k] = REDACTED_STR
     elif isinstance(d, list):
         for v in d:
             if isinstance(v, dict) or isinstance(v, list):
                 v = filter_config_secrets(v)
     elif isinstance(d, str):
-        d = "********"
+        d = REDACTED_STR
     return d
 
 
@@ -87,7 +90,7 @@ def decode_config_secrets(original, new):
             if isinstance(v, dict) and original.get(k):
                 new[k] = decode_config_secrets(original[k], v)
             if isinstance(v, str) and original.get(k):
-                if v == "********":
+                if v == REDACTED_STR:
                     new[k] = original[k]
     elif isinstance(new, list):
         for i in range(len(new)):
@@ -96,7 +99,7 @@ def decode_config_secrets(original, new):
             ):
                 new[i] = decode_config_secrets(original[i], new[i])
     elif isinstance(new, str):
-        if new == "********":
+        if new == REDACTED_STR:
             new = original
     return new
 
@@ -243,14 +246,20 @@ class BaseDynamoHandler:
             overwrite_by_pkeys = []
         with table.batch_writer(overwrite_by_pkeys=overwrite_by_pkeys) as batch:
             for item in data:
-                for attempt in Retrying(stop=stop_after_attempt(3), wait=wait_fixed(2)):
+                for attempt in Retrying(
+                    stop=stop_after_attempt(cluster_config.dynamo_retry_count),
+                    wait=wait_fixed(cluster_config.dynamo_wait_time_between_retries),
+                ):
                     with attempt:
                         batch.put_item(Item=self._data_to_dynamo_replace(item))
 
     def parallel_delete_table_entries(self, table, keys):
         with table.batch_writer() as batch:
             for key in keys:
-                for attempt in Retrying(stop=stop_after_attempt(3), wait=wait_fixed(2)):
+                for attempt in Retrying(
+                    stop=stop_after_attempt(cluster_config.dynamo_retry_count),
+                    wait=wait_fixed(cluster_config.dynamo_wait_time_between_retries),
+                ):
                     with attempt:
                         batch.delete_item(Key=self._data_to_dynamo_replace(key))
 
@@ -1362,6 +1371,12 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         secrets = c_dict.get("secrets", {})
         if secrets and filter_secrets:
             filter_config_secrets(secrets)
+
+        iambic_repos = c_dict.get(IAMBIC_REPOS_BASE_KEY, [])
+        if iambic_repos and filter_secrets:
+            for idx in range(len(iambic_repos)):
+                iambic_repos[idx]["access_token"] = REDACTED_STR
+
         # TODO: Clean up secrets
         if return_format == "dict":
             return c_dict
@@ -1438,8 +1453,9 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
         if not original_config_d:
             original_config_d = {}
         # TODO: Update all of the secrets within the configuration so it's not ****
-        if "secrets" in new_config_d:
+        if "secrets" in new_config_d or IAMBIC_REPOS_BASE_KEY in new_config_d:
             decode_config_secrets(original_config_d, new_config_d)
+
         new_config_writable = {
             "tenant": tenant,
             "id": "master",

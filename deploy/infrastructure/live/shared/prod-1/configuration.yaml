@@ -54,9 +54,9 @@ _global_:
   logging:
     file: ~/logs/cloudumi/cloudumi_tornado.log
   web:
-    path: "/frontend/build"
+    path: "/app/frontend/dist"
   docs:
-    path: "/api/docs"
+    path: "/app/api/docs"
   s3_cache_bucket: cloudumi-cache.noq-dev-shared-prod-1
   development: false
   environment: prod
@@ -103,7 +103,13 @@ _global_:
         global:
           - host: master.noq-dev-shared-prod-1.ph1bdh.usw2.cache.amazonaws.com
             port: 6379
+  noq_db:
+    endpoint: noq-dev-shared-prod-1.cluster-cxpteqvues57.us-west-2.rds.amazonaws.com
+    port: 5432
+    database: noq
   sentry:
     dsn: https://50b9f954977449db94bf4d1a8b9a8084@o1134078.ingest.sentry.io/6625264
   google_analytics:
     tracking_id: G-P5K1SQF3P6
+  tenant_storage:
+    base_path: /data/tenant_data/

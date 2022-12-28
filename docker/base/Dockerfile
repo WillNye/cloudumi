@@ -13,6 +13,7 @@ RUN bash -c 'echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main
 RUN bash -c 'sudo apt-get update && sudo apt-get install logstash'
 RUN systemctl enable logstash
 RUN systemctl start logstash
+ENV PKG_CONFIG_PATH=/usr/local/lib/x86_64-linux-gnu/pkgconfig:/usr/local/lib/pkgconfig:/usr/local/share/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig
 
 # Metricsbeat (System metrics) for AMD64
 # RUN curl -L -O https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.14.2-amd64.deb

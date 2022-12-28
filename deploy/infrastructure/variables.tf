@@ -180,6 +180,12 @@ variable "global_tenant_data_account_id" {
   type        = string
 }
 
+variable "global_tenant_data_role_name" {
+  description = "Role name of the AWS Tenant Data Account"
+  type        = string
+  default     = "NoqServiceConnRole"
+}
+
 variable "legal_docs_bucket_name" {
   description = "The S3 bucket containing templates for our legal documentation"
   type        = string
@@ -226,4 +232,33 @@ variable "landing_page_domains" {
   description = "The domain names that should be used for common endpoints, like tenant_registration. This should NOT be set for non-noq (self-hosted) deployments"
   type        = list(string)
   default     = []
+}
+
+variable "load_balancer_internal" {
+  description = "If set to true, the load balancer will be internal"
+  type        = bool
+  default     = false
+}
+
+variable "noq_db_username" {
+  type = string
+}
+
+variable "noq_db_password" {
+  type = string
+}
+
+variable "noq_db_database_name" {
+  type        = string
+  description = "The name of the default db on the cluster."
+}
+
+variable "noq_db_instance_count" {
+  type    = number
+  default = 1
+}
+
+variable "noq_db_instance_type" {
+  type    = string
+  default = "db.t4g.medium"
 }

@@ -1,5 +1,5 @@
 extends:
-  - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:775726381634:secret:cyberdyne-prod-noq_secrets-CqbT3k
+  - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:775726381634:secret:cyberdyne-prod-noq_secrets-GyXrfZ
 _global_:
   landing_page_domains: []
   metrics:
@@ -54,9 +54,9 @@ _global_:
   logging:
     file: ~/logs/cloudumi/cloudumi_tornado.log
   web:
-    path: "/frontend/build"
+    path: "/app/frontend/dist"
   docs:
-    path: "/api/docs"
+    path: "/app/api/docs"
   s3_cache_bucket: cloudumi-cache.cyberdyne-noq-dev-cyberdyne-prod-1
   development: false
   environment: prod

@@ -17,7 +17,7 @@ service_task_definition_map = [
             {
                 "containerName": "cyberdyne-noq-dev-cyberdyne-prod-1-api",
                 "containerPort": 8092,
-                "targetGroupArn": "arn:aws:elasticloadbalancing:us-west-2:775726381634:targetgroup/tf-20221117003719890900000002/7692277e245eb876",
+                "targetGroupArn": "arn:aws:elasticloadbalancing:us-west-2:775726381634:targetgroup/tf-20221128011440444200000003/10c47575cc948cb9",
             },
         ],
     },
@@ -39,13 +39,13 @@ service_task_definition_map = [
 ]
 
 cluster_name = "cyberdyne-noq-dev-cyberdyne-prod-1"
-subnets = ["subnet-05836021a00835731", "subnet-0c3694776e1001937"]
-security_groups = ["sg-03b1052ecb91f6f1f"]
+subnets = ["subnet-00bee5863eeb40eea", "subnet-0add34c84af14e7da"]
+security_groups = ["sg-06e0c541b0088444a"]
 os.environ["AWS_PROFILE"] = "cyberdyne_demo_org/cyberdyne_admin"
 region = "us-west-2"
 account_id = "775726381634"
 kms_key_arn = (
-    "arn:aws:kms:us-west-2:775726381634:key/1c395f1c-3e48-447f-adfe-f9dc55f5c57e"
+    "arn:aws:kms:us-west-2:775726381634:key/e31eb2cb-6cb9-4edb-8467-fddf530f8a44"
 )
 noq_ecs_log_group_name = "cyberdyne-noq-dev-cyberdyne-prod-1"
 version = os.getenv("VERSION")

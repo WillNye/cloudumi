@@ -51,7 +51,7 @@ class ClusterShardingIndex(GlobalSecondaryIndex):
 class TenantDetails(GlobalNoqModel):
     class Meta:
         table_name = "tenant_details"  # This table is global across all clusters in an environment
-        region = config.region
+        region = config.get("_global_.accounts.tenant_data.region") or config.region
 
     name = UnicodeAttribute(hash_key=True)
     membership_tier = MembershipTierAttribute()

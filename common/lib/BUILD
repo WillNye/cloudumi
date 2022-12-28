@@ -8,7 +8,11 @@ INT_DEPS = [
 ]
 
 EXT_DEPS = [
+    requirement("aiofile"),
+    requirement("aiofiles"),
+    requirement("aiopath"),
     requirement("aiozipkin"),
+    requirement("async_lru"),
     requirement("asgiref"),
     requirement("bcrypt"),
     requirement("blinker"),
@@ -22,6 +26,7 @@ EXT_DEPS = [
     requirement("ed25519"),
     requirement("furl"),
     requirement("gitpython"),
+    requirement("PyGithub"),
     requirement("google-api-python-client"),
     requirement("Jinja2"),
     requirement("joblib"),
@@ -38,6 +43,7 @@ EXT_DEPS = [
     requirement("pyjwt"),
     requirement("pynamodax"),
     requirement("pytz"),
+    requirement("python3-saml"),
     requirement("redis"),
     requirement("requests"),
     requirement("retrying"),
@@ -51,8 +57,12 @@ EXT_DEPS = [
 ]
 
 REQUIRES = [
+    "aiofile",
+    "aiofiles",
+    "aiopath",
     "aiozipkin",
     "asgiref",
+    "async_lru",
     "bcrypt",
     "blinker",
     "boto",
@@ -78,7 +88,9 @@ REQUIRES = [
     "password_strength",
     "policy_sentry",
     "pydantic",
+    "PyGithub",
     "pyjwt",
+    "python3-saml",
     "pytz",
     "redis",
     "requests",

@@ -144,6 +144,7 @@ bazel-bin
 bazel-*
 
 frontend/.certs
+ui/.certs
 
 .env_github_action_secrets
 api/templates
@@ -154,3 +155,4 @@ api/templates
 cloudumi_tornado.log.*
 
 **/.tfsec/*
+/deploy/local/redis

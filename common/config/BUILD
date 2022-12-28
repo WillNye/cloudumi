@@ -23,6 +23,7 @@ filegroup(
         "logger.py",
         "models.py",
         "role_access.py",
+        "tenant_config.py"
     ),
     visibility = ["//visibility:public"],
 )

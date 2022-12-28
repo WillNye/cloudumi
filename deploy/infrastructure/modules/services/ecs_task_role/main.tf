@@ -25,6 +25,19 @@ resource "aws_iam_role" "ecs_task_role" {
       "Statement" : [
         {
           "Action" : [
+            "kms:Decrypt",
+            "kms:DescribeKey",
+            "kms:Encrypt",
+            "kms:GenerateDataKey",
+            "kms:GenerateDataKeyWithoutPlaintext",
+            "kms:ReEncryptFrom",
+            "kms:ReEncryptTo"
+          ],
+          "Effect" : "Allow",
+          "Resource" : "${var.bucket_encryption_key}"
+        },
+        {
+          "Action" : [
             "secretsmanager:describesecret",
             "secretsmanager:GetSecretValue",
             "secretsmanager:ListSecretVersionIds",

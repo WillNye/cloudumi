@@ -9,6 +9,7 @@ from typing import Any
 
 import jwt
 import pytz
+import sentry_sdk
 import tornado.httpclient
 from furl import furl
 from jwt.algorithms import ECAlgorithm, RSAAlgorithm
@@ -374,6 +375,31 @@ async def authenticate_user_by_oidc(request):
             )
         )
 
+        # Groups from the token are not always in the correct format. For JumpCloud,
+        # The format is a string that looks like valid JSON, but isn't. Example:
+        # '[Cool%2C+and+Stuff%7C%7C%7C%7E%21%40%24%40%23%24%25%24%40%25%26%24%25%26*%5E%29%28%26*_%2B_, group_with_underscores, All Users, Engineering Group, Other group with a sane name]'
+        if (
+            groups
+            and isinstance(groups, str)
+            and groups.startswith("[")
+            and groups.endswith("]")
+        ):
+            try:
+                groups = json.loads(groups)
+            except json.JSONDecodeError:
+                try:
+                    groups = groups[1:-1].split(", ")
+                except Exception as e:
+                    log.debug(
+                        {
+                            **log_data,
+                            "message": ("Unable to parse user's groups from id token"),
+                            "error": e,
+                            "user": email,
+                            "groups": groups,
+                        }
+                    )
+                    sentry_sdk.capture_exception()
         if (
             not groups
             and oidc_config.get("userinfo_endpoint")

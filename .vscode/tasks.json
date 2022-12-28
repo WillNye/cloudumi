@@ -27,7 +27,7 @@
       "label": "docker-run: debug",
       "dependsOn": ["docker-build"],
       "python": {
-        "file": "cloudumi_api/cloudumi_api/__main__.py"
+        "file": "/apps/api/__main__.py"
       }
     }
   ]

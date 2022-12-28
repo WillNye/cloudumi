@@ -5,7 +5,7 @@ import time
 import traceback
 import uuid
 from datetime import datetime, timedelta
-from typing import Any, Union
+from typing import Any, Dict, Optional, Union
 
 import pytz
 import redis
@@ -17,20 +17,26 @@ from tornado import httputil
 
 import common.lib.noq_json as json
 from common.config import config
+from common.config.tenant_config import TenantConfig
 from common.exceptions.exceptions import (
     InvalidCertificateException,
     MissingCertificateException,
     MissingConfigurationValue,
     NoGroupsException,
     NoUserException,
-    SilentException,
     WebAuthNError,
 )
 from common.lib.alb_auth import authenticate_user_by_alb_auth
 from common.lib.auth import AuthenticationError, is_tenant_admin
 from common.lib.aws.cached_resources.iam import get_user_active_tra_roles_by_tag
 from common.lib.dynamo import UserDynamoHandler
-from common.lib.jwt import generate_jwt_token, validate_and_return_jwt_token
+from common.lib.jwt import (
+    JwtAuthType,
+    generate_jwt_token,
+    generate_jwt_token_from_cognito,
+    validate_and_authenticate_jwt_token,
+    validate_and_return_jwt_token,
+)
 from common.lib.oidc import authenticate_user_by_oidc
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler
@@ -39,6 +45,7 @@ from common.lib.saml import authenticate_user_by_saml
 from common.lib.tenant.models import TenantDetails
 from common.lib.tracing import ConsoleMeTracer
 from common.lib.web import handle_generic_error_response
+from common.lib.workos import WorkOS
 from common.models import WebResponse
 
 log = config.get_logger()
@@ -98,7 +105,9 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
 
     def get_tenant(self):
         if config.get("_global_.development"):
-            x_forwarded_host = self.request.headers.get("X-Forwarded-Host", "")
+            x_forwarded_host = self.request.headers.get(
+                "X-Forwarded-Host"
+            )  # Adding default of localhost for development only
             if x_forwarded_host:
                 return x_forwarded_host.split(":")[0]
 
@@ -218,7 +227,7 @@ class BaseHandler(TornadoRequestHandler):
     """Default BaseHandler."""
 
     def log_exception(self, *args, **kwargs):
-        if args[0].__name__ == "SilentException":
+        if args[0].__name__ == "Finish":
             pass
         else:
             super(BaseHandler, self).log_exception(*args, **kwargs)
@@ -249,10 +258,13 @@ class BaseHandler(TornadoRequestHandler):
         self.kwargs = kwargs
         self.tracer = None
         self.responses = []
-        self.ctx: Union[None | RequestContext] = None
+        self.ctx: Union[None, RequestContext] = None
         super(BaseHandler, self).initialize()
 
     async def prepare(self) -> None:
+        return await self.authorization_flow()
+
+    async def check_tenant(self):
         tenant = self.get_tenant_name()
         if not config.is_tenant_configured(tenant):
             function: str = (
@@ -274,7 +286,7 @@ class BaseHandler(TornadoRequestHandler):
                 }
             )
             await self.finish()
-            raise SilentException(log_data["message"])
+            raise tornado.web.Finish(log_data["message"])
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
@@ -291,17 +303,6 @@ class BaseHandler(TornadoRequestHandler):
             )
         self.request_uuid = str(uuid.uuid4())
         stats.timer("base_handler.incoming_request")
-        return await self.authorization_flow()
-
-    def write(self, chunk: Union[str, bytes, dict]) -> None:
-        # tenant = self.get_tenant_name()
-        # if config.get_tenant_specific_key(
-        #     "_security_risk_full_debugging.enabled", tenant
-        # ):
-        #     if not hasattr(self, "responses"):
-        #         self.responses = []
-        #     self.responses.append(chunk)
-        super(BaseHandler, self).write(chunk)
 
     async def configure_tracing(self):
         tenant = self.get_tenant_name()
@@ -366,13 +367,19 @@ class BaseHandler(TornadoRequestHandler):
         return False
 
     async def authorization_flow(
-        self, user: str = None, console_only: bool = True, refresh_cache: bool = False
+        self,
+        user: str = None,
+        console_only: bool = True,
+        refresh_cache: bool = False,
+        jwt_tokens: Optional[Dict[str, str]] = None,
+        jwt_auth_type: JwtAuthType = None,
     ) -> None:
         """Perform high level authorization flow."""
         # TODO: Prevent any sites being created with a subdomain that is a yaml keyword, ie: false, no, yes, true, etc
         # TODO: Return Authentication prompt regardless of subdomain
 
         tenant = self.get_tenant_name()
+        tenant_config = TenantConfig(tenant)
         self.eula_signed = None
         self.mfa_setup = None
         self.eligible_roles = []
@@ -394,6 +401,7 @@ class BaseHandler(TornadoRequestHandler):
         refresh_cache = (
             self.request.arguments.get("refresh_cache", [False])[0] or refresh_cache
         )
+
         attempt_sso_authn = await self.attempt_sso_authn(tenant)
 
         refreshed_user_roles_from_cache = False
@@ -453,6 +461,36 @@ class BaseHandler(TornadoRequestHandler):
                 "_development_user_override", tenant
             )
 
+        if not self.user and jwt_tokens:
+            # Cognito JWT Validation / Authentication Flow
+            tenant = self.get_tenant_name()
+
+            verified_claims = await validate_and_authenticate_jwt_token(
+                jwt_tokens, tenant, JwtAuthType.COGNITO
+            )
+            if verified_claims:
+                encoded_cookie = await generate_jwt_token_from_cognito(
+                    verified_claims, tenant
+                )
+
+                self.set_cookie(
+                    self.get_noq_auth_cookie_key(),
+                    encoded_cookie,
+                    expires=verified_claims.get("exp"),
+                    secure=config.get_tenant_specific_key(
+                        "auth.cookie.secure", tenant, True
+                    ),
+                    httponly=config.get_tenant_specific_key(
+                        "auth.cookie.httponly", tenant, True
+                    ),
+                    samesite=config.get_tenant_specific_key(
+                        "auth.cookie.samesite", tenant, True
+                    ),
+                )
+
+                self.user = verified_claims.get("email")
+                self.groups = verified_claims.get("cognito:groups", [])
+
         if not self.user:
             # Authenticate user by API Key
             if config.get_tenant_specific_key(
@@ -469,6 +507,18 @@ class BaseHandler(TornadoRequestHandler):
                     self.user = await ddb.verify_api_key(api_key, api_user, tenant)
 
         if not self.user:
+            if tenant_config.auth_get_user_by_workos and attempt_sso_authn:
+                workos = WorkOS(tenant)
+                res = await workos.authenticate_user_by_workos(self)
+                if not res:
+                    raise tornado.web.Finish(
+                        "Unable to authenticate the user by WorkOS OIDC. "
+                        "Redirecting to authentication endpoint"
+                    )
+                elif isinstance(res, dict):
+                    self.user = res.get("user")
+                    self.groups = res.get("groups")
+        if not self.user:
             # SAML flow. If user has a JWT signed by Noq, and SAML is enabled in configuration, user will go
             # through this flow.
 
@@ -482,7 +532,7 @@ class BaseHandler(TornadoRequestHandler):
                         self.request.uri != "/saml/acs"
                         and not self.request.uri.startswith("/auth?")
                     ):
-                        raise SilentException(
+                        raise tornado.web.Finish(
                             "Unable to authenticate the user by SAML. "
                             "Redirecting to authentication endpoint"
                         )
@@ -495,7 +545,7 @@ class BaseHandler(TornadoRequestHandler):
             ):
                 res = await authenticate_user_by_oidc(self)
                 if not res:
-                    raise SilentException(
+                    raise tornado.web.Finish(
                         "Unable to authenticate the user by OIDC. "
                         "Redirecting to authentication endpoint"
                     )
@@ -532,7 +582,7 @@ class BaseHandler(TornadoRequestHandler):
                     }
                 )
                 await self.finish()
-                raise SilentException(
+                raise tornado.web.Finish(
                     "Redirecting user to authenticate by username/password."
                 )
 
@@ -656,7 +706,7 @@ class BaseHandler(TornadoRequestHandler):
         if not self.get_cookie(self.get_noq_auth_cookie_key()):
             await self.set_jwt_cookie(tenant)
 
-        if self.tracer:
+        if hasattr(self, "tracer") and self.tracer:
             await self.tracer.set_additional_tags({"USER": self.user})
 
         self.is_admin = is_tenant_admin(self.user, self.groups, tenant)
@@ -834,6 +884,27 @@ class BaseHandler(TornadoRequestHandler):
             ),
         )
 
+    async def fte_check(self):
+        if (
+            config.get_tenant_specific_key(
+                "policy_editor.disallow_contractors", self.ctx.tenant, True
+            )
+            and self.contractor
+        ):
+            if self.user not in config.get_tenant_specific_key(
+                "groups.can_bypass_contractor_restrictions",
+                self.ctx.tenant,
+                [],
+            ):
+                self.set_status(403)
+                self.write(
+                    {
+                        "code": "403",
+                        "message": "Only Full-Time Employees are allowed access to make this request.",
+                    }
+                )
+                raise tornado.web.Finish()
+
     @classmethod
     def get_noq_auth_cookie_key(cls):
         attr_name = "noq_auth_cookie_key"
@@ -917,7 +988,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 }
             )
             await self.finish()
-            raise SilentException(log_data["message"])
+            raise tornado.web.Finish(log_data["message"])
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
@@ -1079,7 +1150,7 @@ class AuthenticatedStaticFileHandler(tornado.web.StaticFileHandler, BaseHandler)
         self.kwargs = kwargs
         self.tracer = None
         self.responses = []
-        self.ctx: Union[None | RequestContext] = None
+        self.ctx: Union[None, RequestContext] = None
         super(AuthenticatedStaticFileHandler, self).initialize(**kwargs)
 
     async def prepare(self) -> None:
@@ -1094,10 +1165,19 @@ class BaseAdminHandler(BaseHandler):
         self.set_header("Content-Type", "application/json")
 
     async def authorization_flow(
-        self, user: str = None, console_only: bool = True, refresh_cache: bool = False
+        self,
+        user: str = None,
+        console_only: bool = True,
+        refresh_cache: bool = False,
+        jwt_tokens: Optional[Dict[str, str]] = None,
+        jwt_auth_type: JwtAuthType = None,
     ) -> None:
         await super(BaseAdminHandler, self).authorization_flow(
-            user, console_only, refresh_cache
+            user,
+            console_only,
+            refresh_cache,
+            jwt_tokens,
+            jwt_auth_type,
         )
 
         if not getattr(self.ctx, "tenant") or not self.is_admin:

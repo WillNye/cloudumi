@@ -24,7 +24,7 @@ class SamlHandler(BaseHandler):
 
     async def post(self, endpoint):
         tenant = self.get_tenant_name()
-        req = await prepare_tornado_request_for_saml(self.request)
+        req = await prepare_tornado_request_for_saml(self.request, tenant)
         auth = await init_saml_auth(req, tenant)
 
         if "sso" in endpoint:
@@ -62,8 +62,13 @@ class SamlHandler(BaseHandler):
                         "jwt.expiration_minutes", tenant, 1200
                     )
                 )
+
                 encoded_cookie = await generate_jwt_token(
-                    email, groups, tenant, exp=expiration
+                    email,
+                    groups,
+                    tenant,
+                    roles=[],
+                    exp=expiration,
                 )
                 self.set_cookie(
                     config.get("_global_.auth.cookie.name", "noq_auth"),

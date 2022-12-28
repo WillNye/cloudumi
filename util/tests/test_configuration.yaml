@@ -8,8 +8,10 @@ _global_:
   environment: test
   deployment:
     cluster_id: test
+  tenant_storage:
+    base_path: /tmp/tenant_data/
   tornado:
-    debug: false
+    debug: true
     port: 8081
     xsrf: false
   celery:
@@ -19,6 +21,14 @@ _global_:
       data_folder_in: .pytest_cache/celery_data_folder_in
       data_folder_out: .pytest_cache/celery_data_folder_out
       data_folder_processed: .pytest_cache/celery_data_folder_processed
+  secrets:
+    postgresql:
+      username: postgres
+      password: local_dev
+  noq_db:
+    endpoint: "localhost"
+    port: 5432
+    database: "noq"
 
 site_configs:
   example_com:
@@ -112,7 +122,6 @@ site_configs:
         us-west-2: null
         eu-west-1: null
       port: null
-
     dynamic_config:
       group_mapping:
         someuser@example.com:

@@ -12,14 +12,14 @@ FROM tiangolo/node-frontend as build-stage
 #
 #RUN npm run build:prod
 
-FROM nginx:1.15
+FROM nginx:1.22.1
 
 WORKDIR /apps/frontend
 # Install Node, Yarn, and their dependencies
 RUN apt-get clean
 RUN apt-get update
 RUN apt-get install curl gcc g++ make -y
-RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
+RUN curl -sL https://deb.nodesource.com/setup_18.x | bash -
 RUN apt-get update
 RUN apt-get install nodejs build-essential -y
 RUN npm install yarn -g
