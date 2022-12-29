@@ -17,7 +17,7 @@ const comletePasswordSchema = Yup.object().shape({
 });
 
 export const CompleteNewPassword: FC = () => {
-  const { completeNewPassword, user } = useAuth();
+  const { user } = useAuth();
 
   const {
     register,
@@ -36,12 +36,9 @@ export const CompleteNewPassword: FC = () => {
 
   const passwordValue = watch('newPassword');
 
-  const onSubmit = useCallback(
-    async ({ newPassword }) => {
-      await completeNewPassword(newPassword);
-    },
-    [completeNewPassword]
-  );
+  const onSubmit = useCallback(async ({ newPassword }) => {
+    // TODO: Setup new password
+  }, []);
 
   if (user?.challengeName !== ChallengeName.NEW_PASSWORD_REQUIRED) {
     return <Navigate to="/" />;
