@@ -45,7 +45,7 @@ export const Input: FC<InputProps> = forwardRef(
       autoFocus,
       disabled,
       value,
-      size = 'medium',
+      size = 'small',
       onFocus,
       ...rest
     },

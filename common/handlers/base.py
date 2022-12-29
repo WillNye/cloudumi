@@ -291,31 +291,6 @@ class BaseHandler(TornadoRequestHandler):
                 }
             )
             raise tornado.web.Finish()
-
-        return await self.authorization_flow()
-
-    async def check_tenant(self):
-        tenant = self.get_tenant_name()
-        if not config.is_tenant_configured(tenant):
-            function: str = (
-                f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
-            )
-            log_data = {
-                "function": function,
-                "message": "Invalid tenant specified. Redirecting to main page",
-                "tenant": tenant,
-            }
-            log.debug(log_data)
-            self.set_status(406)
-            self.write(
-                {
-                    "type": "redirect",
-                    "redirect_url": "https://noq.dev",
-                    "reason": "unauthenticated",
-                    "message": "Invalid tenant specified",
-                }
-            )
-            raise tornado.web.Finish()
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
@@ -332,6 +307,7 @@ class BaseHandler(TornadoRequestHandler):
             )
         self.request_uuid = str(uuid.uuid4())
         stats.timer("base_handler.incoming_request")
+        return await self.authorization_flow()
 
     async def configure_tracing(self):
         tenant = self.get_tenant_name()
