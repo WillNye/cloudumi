@@ -795,7 +795,7 @@ class BaseHandler(TornadoRequestHandler):
                 self.set_status(403)
                 raise tornado.web.Finish()
 
-        if self.mfa_setup and tenant_config.require_mfa:
+        elif self.mfa_setup and tenant_config.require_mfa:
             # If the EULA hasn't been signed the user cannot access any AWS information.
             self.groups = []
             self.eligible_roles = []
