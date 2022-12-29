@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Auth } from 'aws-amplify';
+import { useState } from 'react';
+import { Button } from 'shared/elements/Button';
+import { Block } from 'shared/layout/Block';
+import { Input } from 'shared/form/Input';
 
 export function PasswordReset() {
   const [email, setEmail] = useState('');
@@ -35,15 +37,15 @@ export function PasswordReset() {
       {error && <p>{error.message}</p>}
       {!token && (
         <>
-          <label>
-            Email:
-            <input
+          <Block label="Email">
+            <Input
               type="email"
               value={email}
+              placeholder="Enter Email"
               onChange={event => setEmail(event.target.value)}
             />
-          </label>
-          <button type="submit">Send Password Reset link</button>
+          </Block>
+          <Button type="submit">Send Password Reset link</Button>
         </>
       )}
       {token && (

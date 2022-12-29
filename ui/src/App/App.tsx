@@ -7,14 +7,17 @@ const Login = lazy(() => import('./Login'));
 const AccountSetup = lazy(() => import('./AccountSetup'));
 const NotFound = lazy(() => import('./NotFound'));
 const Access = lazy(() => import('./Access'));
+const Dashboard = lazy(() => import('./Dashboard'));
 
 export const App: FC = () => (
   <Suspense fallback={<div>Loading...</div>}>
     <Routes>
       {/** Wrap all Route under ProtectedRoutes element */}
       <Route path="/" element={<AuthRoute />}>
-        <Route path="/account/*" element={<AccountSetup />} />
-        <Route path="/404" element={<NotFound />} />
+        <Route path="/" element={<Dashboard />}>
+          <Route path="/account/*" element={<AccountSetup />} />
+          <Route path="/404" element={<NotFound />} />
+        </Route>
       </Route>
 
       {/** Wrap all Route under PublicRoutes element */}

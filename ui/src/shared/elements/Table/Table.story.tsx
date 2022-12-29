@@ -177,6 +177,7 @@ export const Filter = () => {
       striped
       border="basic"
       spacing="spaced"
+      selectable
     />
   );
 };

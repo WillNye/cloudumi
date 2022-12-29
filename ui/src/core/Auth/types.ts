@@ -1,11 +1,7 @@
-import { CognitoUser } from '@aws-amplify/auth';
-
-export interface User extends CognitoUser {
-  authenticationFlowType: string;
-  preferredMFA: string;
-  attributes: {
-    email: string;
-    email_verified: boolean;
-    sub: string;
-  };
+export interface User {
+  user: string;
+  groups: string[];
+  needs_mfa: boolean;
+  eula_signed: boolean;
+  password_needs_reset: boolean;
 }

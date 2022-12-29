@@ -10,7 +10,6 @@ import 'core/utils/tracking';
 import { theme } from 'shared/utils/DesignTokens';
 import { ErrorBoundary } from 'shared/utils/ErrorBoundary';
 import { Auth } from 'core/Auth';
-import { ApolloProvider } from 'core/Apollo';
 import { App } from './App';
 import favicon from './assets/brand/favicon.ico';
 

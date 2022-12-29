@@ -15,12 +15,12 @@ import { Input } from 'shared/form/Input';
 import { Block } from 'shared/layout/Block';
 
 const credentialsSchema = Yup.object().shape({
-  username: Yup.string().email('Invalid email').required('Required'),
+  email: Yup.string().email('Invalid email').required('Required'),
   password: Yup.string().required('Required')
 });
 
 export const Credentials: FC = () => {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
 
   const {
     register,
@@ -31,7 +31,7 @@ export const Credentials: FC = () => {
     reValidateMode: 'onChange',
     resolver: yupResolver(credentialsSchema),
     defaultValues: {
-      username: '',
+      email: '',
       password: ''
     }
   });
@@ -41,8 +41,12 @@ export const Credentials: FC = () => {
     // if the login needs 2fa, change password, etc and then
     // navigate the user to that route. This should NOT be in
     // this component since its a global concern.
-    const res = await login(data);
-    console.log(res.data, '-------------');
+    try {
+      const res = await login(data);
+      setUser(res.data.data);
+    } catch (error) {
+      // handle login errors
+    }
   }, []);
 
   const onSubmitSSOSignIn = useCallback(async () => {
@@ -68,18 +72,18 @@ export const Credentials: FC = () => {
 
             {/* TODO (@kayizzi)) We cannot assume the username is an e-mail. */}
             {/* Please remove regex requirement for email */}
-            <Block label="Email">
+            <Block label="Email" disableLabelPadding>
               <Input
                 fullWidth
                 size="small"
                 autoFocus
                 placeholder="Enter Email"
                 type="email"
-                {...register('username')}
+                {...register('email')}
               />
             </Block>
 
-            <Block label="Password">
+            <Block label="Password" disableLabelPadding>
               <Input
                 fullWidth
                 size="small"

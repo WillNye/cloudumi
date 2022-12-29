@@ -1,14 +1,14 @@
 @import url('./assets/fonts/inter/inter.css');
 @import url('./assets/fonts/mono/mono.css');
 
-:root {
+body {
   font-size: 16px;
   line-height: 24px;
   font-weight: 400;
 
   color-scheme: dark;
   color: white;
-  background-color: #1c1d22;
+  background-color: var(--body-background);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;

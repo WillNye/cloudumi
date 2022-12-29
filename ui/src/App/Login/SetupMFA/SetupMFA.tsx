@@ -1,5 +1,4 @@
 import { useAuth } from 'core/Auth';
-import { AuthenticationFlowType } from 'core/Auth/constants';
 import { FC, useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Navigate } from 'react-router-dom';
@@ -8,6 +7,7 @@ import { QRCode } from 'shared/elements/QRCode';
 import { AuthCode } from 'shared/form/AuthCode';
 
 import css from './SetupMFA.module.css';
+import { setupMFA } from 'core/API/auth';
 
 export const SetupMFA: FC = () => {
   const [totpCode, setTotpCode] = useState<string>('');
@@ -18,7 +18,14 @@ export const SetupMFA: FC = () => {
   // TODO: Hookup backend
   const getTOTPCode = useCallback(async () => {
     // TODO: Get OTP MFA code
-    setTotpCode('');
+    try {
+      const res = await setupMFA({
+        command: 'setup'
+      });
+      setTotpCode(res.data.data.totp_uri);
+    } catch (error) {
+      console.log(error);
+    }
   }, []);
 
   useMount(() => {
@@ -26,13 +33,17 @@ export const SetupMFA: FC = () => {
   });
 
   const verifyTOTPCode = useCallback(async (val: string) => {
-    // TODO verify MFA user TOTP code
+    try {
+      await setupMFA({
+        command: 'verify',
+        mfa_token: val
+      });
+    } catch (error) {
+      console.log(error);
+    }
   }, []);
 
-  if (
-    user?.authenticationFlowType !== AuthenticationFlowType.USER_SRP_AUTH ||
-    user?.preferredMFA !== 'NOMFA'
-  ) {
+  if (!user?.needs_mfa) {
     return <Navigate to="/" />;
   }
 

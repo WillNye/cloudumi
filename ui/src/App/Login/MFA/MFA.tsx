@@ -1,6 +1,4 @@
 import { useAuth } from 'core/Auth';
-import { ChallengeName } from 'core/Auth/constants';
-import { getEnterLeaveForKind } from 'graphql';
 import { FC, useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Navigate } from 'react-router-dom';
@@ -14,7 +12,7 @@ export const MFA: FC = () => {
     // TODO: verify user TOTP code
   }, []);
 
-  if (user?.challengeName !== ChallengeName.SOFTWARE_TOKEN_MFA) {
+  if (user?.needs_mfa) {
     return <Navigate to="/" />;
   }
 

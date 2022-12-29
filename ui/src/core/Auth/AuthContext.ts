@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { Dispatch, createContext, useContext } from 'react';
 import { User } from './types';
 
 export interface AuthLoginInputs {
@@ -13,10 +13,12 @@ export interface AuthResetPasswordInputs {
 
 export interface AuthContextProps {
   user: User | null;
+  setUser: Dispatch<User | null>;
 }
 
 export const AuthContext = createContext<AuthContextProps>({
-  user: null
+  user: null,
+  setUser: () => undefined
 });
 
 export const { Provider: AuthProvider, Consumer: AuthConsumer } = AuthContext;
