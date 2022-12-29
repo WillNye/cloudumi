@@ -387,6 +387,8 @@ class BaseHandler(TornadoRequestHandler):
         tenant_config = TenantConfig(tenant)
         self.eula_signed = None
         self.mfa_setup = None
+        self.password_needs_reset = None
+        self.sso_user = None
         self.eligible_roles = []
         self.eligible_accounts = []
         self.request_uuid = str(uuid.uuid4())
@@ -457,6 +459,8 @@ class BaseHandler(TornadoRequestHandler):
                 self.auth_cookie_expiration = res.get("exp")
                 self.eula_signed = res.get("eula_signed", False)
                 self.mfa_setup = res.get("mfa_setup", None)
+                self.password_needs_reset = res.get("password_needs_reset", False)
+                self.sso_user = res.get("sso_user", False)
 
         if self.eula_signed is None:
             try:
@@ -771,6 +775,26 @@ class BaseHandler(TornadoRequestHandler):
             },
         )
 
+        if self.password_needs_reset:
+            # If the EULA hasn't been signed the user cannot access any AWS information.
+            self.groups = []
+            self.eligible_roles = []
+            self.eligible_accounts = []
+
+            if not self.request.uri.endswith(
+                "/api/v4/users/password_reset"
+            ) and not isinstance(self, AuthenticatedStaticFileHandler):
+                self.write(
+                    {
+                        "type": "redirect",
+                        "redirect_url": "/reset_password",
+                        "reason": "unauthenticated",
+                        "message": "Password needs to be reset",
+                    }
+                )
+                self.set_status(403)
+                raise tornado.web.Finish()
+
         if self.mfa_setup and tenant_config.require_mfa:
             # If the EULA hasn't been signed the user cannot access any AWS information.
             self.groups = []
@@ -1012,6 +1036,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
         self.responses = []
         self.request_uuid = str(uuid.uuid4())
         self.auth_cookie_expiration = 0
+        self.password_needs_reset = False
         tenant = self.get_tenant_name()
         self.ctx = RequestContext(
             tenant=tenant,
@@ -1095,6 +1120,8 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 self.eligible_roles += await get_user_active_tra_roles_by_tag(
                     tenant, self.user
                 )
+                self.password_needs_reset = res.get("password_needs_reset")
+                self.sso_user = res.get("sso_user")
                 self.eligible_roles = list(set(self.eligible_roles))
                 self.requester = {"type": "user", "email": self.user}
                 self.current_cert_age = int(time.time()) - res.get("iat")

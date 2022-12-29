@@ -110,6 +110,14 @@ class User(SoftDeleteMixin, Base):
         password_hash = hashlib.sha512((password + salt).encode("utf-8")).hexdigest()
         self.password_hash = f"{salt}${password_hash}"
 
+    async def user_initiated_password_reset(self, password):
+        """Set the user's password and reset the password reset token."""
+        await self.set_password(password)
+        self.password_reset_token = None
+        self.password_reset_token_expiration = None
+        self.password_needs_reset = False
+        await self.write()
+
     async def check_password(self, password):
         """Check if the given password matches the stored password hash."""
         salt, password_hash = self.password_hash.split("$")

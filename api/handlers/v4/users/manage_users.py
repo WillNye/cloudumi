@@ -7,8 +7,12 @@ import tornado.gen
 import tornado.web
 from email_validator import validate_email
 
+from common.config.tenant_config import TenantConfig
+from common.group_memberships.models import GroupMembership
 from common.handlers.base import BaseAdminHandler, BaseHandler, TornadoRequestHandler
+from common.lib.jwt import generate_jwt_token
 from common.lib.password import check_password_strength, generate_random_password
+from common.lib.tenant.models import TenantDetails
 from common.lib.web import handle_generic_error_response
 from common.models import WebResponse
 from common.users.models import User
@@ -160,6 +164,128 @@ class ManageUsersHandler(BaseAdminHandler):
                 success="success",
                 status_code=200,
                 data={"message": "Successfully deleted user"},
+            ).dict(exclude_unset=True, exclude_none=True)
+        )
+
+
+class PasswordResetSelfServiceHandler(BaseHandler):
+    async def post(self):
+        log_data = {
+            "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
+            "message": "Resetting User Password",
+        }
+
+        data = tornado.escape.json_decode(self.request.body)
+        current_password = data.get("current_password")
+        new_password = data.get("new_password")
+        mfa_token = data.get("mfa_token")
+        tenant = self.get_tenant_name()
+        tenant_config = TenantConfig(tenant)
+
+        db_user = await User.get_by_username(tenant, self.user)
+        if not db_user:
+            db_user = await User.get_by_email(tenant, self.user)
+
+        if db_user.mfa_enabled and not mfa_token:
+            self.set_status(401)
+            self.write(
+                WebResponse(
+                    success="error",
+                    status_code=403,
+                    data={"message": "MFA is not verified"},
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            raise tornado.web.Finish()
+
+        if not current_password or not new_password:
+            self.set_status(400)
+            self.write(
+                WebResponse(
+                    success="error",
+                    status_code=400,
+                    data={"message": "Current password is required"},
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            raise tornado.web.Finish()
+
+        if not db_user or not await db_user.check_password(current_password):
+            self.set_status(401)
+            self.write(
+                WebResponse(
+                    success="error",
+                    status_code=403,
+                    data={"message": "Invalid password"},
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            raise tornado.web.Finish()
+
+        if db_user.mfa_enabled:
+            if not await db_user.check_mfa(mfa_token):
+                self.set_status(401)
+                self.write(
+                    WebResponse(
+                        success="error",
+                        status_code=403,
+                        data={"message": "Invalid MFA Token. Please try again."},
+                    ).dict(exclude_unset=True, exclude_none=True)
+                )
+                raise tornado.web.Finish()
+
+        password_strength_errors = await check_password_strength(
+            new_password, self.ctx.tenant
+        )
+        if password_strength_errors:
+            await handle_generic_error_response(
+                self,
+                password_strength_errors["message"],
+                password_strength_errors["errors"],
+                403,
+                "weak_password",
+                log_data,
+            )
+            raise tornado.web.Finish()
+
+        await db_user.user_initiated_password_reset(new_password)
+        # Refresh DB User and set cookie
+        db_user = await User.get_by_username(tenant, self.user)
+        if not db_user:
+            db_user = await User.get_by_email(tenant, self.user)
+        groups = [
+            group.name for group in await GroupMembership.get_groups_by_user(db_user)
+        ]
+        tenant_details = await TenantDetails.get(tenant)
+        eula_signed = bool(tenant_details.eula_info)
+        needs_mfa = not db_user.mfa_enabled
+        encoded_cookie = await generate_jwt_token(
+            self.user,
+            self.groups,
+            tenant,
+            mfa_setup=needs_mfa,
+            eula_signed=eula_signed,
+            password_needs_reset=db_user.password_needs_reset,
+        )
+
+        self.set_cookie(
+            tenant_config.auth_cookie_name,
+            encoded_cookie,
+            expires=tenant_config.auth_jwt_expiration_datetime,
+            secure=tenant_config.auth_use_secure_cookies,
+            httponly=tenant_config.auth_cookie_httponly,
+            samesite=tenant_config.auth_cookie_samesite,
+        )
+
+        self.write(
+            WebResponse(
+                success="success",
+                status_code=200,
+                data={
+                    "message": "Password successfully changed",
+                    "user": db_user.email,
+                    "groups": groups,
+                    "needs_mfa": needs_mfa,
+                    "eula_signed": eula_signed,
+                    "password_needs_reset": db_user.password_needs_reset,
+                },
             ).dict(exclude_unset=True, exclude_none=True)
         )
 

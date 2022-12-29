@@ -5,6 +5,7 @@ from common.config.tenant_config import TenantConfig
 from common.group_memberships.models import GroupMembership
 from common.handlers.base import TornadoRequestHandler
 from common.lib.jwt import generate_jwt_token
+from common.lib.tenant.models import TenantDetails
 from common.models import UserLoginRequest, WebResponse
 from common.users.models import User
 
@@ -89,9 +90,17 @@ class LoginHandler(TornadoRequestHandler):
         groups = [
             group.name for group in await GroupMembership.get_groups_by_user(db_user)
         ]
-        # TODO: Get EULA Signed status
+        tenant_details = await TenantDetails.get(tenant)
+        eula_signed = bool(tenant_details.eula_info)
+        needs_mfa = not db_user.mfa_enabled
+
         encoded_cookie = await generate_jwt_token(
-            request.email, groups, tenant, mfa_setup=db_user.mfa_enabled
+            request.email,
+            groups,
+            tenant,
+            mfa_setup=needs_mfa,
+            eula_signed=eula_signed,
+            password_needs_reset=db_user.password_needs_reset,
         )
 
         self.set_cookie(
@@ -107,6 +116,13 @@ class LoginHandler(TornadoRequestHandler):
             WebResponse(
                 success="success",
                 status_code=200,
-                data={"message": "Login successful", "user": db_user.email},
+                data={
+                    "message": "Login successful",
+                    "user": db_user.email,
+                    "groups": groups,
+                    "needs_mfa": needs_mfa,
+                    "eula_signed": eula_signed,
+                    "password_needs_reset": db_user.password_needs_reset,
+                },
             ).dict(exclude_unset=True, exclude_none=True)
         )

@@ -10,6 +10,7 @@ from api.handlers.v4.groups.manage_group_memberships import (
 from api.handlers.v4.users.login import LoginHandler
 from api.handlers.v4.users.manage_users import (
     ManageUsersHandler,
+    PasswordResetSelfServiceHandler,
     UnauthenticatedEmailVerificationHandler,
     UnauthenticatedPasswordResetSelfServiceHandler,
     UserMFASelfServiceHandler,
@@ -398,6 +399,10 @@ def make_app(jwt_validator=None):
         (
             r"/api/v4/users/forgot_password/?",
             UnauthenticatedPasswordResetSelfServiceHandler,
+        ),
+        (
+            r"/api/v4/users/password_reset/?",
+            PasswordResetSelfServiceHandler,
         ),
         (r"/api/v4/verify/?", UnauthenticatedEmailVerificationHandler),
     ]

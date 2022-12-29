@@ -322,6 +322,7 @@ auth:
   challenge_url:
     enabled: true
   get_user_by_oidc: true
+  require_mfa: true
 get_user_by_oidc_settings:
   custom_role_attributes:
     - name: 'custom:role_arns'

@@ -1,5 +1,7 @@
 from typing import Any, Dict, List
 
+import ujson as json
+
 from common.config import config
 from common.models import WebResponse
 
@@ -37,6 +39,6 @@ async def handle_generic_error_response(
         message=message,
     )
     request.set_status(status_code)
-    request.write(res.json(exclude_unset=True))
+    request.write(json.loads(res.json(exclude_unset=True)))
     await request.finish()
     return True
