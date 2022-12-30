@@ -1,5 +1,6 @@
 import { FC } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { Input } from 'shared/form/Input';
 
 import css from './Access.module.css';
 
@@ -27,6 +28,7 @@ export const Access: FC<AccessProps> = ({ data }) => {
         <title>Access</title>
       </Helmet>
       <div className={css.container}>
+        <Input placeholder="Search all resources..." />
         <pre>{JSON.stringify(data, null, '\t')}</pre>
       </div>
     </>

@@ -5,6 +5,7 @@ import { CompleteNewPassword } from './CompleteNewPassword';
 import { SetupMFA } from './SetupMFA';
 import { MFA } from './MFA';
 import { PasswordReset } from './PasswordReset';
+import NotFound from '../NotFound';
 
 export const Login: FC = () => (
   <Routes>
@@ -13,5 +14,6 @@ export const Login: FC = () => (
     <Route path="/password-reset" element={<PasswordReset />} />
     <Route path="/setup-mfa" element={<SetupMFA />} />
     <Route path="/mfa" element={<MFA />} />
+    <Route path="*" element={<NotFound fullPage />} />
   </Routes>
 );

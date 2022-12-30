@@ -4,9 +4,9 @@ import styles from './Dashboard.module.css';
 
 export const Dashboard = () => {
   return (
-    <div>
+    <div className={styles.dashboard}>
       <Navbar />
-      <div>
+      <div className={styles.content}>
         <Outlet />
       </div>
     </div>

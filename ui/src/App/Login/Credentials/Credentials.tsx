@@ -68,8 +68,6 @@ export const Credentials: FC = () => {
           <Logo />
           <br />
           <form className={css.form} onSubmit={handleSubmit(onSubmit)}>
-            {/* TODO (@kayizzi)) Add e-mail and password labels per Figma */}
-
             {/* TODO (@kayizzi)) We cannot assume the username is an e-mail. */}
             {/* Please remove regex requirement for email */}
             <Block label="Email" disableLabelPadding>

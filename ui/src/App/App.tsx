@@ -15,16 +15,15 @@ export const App: FC = () => (
       {/** Wrap all Route under ProtectedRoutes element */}
       <Route path="/" element={<AuthRoute />}>
         <Route path="/" element={<Dashboard />}>
+          <Route path="/" element={<Access />} />
           <Route path="/account/*" element={<AccountSetup />} />
-          <Route path="/404" element={<NotFound />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Route>
 
       {/** Wrap all Route under PublicRoutes element */}
-      <Route>
-        <Route path="/access" element={<Access />} />
-        <Route path="/login/*" element={<Login />} />
-      </Route>
+      <Route path="/login/*" element={<Login />} />
+      <Route path="*" element={<NotFound fullPage />} />
     </Routes>
   </Suspense>
 );
