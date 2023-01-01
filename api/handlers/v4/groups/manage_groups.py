@@ -3,6 +3,7 @@ import tornado.gen
 import tornado.web
 from email_validator import validate_email
 
+from common.group_memberships.models import GroupMembership
 from common.groups.models import Group
 from common.handlers.base import BaseAdminHandler
 from common.models import WebResponse
@@ -13,11 +14,14 @@ class ManageGroupsHandler(BaseAdminHandler):
         all_groups = await Group.get_all(self.ctx.tenant)
         groups = []
         for group in all_groups:
+            users = [
+                user.email for user in await GroupMembership.get_users_by_group(group)
+            ]
             groups.append(
                 {
                     "id": str(group.id),
                     "name": group.name,
-                    "users": [membership.user.username for membership in group.users],
+                    "users": users,
                 }
             )
         self.write(

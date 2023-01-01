@@ -47,6 +47,20 @@ class GroupMembership(Base):
                 return groups
 
     @classmethod
+    async def get_users_by_group(cls, group):
+        # Get group memberships for a user
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = (
+                    select(GroupMembership)
+                    .where(GroupMembership.group_id == group.id)
+                    .options(selectinload(GroupMembership.user))
+                )
+                memberships = await session.execute(stmt)
+                users = [membership.user for membership in memberships.scalars().all()]
+                return users
+
+    @classmethod
     async def create(cls, user, group):
         if await GroupMembership.get(user, group):
             # Group membership already exists. No big deal.

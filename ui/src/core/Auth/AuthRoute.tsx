@@ -9,15 +9,15 @@ export const AuthRoute: FC<PropsWithChildren> = props => {
     return <Navigate to="/login" replace />;
   }
 
-  // if (user.password_needs_reset) {
+  // if (user.password_reset_required) {
   //   return <Navigate to="/login/complete-password" replace />;
   // }
 
-  // if (user.needs_mfa) {
+  // if (user.mfa_setup_required) {
   //   return <Navigate to="/login/mfa" replace />;
   // }
 
-  // if (user.needs_mfa) {
+  // if (user.mfa_setup_required) {
   //   return <Navigate to="/login/setup-mfa" replace />;
   // }
 

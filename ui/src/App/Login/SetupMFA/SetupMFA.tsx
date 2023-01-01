@@ -43,7 +43,7 @@ export const SetupMFA: FC = () => {
     }
   }, []);
 
-  if (!user?.needs_mfa) {
+  if (!user?.mfa_setup_required) {
     return <Navigate to="/" />;
   }
 

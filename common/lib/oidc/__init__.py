@@ -306,7 +306,7 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
                 "email",
             )
         )
-        mfa_setup = None
+        mfa_setup_required = None
 
         if not decoded_id_token.get("identities"):
             user_client = CognitoUserClient.tenant_client(tenant)
@@ -315,7 +315,7 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
                 "get_user_by_oidc_settings.enable_mfa", tenant, True
             ):
                 # If MFA isn't enabled for the user, begin the setup process
-                mfa_setup = await user_client.get_mfa_secret(
+                mfa_setup_required = await user_client.get_mfa_secret(
                     email, access_token=access_token, tenant=tenant
                 )
                 after_redirect_uri = f"{protocol}://{full_host}/mfa"
@@ -462,7 +462,7 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
                 tenant,
                 roles=list(role_allowances),
                 exp=expiration,
-                mfa_setup=mfa_setup,
+                mfa_setup_required=mfa_setup_required,
             )
             request.set_cookie(
                 config.get("_global_.auth.cookie.name", "noq_auth"),

@@ -25,11 +25,14 @@ class ManageUsersHandler(BaseAdminHandler):
         all_users = await users.get_all(self.ctx.tenant)
         users = []
         for user in all_users:
+            groups = [
+                group.name for group in await GroupMembership.get_groups_by_user(user)
+            ]
             users.append(
                 {
                     "id": str(user.id),
                     "email": user.email,
-                    "groups": [membership.group.name for membership in user.groups],
+                    "groups": groups,
                 }
             )
         self.write(
@@ -186,7 +189,20 @@ class PasswordResetSelfServiceHandler(BaseHandler):
         if not db_user:
             db_user = await User.get_by_email(tenant, self.user)
 
-        if db_user.mfa_enabled and not mfa_token:
+        if not db_user:
+            await handle_generic_error_response(
+                self,
+                "User not found",
+                [],
+                403,
+                "user_not_found",
+                log_data,
+            )
+            raise tornado.web.Finish()
+
+        mfa_verification_required = db_user.mfa_enabled
+
+        if mfa_verification_required and not mfa_token:
             self.set_status(401)
             self.write(
                 WebResponse(
@@ -219,8 +235,10 @@ class PasswordResetSelfServiceHandler(BaseHandler):
             )
             raise tornado.web.Finish()
 
-        if db_user.mfa_enabled:
-            if not await db_user.check_mfa(mfa_token):
+        if mfa_verification_required:
+            if await db_user.check_mfa(mfa_token):
+                mfa_verification_required = False
+            else:
                 self.set_status(401)
                 self.write(
                     WebResponse(
@@ -255,14 +273,15 @@ class PasswordResetSelfServiceHandler(BaseHandler):
         ]
         tenant_details = await TenantDetails.get(tenant)
         eula_signed = bool(tenant_details.eula_info)
-        needs_mfa = not db_user.mfa_enabled
+        mfa_setup_required = not db_user.mfa_enabled
         encoded_cookie = await generate_jwt_token(
             self.user,
             self.groups,
             tenant,
-            mfa_setup=needs_mfa,
+            mfa_setup_required=mfa_setup_required,
+            mfa_verification_required=mfa_verification_required,
             eula_signed=eula_signed,
-            password_needs_reset=db_user.password_needs_reset,
+            password_reset_required=db_user.password_reset_required,
         )
 
         self.set_cookie(
@@ -282,9 +301,9 @@ class PasswordResetSelfServiceHandler(BaseHandler):
                     "message": "Password successfully changed",
                     "user": db_user.email,
                     "groups": groups,
-                    "needs_mfa": needs_mfa,
+                    "mfa_setup_required": mfa_setup_required,
                     "eula_signed": eula_signed,
-                    "password_needs_reset": db_user.password_needs_reset,
+                    "password_reset_required": db_user.password_reset_required,
                 },
             ).dict(exclude_unset=True, exclude_none=True)
         )
@@ -525,6 +544,7 @@ class UserMFASelfServiceHandler(BaseHandler):
             # Set up MFA
             await user.set_mfa_secret()
             totp_uri = await user.get_totp_uri()
+            mfa_secret = user.mfa_secret
             self.write(
                 WebResponse(
                     success="success",
@@ -532,6 +552,7 @@ class UserMFASelfServiceHandler(BaseHandler):
                     data={
                         "message": "Please install and verify your MFA",
                         "totp_uri": totp_uri,
+                        "mfa_secret": mfa_secret,
                     },
                 ).dict(exclude_unset=True, exclude_none=True)
             )
@@ -560,6 +581,25 @@ class UserMFASelfServiceHandler(BaseHandler):
                 )
                 raise tornado.web.Finish()
             else:
+                user = await User.get_by_email(self.ctx.tenant, self.user)
+                tenant_config = TenantConfig(self.ctx.tenant)
+                encoded_cookie = await generate_jwt_token(
+                    self.user,
+                    self.groups,
+                    self.ctx.tenant,
+                    mfa_setup_required=not user.mfa_enabled,
+                    mfa_verification_required=False,
+                    eula_signed=self.ctx.needs_to_sign_eula,
+                    password_reset_required=user.password_reset_required,
+                )
+                self.set_cookie(
+                    tenant_config.auth_cookie_name,
+                    encoded_cookie,
+                    expires=tenant_config.auth_jwt_expiration_datetime,
+                    secure=tenant_config.auth_use_secure_cookies,
+                    httponly=tenant_config.auth_cookie_httponly,
+                    samesite=tenant_config.auth_cookie_samesite,
+                )
                 self.write(
                     WebResponse(
                         success="success",

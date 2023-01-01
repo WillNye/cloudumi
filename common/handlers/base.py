@@ -386,8 +386,9 @@ class BaseHandler(TornadoRequestHandler):
         tenant = self.get_tenant_name()
         tenant_config = TenantConfig(tenant)
         self.eula_signed = None
-        self.mfa_setup = None
-        self.password_needs_reset = None
+        self.mfa_setup_required = None
+        self.password_reset_required = None
+        self.mfa_verification_required = None
         self.sso_user = None
         self.eligible_roles = []
         self.eligible_accounts = []
@@ -458,11 +459,11 @@ class BaseHandler(TornadoRequestHandler):
                 self.eligible_roles = res.get("additional_roles", [])
                 self.auth_cookie_expiration = res.get("exp")
                 self.eula_signed = res.get("eula_signed", False)
-                self.mfa_setup = res.get("mfa_setup", None)
-                self.password_needs_reset = res.get("password_needs_reset", False)
+                self.mfa_setup_required = res.get("mfa_setup_required", None)
+                self.password_reset_required = res.get("password_reset_required", False)
                 self.sso_user = res.get("sso_user", False)
 
-        if self.eula_signed is None:
+        if not self.eula_signed:
             try:
                 tenant_details = await TenantDetails.get(tenant)
                 self.eula_signed = bool(tenant_details.eula_info)
@@ -709,7 +710,6 @@ class BaseHandler(TornadoRequestHandler):
         ):
             # Get or create user_role_name attribute
             self.user_role_name = await auth.get_or_create_user_role_name(self.user)
-
         await self.set_eligible_roles(console_only)
 
         if not self.eligible_roles:
@@ -719,7 +719,11 @@ class BaseHandler(TornadoRequestHandler):
             log.warning(log_data)
         log_data["eligible_roles"] = len(self.eligible_roles)
 
-        if not self.eligible_accounts and self.eula_signed and not self.mfa_setup:
+        if (
+            not self.eligible_accounts
+            and self.eula_signed
+            and not self.mfa_setup_required
+        ):
             try:
                 self.eligible_accounts = await group_mapping.get_eligible_accounts(self)
                 log_data["eligible_accounts"] = len(self.eligible_accounts)
@@ -775,54 +779,69 @@ class BaseHandler(TornadoRequestHandler):
             },
         )
 
-        if self.password_needs_reset:
+        if self.__class__.__name__ == "UserProfileHandler":
+            # Let the user profile endpoint through
+            pass
+        elif (
+            self.password_reset_required
+            or self.__class__.__name__ == "PasswordResetSelfServiceHandler"
+        ):
             # If the EULA hasn't been signed the user cannot access any AWS information.
-            self.groups = []
-            self.eligible_roles = []
-            self.eligible_accounts = []
 
-            if not self.request.uri.endswith(
-                "/api/v4/users/password_reset"
-            ) and not isinstance(self, AuthenticatedStaticFileHandler):
+            if self.__class__.__name__ not in [
+                "PasswordResetSelfServiceHandler",
+                "AuthenticatedStaticFileHandler",
+            ]:
                 self.write(
                     {
                         "type": "redirect",
                         "redirect_url": "/reset_password",
                         "reason": "unauthenticated",
-                        "message": "Password needs to be reset",
+                        "message": "PASSWORD_RESET_REQUIRED",
                     }
                 )
                 self.set_status(403)
                 raise tornado.web.Finish()
-
-        elif self.mfa_setup and tenant_config.require_mfa:
+        elif self.mfa_setup_required and tenant_config.require_mfa:
             # If the EULA hasn't been signed the user cannot access any AWS information.
-            self.groups = []
-            self.eligible_roles = []
-            self.eligible_accounts = []
 
-            if not self.request.uri.endswith(
-                "auth/cognito/setup-mfa"
-            ) and not isinstance(self, AuthenticatedStaticFileHandler):
+            if self.__class__.__name__ not in [
+                "CognitoUserSetupMFA",
+                "UserMFASelfServiceHandler",
+                "AuthenticatedStaticFileHandler",
+            ]:
                 self.write(
                     {
                         "type": "redirect",
                         "redirect_url": "/mfa",
                         "reason": "unauthenticated",
-                        "message": "User MFA has not been configured",
+                        "message": "MFA_SETUP_REQUIRED",
                     }
                 )
                 self.set_status(403)
                 raise tornado.web.Finish()
+        elif self.mfa_verification_required and self.__class__.__name__ not in [
+            "AuthenticatedStaticFileHandler"
+        ]:
+
+            self.write(
+                WebResponse(
+                    status_code=403,
+                    reason="MFA verification required",
+                    data={"message": "MFA_VERIFICATION_REQUIRED"},
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            raise tornado.web.Finish()
         elif not self.eula_signed:
             # If the EULA hasn't been signed the user cannot access any AWS information.
             self.groups = []
             self.eligible_roles = []
             self.eligible_accounts = []
 
-            if not self.request.uri.endswith("tenant/details/eula") and not isinstance(
-                self, AuthenticatedStaticFileHandler
-            ):
+            if self.__class__.__name__ not in [
+                "TenantEulaHandler",
+                "AuthenticatedStaticFileHandler",
+            ]:
                 # Force them to the eula page if they're an admin, return a 403 otherwise
                 if self.is_admin:
                     self.write(
@@ -830,7 +849,7 @@ class BaseHandler(TornadoRequestHandler):
                             "type": "redirect",
                             "redirect_url": "/eula",
                             "reason": "unauthenticated",
-                            "message": "User did not sign EULA yet",
+                            "message": "EULA_NOT_SIGNED",
                         }
                     )
                 else:
@@ -850,6 +869,11 @@ class BaseHandler(TornadoRequestHandler):
             groups=self.groups,
             request_uuid=self.request_uuid,
             uri=self.request.uri,
+            mfa_setup_required=self.mfa_setup_required,
+            password_reset_required=self.password_reset_required,
+            needs_to_sign_eula=not self.eula_signed,
+            mfa_verification_required=self.mfa_verification_required,
+            is_admin=self.is_admin,
         )
 
     async def set_groups(self):
@@ -939,7 +963,7 @@ class BaseHandler(TornadoRequestHandler):
             roles,
             exp=expiration,
             eula_signed=self.eula_signed,
-            mfa_setup=self.mfa_setup,
+            mfa_setup_required=self.mfa_setup_required,
         )
         self.set_cookie(
             self.get_noq_auth_cookie_key(),
@@ -1036,7 +1060,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
         self.responses = []
         self.request_uuid = str(uuid.uuid4())
         self.auth_cookie_expiration = 0
-        self.password_needs_reset = False
+        self.password_reset_required = False
         tenant = self.get_tenant_name()
         self.ctx = RequestContext(
             tenant=tenant,
@@ -1117,12 +1141,13 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 self.user = res.get("user")
                 self.groups = res.get("groups")
                 self.eligible_roles += res.get("additional_roles")
+                # TODO: Fix expensive call
                 self.eligible_roles += await get_user_active_tra_roles_by_tag(
                     tenant, self.user
                 )
-                self.password_needs_reset = res.get("password_needs_reset")
-                self.sso_user = res.get("sso_user")
                 self.eligible_roles = list(set(self.eligible_roles))
+                self.password_reset_required = res.get("password_reset_required")
+                self.sso_user = res.get("sso_user")
                 self.requester = {"type": "user", "email": self.user}
                 self.current_cert_age = int(time.time()) - res.get("iat")
                 self.auth_cookie_expiration = res.get("exp")

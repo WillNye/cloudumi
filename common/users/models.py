@@ -41,7 +41,7 @@ class User(SoftDeleteMixin, Base):
     email_verify_token_expiration: datetime = Column(DateTime, nullable=True)
     # TODO: Force password reset flow after temp password created (Or just send them a
     # password reset)
-    password_needs_reset: bool = Column(Boolean, default=False)
+    password_reset_required: bool = Column(Boolean, default=False)
     password_hash = Column(String, nullable=False)
     password_reset_token = Column(String, nullable=True)
     password_reset_token_expiration = Column(DateTime, nullable=True)
@@ -115,7 +115,7 @@ class User(SoftDeleteMixin, Base):
         await self.set_password(password)
         self.password_reset_token = None
         self.password_reset_token_expiration = None
-        self.password_needs_reset = False
+        self.password_reset_required = False
         await self.write()
 
     async def check_password(self, password):
@@ -227,7 +227,7 @@ class User(SoftDeleteMixin, Base):
             tenant=tenant,
             username=username,
             email=email,
-            password_needs_reset=True,
+            password_reset_required=True,
             **kwargs,
         )
         await user.set_password(password)

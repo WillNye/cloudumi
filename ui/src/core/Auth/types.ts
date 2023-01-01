@@ -1,7 +1,7 @@
 export interface User {
   user: string;
   groups: string[];
-  needs_mfa: boolean;
+  mfa_setup_required: boolean;
   eula_signed: boolean;
-  password_needs_reset: boolean;
+  password_reset_required: boolean;
 }

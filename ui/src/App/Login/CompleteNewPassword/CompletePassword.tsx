@@ -56,7 +56,7 @@ export const CompleteNewPassword: FC = () => {
     }
   }, []);
 
-  if (!user?.password_needs_reset) {
+  if (!user?.password_reset_required) {
     return <Navigate to="/" />;
   }
 

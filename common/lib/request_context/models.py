@@ -9,3 +9,8 @@ class RequestContext(BaseModel):
     groups: Optional[List[str]]
     request_uuid: str
     uri: str
+    mfa_setup_required: Optional[bool]
+    password_reset_required: Optional[bool]
+    needs_to_sign_eula: Optional[bool]
+    mfa_verification_required: Optional[bool]
+    is_admin: Optional[bool]

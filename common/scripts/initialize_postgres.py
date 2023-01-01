@@ -25,7 +25,7 @@ async def rebuild_tables():
             "cloudumidev_com",
             "admin_user@noq.dev",
             "admin_user@noq.dev",
-            "password!",
+            "Password!1",
             email_verified=True,
         )
         group = await Group.create(

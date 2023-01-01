@@ -34,7 +34,7 @@ class UserProfileHandler(BaseAPIV1Handler):
             landing_url = "/onboarding"
 
         site_config = {
-            "consoleme_logo": await get_random_security_logo(tenant),
+            "noq_logo": await get_random_security_logo(tenant),
             "google_analytics": {
                 "tracking_id": config.get("_global_.google_analytics.tracking_id"),
                 "options": config.get("_global_.google_analytics.options", {}),
@@ -80,6 +80,10 @@ class UserProfileHandler(BaseAPIV1Handler):
         user_profile = {
             "site_config": site_config,
             "user": self.user,
+            "mfa_setup_required": self.ctx.mfa_setup_required,
+            "password_reset_required": self.ctx.password_reset_required,
+            "needs_to_sign_eula": self.ctx.needs_to_sign_eula,
+            "mfa_verification_required": self.ctx.mfa_verification_required,
             "can_logout": config.get("_global_.auth.set_auth_cookie", True),
             "is_contractor": is_contractor,
             "employee_photo_url": "",  # TODO: Support custom employee URL

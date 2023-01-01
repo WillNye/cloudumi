@@ -43,7 +43,7 @@ def upgrade() -> None:
         sa.Column("email_verified", sa.Boolean(), nullable=True),
         sa.Column("email_verify_token", sa.String(), nullable=True),
         sa.Column("email_verify_token_expiration", sa.DateTime(), nullable=True),
-        sa.Column("password_needs_reset", sa.Boolean(), nullable=True),
+        sa.Column("password_reset_required", sa.Boolean(), nullable=True),
         sa.Column("password_hash", sa.String(), nullable=False),
         sa.Column("password_reset_token", sa.String(), nullable=True),
         sa.Column("password_reset_token_expiration", sa.DateTime(), nullable=True),

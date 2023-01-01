@@ -12,7 +12,7 @@ export const MFA: FC = () => {
     // TODO: verify user TOTP code
   }, []);
 
-  if (user?.needs_mfa) {
+  if (user?.mfa_setup_required) {
     return <Navigate to="/" />;
   }
 

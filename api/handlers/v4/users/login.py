@@ -64,9 +64,13 @@ class LoginHandler(TornadoRequestHandler):
             )
             raise tornado.web.Finish()
 
+        mfa_verification_required = db_user.mfa_enabled
+
         # TODO: Fix force-MFA flow
-        if db_user.mfa_enabled:
-            if not await db_user.check_mfa(mfa_token):
+        if mfa_verification_required and mfa_token:
+            if await db_user.check_mfa(mfa_token):
+                mfa_verification_required = False
+            else:
                 self.set_status(401)
                 self.write(
                     WebResponse(
@@ -92,15 +96,16 @@ class LoginHandler(TornadoRequestHandler):
         ]
         tenant_details = await TenantDetails.get(tenant)
         eula_signed = bool(tenant_details.eula_info)
-        needs_mfa = not db_user.mfa_enabled
+        mfa_setup_required = not db_user.mfa_enabled
 
         encoded_cookie = await generate_jwt_token(
             request.email,
             groups,
             tenant,
-            mfa_setup=needs_mfa,
+            mfa_setup_required=mfa_setup_required,
+            mfa_verification_required=mfa_verification_required,
             eula_signed=eula_signed,
-            password_needs_reset=db_user.password_needs_reset,
+            password_reset_required=db_user.password_reset_required,
         )
 
         self.set_cookie(
@@ -120,9 +125,10 @@ class LoginHandler(TornadoRequestHandler):
                     "message": "Login successful",
                     "user": db_user.email,
                     "groups": groups,
-                    "needs_mfa": needs_mfa,
+                    "mfa_setup_required": mfa_setup_required,
+                    "mfa_verification_required": mfa_verification_required,
                     "eula_signed": eula_signed,
-                    "password_needs_reset": db_user.password_needs_reset,
+                    "password_reset_required": db_user.password_reset_required,
                 },
             ).dict(exclude_unset=True, exclude_none=True)
         )

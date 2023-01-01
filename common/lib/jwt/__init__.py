@@ -72,8 +72,9 @@ async def generate_jwt_token(
     iat=datetime.utcnow(),
     exp=None,
     eula_signed=None,
-    mfa_setup=None,
-    password_needs_reset=False,
+    mfa_setup_required=None,
+    mfa_verification_required=None,
+    password_reset_required=False,
     sso_user=True,
 ):
     if eula_signed is None:
@@ -113,9 +114,10 @@ async def generate_jwt_token(
         "eula_signed": eula_signed,
         "groups_pending_eula": groups_pending_eula,
         "additional_roles_pending_eula": roles_pending_eula,
-        "mfa_setup": mfa_setup,
-        "password_needs_reset": password_needs_reset,
+        "mfa_setup_required": mfa_setup_required,
+        "password_reset_required": password_reset_required,
         "sso_user": sso_user,
+        "mfa_verification_required": mfa_verification_required,
     }
 
     encoded_cookie = await aio_wrapper(
@@ -171,9 +173,14 @@ async def validate_and_return_jwt_token(auth_cookie, tenant):
             "additional_roles_pending_eula": decoded_jwt.get(
                 "additional_roles_pending_eula", []
             ),
-            "mfa_setup": decoded_jwt.get("mfa_setup", {}),
-            "password_needs_reset": decoded_jwt.get("password_needs_reset", {}),
+            "mfa_setup_required": decoded_jwt.get("mfa_setup_required", False),
+            "password_reset_required": decoded_jwt.get(
+                "password_reset_required", False
+            ),
             "sso_user": decoded_jwt.get("sso_user", {}),
+            "mfa_verification_required": decoded_jwt.get(
+                "mfa_verification_required", False
+            ),
         }
     except (jwt.ExpiredSignatureError, jwt.InvalidSignatureError, jwt.DecodeError):
         # Force user to reauth.
