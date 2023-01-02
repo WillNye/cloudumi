@@ -220,8 +220,7 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
                     "message": "User is not authenticated. Redirect to authenticate",
                 }
             )
-        request.finish()
-        return
+        raise tornado.web.Finish()
     if not id_token or not access_token:
         try:
             # exchange the authorization code with the access token
@@ -250,15 +249,19 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
             if client_scope:
                 client_scope = " ".join(client_scope)
             try:
+                client_id = oidc_config.get("client_id")
+                client_secret = oidc_config.get("client_secret")
+                headers = {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Accept": "application/json",
+                }
+                if client_secret:
+                    headers["Authorization"] = "Basic %s" % authorization_header_encoded
                 token_exchange_response = await http_client.fetch(
                     url,
                     method="POST",
-                    headers={
-                        "Content-Type": "application/x-www-form-urlencoded",
-                        "Authorization": "Basic %s" % authorization_header_encoded,
-                        "Accept": "application/json",
-                    },
-                    body=f"grant_type={grant_type}&code={code}&redirect_uri={oidc_redirect_uri}&scope={client_scope}",
+                    headers=headers,
+                    body=f"grant_type={grant_type}&client_id={client_id}&code={code}&redirect_uri={oidc_redirect_uri}&scope={client_scope}",
                 )
             except tornado.httpclient.HTTPError:
                 raise
@@ -495,7 +498,7 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
                     "message": "User has been authenticated and needs to be redirected to their intended destination",
                 }
             )
-        request.finish()
+        raise tornado.web.Finish()
 
     except Exception as e:
         log_data["error"] = e
