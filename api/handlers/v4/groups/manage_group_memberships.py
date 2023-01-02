@@ -97,7 +97,7 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
                         }
                     )
                     continue
-                deleted = await GroupMembership.delete(membership)
+                deleted = await membership.delete()
                 if not deleted:
                     messages.append(
                         {

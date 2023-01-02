@@ -298,6 +298,8 @@ application_admin:
   - engineering@noq.dev
   - noq_admins
 secrets:
+  scim:
+    bearer_token: local_secret_scim_bearer_token
   jwt_secret: {token_urlsafe(32)}
   auth:
     oidc:

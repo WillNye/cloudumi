@@ -18,12 +18,17 @@ from sqlalchemy import (
     and_,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, selectinload
 from sqlalchemy.sql import select
 
 from common.config.globals import ASYNC_PG_SESSION
 from common.group_memberships.models import GroupMembership  # noqa
 from common.lib.notifications import send_email_via_sendgrid
+from common.pg_core.filters import (
+    DEFAULT_SIZE,
+    create_filter_from_url_params,
+    determine_page_from_offset,
+)
 from common.pg_core.models import Base, SoftDeleteMixin
 from common.templates import (
     generic_email_template,
@@ -34,8 +39,13 @@ from common.templates import (
 class User(SoftDeleteMixin, Base):
     __tablename__ = "users"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    active = Column(Boolean, default=True)
     username = Column(String, nullable=False)
     email: str = Column(String, nullable=False)
+    email_type: str = Column(String, nullable=True)
+    locale: str = Column(String, nullable=True)
+    external_id: str = Column(String, nullable=True)
+    email_primary: bool = Column(Boolean, default=True)
     email_verified: bool = Column(Boolean, default=False)
     email_verify_token: str = Column(String, nullable=True)
     email_verify_token_expiration: datetime = Column(DateTime, nullable=True)
@@ -48,7 +58,11 @@ class User(SoftDeleteMixin, Base):
     login_attempts = Column(Integer, default=0)
     login_magic_link_token = Column(String, nullable=True)
     login_magic_link_token_expiration = Column(DateTime, nullable=True)
+    display_name = Column(String, nullable=True)
     full_name = Column(String)
+    given_name = Column(String)
+    middle_name = Column(String)
+    family_name = Column(String)
     mfa_secret = Column(String)
     mfa_enabled = Column(Boolean, default=False)
     mfa_primary_method = Column(String(64), nullable=True)
@@ -59,7 +73,14 @@ class User(SoftDeleteMixin, Base):
     # TODO: When we're soft-deleting, we need our own methods to get these groups
     # because `deleted=true`. Create async delete function to update the relationship
     # object for users and groups.
-    groups = relationship("GroupMembership", back_populates="user", lazy="subquery")
+    # groups = relationship("GroupMembership", back_populates="user", lazy="subquery")
+    groups = relationship(
+        "Group",
+        secondary=GroupMembership.__table__,
+        back_populates="users",
+        foreign_keys=[GroupMembership.user_id, GroupMembership.group_id],
+    )
+
     __table_args__ = (
         UniqueConstraint("tenant", "username", name="uq_tenant_username"),
         UniqueConstraint("tenant", "email", name="uq_tenant_email"),
@@ -74,14 +95,13 @@ class User(SoftDeleteMixin, Base):
                         and_(GroupMembership.user_id == self.id)
                     )
                 )
-                for group_membership in group_memberships:
-                    await group_membership.delete()
-                await session.commit()
                 self.deleted = True
                 self.username = f"{self.username}-{self.id}"
                 self.email = f"{self.email}-{self.id}"
                 await self.write()
-                return True
+        for group_membership in group_memberships.scalars().all():
+            await group_membership.delete()
+        return True
 
     # Should be soft deletes because headaches when people leave and we need auditability.
     # users = relationship(
@@ -104,11 +124,16 @@ class User(SoftDeleteMixin, Base):
             f")>"
         )
 
-    async def set_password(self, password):
-        """Hash the given password and store it in the password_hash field."""
+    @classmethod
+    async def generate_password_hash(cls, password):
+        """Hash the given password and return the hash."""
         salt = base64.b64encode(uuid.uuid4().bytes).decode("utf-8")
         password_hash = hashlib.sha512((password + salt).encode("utf-8")).hexdigest()
-        self.password_hash = f"{salt}${password_hash}"
+        return f"{salt}${password_hash}"
+
+    async def set_password(self, password):
+        """Hash the given password and store it in the password_hash field."""
+        self.password_hash = await self.generate_password_hash(password)
 
     async def user_initiated_password_reset(self, password):
         """Set the user's password and reset the password reset token."""
@@ -183,7 +208,23 @@ class User(SoftDeleteMixin, Base):
                 await session.commit()
 
     @classmethod
-    async def get_by_username(cls, tenant, username):
+    async def get_by_id(cls, tenant, user_id, get_groups=False):
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = select(User).where(
+                    and_(
+                        User.tenant == tenant,
+                        User.id == user_id,
+                        User.deleted == False,  # noqa
+                    )
+                )
+                if get_groups:
+                    stmt = stmt = stmt.options(selectinload(User.groups))
+                user = await session.execute(stmt)
+                return user.scalars().first()
+
+    @classmethod
+    async def get_by_username(cls, tenant, username, get_groups=False):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 stmt = select(User).where(
@@ -193,11 +234,13 @@ class User(SoftDeleteMixin, Base):
                         User.deleted == False,  # noqa
                     )
                 )
+                if get_groups:
+                    stmt = stmt = stmt.options(selectinload(User.groups))
                 user = await session.execute(stmt)
                 return user.scalars().first()
 
     @classmethod
-    async def get_by_email(cls, tenant, email):
+    async def get_by_email(cls, tenant, email, get_groups=False):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 stmt = select(User).where(
@@ -207,16 +250,33 @@ class User(SoftDeleteMixin, Base):
                         User.deleted == False,  # noqa
                     )
                 )
+                if get_groups:
+                    stmt = stmt = stmt.options(selectinload(User.groups))
                 user = await session.execute(stmt)
                 return user.scalars().first()
 
     @classmethod
-    async def get_all(cls, tenant):
+    async def get_all(
+        cls,
+        tenant,
+        get_groups=False,
+        count=DEFAULT_SIZE,
+        offset=0,
+        page=0,
+        filters=None,
+    ):
+        if not filters:
+            filters = {}
+        if not page:
+            page = determine_page_from_offset(offset, count)
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 stmt = select(User).where(
                     User.tenant == tenant, User.deleted == False  # noqa
                 )
+                stmt = create_filter_from_url_params(stmt, page, count, **filters)
+                if get_groups:
+                    stmt = stmt.options(selectinload(User.groups))
                 users = await session.execute(stmt)
                 return users.scalars().all()
 
@@ -423,3 +483,28 @@ class User(SoftDeleteMixin, Base):
             return True
         else:
             return False
+
+    async def serialize_for_scim(self):
+        return {
+            "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+            "id": self.id,
+            "userName": self.username,
+            "name": {
+                "givenName": self.given_name,
+                "middleName": self.middle_name,
+                "familyName": self.family_name,
+            },
+            "emails": [
+                {
+                    "value": self.email,
+                    "primary": self.email_primary,
+                    "type": self.email_type,
+                }
+            ],
+            "displayName": self.display_name,
+            "locale": self.locale,
+            "externalId": self.external_id,
+            "active": self.active,
+            "groups": [group.name for group in self.groups],
+            "meta": {"resourceType": "User"},
+        }

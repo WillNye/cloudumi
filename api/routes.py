@@ -7,7 +7,9 @@ from api.handlers.v3.typeahead import UserAndGroupTypeAheadHandler
 from api.handlers.v4.groups.manage_group_memberships import (
     ManageGroupMembershipsHandler,
 )
-from api.handlers.v4.users.login import LoginHandler
+from api.handlers.v4.scim.groups import ScimV2GroupHandler, ScimV2GroupsHandler
+from api.handlers.v4.scim.users import ScimV2UserHandler, ScimV2UsersHandler
+from api.handlers.v4.users.login import LoginHandler, MfaHandler
 from api.handlers.v4.users.manage_users import (
     ManageUsersHandler,
     PasswordResetSelfServiceHandler,
@@ -395,6 +397,7 @@ def make_app(jwt_validator=None):
         (r"/api/v4/users/?", ManageUsersHandler),
         (r"/api/v4/users/password/complexity/?", PasswordComplexityHandler),
         (r"/api/v4/users/login/?", LoginHandler),
+        (r"/api/v4/users/login/mfa/?", MfaHandler),
         (r"/api/v4/users/mfa/?", UserMFASelfServiceHandler),
         (
             r"/api/v4/users/forgot_password/?",
@@ -405,6 +408,10 @@ def make_app(jwt_validator=None):
             PasswordResetSelfServiceHandler,
         ),
         (r"/api/v4/verify/?", UnauthenticatedEmailVerificationHandler),
+        (r"/api/v4/scim/v2/Users/?", ScimV2UsersHandler),
+        (r"/api/v4/scim/v2/Users/(.*)", ScimV2UserHandler),
+        (r"/api/v4/scim/v2/Groups/?", ScimV2GroupsHandler),
+        (r"/api/v4/scim/v2/Group/(.*)", ScimV2GroupHandler),
     ]
 
     router = RuleRouter(routes)

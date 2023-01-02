@@ -460,6 +460,9 @@ class BaseHandler(TornadoRequestHandler):
                 self.auth_cookie_expiration = res.get("exp")
                 self.eula_signed = res.get("eula_signed", False)
                 self.mfa_setup_required = res.get("mfa_setup_required", None)
+                self.mfa_verification_required = res.get(
+                    "mfa_verification_required", None
+                )
                 self.password_reset_required = res.get("password_reset_required", False)
                 self.sso_user = res.get("sso_user", False)
 
@@ -821,7 +824,8 @@ class BaseHandler(TornadoRequestHandler):
                 self.set_status(403)
                 raise tornado.web.Finish()
         elif self.mfa_verification_required and self.__class__.__name__ not in [
-            "AuthenticatedStaticFileHandler"
+            "MfaHandler",
+            "AuthenticatedStaticFileHandler",
         ]:
 
             self.write(
@@ -1288,3 +1292,35 @@ class BaseAdminHandler(BaseHandler):
                 self, errors[0], errors, 403, "unauthorized", {}
             )
             raise tornado.web.Finish()
+
+
+class ScimAuthHandler(TornadoRequestHandler):
+    """
+    This handler is used to authenticate SCIM requests.
+    It should only be used by Identity Providers, and not by end users.
+    """
+
+    def initialize(self, **kwargs) -> None:
+        self.kwargs = kwargs
+        self.tracer = None
+        self.responses = []
+        self.ctx: Union[None, RequestContext] = None
+        super(ScimAuthHandler, self).initialize(**kwargs)
+
+    async def prepare(self) -> None:
+        self.request_uuid = str(uuid.uuid4())
+        tenant = self.get_tenant_name()
+        tenant_config = TenantConfig(tenant)
+        if not tenant_config.scim_bearer_token:
+            raise tornado.web.HTTPError(403, "Bearer token not configured.")
+
+        bearer_header = self.request.headers.get("Authorization")
+        authorization_token = bearer_header.split("Bearer ")[1]
+
+        if authorization_token != tenant_config.scim_bearer_token:
+            raise tornado.web.HTTPError(403, "Invalid bearer token.")
+        self.ctx = RequestContext(
+            tenant=tenant,
+            request_uuid=self.request_uuid,
+            uri=self.request.uri,
+        )

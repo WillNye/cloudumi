@@ -256,6 +256,9 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
                     "Accept": "application/json",
                 }
                 if client_secret:
+                    # If authorization header is included in a token exchange request
+                    # for a client without a client_secret, Cognito will return an
+                    # ambiguous error.
                     headers["Authorization"] = "Basic %s" % authorization_header_encoded
                 token_exchange_response = await http_client.fetch(
                     url,

@@ -3439,6 +3439,13 @@ components:
           type: string
         mfa_token:
           type: string
+    UserMfaVerificationRequest:
+      type: object
+      required:
+        - mfa_token
+      properties:
+        mfa_token:
+          type: string
     UserForgotPasswordRequest:
       type: object
       required:

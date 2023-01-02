@@ -8,7 +8,6 @@ import tornado.web
 from email_validator import validate_email
 
 from common.config.tenant_config import TenantConfig
-from common.group_memberships.models import GroupMembership
 from common.handlers.base import BaseAdminHandler, BaseHandler, TornadoRequestHandler
 from common.lib.jwt import generate_jwt_token
 from common.lib.password import check_password_strength, generate_random_password
@@ -22,17 +21,14 @@ from common.users.models import User
 class ManageUsersHandler(BaseAdminHandler):
     async def get(self):
         users = User()
-        all_users = await users.get_all(self.ctx.tenant)
+        all_users = await users.get_all(self.ctx.tenant, get_groups=True)
         users = []
         for user in all_users:
-            groups = [
-                group.name for group in await GroupMembership.get_groups_by_user(user)
-            ]
             users.append(
                 {
                     "id": str(user.id),
                     "email": user.email,
-                    "groups": groups,
+                    "groups": [group.name for group in user.groups],
                 }
             )
         self.write(
@@ -181,7 +177,6 @@ class PasswordResetSelfServiceHandler(BaseHandler):
         data = tornado.escape.json_decode(self.request.body)
         current_password = data.get("current_password")
         new_password = data.get("new_password")
-        mfa_token = data.get("mfa_token")
         tenant = self.get_tenant_name()
         tenant_config = TenantConfig(tenant)
 
@@ -197,19 +192,6 @@ class PasswordResetSelfServiceHandler(BaseHandler):
                 403,
                 "user_not_found",
                 log_data,
-            )
-            raise tornado.web.Finish()
-
-        mfa_verification_required = db_user.mfa_enabled
-
-        if mfa_verification_required and not mfa_token:
-            self.set_status(401)
-            self.write(
-                WebResponse(
-                    success="error",
-                    status_code=403,
-                    data={"message": "MFA is not verified"},
-                ).dict(exclude_unset=True, exclude_none=True)
             )
             raise tornado.web.Finish()
 
@@ -235,20 +217,6 @@ class PasswordResetSelfServiceHandler(BaseHandler):
             )
             raise tornado.web.Finish()
 
-        if mfa_verification_required:
-            if await db_user.check_mfa(mfa_token):
-                mfa_verification_required = False
-            else:
-                self.set_status(401)
-                self.write(
-                    WebResponse(
-                        success="error",
-                        status_code=403,
-                        data={"message": "Invalid MFA Token. Please try again."},
-                    ).dict(exclude_unset=True, exclude_none=True)
-                )
-                raise tornado.web.Finish()
-
         password_strength_errors = await check_password_strength(
             new_password, self.ctx.tenant
         )
@@ -265,12 +233,10 @@ class PasswordResetSelfServiceHandler(BaseHandler):
 
         await db_user.user_initiated_password_reset(new_password)
         # Refresh DB User and set cookie
-        db_user = await User.get_by_username(tenant, self.user)
+        db_user = await User.get_by_username(tenant, self.user, get_groups=True)
         if not db_user:
-            db_user = await User.get_by_email(tenant, self.user)
-        groups = [
-            group.name for group in await GroupMembership.get_groups_by_user(db_user)
-        ]
+            db_user = await User.get_by_email(tenant, get_groups=True)
+        groups = [group.name for group in db_user.groups]
         tenant_details = await TenantDetails.get(tenant)
         eula_signed = bool(tenant_details.eula_info)
         mfa_setup_required = not db_user.mfa_enabled
@@ -279,7 +245,7 @@ class PasswordResetSelfServiceHandler(BaseHandler):
             self.groups,
             tenant,
             mfa_setup_required=mfa_setup_required,
-            mfa_verification_required=mfa_verification_required,
+            mfa_verification_required=self.mfa_verification_required,
             eula_signed=eula_signed,
             password_reset_required=db_user.password_reset_required,
         )

@@ -138,13 +138,13 @@ class TenantConfig:
 
     @property
     def scim_endpoint_authenticator(self):
-        return self.get_tenant_specific_key(
+        return config.get_tenant_specific_key(
             "secrets.scim.endpoint_authenticator", self.tenant
         )
 
     @property
     def scim_bearer_token(self):
-        return self.get_tenant_specific_key("secrets.scim.bearer_token", self.tenant)
+        return config.get_tenant_specific_key("secrets.scim.bearer_token", self.tenant)
 
     @property
     def saml_key_passphrase(self):
