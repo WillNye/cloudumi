@@ -23,6 +23,10 @@ class BaseException(Exception):
         return self.msg
 
 
+class CognitoJWTException(BaseException):
+    """Raised when something went wrong in token verification proccess"""
+
+
 class WebAuthNError(tornado.web.HTTPError):
     """Authentication Error"""
 

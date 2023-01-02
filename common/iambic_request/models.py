@@ -3,7 +3,7 @@ import os
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import aiofiles
 import aiofiles.os
@@ -21,6 +21,7 @@ from common.config import config
 from common.lib import noq_json as json
 from common.lib.asyncio import aio_wrapper
 from common.lib.storage import TenantFileStorageHandler
+from common.models import IambicTemplateChange
 from common.pg_core.models import Base, SoftDeleteMixin
 
 TENANT_REPO_DIR = Path(config.get("_global_.tenant_storage.base_path")).expanduser()
@@ -32,18 +33,6 @@ log = config.get_logger(__name__)
 RequestStatus = ENUM(
     "Pending", "Approved", "Rejected", "Expired", name="RequestStatusEnum"
 )
-
-
-class IambicTemplateChange(PydanticBaseModel):
-    path: str
-    body: Union[str | None]
-
-    def __init__(self, **kwargs):
-        path = kwargs.get("path", "")
-        if not path.endswith(".yaml") or not path.endswith(".yml"):
-            kwargs["path"] = f"{path}.yaml"
-
-        super(IambicTemplateChange, self).__init__(**kwargs)
 
 
 class IambicRepo:

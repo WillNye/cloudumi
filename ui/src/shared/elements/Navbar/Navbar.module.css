@@ -1,0 +1,46 @@
+.sidebar {
+  padding: var(--spacing-md);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--gray-700);
+  color: var(--card-color);
+  width: 60px;
+  height: 100vh;
+}
+
+.sidebarNav {
+  padding-top: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.sidebarNav a {
+  margin: 10px 0px;
+  path {
+    stroke: var(--gray-200);
+  }
+
+  &:hover {
+    path {
+      stroke: var(--body-color);
+    }
+  }
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: auto;
+}
+
+.sidebarLogo {
+  padding: 10px 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

@@ -1,10 +1,12 @@
 import asyncio
 import os
 import urllib
+from http.cookies import SimpleCookie
 
 import ujson as json
 from _pytest.config import Config
 from pytest_cov.plugin import CovPlugin
+from tornado import escape
 from tornado.testing import AsyncHTTPTestCase
 
 from common.lib.jwt import generate_jwt_token
@@ -15,9 +17,16 @@ TEST_ROLE = "FunctionalTestNullRole"
 TEST_ROLE_ARN = f"arn:aws:iam::{TEST_ACCOUNT_ID}:role/{TEST_ROLE}"
 TEST_USER_NAME = "user@noq.dev"
 TEST_USER_GROUPS = ["engineering@noq.dev"]
-TEST_USER_DOMAIN = os.getenv("TEST_USER_DOMAIN", "corp.staging.noq.dev")
-if os.getenv("STAGE", "staging") == "prod":
-    TEST_USER_DOMAIN = os.getenv("TEST_USER_DOMAIN", "corp.noq.dev")
+TEST_USER_DOMAIN = os.getenv("TEST_USER_DOMAIN")
+XSRF_TOKEN = None
+stage = os.getenv("STAGE", "staging")
+if not TEST_USER_DOMAIN:
+    if stage == "staging":
+        TEST_USER_DOMAIN = "corp.staging.noq.dev"
+    if stage == "prod":
+        TEST_USER_DOMAIN = "corp.noq.dev"
+    if stage == "dev":
+        TEST_USER_DOMAIN = "localhost"
 TEST_USER_DOMAIN_US = TEST_USER_DOMAIN.replace(".", "_")
 
 
@@ -48,27 +57,45 @@ def disable_coverage_on_deployment(config):
 
 class FunctionalTest(AsyncHTTPTestCase):
     maxDiff = None
-    if os.getenv("STAGE") == "staging" or os.getenv("STAGE") == "prod":
-        token = asyncio.run(
-            generate_jwt_token(
-                TEST_USER_NAME,
-                TEST_USER_GROUPS,
-                TEST_USER_DOMAIN_US,
-                eula_signed=True,
-            )
+    cookies = SimpleCookie()
+
+    token = asyncio.run(
+        generate_jwt_token(
+            TEST_USER_NAME,
+            TEST_USER_GROUPS,
+            TEST_USER_DOMAIN_US,
+            eula_signed=True,
         )
-    else:
-        token = None
+    )
 
     def get_app(self):
         from common.config import config
 
         config.values["_global_"]["tornado"]["debug"] = True
-        config.values["_global_"]["tornado"]["xsrf"] = False
+        config.values["_global_"]["tornado"]["xsrf"] = True
+        config.values["_global_"]["development"] = False
         from api.routes import make_app
 
         self.config = config
         return make_app(jwt_validator=lambda x: {})
+
+    def _render_cookie_back(self):
+        return "".join(
+            ["%s=%s;" % (x, morsel.value) for (x, morsel) in self.cookies.items()]
+        )
+
+    def _update_cookies(self, headers):
+        try:
+            sc = headers["Set-Cookie"]
+            cookies = escape.native_str(sc)
+            self.cookies.update(SimpleCookie(cookies))
+            while True:
+                self.cookies.update(SimpleCookie(cookies))
+                if "," not in cookies:
+                    break
+                cookies = cookies[cookies.find(",") + 1 :]
+        except KeyError:
+            return
 
     def make_request(
         self,
@@ -85,8 +112,16 @@ class FunctionalTest(AsyncHTTPTestCase):
         if not headers.get("Content-Type"):
             headers["Content-Type"] = "application/json"
         headers["Host"] = TEST_USER_DOMAIN
-        headers["Cookie"] = f"noq_auth={self.token}"
+        self.cookies["noq_auth"] = self.token
         headers["X-Forwarded-For"] = "127.0.0.1"
+
+        # Get XSRF token
+        if method.lower() in ["post", "put", "delete"]:
+            r = self.fetch("/", headers=headers)
+            self._update_cookies(r.headers)
+
+        if self.cookies:
+            headers["Cookie"] = self._render_cookie_back()
 
         if body and body_type == "json":
             body = json.dumps(body)

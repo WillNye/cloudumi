@@ -4,6 +4,9 @@ from sqlalchemy.sql import extract, operators
 from sqlalchemy.sql.base import _entity_namespace_key
 from sqlalchemy.util import to_list
 
+DEFAULT_PAGE = 1
+DEFAULT_SIZE = 20
+
 OPERATOR_MAP = {
     "eq": operators.eq,
     "gt": operators.gt,
@@ -26,8 +29,16 @@ OPERATOR_MAP = {
 }
 
 
+def paginate_query(query: Query, page: int = DEFAULT_PAGE, size: int = DEFAULT_SIZE):
+    return query.offset((page - 1) * size).limit(size)
+
+
 def create_filter_from_url_params(
-    query: Query, order_by: str = None, **kwargs
+    query: Query,
+    page: int = DEFAULT_PAGE,
+    size: int = DEFAULT_SIZE,
+    order_by: str = None,
+    **kwargs
 ) -> Query:
     from_entity = query._filter_by_zero()
 
@@ -48,6 +59,8 @@ def create_filter_from_url_params(
                 query = query.filter(namespace.contains(val))
             else:
                 query = query.filter(OPERATOR_MAP[operation](namespace, *val))
+
+    query = paginate_query(query, page, size)
 
     if order_by and order_by.startswith("-"):
         query = query.order_by(desc(_entity_namespace_key(from_entity, order_by[1:])))

@@ -8,9 +8,11 @@ INT_DEPS = [
 ]
 
 EXT_DEPS = [
+    requirement("aiofile"),
     requirement("aiofiles"),
     requirement("aiopath"),
     requirement("aiozipkin"),
+    requirement("async_lru"),
     requirement("asgiref"),
     requirement("bcrypt"),
     requirement("blinker"),
@@ -55,10 +57,12 @@ EXT_DEPS = [
 ]
 
 REQUIRES = [
+    "aiofile",
     "aiofiles",
     "aiopath",
     "aiozipkin",
     "asgiref",
+    "async_lru",
     "bcrypt",
     "blinker",
     "boto",
