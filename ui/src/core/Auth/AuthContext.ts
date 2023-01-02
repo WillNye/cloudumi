@@ -14,11 +14,13 @@ export interface AuthResetPasswordInputs {
 export interface AuthContextProps {
   user: User | null;
   setUser: Dispatch<User | null>;
+  getUser: () => void;
 }
 
 export const AuthContext = createContext<AuthContextProps>({
   user: null,
-  setUser: () => undefined
+  setUser: () => undefined,
+  getUser: () => undefined
 });
 
 export const { Provider: AuthProvider, Consumer: AuthConsumer } = AuthContext;

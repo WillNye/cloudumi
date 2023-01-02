@@ -25,18 +25,40 @@ import {
   WebResponse
 } from 'core/graphql';
 import '../AWS/Amplify';
+import { getUserDetails } from 'core/API/auth';
 
 export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [invalidTenant, setInvalidTenant] = useState(false);
 
+  const navigate = useNavigate();
+
+  useEffect(function onMount() {
+    getUser();
+  }, []);
+
+  const getUser = useCallback(() => {
+    setIsLoading(true);
+    getUserDetails()
+      .then(({ data }) => {
+        setUser(data);
+      })
+      .catch(() => {
+        navigate('/login');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [navigate]);
+
   const values = useMemo(
     () => ({
       user,
-      setUser
+      setUser,
+      getUser
     }),
-    [user, setUser]
+    [user, setUser, getUser]
   );
 
   // NOTE: I don't think we should put these 2 loading/invalid checks here

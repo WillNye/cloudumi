@@ -9,7 +9,7 @@ import css from './Credentials.module.css';
 import { Navigate } from 'react-router-dom';
 import { MotionGroup, MotionItem } from 'reablocks';
 import { ReactComponent as Logo } from 'assets/brand/logo-bw.svg';
-import { login } from 'core/API/auth';
+import { login, signinWithSSO } from 'core/API/auth';
 import { Button } from 'shared/elements/Button';
 import { Input } from 'shared/form/Input';
 import { Block } from 'shared/layout/Block';
@@ -20,7 +20,7 @@ const credentialsSchema = Yup.object().shape({
 });
 
 export const Credentials: FC = () => {
-  const { user, setUser } = useAuth();
+  const { user, getUser } = useAuth();
 
   const {
     register,
@@ -36,21 +36,28 @@ export const Credentials: FC = () => {
     }
   });
 
-  const onSubmit = useCallback(async data => {
-    // TODO: In this `login` method here, we should detect
-    // if the login needs 2fa, change password, etc and then
-    // navigate the user to that route. This should NOT be in
-    // this component since its a global concern.
-    try {
-      const res = await login(data);
-      setUser(res.data.data);
-    } catch (error) {
-      // handle login errors
-    }
-  }, []);
+  const onSubmit = useCallback(
+    async data => {
+      // TODO: In this `login` method here, we should detect
+      // if the login needs 2fa, change password, etc and then
+      // navigate the user to that route. This should NOT be in
+      // this component since its a global concern.
+      try {
+        await login(data);
+        await getUser();
+      } catch (error) {
+        // handle login errors
+      }
+    },
+    [getUser]
+  );
 
-  const onSubmitSSOSignIn = useCallback(async () => {
-    // TODO: Setup SSO login
+  const handleSSOLoginIn = useCallback(async () => {
+    const res = await signinWithSSO();
+    const data = res?.data;
+    if (data.redirect_url) {
+      window.location.href = data.redirect_url;
+    }
   }, []);
 
   if (user) {
@@ -101,7 +108,7 @@ export const Credentials: FC = () => {
 
             {/* TODO (@kayizzi)) Add a `Sign in with your Identity Provider` button. I added it to Figma here: https://www.figma.com/file/u8pwOpItLV7J1H38Nh92Da/NOQ-App-Design?node-id=289%3A346&t=l5gEJ592lF2gH077-0*/}
           </form>
-          <Button fullWidth onClick={onSubmitSSOSignIn} value="sso_provider">
+          <Button fullWidth onClick={handleSSOLoginIn} value="sso_provider">
             {isSubmitting
               ? 'Logging in...'
               : 'Sign-In with your Identity Provider'}

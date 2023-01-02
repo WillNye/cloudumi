@@ -21,7 +21,7 @@ const comletePasswordSchema = Yup.object().shape({
 });
 
 export const CompleteNewPassword: FC = () => {
-  const { user } = useAuth();
+  const { user, getUser } = useAuth();
 
   const {
     register,
@@ -41,20 +41,23 @@ export const CompleteNewPassword: FC = () => {
 
   const passwordValue = watch('newPassword');
 
-  const onSubmit = useCallback(async ({ newPassword, currentPassword }) => {
-    // TODO: Setup new password
-    completePassword;
+  const onSubmit = useCallback(
+    async ({ newPassword, currentPassword }) => {
+      // TODO: Setup new password
+      completePassword;
 
-    try {
-      const res = await completePassword({
-        new_password: newPassword,
-        current_password: currentPassword
-      });
-      console.log(res.data);
-    } catch (error) {
-      // handle login errors
-    }
-  }, []);
+      try {
+        const res = await completePassword({
+          new_password: newPassword,
+          current_password: currentPassword
+        });
+        await getUser();
+      } catch (error) {
+        // handle login errors
+      }
+    },
+    [getUser]
+  );
 
   if (!user?.password_reset_required) {
     return <Navigate to="/" />;
@@ -73,7 +76,7 @@ export const CompleteNewPassword: FC = () => {
               type="password"
               autoCapitalize="none"
               autoCorrect="off"
-              placeholder="New password"
+              placeholder="Current password"
               {...register('currentPassword')}
             />
           </Block>

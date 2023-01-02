@@ -4,14 +4,25 @@ import { Helmet } from 'react-helmet-async';
 import { Navigate } from 'react-router-dom';
 import { AuthCode } from 'shared/form/AuthCode';
 import css from './MFA.module.css';
+import { setupMFA } from 'core/API/auth';
 
 export const MFA: FC = () => {
-  const { user } = useAuth();
+  const { user, getUser } = useAuth();
 
-  const verifyTOTPCode = useCallback(async (val: string) => {
-    // TODO: verify user TOTP code
-  }, []);
-
+  const verifyTOTPCode = useCallback(
+    async (val: string) => {
+      try {
+        await setupMFA({
+          command: 'verify',
+          mfa_token: val
+        });
+        await getUser();
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    [getUser]
+  );
   if (user?.mfa_setup_required) {
     return <Navigate to="/" />;
   }
