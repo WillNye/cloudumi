@@ -1,5 +1,5 @@
 import axios from '../Axios';
-import { V2_API_URL, V4_API_URL } from './constants';
+import { V1_API_URL, V2_API_URL, V4_API_URL } from './constants';
 
 type LoginParams = {
   email: string;
@@ -54,6 +54,6 @@ export const signup = () => {
 };
 
 export const signinWithSSO = () => {
-  const url = `${V4_API_URL}/api/v1/auth?sso_signin=true`;
-  return axios.post(url);
+  const url = `${V1_API_URL}/auth?sso_signin=true`;
+  return axios.get(url);
 };

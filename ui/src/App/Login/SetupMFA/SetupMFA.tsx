@@ -13,7 +13,7 @@ export const SetupMFA: FC = () => {
   const [totpCode, setTotpCode] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const { user } = useAuth();
+  const { user, getUser } = useAuth();
 
   // TODO: Hookup backend
   const getTOTPCode = useCallback(async () => {
@@ -32,16 +32,20 @@ export const SetupMFA: FC = () => {
     getTOTPCode();
   });
 
-  const verifyTOTPCode = useCallback(async (val: string) => {
-    try {
-      await setupMFA({
-        command: 'verify',
-        mfa_token: val
-      });
-    } catch (error) {
-      console.log(error);
-    }
-  }, []);
+  const verifyTOTPCode = useCallback(
+    async (val: string) => {
+      try {
+        await setupMFA({
+          command: 'verify',
+          mfa_token: val
+        });
+        await getUser();
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    [getUser]
+  );
 
   if (!user?.mfa_setup_required) {
     return <Navigate to="/" />;
