@@ -1,4 +1,5 @@
 import asyncio
+
 from iambic.aws.models import AWSAccount, AWSOrganization
 from iambic.config.models import AWSConfig, Config
 from iambic.core.parser import load_templates
@@ -28,6 +29,7 @@ async def get_account_data(template_type: str):
                 #     role_access.expires_at
                 # )  # Write this to postgres to know if is breakglass
                 # Write the aws account plus role access somewhere?
+
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(get_account_data("ROLE"))
