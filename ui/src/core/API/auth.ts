@@ -36,8 +36,8 @@ export const setupMFA = (data: SetupMFAParams) => {
   return axios.post(url, data);
 };
 
-export const verifypMFA = (data: VerifyMFAParams) => {
-  const url = `${V4_API_URL}/users/login/mfa`;
+export const verifyMFA = (data: VerifyMFAParams) => {
+  const url = `${V4_API_URL}/users/login/mfa/`;
   return axios.post(url, data);
 };
 
