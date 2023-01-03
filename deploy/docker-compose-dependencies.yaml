@@ -29,6 +29,7 @@ services:
       - "8005:8005"
     volumes:
       - ./dynamodb-data:/data:delegated
+
   cloudumi-dynamodb_admin:
     container_name: cloudumi-dynamodb-admin
     image: aaronshaf/dynamodb-admin:latest
@@ -46,6 +47,7 @@ services:
       - cloudumi-pg:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+
   cloudumi-pg-admin:
     image: adminer
     ports:

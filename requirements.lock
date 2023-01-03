@@ -557,7 +557,9 @@ okta-jwt==1.3.5
     #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
 onelogin==3.0.1
-    # via -r ./api/requirements.in
+    # via
+    #   -r ./api/requirements.in
+    #   -r ./common/lib/requirements.in
 ordered-set==4.1.0
     # via deepdiff
 orderedmultidict==1.0.1
