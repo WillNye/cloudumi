@@ -64,6 +64,7 @@ class User(SoftDeleteMixin, Base):
     middle_name = Column(String)
     family_name = Column(String)
     mfa_secret = Column(String)
+    mfa_secret_temp = Column(String)
     mfa_enabled = Column(Boolean, default=False)
     mfa_primary_method = Column(String(64), nullable=True)
     mfa_phone_number = Column(String(128), nullable=True)
@@ -158,15 +159,23 @@ class User(SoftDeleteMixin, Base):
                 await session.commit()
             return True
 
-    async def set_mfa_secret(self):
+    async def set_mfa_secret(self, mfa_secret) -> bool:
         """Generate a new MFA secret"""
-        self.mfa_secret = self.mfa_secret = pyotp.random_base32()
+        self.mfa_secret = mfa_secret
         await self.write()
-        return self.mfa_secret
+        return True
+
+    async def set_mfa_secret_temp(self):
+        """Generate a new MFA secret"""
+        self.mfa_secret_temp = pyotp.random_base32()
+        await self.write()
+        return self.mfa_secret_temp
 
     async def enable_mfa(self, token):
         """Enable MFA after the user has verified their MFA token."""
-        if await self.check_mfa(token):
+        if await self.check_temp_mfa(token):
+            self.mfa_secret = self.mfa_secret_temp
+            self.mfa_secret_temp = None
             self.mfa_enabled = True
             await self.write()
             return True
@@ -174,10 +183,10 @@ class User(SoftDeleteMixin, Base):
 
     async def get_totp_uri(self):
         label = urllib.parse.quote_plus(self.tenant.replace("_", "."))
-        mfa_secret = self.mfa_secret
-        if not mfa_secret:
-            mfa_secret = self.set_mfa_secret()
-        return f"otpauth://totp/{label}:{self.email}?secret={mfa_secret}&issuer={label}"
+        mfa_secret_temp = self.mfa_secret_temp
+        if not mfa_secret_temp:
+            mfa_secret_temp = self.set_mfa_secret_temp()
+        return f"otpauth://totp/{label}:{self.email}?secret={mfa_secret_temp}&issuer={label}"
 
     async def disable_mfa(self):
         """Disable MFA for the user and clear the MFA secret."""
@@ -197,6 +206,11 @@ class User(SoftDeleteMixin, Base):
             await self.write()
 
         return verified
+
+    async def check_temp_mfa(self, token):
+        """Check if the given MFA token is valid."""
+        totp = pyotp.TOTP(self.mfa_secret_temp)
+        return totp.verify(token)
 
     @classmethod
     async def update(cls, id, username, **kwargs):

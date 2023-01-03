@@ -1,8 +1,8 @@
 """migration
 
-Revision ID: ac757d1cccde
+Revision ID: 3b751f90a520
 Revises: 82d249e52311
-Create Date: 2023-01-02 14:13:42.217382
+Create Date: 2023-01-03 15:34:04.825161
 
 """
 import sqlalchemy as sa
@@ -10,7 +10,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "ac757d1cccde"
+revision = "3b751f90a520"
 down_revision = "82d249e52311"
 branch_labels = None
 depends_on = None
@@ -61,6 +61,7 @@ def upgrade() -> None:
         sa.Column("middle_name", sa.String(), nullable=True),
         sa.Column("family_name", sa.String(), nullable=True),
         sa.Column("mfa_secret", sa.String(), nullable=True),
+        sa.Column("mfa_secret_temp", sa.String(), nullable=True),
         sa.Column("mfa_enabled", sa.Boolean(), nullable=True),
         sa.Column("mfa_primary_method", sa.String(length=64), nullable=True),
         sa.Column("mfa_phone_number", sa.String(length=128), nullable=True),

@@ -508,9 +508,9 @@ class UserMFASelfServiceHandler(BaseHandler):
             raise tornado.web.Finish()
         if command == "setup":
             # Set up MFA
-            await user.set_mfa_secret()
+            await user.set_mfa_secret_temp()
             totp_uri = await user.get_totp_uri()
-            mfa_secret = user.mfa_secret
+            mfa_secret = user.mfa_secret_temp
             self.write(
                 WebResponse(
                     success="success",
