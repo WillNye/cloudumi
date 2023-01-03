@@ -6,6 +6,7 @@ import common.lib.noq_json as json
 from common.group_memberships.models import GroupMembership
 from common.groups.models import Group
 from common.handlers.base import ScimAuthHandler
+from common.lib.password import generate_random_password
 from common.users.models import User
 
 
@@ -26,6 +27,8 @@ class ScimV2UsersHandler(ScimAuthHandler):
             if request_filter:
                 match = re.match(r'(\w+) eq "([^"]*)"', request_filter)
                 (search_key_name, search_value) = match.groups()
+                if search_key_name == "userName":
+                    search_key_name = "username"
                 filters[f"{search_key_name}__eq"] = search_value
 
         users = await User.get_all(
@@ -39,7 +42,17 @@ class ScimV2UsersHandler(ScimAuthHandler):
         for user in users:
             all_users.append(await user.serialize_for_scim())
         self.set_header("Content-Type", "application/json")
-        self.write(json.dumps(all_users))
+        self.write(
+            json.dumps(
+                {
+                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
+                    "totalResults": len(all_users),
+                    "startIndex": offset,
+                    "itemsPerPage": count,
+                    "Resources": all_users,
+                }
+            )
+        )
 
     async def post(self):
         """Create a new user."""
@@ -55,6 +68,8 @@ class ScimV2UsersHandler(ScimAuthHandler):
         middle_name = body.get("name", {}).get("middleName")
         family_name = body.get("name", {}).get("familyName")
         password = body.get("password")
+        if not password:
+            password = await generate_random_password()
 
         existing_user = await User.get_by_username(self.ctx.tenant, username)
 
@@ -100,12 +115,29 @@ class ScimV2UsersHandler(ScimAuthHandler):
                     await GroupMembership.create(user, new_group)
         user = await User.get_by_username(self.ctx.tenant, username, get_groups=True)
         new_user = await user.serialize_for_scim()
+        self.set_status(201)
         self.set_header("Content-Type", "application/json")
         self.write(json.dumps(new_user))
 
 
 class ScimV2UserHandler(ScimAuthHandler):
     """Handler for SCIM v2 User API endpoints."""
+
+    async def get(self, user_id):
+        user = await User.get_by_id(self.ctx.tenant, user_id, get_groups=True)
+        if not user:
+            self.set_status(404)
+            self.write(
+                {
+                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                    "detail": "User not found",
+                    "status": 404,
+                }
+            )
+            raise tornado.web.Finish()
+        scim_user = await user.serialize_for_scim()
+        self.set_header("Content-Type", "application/json")
+        self.write(json.dumps(scim_user))
 
     async def post(self, user_id):
         user = await User.get_by_id(self.ctx.tenant, user_id)

@@ -35,7 +35,17 @@ class ScimV2GroupsHandler(ScimAuthHandler):
         for group in groups:
             all_groups.append(await group.serialize_for_scim())
         self.set_header("Content-Type", "application/json")
-        self.write(json.dumps(all_groups))
+        self.write(
+            json.dumps(
+                {
+                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
+                    "totalResults": len(all_groups),
+                    "startIndex": offset,
+                    "itemsPerPage": count,
+                    "Resources": all_groups,
+                }
+            )
+        )
 
     async def post(self):
         """Create a new group."""

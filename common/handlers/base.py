@@ -1308,13 +1308,15 @@ class ScimAuthHandler(TornadoRequestHandler):
         super(ScimAuthHandler, self).initialize(**kwargs)
 
     async def prepare(self) -> None:
-        self.request_uuid = str(uuid.uuid4())
-        tenant = self.get_tenant_name()
-        tenant_config = TenantConfig(tenant)
+        self.request_uuid: str = str(uuid.uuid4())
+        tenant: str = self.get_tenant_name()
+        tenant_config: TenantConfig = TenantConfig(tenant)
         if not tenant_config.scim_bearer_token:
             raise tornado.web.HTTPError(403, "Bearer token not configured.")
 
-        bearer_header = self.request.headers.get("Authorization")
+        bearer_header: str = self.request.headers.get("Authorization", "")
+        if not bearer_header.startswith("Bearer "):
+            raise tornado.web.HTTPError(403, "Invalid bearer token.")
         authorization_token = bearer_header.split("Bearer ")[1]
 
         if authorization_token != tenant_config.scim_bearer_token:
