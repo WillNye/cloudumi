@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { Navigate } from 'react-router-dom';
 import { AuthCode } from 'shared/form/AuthCode';
 import css from './MFA.module.css';
-import { setupMFA } from 'core/API/auth';
+import { verifypMFA } from 'core/API/auth';
 
 export const MFA: FC = () => {
   const { user, getUser } = useAuth();
@@ -12,8 +12,7 @@ export const MFA: FC = () => {
   const verifyTOTPCode = useCallback(
     async (val: string) => {
       try {
-        await setupMFA({
-          command: 'verify',
+        await verifypMFA({
           mfa_token: val
         });
         await getUser();

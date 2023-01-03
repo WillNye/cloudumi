@@ -16,6 +16,10 @@ type SetupMFAParams = {
   mfa_token?: string;
 };
 
+type VerifyMFAParams = {
+  mfa_token: string;
+};
+
 export const login = (data: LoginParams) => {
   const url = `${V4_API_URL}/users/login`;
   return axios.post(url, data);
@@ -29,6 +33,11 @@ export const logout = () => {
 
 export const setupMFA = (data: SetupMFAParams) => {
   const url = `${V4_API_URL}/users/mfa`;
+  return axios.post(url, data);
+};
+
+export const verifypMFA = (data: VerifyMFAParams) => {
+  const url = `${V4_API_URL}/users/login/mfa`;
   return axios.post(url, data);
 };
 
