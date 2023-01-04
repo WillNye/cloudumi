@@ -1,0 +1,7 @@
+.notification {
+  padding: var(--spacing-md);
+  background: var(--gray-600);
+  border-radius: var(--border-radius-lg);
+  max-width: 300px;
+  min-width: 250px;
+}
