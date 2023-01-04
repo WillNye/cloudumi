@@ -1,8 +1,7 @@
 import { useAuth } from 'core/Auth';
-import { FC, useCallback, useState } from 'react';
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Navigate } from 'react-router-dom';
-import { useMount } from 'react-use';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { QRCode } from 'shared/elements/QRCode';
 import { AuthCode } from 'shared/form/AuthCode';
 
@@ -10,10 +9,23 @@ import css from './SetupMFA.module.css';
 import { setupMFA } from 'core/API/auth';
 
 export const SetupMFA: FC = () => {
-  const [totpCode, setTotpCode] = useState<string>('');
+  const [totpCode, setTotpCode] = useState<Record<string, string>>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const { user, getUser } = useAuth();
+
+  const navigate = useNavigate();
+
+  const isMounted = useRef(false);
+
+  const mfaSetupRequired = useMemo(() => user?.mfa_setup_required, [user]);
+
+  useEffect(() => {
+    if (!isMounted.current && mfaSetupRequired) {
+      isMounted.current = true;
+      getTOTPCode();
+    }
+  }, [isMounted, mfaSetupRequired]);
 
   // TODO: Hookup backend
   const getTOTPCode = useCallback(async () => {
@@ -22,15 +34,11 @@ export const SetupMFA: FC = () => {
       const res = await setupMFA({
         command: 'setup'
       });
-      setTotpCode(res.data.data.totp_uri);
+      setTotpCode(res.data.data);
     } catch (error) {
       console.log(error);
     }
   }, []);
-
-  useMount(() => {
-    getTOTPCode();
-  });
 
   const verifyTOTPCode = useCallback(
     async (val: string) => {
@@ -40,14 +48,15 @@ export const SetupMFA: FC = () => {
           mfa_token: val
         });
         await getUser();
+        navigate('/');
       } catch (error) {
         console.log(error);
       }
     },
-    [getUser]
+    [getUser, navigate]
   );
 
-  if (!user?.mfa_setup_required) {
+  if (!mfaSetupRequired) {
     return <Navigate to="/" />;
   }
 
@@ -58,8 +67,9 @@ export const SetupMFA: FC = () => {
       </Helmet>
       <div className={css.container}>
         <h1>Setup MFA</h1>
-        <QRCode value={totpCode} />
+        <QRCode value={totpCode?.totp_uri ?? ''} />
         <br />
+        <div>{totpCode?.mfa_secret}</div>
         <br />
         <h3>Enter Code</h3>
         <AuthCode
