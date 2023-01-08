@@ -1,4 +1,4 @@
-name: Publish to staging using bazelisk/bazel and the `//deploy/staging:deploy` target
+name: Publish to staging using Docker
 on: workflow_dispatch
 # The  below will trigger build on any push to main branch
 #on:
@@ -7,53 +7,16 @@ on: workflow_dispatch
 #    tags:
 #      - "*"
 jobs:
-  bazelisk_deploy_to_staging:
+  deploy_to_staging:
     runs-on: self-hosted
-    name: Bazelisk deploy action
+    name: Deploy to Staging
     if: github.repository == 'noqdev/cloudumi'
     steps:
-      - uses: actions/checkout@v1
-
-      - uses: satackey/action-docker-layer-caching@v0.0.11
-        # Ignore the failure of a step and avoid terminating the job.
-        continue-on-error: true
-        if: ${{ !env.ACT }}
-
-      - name: Mount bazel cache
-        uses: actions/cache@v1
-        with:
-          path: "/home/runner/.cache/bazel"
-          key: bazel
-
-      - name: Update cache
-        run: sudo apt-get update
-
-      - name: Install xmlsec dependencies
-        run: sudo apt-get install -y libxml2-dev libxmlsec1-dev libxmlsec1-openssl
-
-      - name: Install bazelisk
+      - uses: actions/checkout@v2
+      - name: Push all the things
         run: |
-          curl -LO "https://github.com/bazelbuild/bazelisk/releases/download/v1.1.0/bazelisk-linux-amd64"
-          mkdir -p "${GITHUB_WORKSPACE}/bin/"
-          mv bazelisk-linux-amd64 "${GITHUB_WORKSPACE}/bin/bazel"
-          chmod +x "${GITHUB_WORKSPACE}/bin/bazel"
-
-      - name: Setup ECS CLI
-        run: |-
-          mkdir -p "$HOME/tools/ecs-cli"
-          curl -Lo "$HOME/tools/ecs-cli/ecs-cli" https://amazon-ecs-cli.s3.amazonaws.com/ecs-cli-linux-amd64-latest
-          chmod +x "$HOME/tools/ecs-cli/ecs-cli"
-          echo "$HOME/tools/ecs-cli" >> $GITHUB_PATH
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.10
-
-      - name: Deploy to Staging using Bazelisk
-        env:
-          AWS_DEFAULT_REGION: us-west-2
-          AWS_ACCESS_KEY_ID: ${{ secrets.NOQ_ECR_USER_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.NOQ_ECR_USER_SECRET_ACCESS_KEY }}
-        run: |-
-          ${GITHUB_WORKSPACE}/bin/bazel run //deploy/infrastructure/live/noq.dev:staging-1
+          set -x
+          export AWS_ACCESS_KEY_ID=${{ secrets.NOQ_ECR_USER_ACCESS_KEY_ID }}
+          export AWS_SECRET_ACCESS_KEY=${{ secrets.NOQ_ECR_USER_SECRET_ACCESS_KEY }}
+          export PATH="$PATH:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+          deploy/infrastructure/live/shared/staging-1/push_all_the_things.sh
