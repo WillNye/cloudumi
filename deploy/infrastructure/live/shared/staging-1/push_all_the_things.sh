@@ -1,9 +1,11 @@
 #!/bin/bash
 set -ex
 echo
-echo "Setting AWS_PROFILE=staging/staging_admin"
-echo
-export AWS_PROFILE=staging/staging_admin
+if [ -z "$AWS_ACCESS_KEY_ID" ]
+then
+  echo "Setting AWS_PROFILE=staging/staging_admin"
+  export AWS_PROFILE=staging/staging_admin
+fi
 
 echo
 echo "Updating aws-cli"
