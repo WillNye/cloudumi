@@ -12,7 +12,9 @@ jobs:
     name: Deploy to Staging
     if: github.repository == 'noqdev/cloudumi'
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Fetches tags, which we need to determine version
       - name: Push all the things
         run: |
           set -x
