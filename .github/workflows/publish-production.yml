@@ -1,4 +1,4 @@
-name: Publish to staging using Docker
+name: Publish to prod using Docker
 on: workflow_dispatch
 # The  below will trigger build on any push to main branch
 #on:
@@ -7,9 +7,9 @@ on: workflow_dispatch
 #    tags:
 #      - "*"
 jobs:
-  deploy_to_staging:
+  deploy_to_prod:
     runs-on: self-hosted
-    name: Deploy to Staging
+    name: Deploy to Prod
     if: github.repository == 'noqdev/cloudumi'
     steps:
       - uses: actions/checkout@v3
