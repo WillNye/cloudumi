@@ -1,9 +1,11 @@
 #!/bin/bash
 set -ex
 echo
-echo "Setting AWS_PROFILE=prod/prod_admin"
-echo
-export AWS_PROFILE=prod/prod_admin
+if [ -z "$AWS_ACCESS_KEY_ID" ]
+then
+  echo "Setting AWS_PROFILE=prod/prod_admin"
+  export AWS_PROFILE=prod/prod_admin
+fi
 
 echo
 echo "Updating aws-cli"
@@ -13,7 +15,7 @@ pip install --upgrade awscli
 echo
 echo "Logging in to AWS ECR for 940552945933.dkr.ecr.us-west-2.amazonaws.com"
 echo
-aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 940552945933.dkr.ecr.us-west-2.amazonaws.com
+bash -c "aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 940552945933.dkr.ecr.us-west-2.amazonaws.com"
 
 export VERSION=$(git describe --tags --abbrev=0)
 export BRANCH=$(git symbolic-ref --short HEAD)

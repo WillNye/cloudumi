@@ -1,9 +1,11 @@
 #!/bin/bash
 set -ex
 echo
-echo "Setting AWS_PROFILE={{ aws_profile }}"
-echo
-export AWS_PROFILE={{ aws_profile }}
+if [ -z "$AWS_ACCESS_KEY_ID" ]
+then
+  echo "Setting AWS_PROFILE={{ aws_profile }}"
+  export AWS_PROFILE={{ aws_profile }}
+fi
 
 echo
 echo "Updating aws-cli"
@@ -13,7 +15,7 @@ pip install --upgrade awscli
 echo
 echo "Logging in to AWS ECR for {{ registry_repository_url }}"
 echo
-aws ecr get-login-password --region {{ region }} | docker login --username AWS --password-stdin {{ registry_repository_url }}
+bash -c "aws ecr get-login-password --region {{ region }} | docker login --username AWS --password-stdin {{ registry_repository_url }}"
 
 export VERSION=$(git describe --tags --abbrev=0)
 export BRANCH=$(git symbolic-ref --short HEAD)
