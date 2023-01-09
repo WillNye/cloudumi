@@ -34,27 +34,4 @@ client.interceptors.request.use(
   }
 );
 
-// Response Interceptor
-client.interceptors.response.use(
-  response => {
-    return response;
-  },
-
-  error => {
-    if (error?.response?.status === 401) {
-      // logout user
-    }
-
-    if (error?.response?.status === 500) {
-      // log sentry error
-    }
-
-    if (error?.response?.status === 406) {
-      // show invalid client page
-    }
-
-    return Promise.reject(error);
-  }
-);
-
 export default client;

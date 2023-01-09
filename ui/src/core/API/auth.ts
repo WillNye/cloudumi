@@ -20,6 +20,13 @@ type VerifyMFAParams = {
   mfa_token: string;
 };
 
+type ForgotPasswordParams = {
+  command: 'request' | 'reset';
+  email?: string;
+  password?: string;
+  token?: string;
+};
+
 export const login = (data: LoginParams) => {
   const url = `${V4_API_URL}/users/login`;
   return axios.post(url, data);
@@ -51,15 +58,9 @@ export const completePassword = (data: CompletePasswordParams) => {
   return axios.post(url, data);
 };
 
-export const resetPassword = () => {
+export const resetPassword = (data: ForgotPasswordParams) => {
   const url = `${V4_API_URL}/users/forgot_password`;
-  return axios.post(url);
-};
-
-// Not yet implemented in the backend
-export const signup = () => {
-  const url = `${V4_API_URL}/users/signup`;
-  return axios.post(url);
+  return axios.post(url, data);
 };
 
 export const signinWithSSO = () => {

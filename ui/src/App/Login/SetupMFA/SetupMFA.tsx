@@ -7,10 +7,17 @@ import { AuthCode } from 'shared/form/AuthCode';
 
 import css from './SetupMFA.module.css';
 import { setupMFA } from 'core/API/auth';
+import { extractErrorMessage } from 'core/API/utils';
+import { AxiosError } from 'axios';
+import { Loader } from 'shared/elements/Loader';
+import { Notification, NotificationType } from 'shared/elements/Notification';
 
 export const SetupMFA: FC = () => {
   const [totpCode, setTotpCode] = useState<Record<string, string>>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [submittingError, setSubmittingError] = useState<string | null>(null);
 
   const { user, getUser } = useAuth();
 
@@ -27,34 +34,48 @@ export const SetupMFA: FC = () => {
     }
   }, [isMounted, mfaSetupRequired]);
 
-  // TODO: Hookup backend
   const getTOTPCode = useCallback(async () => {
-    // TODO: Get OTP MFA code
+    setIsLoading(true);
     try {
       const res = await setupMFA({
         command: 'setup'
       });
       setTotpCode(res.data.data);
+      setIsLoading(false);
     } catch (error) {
-      console.log(error);
+      const err = error as AxiosError;
+      const errorRes = err?.response;
+      const errorMsg = extractErrorMessage(errorRes?.data);
+      setErrorMessage(errorMsg || 'Unable to setup MFA');
+      setIsLoading(false);
     }
   }, []);
 
   const verifyTOTPCode = useCallback(
     async (val: string) => {
+      setIsSubmitting(true);
       try {
         await setupMFA({
           command: 'verify',
           mfa_token: val
         });
         await getUser();
+        setIsSubmitting(false);
         navigate('/');
       } catch (error) {
-        console.log(error);
+        const err = error as AxiosError;
+        const errorRes = err?.response;
+        const errorMsg = extractErrorMessage(errorRes?.data);
+        setSubmittingError(errorMsg || 'Unable to setup MFA');
+        setIsSubmitting(false);
       }
     },
     [getUser, navigate]
   );
+
+  if (errorMessage) {
+    // setup Generic Error component
+  }
 
   if (!mfaSetupRequired) {
     return <Navigate to="/" />;
@@ -66,19 +87,34 @@ export const SetupMFA: FC = () => {
         <title>Setup MFA</title>
       </Helmet>
       <div className={css.container}>
-        <h1>Setup MFA</h1>
-        <QRCode value={totpCode?.totp_uri ?? ''} />
-        <br />
-        <div>{totpCode?.mfa_secret}</div>
-        <br />
-        <h3>Enter Code</h3>
-        <AuthCode
-          onChange={val => {
-            if (val?.length === 6) {
-              verifyTOTPCode(val);
-            }
-          }}
-        />
+        {isLoading ? (
+          <Loader fullPage />
+        ) : (
+          <>
+            <h1>Setup MFA</h1>
+            <QRCode value={totpCode?.totp_uri ?? ''} />
+            <br />
+            <div>{totpCode?.mfa_secret}</div>
+            <br />
+            <h3>Enter Code</h3>
+            <AuthCode
+              disabled={isSubmitting}
+              onChange={val => {
+                setSubmittingError(null);
+                if (val?.length === 6) {
+                  verifyTOTPCode(val);
+                }
+              }}
+            />
+            {submittingError && (
+              <Notification
+                type={NotificationType.ERROR}
+                header={submittingError}
+                showCloseIcon={false}
+              />
+            )}
+          </>
+        )}
       </div>
     </>
   );

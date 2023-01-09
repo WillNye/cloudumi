@@ -1,82 +1,18 @@
-import { useState } from 'react';
-import { Button } from 'shared/elements/Button';
-import { Block } from 'shared/layout/Block';
-import { Input } from 'shared/form/Input';
+import { useMemo } from 'react';
+import css from './PasswordReset.module.css';
+import { useSearchParams } from 'react-router-dom';
+import { SetNewPassword } from './components/SetNewPassword';
+import { ResetPassword } from './components/ResetPassword';
 
-export function PasswordReset() {
-  const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [passwordConfirmation, setPasswordConfirmation] = useState('');
-  const [resetSuccess, setResetSuccess] = useState(false);
-  const [error, setError] = useState(null);
-  const token = new URLSearchParams(window.location.search).get('token');
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-
-    try {
-      if (!token) {
-        // TODO (Kayizzi): Make a POST REQUEST with user's e-mail to /api/v4/users/forgot_password, it's in
-        // queries.ts under `USER_SEND_RESET_PASSWORD_LINK`.
-        // BODY contents:
-        // {
-        //   "command": "request",
-        //   "email": "curtis@noq.dev"
-        // }
-      } else {
-        // TODO (Kayizzi): Make a POST REQUEST to /api/v4/users/forgot_password, body content:
-      }
-    } catch (error) {
-      setError(error);
-    }
-  }
+export const PasswordReset = () => {
+  const [searchParams] = useSearchParams();
+  const token = useMemo(() => searchParams.get('token'), [searchParams]);
 
   return (
-    <form onSubmit={handleSubmit}>
-      {error && <p>{error.message}</p>}
-      {!token && (
-        <>
-          <Block label="Email">
-            <Input
-              type="email"
-              value={email}
-              placeholder="Enter Email"
-              onChange={event => setEmail(event.target.value)}
-            />
-          </Block>
-          <Button type="submit">Send Password Reset link</Button>
-        </>
-      )}
-      {token && (
-        <>
-          <label>
-            New Password:
-            <input
-              type="password"
-              value={newPassword}
-              onChange={event => setNewPassword(event.target.value)}
-            />
-          </label>
-          {/* TODO (Kayizzi): Add a password strength meter here. */}
-          <label>
-            Verify New Password:
-            <input
-              type="password"
-              value={passwordConfirmation}
-              onChange={event => setPasswordConfirmation(event.target.value)}
-            />
-          </label>
-          <button type="submit">Reset Password</button>
-        </>
-      )}
-      {/* TODO (Kayizzi): We should link the user to the login page here.  */}
-      {resetSuccess && (
-        <p>
-          Your password has been successfully reset. You can now log in with
-          your new password.
-        </p>
-      )}
-    </form>
+    <div className={css.container}>
+      <h3>Reset Password</h3>
+      <br />
+      {token ? <SetNewPassword token={token} /> : <ResetPassword />}
+    </div>
   );
-}
+};

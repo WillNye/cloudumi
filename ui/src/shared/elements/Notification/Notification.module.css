@@ -2,8 +2,8 @@
   padding: 15px var(--spacing-md);
   background: var(--gray-600);
   border-radius: var(--border-radius-lg);
-  max-width: 350px;
-  min-width: 300px;
+  max-width: 320px;
+  width: 100%;
   display: flex;
   flex-direction: row;
   align-items: flex-start;

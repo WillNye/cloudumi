@@ -1,16 +1,19 @@
 import { useAuth } from 'core/Auth';
-import { FC, useCallback } from 'react';
+import { FC, useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { PasswordMeter } from 'shared/elements/PasswordMeter';
 import { Navigate } from 'react-router-dom';
-import css from './CompletePassword.module.css';
 import { Input } from 'shared/form/Input';
 import { Button } from 'shared/elements/Button';
 import { Block } from 'shared/layout/Block';
 import { completePassword } from 'core/API/auth';
+import { AxiosError } from 'axios';
+import { extractErrorMessage } from 'core/API/utils';
+import { Notification, NotificationType } from 'shared/elements/Notification';
+import css from './CompletePassword.module.css';
 
 const comletePasswordSchema = Yup.object().shape({
   newPassword: Yup.string().required('Required'),
@@ -21,6 +24,8 @@ const comletePasswordSchema = Yup.object().shape({
 });
 
 export const CompleteNewPassword: FC = () => {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const { user, getUser } = useAuth();
 
   const {
@@ -43,9 +48,6 @@ export const CompleteNewPassword: FC = () => {
 
   const onSubmit = useCallback(
     async ({ newPassword, currentPassword }) => {
-      // TODO: Setup new password
-      completePassword;
-
       try {
         const res = await completePassword({
           new_password: newPassword,
@@ -53,7 +55,12 @@ export const CompleteNewPassword: FC = () => {
         });
         await getUser();
       } catch (error) {
-        // handle login errors
+        const err = error as AxiosError;
+        const errorRes = err?.response;
+        const errorMsg = extractErrorMessage(errorRes?.data);
+        setErrorMessage(
+          errorMsg || 'An error occurred while reseting Password'
+        );
       }
     },
     [getUser]
@@ -105,8 +112,15 @@ export const CompleteNewPassword: FC = () => {
             <p>{errors.confirmNewPassword.message}</p>
           )}
           <br />
+          {errorMessage && (
+            <Notification
+              type={NotificationType.ERROR}
+              header={errorMessage}
+              showCloseIcon={false}
+            />
+          )}
           <br />
-          <Button type="submit" disabled={isSubmitting || !isValid}>
+          <Button type="submit" disabled={isSubmitting || !isValid} fullWidth>
             {isSubmitting ? 'Resetting Password...' : 'Reset Password'}
           </Button>
         </form>

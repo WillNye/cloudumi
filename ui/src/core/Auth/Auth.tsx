@@ -6,19 +6,25 @@ import {
   useMemo,
   useState
 } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMatch, useNavigate } from 'react-router-dom';
 import { AuthProvider } from './AuthContext';
 import { User } from './types';
 
 import { getUserDetails } from 'core/API/auth';
 import { Loader } from 'shared/elements/Loader';
+import { useAxiosInterceptors } from './hooks';
 
 export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [invalidTenant, setInvalidTenant] = useState(false);
+  const [internalServerError, setInternalServerError] = useState(false);
+
+  const isResetPasswordRoute = useMatch('/login/password-reset');
 
   const navigate = useNavigate();
+
+  useAxiosInterceptors({ setUser, setInvalidTenant });
 
   useEffect(function onMount() {
     getUser();
@@ -31,12 +37,14 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
         setUser(data);
       })
       .catch(() => {
-        navigate('/login');
+        if (!isResetPasswordRoute) {
+          navigate('/login');
+        }
       })
       .finally(() => {
         setIsLoading(false);
       });
-  }, [navigate]);
+  }, [navigate, isResetPasswordRoute]);
 
   const values = useMemo(
     () => ({
@@ -60,6 +68,11 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
         contact support.
       </div>
     );
+  }
+
+  if (internalServerError) {
+    // Invalid Tenant component
+    return <div>Internal server error</div>;
   }
 
   return <AuthProvider value={values}>{children}</AuthProvider>;
