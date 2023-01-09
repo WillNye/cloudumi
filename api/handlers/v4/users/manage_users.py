@@ -207,7 +207,7 @@ class PasswordResetSelfServiceHandler(BaseHandler):
             raise tornado.web.Finish()
 
         if not db_user or not await db_user.check_password(current_password):
-            self.set_status(401)
+            self.set_status(400)
             self.write(
                 WebResponse(
                     success="error",

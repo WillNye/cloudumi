@@ -24,7 +24,7 @@ class LoginHandler(TornadoRequestHandler):
             db_user = await User.get_by_email(tenant, username, get_groups=True)
 
         if not db_user or not await db_user.check_password(request.password):
-            self.set_status(401)
+            self.set_status(400)
             self.write(
                 WebResponse(
                     success="error",
@@ -58,7 +58,7 @@ class LoginHandler(TornadoRequestHandler):
             if await db_user.check_mfa(mfa_token):
                 mfa_verification_required = False
             else:
-                self.set_status(401)
+                self.set_status(400)
                 self.write(
                     WebResponse(
                         success="error",
@@ -69,7 +69,7 @@ class LoginHandler(TornadoRequestHandler):
                 raise tornado.web.Finish()
 
         if not db_user.mfa_enabled and request.mfa_token:
-            self.set_status(401)
+            self.set_status(400)
             self.write(
                 WebResponse(
                     success="error",
@@ -154,7 +154,7 @@ class MfaHandler(BaseHandler):
             raise tornado.web.Finish()
 
         if not await db_user.check_mfa(request.mfa_token):
-            self.set_status(401)
+            self.set_status(400)
             self.write(
                 WebResponse(
                     success="error",
