@@ -41,7 +41,6 @@ service_task_definition_map = [
 cluster_name = "{{ ecs_cluster_name }}"
 subnets = ["{{ subnet_name_private_az0 }}", "{{ subnet_name_private_az1 }}"]
 security_groups = ["{{ ecs_security_group }}"]
-os.environ["AWS_PROFILE"] = "{{ aws_profile }}"
 region = "{{ region }}"
 account_id = "{{ account_id}}"
 kms_key_arn = "{{ kms_key_id }}"
