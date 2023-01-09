@@ -11,7 +11,7 @@ export const useAxiosInterceptors = ({ setUser, setInvalidTenant }) => {
 
       error => {
         if (error?.response?.status === 401) {
-          //   setUser(null);
+          setUser(null);
         }
 
         if (error?.response?.status === 500) {
