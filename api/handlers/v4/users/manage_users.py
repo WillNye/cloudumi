@@ -311,6 +311,17 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
 
         user = await User.get_by_email(tenant, email)
 
+        if not user:
+            self.set_status(400)
+            self.write(
+                WebResponse(
+                    success="error",
+                    status_code=400,
+                    data={"message": "Invalid user or password"},
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            raise tornado.web.Finish()
+
         password_reset_token = password_reset_blob.get("password_reset_token")
         if not password_reset_token:
             self.set_status(400)
