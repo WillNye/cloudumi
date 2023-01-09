@@ -83,16 +83,6 @@ echo
 echo "Copying Frontend from container to S3"
 echo
 
-<<<<<<< HEAD
-# Get production creds
-export PROD_ROLE_ARN=arn:aws:iam::940552945933:role/prod_admin
-noq file -p $PROD_ROLE_ARN $PROD_ROLE_ARN -f
-
-# Upload frontend files that we just built in the container to S3
-docker run -v "$HOME/.aws:/root/.aws" \
-    -e "AWS_PROFILE=$PROD_ROLE_ARN" 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api:latest \
-    bash -c "aws s3 sync /app/frontend/dist/ $UPLOAD_DIRECTORY"
-=======
 if [ -z "$AWS_ACCESS_KEY_ID" ]
 then
   # Get production creds
@@ -100,14 +90,13 @@ then
   noq file -p $PROD_ROLE_ARN $PROD_ROLE_ARN -f
   # Upload frontend files that we just built in the container to S3
   docker run -v "$HOME/.aws:/root/.aws" \
-      -e "AWS_PROFILE=$PROD_ROLE_ARN" $ECR_IMAGE_TAG_LATEST \
+      -e "AWS_PROFILE=$PROD_ROLE_ARN" 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api:latest \
       bash -c "aws s3 sync /app/frontend/dist/ $UPLOAD_DIRECTORY"
 else
   docker run -v "$HOME/.aws:/root/.aws" \
     -e "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" -e "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" \
-    $ECR_IMAGE_TAG_LATEST bash -c "aws s3 sync /app/frontend/dist/ $UPLOAD_DIRECTORY"
+    259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api:latest bash -c "aws s3 sync /app/frontend/dist/ $UPLOAD_DIRECTORY"
 fi
->>>>>>> main
 
 echo
 echo "Deploying Service - $VERSION"

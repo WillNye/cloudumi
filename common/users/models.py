@@ -455,7 +455,7 @@ class User(SoftDeleteMixin, Base):
 
         # Build the reset URL
         password_reset_url = tenant_url.join(
-            f"/api/v4/users/forgot_password?token={password_reset_blob_j_url_safe}"
+            f"/login/password-reset?token={password_reset_blob_j_url_safe}"
         ).url
 
         body_text = (
