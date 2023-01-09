@@ -435,7 +435,7 @@ logmatic-python==0.1.7
     #   -r ./common/celery_tasks/requirements.in
     #   -r ./common/config/requirements.in
     #   -r ./common/util/requirements.in
-lxml==4.6.5
+lxml==4.9.2
     # via
     #   python3-saml
     #   xmlsec
@@ -750,7 +750,7 @@ python-json-logger==2.0.4
     # via logmatic-python
 python-terraform==0.10.1
     # via -r ./api/requirements.in
-python3-saml==1.14.0
+python3-saml==1.15.0
     # via -r ./common/requirements.in
 pytz==2022.7
     # via
