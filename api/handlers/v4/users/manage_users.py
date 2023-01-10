@@ -292,7 +292,7 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
                 WebResponse(
                     success="error",
                     status_code=400,
-                    data={"message": "Invalid email address"},
+                    data={"message": "Invalid token"},
                 ).dict(exclude_unset=True, exclude_none=True)
             )
             raise tornado.web.Finish()
@@ -304,7 +304,7 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
                 WebResponse(
                     success="error",
                     status_code=400,
-                    data={"message": "Invalid tenant"},
+                    data={"message": "Invalid token"},
                 ).dict(exclude_unset=True, exclude_none=True)
             )
             raise tornado.web.Finish()
@@ -317,7 +317,7 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
                 WebResponse(
                     success="error",
                     status_code=400,
-                    data={"message": "Invalid user or password"},
+                    data={"message": "Invalid token"},
                 ).dict(exclude_unset=True, exclude_none=True)
             )
             raise tornado.web.Finish()
