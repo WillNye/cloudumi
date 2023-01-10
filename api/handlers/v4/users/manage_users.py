@@ -281,9 +281,31 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
         # extract the email and verification code from the request
         token = self.get_argument("token")
 
-        password_reset_blob_j = base64.b64decode(token).decode("utf-8")
+        try:
+            password_reset_blob_j = base64.b64decode(token).decode("utf-8")
+        except Exception:
+            self.set_status(400)
+            self.write(
+                WebResponse(
+                    success="error",
+                    status_code=400,
+                    data={"message": "Invalid token"},
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            raise tornado.web.Finish()
 
-        password_reset_blob = tornado.escape.json_decode(password_reset_blob_j)
+        try:
+            password_reset_blob = tornado.escape.json_decode(password_reset_blob_j)
+        except Exception:
+            self.set_status(400)
+            self.write(
+                WebResponse(
+                    success="error",
+                    status_code=400,
+                    data={"message": "Invalid token"},
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            raise tornado.web.Finish()
 
         email = password_reset_blob.get("email")
         if not email or not validate_email(email):
