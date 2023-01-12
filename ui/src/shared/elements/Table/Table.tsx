@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import classNames from 'classnames';
 import {
   useTable,
@@ -9,12 +9,13 @@ import {
 } from 'react-table';
 import { IndeterminateCheckbox } from './Filters';
 import styles from './Table.module.css';
+import { Icon } from '../Icon';
 
 interface TableProps<T, D> {
-  spacing?: 'spaced' | 'compact';
+  spacing?: 'expanded' | 'compact';
   columns: T[];
   data: D[];
-  border?: 'basic' | 'celled';
+  border?: 'basic' | 'celled' | 'row';
   striped?: boolean;
   selectable?: boolean;
 }
@@ -91,25 +92,29 @@ export const Table = <T, D>({
               <th
                 key={idx}
                 {...column.getHeaderProps({
-                  ...(column?.sortable && { ...column.getSortByToggleProps() }),
                   style: {
                     minWidth: column.minWidth,
                     width: column.width,
                     maxWidth: column.maxWidth
-                  }
+                  },
+                  ...(column?.sortable && { ...column.getSortByToggleProps() })
                 })}
                 className={styles.th}
               >
-                {column.render('Header')}
-
-                {/* TODO: Use icons for to show asc and desc order  */}
-                <span>
-                  {column.isSorted
-                    ? column.isSortedDesc
-                      ? 'DESC'
-                      : 'ASC'
-                    : ''}
-                </span>
+                <div className={styles.center}>
+                  <span>{column.render('Header')}</span>
+                  <span>
+                    {column.isSorted ? (
+                      column.isSortedDesc ? (
+                        <Icon name="sort-descending" size="large" />
+                      ) : (
+                        <Icon name="sort-ascending" size="large" />
+                      )
+                    ) : (
+                      <Fragment />
+                    )}
+                  </span>
+                </div>
                 <div>{column.canFilter ? column.render('Filter') : null}</div>
               </th>
             ))}

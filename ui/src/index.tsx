@@ -14,6 +14,9 @@ import { App } from './App';
 import favicon from './assets/brand/favicon.ico';
 
 import './index.css';
+import { Mode, applyMode } from '@cloudscape-design/global-styles';
+
+applyMode(Mode.Dark);
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
