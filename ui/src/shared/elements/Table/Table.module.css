@@ -33,23 +33,23 @@
 
   &.celled {
     td {
-      border: 1px solid var(--gray-500);
+      border: 1px solid var(--gray-600);
     }
 
     th {
-      border: 1px solid var(--gray-500);
+      border: 1px solid var(--gray-600);
     }
   }
 
   &.basic {
     tr {
-      border: 1px solid var(--gray-500);
+      border: 1px solid var(--gray-600);
     }
   }
 
   &.row {
     tr {
-      border-bottom: 1px solid var(--gray-500);
+      border-bottom: 1px solid var(--gray-600);
     }
   }
 

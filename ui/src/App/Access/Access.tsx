@@ -1,4 +1,4 @@
-import { FC, useMemo, useState } from 'react';
+import { FC, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 
 import css from './Access.module.css';
@@ -7,6 +7,7 @@ import { Button } from 'shared/elements/Button';
 import { Link } from 'react-router-dom';
 import { PropertyFilter, PropertyFilterProps } from '@noqdev/cloudscape';
 import { Icon } from 'shared/elements/Icon';
+import { Menu } from 'shared/layers/Menu';
 
 export interface AccessRole {
   arn: string;
@@ -50,6 +51,30 @@ const columns = [
   }
 ];
 
+const MoreActions = () => {
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef(null);
+
+  return (
+    <>
+      <div ref={buttonRef} onClick={() => setOpen(!open)}>
+        <Icon name="more" size="large" color="secondary" />
+      </div>
+      <Menu open={open} onClose={() => setOpen(false)} reference={buttonRef}>
+        <div>
+          {/* <Button variant='outline' color='secondary' size='small' fullWidth>View Details</Button> */}
+          <Button variant="text" color="secondary" size="small" fullWidth>
+            Add Permissions
+          </Button>
+          <Button variant="text" color="secondary" size="small" fullWidth>
+            View Details
+          </Button>
+        </div>
+      </Menu>
+    </>
+  );
+};
+
 export const Access: FC<AccessProps> = ({ data }) => {
   const [query, setQuery] = useState<PropertyFilterProps.Query>({
     tokens: [],
@@ -77,11 +102,11 @@ export const Access: FC<AccessProps> = ({ data }) => {
             color={item.inactive_tra ? 'secondary' : 'primary'}
             size="small"
           >
-            {item.inactive_tra ? 'Request Access' : 'Signin'}
+            {item.inactive_tra ? 'Request Temporary Access' : 'Signin'}
           </Button>
         ),
         viewDetails: <Icon name="break-glass" size="large" />,
-        moreActions: <Icon name="more" size="large" />
+        moreActions: <MoreActions />
       };
     });
   }, [data]);
