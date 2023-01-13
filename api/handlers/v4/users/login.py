@@ -137,7 +137,7 @@ class MfaHandler(BaseHandler):
                 WebResponse(
                     success="error",
                     status_code=403,
-                    data={"message": "Invalid mfa token"},
+                    data={"message": "Invalid MFA Token. Please try again."},
                 ).dict(exclude_unset=True, exclude_none=True)
             )
             raise tornado.web.Finish()
@@ -159,7 +159,7 @@ class MfaHandler(BaseHandler):
                 WebResponse(
                     success="error",
                     status_code=403,
-                    data={"message": "Invalid mfa token"},
+                    data={"message": "Invalid MFA Token. Please try again."},
                 ).dict(exclude_unset=True, exclude_none=True)
             )
             raise tornado.web.Finish()

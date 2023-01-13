@@ -73,10 +73,11 @@ export const CompleteNewPassword: FC = () => {
   return (
     <>
       <Helmet>
-        <title>Complete Password</title>
+        <title>Reset Password</title>
       </Helmet>
       <div className={css.container}>
-        <h1>Complete Password</h1>
+        <h1>Reset Password</h1>
+        <br />
         <form onSubmit={handleSubmit(onSubmit)}>
           <Block label="Current Password" disableLabelPadding>
             <Input
