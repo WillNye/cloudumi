@@ -92,11 +92,13 @@ export const SetupMFA: FC = () => {
         ) : (
           <>
             <h1>Setup MFA</h1>
+            <br />
             <QRCode value={totpCode?.totp_uri ?? ''} />
             <br />
             <div>{totpCode?.mfa_secret}</div>
             <br />
             <h3>Enter Code</h3>
+            <br />
             <AuthCode
               disabled={isSubmitting}
               onChange={val => {

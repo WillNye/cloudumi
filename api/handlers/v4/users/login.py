@@ -107,7 +107,7 @@ class LoginHandler(TornadoRequestHandler):
                 success="success",
                 status_code=200,
                 data={
-                    "message": "Login successful",
+                    "message": "Login successful. Have a delicious cookie.",
                     "user": db_user.email,
                     "groups": groups,
                     "mfa_setup_required": mfa_setup_required,
@@ -137,7 +137,7 @@ class MfaHandler(BaseHandler):
                 WebResponse(
                     success="error",
                     status_code=403,
-                    data={"message": "Invalid mfa token"},
+                    data={"message": "Invalid MFA Token. Please try again."},
                 ).dict(exclude_unset=True, exclude_none=True)
             )
             raise tornado.web.Finish()
@@ -159,7 +159,7 @@ class MfaHandler(BaseHandler):
                 WebResponse(
                     success="error",
                     status_code=403,
-                    data={"message": "Invalid mfa token"},
+                    data={"message": "Invalid MFA Token. Please try again."},
                 ).dict(exclude_unset=True, exclude_none=True)
             )
             raise tornado.web.Finish()
@@ -181,4 +181,20 @@ class MfaHandler(BaseHandler):
             secure=tenant_config.auth_use_secure_cookies,
             httponly=tenant_config.auth_cookie_httponly,
             samesite=tenant_config.auth_cookie_samesite,
+        )
+        mfa_setup_required = not db_user.mfa_enabled
+        self.write(
+            WebResponse(
+                success="success",
+                status_code=200,
+                data={
+                    "message": "Login successful. Have a delicious cookie.",
+                    "user": db_user.email,
+                    "groups": self.groups,
+                    "mfa_setup_required": mfa_setup_required,
+                    "mfa_verification_required": False,
+                    "eula_signed": self.eula_signed,
+                    "password_reset_required": db_user.password_reset_required,
+                },
+            ).dict(exclude_unset=True, exclude_none=True)
         )
