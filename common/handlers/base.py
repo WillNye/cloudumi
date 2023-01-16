@@ -395,14 +395,6 @@ class BaseHandler(TornadoRequestHandler):
         self.request_uuid = str(uuid.uuid4())
         sso_signin_toggle = self.request.query_arguments.get("sso_signin") == [b"true"]
 
-        # jwt_tokens = {}
-        # try:
-        #     request_body: dict = json.loads(self.request.body)
-        #     if request_body.get("idToken").get("jwtToken", {}):
-        #         jwt_tokens = request_body
-        # except:
-        #     pass
-
         group_mapping = get_plugin_by_name(
             config.get_tenant_specific_key(
                 "plugins.group_mapping",
@@ -515,40 +507,6 @@ class BaseHandler(TornadoRequestHandler):
                 elif isinstance(res, dict):
                     self.user = res.get("user")
                     self.groups = res.get("groups")
-
-            # If SAML, redirect
-            # If OIDC, redirect
-            # If AWS SSO, redirect
-
-        # if not self.user and jwt_tokens:
-        #     # Cognito JWT Validation / Authentication Flow
-        #     tenant = self.get_tenant_name()
-
-        #     verified_claims = await validate_and_authenticate_jwt_token(
-        #         jwt_tokens, tenant, JwtAuthType.COGNITO
-        #     )
-        #     if verified_claims:
-        #         encoded_cookie = await generate_jwt_token_from_cognito(
-        #             verified_claims, tenant
-        #         )
-
-        #         self.set_cookie(
-        #             self.get_noq_auth_cookie_key(),
-        #             encoded_cookie,
-        #             expires=verified_claims.get("exp"),
-        #             secure=config.get_tenant_specific_key(
-        #                 "auth.cookie.secure", tenant, True
-        #             ),
-        #             httponly=config.get_tenant_specific_key(
-        #                 "auth.cookie.httponly", tenant, True
-        #             ),
-        #             samesite=config.get_tenant_specific_key(
-        #                 "auth.cookie.samesite", tenant, True
-        #             ),
-        #         )
-
-        #         self.user = verified_claims.get("email")
-        #         self.groups = verified_claims.get("cognito:groups", [])
 
         if not self.user:
             # Authenticate user by API Key

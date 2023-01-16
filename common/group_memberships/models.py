@@ -50,7 +50,3 @@ class GroupMembership(SoftDeleteMixin, Base):
                 await session.delete(self)
                 await session.commit()
         return True
-
-
-# User.group_memberships = relationship('GroupMembership', back_populates='user', cascade='all, delete-orphan')
-# Group.group_memberships = relationship('GroupMembership', back_populates='group', cascade='all, delete-orphan')
