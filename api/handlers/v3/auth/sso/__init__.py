@@ -327,8 +327,8 @@ class CognitoUserResetMFA(BaseHandler):
 
 class CognitoUserSetupMFA(BaseHandler):
     async def get(self):
-        if self.mfa_setup:
-            self.write(self.mfa_setup)
+        if self.mfa_setup_required:
+            self.write(self.mfa_setup_required)
             await self.finish()
             return True
 
@@ -356,7 +356,7 @@ class CognitoUserSetupMFA(BaseHandler):
                 access_token=mfa_request.access_token,
                 email=self.user,
             )
-            self.mfa_setup = None
+            self.mfa_setup_required = None
 
             await self.clear_jwt_cookie()
 

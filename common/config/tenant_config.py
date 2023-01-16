@@ -1,5 +1,8 @@
+import datetime
 import os
 from typing import Any
+
+import pytz
 
 from common.config import config
 
@@ -67,6 +70,12 @@ class TenantConfig:
         return self.get_tenant_or_global_config_var("jwt.expiration_minutes", 1200)
 
     @property
+    def auth_jwt_expiration_datetime(self) -> datetime.datetime:
+        return datetime.datetime.utcnow().replace(tzinfo=pytz.UTC) + datetime.timedelta(
+            minutes=self.auth_jwt_expiration_minutes
+        )
+
+    @property
     def auth_cookie_name(self):
         return self.get_tenant_or_global_config_var("auth.cookie.name", "noq_auth")
 
@@ -129,13 +138,13 @@ class TenantConfig:
 
     @property
     def scim_endpoint_authenticator(self):
-        return self.get_tenant_specific_key(
+        return config.get_tenant_specific_key(
             "secrets.scim.endpoint_authenticator", self.tenant
         )
 
     @property
     def scim_bearer_token(self):
-        return self.get_tenant_specific_key("secrets.scim.bearer_token", self.tenant)
+        return config.get_tenant_specific_key("secrets.scim.bearer_token", self.tenant)
 
     @property
     def saml_key_passphrase(self):
@@ -196,3 +205,7 @@ class TenantConfig:
             if not _saml_config["idp"].get("entityId"):
                 _saml_config["idp"]["entityId"] = self.tenant_url
         return _saml_config
+
+    @property
+    def require_mfa(self):
+        return self.get_tenant_or_global_config_var("auth.require_mfa", False)

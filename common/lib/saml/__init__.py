@@ -135,13 +135,14 @@ async def prepare_tornado_request_for_saml(request, tenant):
     return result
 
 
-async def authenticate_user_by_saml(request):
+async def authenticate_user_by_saml(request, return_200=False, force_redirect=None):
     log_data = {"function": f"{__name__}.{sys._getframe().f_code.co_name}"}
     # TODO: Start here
     tenant = request.get_tenant_name()
     saml_req = await prepare_tornado_request_for_saml(request.request, tenant)
     saml_auth = await init_saml_auth(saml_req, tenant)
-    force_redirect = await should_force_redirect(request.request)
+    if force_redirect is None:
+        force_redirect = await should_force_redirect(request.request)
     try:
         await aio_wrapper(saml_auth.process_response)
     except OneLogin_Saml2_Error as e:
@@ -154,7 +155,9 @@ async def authenticate_user_by_saml(request):
         if force_redirect:
             return request.redirect(login_endpoint)
         else:
-            request.set_status(403)
+            if not return_200:
+                # GraphQL (New UI) will not work if we return 403
+                request.set_status(403)
             request.write(
                 {
                     "type": "redirect",
@@ -179,7 +182,9 @@ async def authenticate_user_by_saml(request):
         if force_redirect:
             return request.redirect(login_endpoint)
         else:
-            request.set_status(403)
+            if not return_200:
+                # GraphQL (New UI) will not work if we return 403
+                request.set_status(403)
             request.write(
                 {
                     "type": "redirect",

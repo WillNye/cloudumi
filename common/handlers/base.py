@@ -13,6 +13,7 @@ import sentry_sdk
 import tornado.httpclient
 import tornado.httputil
 import tornado.web
+from furl import furl
 from tornado import httputil
 
 import common.lib.noq_json as json
@@ -33,8 +34,6 @@ from common.lib.dynamo import UserDynamoHandler
 from common.lib.jwt import (
     JwtAuthType,
     generate_jwt_token,
-    generate_jwt_token_from_cognito,
-    validate_and_authenticate_jwt_token,
     validate_and_return_jwt_token,
 )
 from common.lib.oidc import authenticate_user_by_oidc
@@ -92,7 +91,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
             "tenant": tenant,
         }
         log.debug(log_data)
-        self.set_status(403)
+        self.set_status(406)
         self.write(
             {
                 "type": "redirect",
@@ -101,7 +100,16 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
                 "message": "Invalid tenant specified",
             }
         )
-        return
+        raise tornado.web.Finish()
+
+    def get_tenant_url(self):
+        protocol = self.request.protocol
+        if "https://" in self.request.headers.get("Referer", ""):
+            protocol = "https"
+        full_host = self.request.headers.get("X-Forwarded-Host")
+        if not full_host:
+            full_host = self.get_tenant()
+        return furl(f"{protocol}://{full_host}/")
 
     def get_tenant(self):
         if config.get("_global_.development"):
@@ -167,7 +175,7 @@ class BaseJSONHandler(TornadoRequestHandler):
                 "tenant": tenant,
             }
             log.debug(log_data)
-            self.set_status(403)
+            self.set_status(406)
             self.write(
                 {
                     "type": "redirect",
@@ -176,7 +184,7 @@ class BaseJSONHandler(TornadoRequestHandler):
                     "message": "Invalid tenant specified",
                 }
             )
-            return
+            raise tornado.web.Finish()
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
@@ -273,7 +281,7 @@ class BaseHandler(TornadoRequestHandler):
                 "tenant": tenant,
             }
             log.debug(log_data)
-            self.set_status(403)
+            self.set_status(406)
             self.write(
                 {
                     "type": "redirect",
@@ -282,8 +290,7 @@ class BaseHandler(TornadoRequestHandler):
                     "message": "Invalid tenant specified",
                 }
             )
-            await self.finish()
-            raise tornado.web.Finish(log_data["message"])
+            raise tornado.web.Finish()
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
         )()
@@ -366,11 +373,11 @@ class BaseHandler(TornadoRequestHandler):
 
     async def authorization_flow(
         self,
-        user: str = None,
+        user: Optional[str] = None,
         console_only: bool = True,
         refresh_cache: bool = False,
         jwt_tokens: Optional[Dict[str, str]] = None,
-        jwt_auth_type: JwtAuthType = None,
+        jwt_auth_type: Optional[JwtAuthType] = None,
     ) -> None:
         """Perform high level authorization flow."""
         # TODO: Prevent any sites being created with a subdomain that is a yaml keyword, ie: false, no, yes, true, etc
@@ -379,10 +386,15 @@ class BaseHandler(TornadoRequestHandler):
         tenant = self.get_tenant_name()
         tenant_config = TenantConfig(tenant)
         self.eula_signed = None
-        self.mfa_setup = None
+        self.mfa_setup_required = None
+        self.password_reset_required = None
+        self.mfa_verification_required = None
+        self.sso_user = None
         self.eligible_roles = []
         self.eligible_accounts = []
         self.request_uuid = str(uuid.uuid4())
+        sso_signin_toggle = self.request.query_arguments.get("sso_signin") == [b"true"]
+
         group_mapping = get_plugin_by_name(
             config.get_tenant_specific_key(
                 "plugins.group_mapping",
@@ -439,9 +451,14 @@ class BaseHandler(TornadoRequestHandler):
                 self.eligible_roles = res.get("additional_roles", [])
                 self.auth_cookie_expiration = res.get("exp")
                 self.eula_signed = res.get("eula_signed", False)
-                self.mfa_setup = res.get("mfa_setup", None)
+                self.mfa_setup_required = res.get("mfa_setup_required", None)
+                self.mfa_verification_required = res.get(
+                    "mfa_verification_required", None
+                )
+                self.password_reset_required = res.get("password_reset_required", False)
+                self.sso_user = res.get("sso_user", False)
 
-        if self.eula_signed is None:
+        if not self.eula_signed:
             try:
                 tenant_details = await TenantDetails.get(tenant)
                 self.eula_signed = bool(tenant_details.eula_info)
@@ -459,35 +476,37 @@ class BaseHandler(TornadoRequestHandler):
                 "_development_user_override", tenant
             )
 
-        if not self.user and jwt_tokens:
-            # Cognito JWT Validation / Authentication Flow
-            tenant = self.get_tenant_name()
-
-            verified_claims = await validate_and_authenticate_jwt_token(
-                jwt_tokens, tenant, JwtAuthType.COGNITO
-            )
-            if verified_claims:
-                encoded_cookie = await generate_jwt_token_from_cognito(
-                    verified_claims, tenant
+        if not self.user and sso_signin_toggle:
+            # Redirect to SSO provider
+            if config.get_tenant_specific_key("auth.get_user_by_saml", tenant, False):
+                res = await authenticate_user_by_saml(
+                    self, return_200=True, force_redirect=False
                 )
-
-                self.set_cookie(
-                    self.get_noq_auth_cookie_key(),
-                    encoded_cookie,
-                    expires=verified_claims.get("exp"),
-                    secure=config.get_tenant_specific_key(
-                        "auth.cookie.secure", tenant, True
-                    ),
-                    httponly=config.get_tenant_specific_key(
-                        "auth.cookie.httponly", tenant, True
-                    ),
-                    samesite=config.get_tenant_specific_key(
-                        "auth.cookie.samesite", tenant, True
-                    ),
+                if not res:
+                    if (
+                        self.request.uri != "/saml/acs"
+                        and not self.request.uri.startswith("/auth?")
+                    ):
+                        raise tornado.web.Finish(
+                            "Unable to authenticate the user by SAML. "
+                            "Redirecting to authentication endpoint"
+                        )
+                    return
+            if (
+                config.get_tenant_specific_key("auth.get_user_by_oidc", tenant, False)
+                and attempt_sso_authn
+            ):
+                res = await authenticate_user_by_oidc(
+                    self, return_200=True, force_redirect=False
                 )
-
-                self.user = verified_claims.get("email")
-                self.groups = verified_claims.get("cognito:groups", [])
+                if not res:
+                    raise tornado.web.Finish(
+                        "Unable to authenticate the user by OIDC. "
+                        "Redirecting to authentication endpoint"
+                    )
+                elif isinstance(res, dict):
+                    self.user = res.get("user")
+                    self.groups = res.get("groups")
 
         if not self.user:
             # Authenticate user by API Key
@@ -652,7 +671,6 @@ class BaseHandler(TornadoRequestHandler):
         ):
             # Get or create user_role_name attribute
             self.user_role_name = await auth.get_or_create_user_role_name(self.user)
-
         await self.set_eligible_roles(console_only)
 
         if not self.eligible_roles:
@@ -662,7 +680,11 @@ class BaseHandler(TornadoRequestHandler):
             log.warning(log_data)
         log_data["eligible_roles"] = len(self.eligible_roles)
 
-        if not self.eligible_accounts and self.eula_signed and not self.mfa_setup:
+        if (
+            not self.eligible_accounts
+            and self.eula_signed
+            and not self.mfa_setup_required
+        ):
             try:
                 self.eligible_accounts = await group_mapping.get_eligible_accounts(self)
                 log_data["eligible_accounts"] = len(self.eligible_accounts)
@@ -718,34 +740,70 @@ class BaseHandler(TornadoRequestHandler):
             },
         )
 
-        if self.mfa_setup:
+        if self.__class__.__name__ == "UserProfileHandler":
+            # Let the user profile endpoint through
+            pass
+        elif (
+            self.password_reset_required
+            or self.__class__.__name__ == "PasswordResetSelfServiceHandler"
+        ):
             # If the EULA hasn't been signed the user cannot access any AWS information.
-            self.groups = []
-            self.eligible_roles = []
-            self.eligible_accounts = []
 
-            if not self.request.uri.endswith(
-                "auth/cognito/setup-mfa"
-            ) and not isinstance(self, AuthenticatedStaticFileHandler):
+            if self.__class__.__name__ not in [
+                "PasswordResetSelfServiceHandler",
+                "AuthenticatedStaticFileHandler",
+            ]:
+                self.write(
+                    {
+                        "type": "redirect",
+                        "redirect_url": "/reset_password",
+                        "reason": "unauthenticated",
+                        "message": "PASSWORD_RESET_REQUIRED",
+                    }
+                )
+                self.set_status(403)
+                raise tornado.web.Finish()
+        elif self.mfa_setup_required and tenant_config.require_mfa:
+            # If the EULA hasn't been signed the user cannot access any AWS information.
+
+            if self.__class__.__name__ not in [
+                "CognitoUserSetupMFA",
+                "UserMFASelfServiceHandler",
+                "AuthenticatedStaticFileHandler",
+            ]:
                 self.write(
                     {
                         "type": "redirect",
                         "redirect_url": "/mfa",
                         "reason": "unauthenticated",
-                        "message": "User MFA has not been configured",
+                        "message": "MFA_SETUP_REQUIRED",
                     }
                 )
                 self.set_status(403)
                 raise tornado.web.Finish()
+        elif self.mfa_verification_required and self.__class__.__name__ not in [
+            "MfaHandler",
+            "AuthenticatedStaticFileHandler",
+        ]:
+
+            self.write(
+                WebResponse(
+                    status_code=403,
+                    reason="MFA verification required",
+                    data={"message": "MFA_VERIFICATION_REQUIRED"},
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            raise tornado.web.Finish()
         elif not self.eula_signed:
             # If the EULA hasn't been signed the user cannot access any AWS information.
             self.groups = []
             self.eligible_roles = []
             self.eligible_accounts = []
 
-            if not self.request.uri.endswith("tenant/details/eula") and not isinstance(
-                self, AuthenticatedStaticFileHandler
-            ):
+            if self.__class__.__name__ not in [
+                "TenantEulaHandler",
+                "AuthenticatedStaticFileHandler",
+            ]:
                 # Force them to the eula page if they're an admin, return a 403 otherwise
                 if self.is_admin:
                     self.write(
@@ -753,7 +811,7 @@ class BaseHandler(TornadoRequestHandler):
                             "type": "redirect",
                             "redirect_url": "/eula",
                             "reason": "unauthenticated",
-                            "message": "User did not sign EULA yet",
+                            "message": "EULA_NOT_SIGNED",
                         }
                     )
                 else:
@@ -773,6 +831,11 @@ class BaseHandler(TornadoRequestHandler):
             groups=self.groups,
             request_uuid=self.request_uuid,
             uri=self.request.uri,
+            mfa_setup_required=self.mfa_setup_required,
+            password_reset_required=self.password_reset_required,
+            needs_to_sign_eula=not self.eula_signed,
+            mfa_verification_required=self.mfa_verification_required,
+            is_admin=self.is_admin,
         )
 
     async def set_groups(self):
@@ -795,7 +858,6 @@ class BaseHandler(TornadoRequestHandler):
 
         log_data = {
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
-            "message": "Invalid tenant specified. Redirecting to main page",
             "tenant": tenant,
         }
         try:
@@ -863,7 +925,7 @@ class BaseHandler(TornadoRequestHandler):
             roles,
             exp=expiration,
             eula_signed=self.eula_signed,
-            mfa_setup=self.mfa_setup,
+            mfa_setup_required=self.mfa_setup_required,
         )
         self.set_cookie(
             self.get_noq_auth_cookie_key(),
@@ -960,6 +1022,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
         self.responses = []
         self.request_uuid = str(uuid.uuid4())
         self.auth_cookie_expiration = 0
+        self.password_reset_required = False
         tenant = self.get_tenant_name()
         self.ctx = RequestContext(
             tenant=tenant,
@@ -976,7 +1039,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 "tenant": tenant,
             }
             log.debug(log_data)
-            self.set_status(403)
+            self.set_status(406)
             self.write(
                 {
                     "type": "redirect",
@@ -1040,10 +1103,13 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 self.user = res.get("user")
                 self.groups = res.get("groups")
                 self.eligible_roles += res.get("additional_roles")
+                # TODO: Fix expensive call
                 self.eligible_roles += await get_user_active_tra_roles_by_tag(
                     tenant, self.user
                 )
                 self.eligible_roles = list(set(self.eligible_roles))
+                self.password_reset_required = res.get("password_reset_required")
+                self.sso_user = res.get("sso_user")
                 self.requester = {"type": "user", "email": self.user}
                 self.current_cert_age = int(time.time()) - res.get("iat")
                 self.auth_cookie_expiration = res.get("exp")
@@ -1184,3 +1250,37 @@ class BaseAdminHandler(BaseHandler):
                 self, errors[0], errors, 403, "unauthorized", {}
             )
             raise tornado.web.Finish()
+
+
+class ScimAuthHandler(TornadoRequestHandler):
+    """
+    This handler is used to authenticate SCIM requests.
+    It should only be used by Identity Providers, and not by end users.
+    """
+
+    def initialize(self, **kwargs) -> None:
+        self.kwargs = kwargs
+        self.tracer = None
+        self.responses = []
+        self.ctx: Union[None, RequestContext] = None
+        super(ScimAuthHandler, self).initialize(**kwargs)
+
+    async def prepare(self) -> None:
+        self.request_uuid: str = str(uuid.uuid4())
+        tenant: str = self.get_tenant_name()
+        tenant_config: TenantConfig = TenantConfig(tenant)
+        if not tenant_config.scim_bearer_token:
+            raise tornado.web.HTTPError(403, "Bearer token not configured.")
+
+        bearer_header: str = self.request.headers.get("Authorization", "")
+        if not bearer_header.startswith("Bearer "):
+            raise tornado.web.HTTPError(403, "Invalid bearer token.")
+        authorization_token = bearer_header.split("Bearer ")[1]
+
+        if authorization_token != tenant_config.scim_bearer_token:
+            raise tornado.web.HTTPError(403, "Invalid bearer token.")
+        self.ctx = RequestContext(
+            tenant=tenant,
+            request_uuid=self.request_uuid,
+            uri=self.request.uri,
+        )

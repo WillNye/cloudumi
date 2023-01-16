@@ -4,6 +4,20 @@ from api.handlers.v3.automatic_policy_request_handler.aws import (
     AutomaticPolicyRequestHandler,
 )
 from api.handlers.v3.typeahead import UserAndGroupTypeAheadHandler
+from api.handlers.v4.groups.manage_group_memberships import (
+    ManageGroupMembershipsHandler,
+)
+from api.handlers.v4.scim.groups import ScimV2GroupHandler, ScimV2GroupsHandler
+from api.handlers.v4.scim.users import ScimV2UserHandler, ScimV2UsersHandler
+from api.handlers.v4.users.login import LoginHandler, MfaHandler
+from api.handlers.v4.users.manage_users import (
+    ManageUsersHandler,
+    PasswordResetSelfServiceHandler,
+    UnauthenticatedEmailVerificationHandler,
+    UnauthenticatedPasswordResetSelfServiceHandler,
+    UserMFASelfServiceHandler,
+)
+from api.handlers.v4.users.password_complexity import PasswordComplexityHandler
 from common.handlers.base import AuthenticatedStaticFileHandler
 
 """Web routes."""
@@ -16,7 +30,11 @@ from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.tornado import TornadoIntegration
 from tornado.routing import HostMatches, PathMatches, Rule, RuleRouter
 
-from api.handlers.auth import AuthHandler, CognitoAuthHandler
+from api.handlers.auth import (
+    AuthHandler,
+    CognitoAuthHandler,
+    UnauthenticatedAuthSettingsHandler,
+)
 from api.handlers.v1.credentials import GetCredentialsHandler
 from api.handlers.v1.health import HealthHandler
 from api.handlers.v1.policies import (
@@ -44,7 +62,6 @@ from api.handlers.v2.index import (
     FrontendHandler,
     UnauthenticatedFileHandler,
 )
-from api.handlers.v2.logout import LogOutHandler
 from api.handlers.v2.managed_policies import (
     ManagedPoliciesForAccountHandler,
     ManagedPoliciesHandler,
@@ -84,12 +101,6 @@ from api.handlers.v2.terraform_resources import TerraformResourceDetailHandler
 from api.handlers.v2.typeahead import (
     ResourceTypeAheadHandlerV2,
     SelfServiceStep1ResourceTypeahead,
-)
-from api.handlers.v2.user import (
-    LoginConfigurationHandler,
-    LoginHandler,
-    UserManagementHandler,
-    UserRegistrationHandler,
 )
 from api.handlers.v2.user_profile import UserProfileHandler
 from api.handlers.v3.auth import ChallengeUrlConfigurationCrudHandler
@@ -138,6 +149,7 @@ from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationAwsMarketplaceHandler,
     TenantRegistrationHandler,
 )
+from api.handlers.v4.groups.manage_groups import ManageGroupsHandler
 from api.handlers.v4.requests import IambicRequestCommentHandler, IambicRequestHandler
 from common.config import config
 from common.lib.sentry import before_send_event
@@ -162,6 +174,7 @@ def make_app(jwt_validator=None):
         (r"/healthcheck", HealthHandler),
         (r"/api/v1/auth", AuthHandler),
         (r"/api/v1/auth/cognito", CognitoAuthHandler),
+        (r"/api/v1/auth/settings", UnauthenticatedAuthSettingsHandler),
         (r"/api/v1/get_credentials", GetCredentialsHandler),
         (r"/api/v3/legal/agreements/eula", EulaHandler),
         (r"/api/v3/tenant/details", TenantDetailsHandler),
@@ -199,15 +212,10 @@ def make_app(jwt_validator=None):
             r"/api/v2/managed_policies_on_principal/(.*)",
             ManagedPoliciesOnPrincipalHandler,
         ),
-        (r"/api/v2/login", LoginHandler),
-        (r"/api/v2/login_configuration", LoginConfigurationHandler),
-        (r"/api/v2/logout", LogOutHandler),
         (
             r"/api/v2/typeahead/self_service_resources",
             SelfServiceStep1ResourceTypeahead,
         ),
-        (r"/api/v2/user", UserManagementHandler),
-        (r"/api/v2/user_registration", UserRegistrationHandler),
         (r"/api/v2/policies", PoliciesHandler),
         (r"/api/v2/request", RequestHandler),
         (r"/api/v2/requests", RequestsHandler),
@@ -384,6 +392,26 @@ def make_app(jwt_validator=None):
             IambicRequestCommentHandler,
         ),
         (rf"/api/v4/requests/(?P<request_id>{UUID_REGEX})", IambicRequestHandler),
+        (r"/api/v4/groups/?", ManageGroupsHandler),
+        (r"/api/v4/group_memberships/?", ManageGroupMembershipsHandler),
+        (r"/api/v4/users/?", ManageUsersHandler),
+        (r"/api/v4/users/password/complexity/?", PasswordComplexityHandler),
+        (r"/api/v4/users/login/?", LoginHandler),
+        (r"/api/v4/users/login/mfa/?", MfaHandler),
+        (r"/api/v4/users/mfa/?", UserMFASelfServiceHandler),
+        (
+            r"/api/v4/users/forgot_password/?",
+            UnauthenticatedPasswordResetSelfServiceHandler,
+        ),
+        (
+            r"/api/v4/users/password_reset/?",
+            PasswordResetSelfServiceHandler,
+        ),
+        (r"/api/v4/verify/?", UnauthenticatedEmailVerificationHandler),
+        (r"/api/v4/scim/v2/Users/?", ScimV2UsersHandler),
+        (r"/api/v4/scim/v2/Users/(.*)", ScimV2UserHandler),
+        (r"/api/v4/scim/v2/Groups/?", ScimV2GroupsHandler),
+        (r"/api/v4/scim/v2/Group/(.*)", ScimV2GroupHandler),
     ]
 
     router = RuleRouter(routes)

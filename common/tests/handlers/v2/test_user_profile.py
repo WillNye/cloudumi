@@ -37,8 +37,7 @@ class TestUserProfile(NOQAsyncHTTPTestCase):
         response = self.fetch("/api/v2/user_profile", headers=headers)
         self.assertEqual(response.code, 200)
         response_j = json.loads(response.body)
-        response_j["site_config"].pop("consoleme_logo")
-        # self.assertIn("/images/logos/", consoleme_logo)
+        response_j["site_config"].pop("noq_logo")
         self.assertEqual(
             response_j,
             {
@@ -57,6 +56,10 @@ class TestUserProfile(NOQAsyncHTTPTestCase):
                 "user": "testuser@example.com",
                 "can_logout": True,
                 "is_contractor": False,
+                "mfa_setup_required": None,
+                "mfa_verification_required": None,
+                "needs_to_sign_eula": False,
+                "password_reset_required": False,
                 "employee_photo_url": "",
                 "employee_info_url": "",
                 "authorization": {

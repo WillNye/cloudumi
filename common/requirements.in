@@ -6,3 +6,4 @@ pydantic
 python3-saml
 pynamodax
 workos
+types-ujson

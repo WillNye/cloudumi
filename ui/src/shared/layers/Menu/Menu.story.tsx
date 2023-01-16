@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from 'shared/elements/Button';
 import { Divider } from 'shared/elements/Divider';
 import { List, ListItem } from 'shared/layout/List';

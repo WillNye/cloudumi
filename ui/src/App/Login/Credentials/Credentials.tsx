@@ -1,21 +1,38 @@
 import { useAuth } from 'core/Auth';
-import { FC } from 'react';
+import { FC, useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
+import { Link } from 'react-router-dom';
 import { yupResolver } from '@hookform/resolvers/yup';
 import css from './Credentials.module.css';
 import { Navigate } from 'react-router-dom';
 import { MotionGroup, MotionItem } from 'reablocks';
 import { ReactComponent as Logo } from 'assets/brand/logo-bw.svg';
+import { login, signinWithSSO } from 'core/API/auth';
+import { Button } from 'shared/elements/Button';
+import { Input } from 'shared/form/Input';
+import { Block } from 'shared/layout/Block';
+import { Notification, NotificationType } from 'shared/elements/Notification';
+import { AxiosError } from 'axios';
+import { extractErrorMessage } from 'core/API/utils';
 
 const credentialsSchema = Yup.object().shape({
-  username: Yup.string().email('Invalid email').required('Required'),
+  email: Yup.string().required('Required'),
   password: Yup.string().required('Required')
 });
 
 export const Credentials: FC = () => {
-  const { login, user } = useAuth();
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [ssoError, setSSOError] = useState<string | null>(null);
+  const [isGeneratingSSOLink, setIsGeneratingSSOLink] = useState(false);
+
+  const { user, getUser } = useAuth();
+
+  const resetState = useCallback(() => {
+    setLoginError(null);
+    setSSOError(null);
+  }, []);
 
   const {
     register,
@@ -26,18 +43,45 @@ export const Credentials: FC = () => {
     reValidateMode: 'onChange',
     resolver: yupResolver(credentialsSchema),
     defaultValues: {
-      username: '',
+      email: '',
       password: ''
     }
   });
 
-  const onSubmit = async data => {
-    // TODO: In this `login` method here, we should detect
-    // if the login needs 2fa, change password, etc and then
-    // navigate the user to that route. This should NOT be in
-    // this component since its a global concern.
-    await login(data);
-  };
+  const onSubmit = useCallback(
+    async data => {
+      resetState();
+      try {
+        await login(data);
+        await getUser();
+      } catch (error) {
+        const err = error as AxiosError;
+        const errorRes = err?.response;
+        const errorMsg = extractErrorMessage(errorRes?.data);
+        setLoginError(errorMsg || 'An error occurred while logging in');
+      }
+    },
+    [getUser, resetState]
+  );
+
+  const handleSSOLoginIn = useCallback(async () => {
+    setIsGeneratingSSOLink(true);
+    resetState();
+    try {
+      const res = await signinWithSSO();
+      const data = res?.data;
+      setIsGeneratingSSOLink(false);
+      if (data.redirect_url) {
+        window.location.href = data.redirect_url;
+      }
+    } catch (error) {
+      const err = error as AxiosError;
+      const errorRes = err?.response;
+      const errorMsg = extractErrorMessage(errorRes?.data);
+      setSSOError(errorMsg || 'Unable to login with SSO');
+      setIsGeneratingSSOLink(false);
+    }
+  }, [resetState]);
 
   if (user) {
     return <Navigate to="/" />;
@@ -52,21 +96,57 @@ export const Credentials: FC = () => {
         <MotionItem className={css.box}>
           <Logo />
           <br />
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <input autoFocus type="email" {...register('username')} />
+          <form className={css.form} onSubmit={handleSubmit(onSubmit)}>
+            <Block label="Email" disableLabelPadding>
+              <Input
+                fullWidth
+                size="small"
+                autoFocus
+                placeholder="Enter Email"
+                type="email"
+                {...register('email')}
+              />
+            </Block>
+
+            <Block label="Password" disableLabelPadding>
+              <Input
+                fullWidth
+                size="small"
+                type="password"
+                placeholder="Enter Password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                {...register('password')}
+              />
+            </Block>
+            {loginError && (
+              <Notification
+                type={NotificationType.ERROR}
+                header={loginError}
+                showCloseIcon={false}
+              />
+            )}
             <br />
-            <input
-              type="password"
-              autoCapitalize="none"
-              autoCorrect="off"
-              {...register('password')}
-            />
-            <br />
-            <br />
-            <button type="submit" disabled={isSubmitting || !isValid}>
+
+            <Button fullWidth type="submit" disabled={isSubmitting || !isValid}>
               {isSubmitting ? 'Logging in...' : 'Login'}
-            </button>
+            </Button>
           </form>
+
+          <Button fullWidth onClick={handleSSOLoginIn} value="sso_provider">
+            {isGeneratingSSOLink
+              ? 'Loading ...'
+              : 'Sign-In with your Identity Provider'}
+          </Button>
+          {ssoError && (
+            <Notification
+              type={NotificationType.ERROR}
+              header={ssoError}
+              showCloseIcon={false}
+            />
+          )}
+          <br />
+          <Link to="password-reset">Forgot your password?</Link>
         </MotionItem>
       </MotionGroup>
     </>
