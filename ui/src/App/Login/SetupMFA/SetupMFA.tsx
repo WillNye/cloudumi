@@ -27,13 +27,6 @@ export const SetupMFA: FC = () => {
 
   const mfaSetupRequired = useMemo(() => user?.mfa_setup_required, [user]);
 
-  useEffect(() => {
-    if (!isMounted.current && mfaSetupRequired) {
-      isMounted.current = true;
-      getTOTPCode();
-    }
-  }, [isMounted, mfaSetupRequired]);
-
   const getTOTPCode = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -50,6 +43,13 @@ export const SetupMFA: FC = () => {
       setIsLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!isMounted.current && mfaSetupRequired) {
+      isMounted.current = true;
+      getTOTPCode();
+    }
+  }, [isMounted, mfaSetupRequired, getTOTPCode]);
 
   const verifyTOTPCode = useCallback(
     async (val: string) => {

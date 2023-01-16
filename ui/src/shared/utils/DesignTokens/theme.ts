@@ -163,7 +163,6 @@ export const theme: DesignTokens = {
   },
   components: {
     button: {
-      // NOTE: These are just placeholders
       'btn-background': themeColors.slate['100'],
       'btn-border': themeColors.blue['100'],
       'btn-color': themeColors.slate['100']
@@ -179,6 +178,10 @@ export const theme: DesignTokens = {
     },
     divider: {
       'color-divider': themeColors.gray['500']
+    },
+    dialog: {
+      'dialog-background': themeColors.gray['700'],
+      'dialog-color': themeColors.gray['100']
     }
   }
 };

@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { PropertyFilter, PropertyFilterProps } from '@noqdev/cloudscape';
 import { Icon } from 'shared/elements/Icon';
 import { Menu } from 'shared/layers/Menu';
+import { Dialog } from 'shared/layers/Dialog';
 
 export interface AccessRole {
   arn: string;
@@ -62,7 +63,6 @@ const MoreActions = () => {
       </div>
       <Menu open={open} onClose={() => setOpen(false)} reference={buttonRef}>
         <div>
-          {/* <Button variant='outline' color='secondary' size='small' fullWidth>View Details</Button> */}
           <Button variant="text" color="secondary" size="small" fullWidth>
             Add Permissions
           </Button>
@@ -71,6 +71,52 @@ const MoreActions = () => {
           </Button>
         </div>
       </Menu>
+    </>
+  );
+};
+
+const RoleCredentailSummary = () => {
+  const [showDialog, setShowDialog] = useState(false);
+
+  return (
+    <>
+      <div onClick={() => setShowDialog(!showDialog)}>
+        <Icon name="break-glass" size="large" color="secondary" />
+      </div>
+      <Dialog
+        showDialog={showDialog}
+        setShowDialog={setShowDialog}
+        size="medium"
+      >
+        <pre>
+          Noq CLI To retrieve AWS credentials on demand noq credential_process
+          -g prod/prod_admin noq serve prod/prod_admin noq file prod/prod_admin
+          -p prod/prod_admin noq export prod/prod_admin
+        </pre>
+        <pre>
+          Noq CLI To retrieve AWS credentials on demand noq credential_process
+          -g prod/prod_admin noq serve prod/prod_admin noq file prod/prod_admin
+          -p prod/prod_admin noq export prod/prod_admin
+        </pre>
+        <br />
+        <pre>
+          Noq CLI To retrieve AWS credentials on demand noq credential_process
+          -g prod/prod_admin noq serve prod/prod_admin noq file prod/prod_admin
+          -p prod/prod_admin noq export prod/prod_admin
+        </pre>
+        <br />
+        <pre>
+          Noq CLI To retrieve AWS credentials on demand noq credential_process
+          -g prod/prod_admin noq serve prod/prod_admin noq file prod/prod_admin
+          -p prod/prod_admin noq export prod/prod_admin
+        </pre>
+        <br />
+        <pre>
+          Noq CLI To retrieve AWS credentials on demand noq credential_process
+          -g prod/prod_admin noq serve prod/prod_admin noq file prod/prod_admin
+          -p prod/prod_admin noq export prod/prod_admin
+        </pre>
+      </Dialog>
     </>
   );
 };
@@ -105,7 +151,7 @@ export const Access: FC<AccessProps> = ({ data }) => {
             {item.inactive_tra ? 'Request Temporary Access' : 'Signin'}
           </Button>
         ),
-        viewDetails: <Icon name="break-glass" size="large" />,
+        viewDetails: <RoleCredentailSummary />,
         moreActions: <MoreActions />
       };
     });
