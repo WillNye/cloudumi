@@ -41,7 +41,6 @@ service_task_definition_map = [
 cluster_name = "staging-noq-dev-shared-staging-1"
 subnets = ["subnet-0dd8e008f770bd447", "subnet-0ae657185cbb32ee3"]
 security_groups = ["sg-0344d82e7000960df"]
-os.environ["AWS_PROFILE"] = "staging/staging_admin"
 region = "us-west-2"
 account_id = "259868150464"
 kms_key_arn = (
@@ -58,6 +57,9 @@ response = ecr_client.get_authorization_token(
 )
 
 ecs_client = boto3.client("ecs", region_name=region)
+
+identity_res = boto3.client("sts").get_caller_identity()
+identity = identity_res["Arn"].replace(":sts:", ":iam:").replace("assumed-role", "role")
 
 try:
     ecs_client.create_cluster(
@@ -212,5 +214,5 @@ for task in task_details["tasks"]:
     task_id = task["taskArn"].split("/")[-1]
     print("ARN {} : ".format(task["taskDefinitionArn"]))
     print(
-        f"AWS_PROFILE={os.environ['AWS_PROFILE']} ecs-cli logs --region {region} --task-id {task_id} -c {cluster_name} --follow\n"
+        f"AWS_PROFILE={os.environ.get('AWS_PROFILE', identity)} ecs-cli logs --region {region} --task-id {task_id} -c {cluster_name} --follow\n"
     )

@@ -64,7 +64,7 @@
   &.text {
     --btn-background: transparent;
     --btn-border-color: transparent;
-    --btn-color: var(--btn-background-color);
+    --btn-color: var(--body-colorr);
   }
 
   &.fullWidth {

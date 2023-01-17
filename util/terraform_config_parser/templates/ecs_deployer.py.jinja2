@@ -41,7 +41,6 @@ service_task_definition_map = [
 cluster_name = "{{ ecs_cluster_name }}"
 subnets = ["{{ subnet_name_private_az0 }}", "{{ subnet_name_private_az1 }}"]
 security_groups = ["{{ ecs_security_group }}"]
-os.environ["AWS_PROFILE"] = "{{ aws_profile }}"
 region = "{{ region }}"
 account_id = "{{ account_id}}"
 kms_key_arn = "{{ kms_key_id }}"
@@ -56,6 +55,13 @@ response = ecr_client.get_authorization_token(
 )
 
 ecs_client = boto3.client("ecs", region_name=region)
+
+identity_res = boto3.client("sts").get_caller_identity()
+identity = (
+    identity_res["Arn"]
+    .replace(":sts:", ":iam:")
+    .replace("assumed-role", "role")
+)
 
 try:
     ecs_client.create_cluster(
@@ -197,4 +203,4 @@ print("Commands to view task logs: ")
 for task in task_details["tasks"]:
     task_id = task["taskArn"].split("/")[-1]
     print("ARN {} : ".format(task["taskDefinitionArn"]))
-    print(f"AWS_PROFILE={os.environ['AWS_PROFILE']} ecs-cli logs --region {region} --task-id {task_id} -c {cluster_name} --follow\n")
+    print(f"AWS_PROFILE={os.environ.get('AWS_PROFILE', identity)} ecs-cli logs --region {region} --task-id {task_id} -c {cluster_name} --follow\n")

@@ -4,5 +4,5 @@ import Logo from '../src/assets/brand/logo-bw.svg';
 export const storybookTheme = create({
   brandImage: Logo,
   base: 'dark',
-  brandTitle: 'NOQ'
+  brandTitle: 'Noq'
 });

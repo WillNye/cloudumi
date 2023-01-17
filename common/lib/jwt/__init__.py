@@ -1,4 +1,3 @@
-import logging
 import sys
 from datetime import datetime, timedelta
 from enum import Enum
@@ -41,9 +40,13 @@ def log_dict_func(
     if log_level.upper() in ["ERROR", "CRITICAL", "EXCEPTION"]:
         log_data["exception"] = exc
     if log_level.upper() == "EXCEPTION":
-        getattr(log, getattr(logging, log_level))(log_data, exc_info=True)
+        # getattr(log, getattr(logging, log_level))(log_data, exc_info=True)
+        log.exception(log_data, exc_info=True)
     else:
-        getattr(log, getattr(logging, log_level.upper()))(log_data)
+        # TODO (matt): This doesn't work:
+        # TypeError: getattr(): attribute name must be string
+        # getattr(log, getattr(logging, log_level.upper()))(log_data)
+        log.debug(log_data)
     sentry_sdk.capture_exception(tags={})
 
 
@@ -69,7 +72,10 @@ async def generate_jwt_token(
     iat=datetime.utcnow(),
     exp=None,
     eula_signed=None,
-    mfa_setup=None,
+    mfa_setup_required=None,
+    mfa_verification_required=None,
+    password_reset_required=False,
+    sso_user=True,
 ):
     if eula_signed is None:
         tenant_details = await TenantDetails.get(tenant)
@@ -108,7 +114,10 @@ async def generate_jwt_token(
         "eula_signed": eula_signed,
         "groups_pending_eula": groups_pending_eula,
         "additional_roles_pending_eula": roles_pending_eula,
-        "mfa_setup": mfa_setup,
+        "mfa_setup_required": mfa_setup_required,
+        "password_reset_required": password_reset_required,
+        "sso_user": sso_user,
+        "mfa_verification_required": mfa_verification_required,
     }
 
     encoded_cookie = await aio_wrapper(
@@ -164,7 +173,14 @@ async def validate_and_return_jwt_token(auth_cookie, tenant):
             "additional_roles_pending_eula": decoded_jwt.get(
                 "additional_roles_pending_eula", []
             ),
-            "mfa_setup": decoded_jwt.get("mfa_setup", {}),
+            "mfa_setup_required": decoded_jwt.get("mfa_setup_required", False),
+            "password_reset_required": decoded_jwt.get(
+                "password_reset_required", False
+            ),
+            "sso_user": decoded_jwt.get("sso_user", {}),
+            "mfa_verification_required": decoded_jwt.get(
+                "mfa_verification_required", False
+            ),
         }
     except (jwt.ExpiredSignatureError, jwt.InvalidSignatureError, jwt.DecodeError):
         # Force user to reauth.

@@ -53,7 +53,7 @@ const SideBar = () => {
   }, [user])
 
   const {
-    consoleme_logo,
+    noq_logo,
     documentation_url,
     security_logo,
     security_url,
@@ -153,14 +153,14 @@ const SideBar = () => {
         <div>
           <Menu.Menu>
             <Menu.Item>
-              {consoleme_logo && (
+              {noq_logo && (
                 <a href={'/'} rel='noopener noreferrer' target='_blank'>
                   <Image
                     style={{
                       height: '250px',
                       margin: 'auto',
                     }}
-                    src={consoleme_logo}
+                    src={noq_logo}
                   />
                 </a>
               )}

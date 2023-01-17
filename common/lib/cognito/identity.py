@@ -1100,7 +1100,7 @@ class CognitoUserClient:
         return cls(
             cognito_info["user_pool_id"],
             cognito_info["user_pool_client_id"],
-            cognito_info["user_pool_client_secret"],
+            cognito_info.get("user_pool_client_secret"),
             cognito_idp_client or boto3.client("cognito-idp", region_name=region),
         )
 

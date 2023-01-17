@@ -1,7 +1,6 @@
 import { FC, PropsWithChildren } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './AuthContext';
-import { ChallengeName, AuthenticationFlowType } from './constants';
 
 export const AuthRoute: FC<PropsWithChildren> = props => {
   const { user } = useAuth();
@@ -10,19 +9,16 @@ export const AuthRoute: FC<PropsWithChildren> = props => {
     return <Navigate to="/login" replace />;
   }
 
-  if (user.challengeName === ChallengeName.NEW_PASSWORD_REQUIRED) {
+  if (user.password_reset_required) {
     return <Navigate to="/login/complete-password" replace />;
   }
 
-  if (user.challengeName === ChallengeName.SOFTWARE_TOKEN_MFA) {
-    return <Navigate to="/login/mfa" replace />;
+  if (user.mfa_setup_required) {
+    return <Navigate to="/login/setup-mfa" replace />;
   }
 
-  if (
-    user.authenticationFlowType === AuthenticationFlowType.USER_SRP_AUTH &&
-    user.preferredMFA === 'NOMFA'
-  ) {
-    return <Navigate to="/login/setup-mfa" replace />;
+  if (user.mfa_verification_required) {
+    return <Navigate to="/login/mfa" replace />;
   }
 
   return <Outlet />;

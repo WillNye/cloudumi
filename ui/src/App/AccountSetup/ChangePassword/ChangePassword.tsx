@@ -16,7 +16,7 @@ const changePasswordSchema = Yup.object().shape({
 });
 
 export const ChangePassword: FC = () => {
-  const { changePassword, user } = useAuth();
+  const { user } = useAuth();
 
   const {
     register,
@@ -36,12 +36,9 @@ export const ChangePassword: FC = () => {
 
   const passwordValue = watch('newPassword');
 
-  const onSubmit = useCallback(
-    async ({ oldPassword, newPassword }) => {
-      await changePassword({ oldPassword, newPassword });
-    },
-    [changePassword]
-  );
+  const onSubmit = useCallback(async ({ oldPassword, newPassword }) => {
+    // TODO: Update password api route
+  }, []);
 
   return (
     <>

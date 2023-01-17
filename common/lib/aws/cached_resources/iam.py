@@ -109,6 +109,8 @@ async def get_user_active_tra_roles_by_tag(tenant: str, user: str) -> list[str]:
         return []
 
     active_tra_roles = set()
+    # TODO: This is a very expensive query to run so frequently. It's fine in our small environment
+    # but this will fall apart completely in a large environment.
     all_iam_roles = await IAMRole.query(tenant)
     tra_users_tag = get_active_tra_users_tag(tenant)
     tra_groups_tag = get_tra_supported_groups_tag(tenant)

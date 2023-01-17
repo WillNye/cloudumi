@@ -69,3 +69,10 @@ docker_deps_up:
 docker_deps_down:
 	docker-compose -f deploy/docker-compose-dependencies.yaml down
 
+.PHONY: ssm_prod
+ssm_prod:
+	AWS_REGION=us-west-2 AWS_DEFAULT_REGION=us-west-2 AWS_PROFILE=prod/prod_admin ecsgo
+
+.PHONY: ssm_staging
+ssm_staging:
+	AWS_REGION=us-west-2 AWS_DEFAULT_REGION=us-west-2 AWS_PROFILE=staging/staging_admin ecsgo
