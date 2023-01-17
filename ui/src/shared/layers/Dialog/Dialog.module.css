@@ -18,7 +18,7 @@
   max-height: 80%;
   overflow: hidden;
   box-shadow: var(--shadow-300);
-  border-radius: var(--border-radius-lg);
+  border-radius: var(--border-radius-md);
   background-color: var(--dialog-background);
   padding: var(--spacing-lg);
 

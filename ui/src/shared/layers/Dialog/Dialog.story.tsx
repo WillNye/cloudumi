@@ -1,4 +1,3 @@
-import { useDialog } from 'reablocks';
 import { Dialog } from './Dialog';
 import { Button } from '../../elements/Button';
 import { useState } from 'react';

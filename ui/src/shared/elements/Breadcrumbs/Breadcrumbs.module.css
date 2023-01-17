@@ -1,0 +1,21 @@
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+}
+
+.breadcrumbLink {
+  color: var(--gray-200);
+  text-decoration: none;
+}
+
+.active {
+  color: var(--gray-100);
+  pointer-events: none;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
