@@ -103,6 +103,10 @@ async def explode_role_templates_for_accounts(
     return arn_mappings
 
 
+async def get_effective_role_access():
+    pass
+
+
 async def sync_role_access(tenant: str):
     template_type = "Role"
 
