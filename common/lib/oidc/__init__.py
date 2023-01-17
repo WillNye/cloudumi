@@ -154,7 +154,6 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
 
     # The endpoint where we want our OIDC provider to redirect us back to perform auth
     oidc_redirect_uri = f"{protocol}://{full_host}/auth"
-    oidc_port = furl(oidc_redirect_uri).port
 
     # The endpoint where the user wants to be sent after authentication. This will be stored in the state
     after_redirect_uri = request.request.arguments.get("redirect_url", [""])[0]
@@ -194,11 +193,6 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
         args["client_id"] = oidc_config["client_id"]
         if client_scope:
             args["scope"] = " ".join(client_scope)
-        # TODO: Sign and verify redirect URI with expiration
-        if oidc_port:
-            after_redirect_uri_furl = furl(after_redirect_uri)
-            after_redirect_uri_furl.port = oidc_port
-            after_redirect_uri = after_redirect_uri_furl.url
 
         args["state"] = after_redirect_uri
 
