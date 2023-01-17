@@ -1,64 +1,129 @@
 import asyncio
-from typing import List
+from typing import Dict, List
 
-from common.config.models import ModelAdapter
-from common.models import HubAccount, OrgAccount, SpokeAccount
-from iambic.aws.models import AWSAccount, AWSOrganization, BaseAWSOrgRule
-from iambic.config.models import AWSConfig, Config
+from iambic.aws.iam.role.models import RoleTemplate
+from iambic.aws.models import AWSAccount
+from iambic.config.utils import load_template as load_config_template
 from iambic.core.parser import load_templates
-from iambic.core.utils import gather_templates
+from iambic.core.utils import gather_templates, yaml
+
+from common.config import config
+from common.config.models import ModelAdapter
+from common.iambic_request.models import IambicRepo
+from common.identity.role_access_crud import list_role_access, update_role_access
+from common.models import IambicRepoConfig
+
+log = config.get_logger()
 
 
-async def get_aws_assume_account(tenant: str) -> HubAccount:
-    return ModelAdapter(HubAccount).load_config("hub_account", tenant).model
+async def get_data_for_template_type(tenant: str, template_type: str):
+    iambic_repo_config = (
+        ModelAdapter(IambicRepoConfig).load_config("iambic_repos", tenant).model
+    )
+    iambic_repo = IambicRepo(
+        tenant=tenant,
+        repo_name=iambic_repo_config.repo_name,
+        repo_uri=f"https://oauth:{iambic_repo_config.access_token}@github.com/{iambic_repo_config.repo_name}",
+    )
+    await iambic_repo.set_repo()
+    return load_templates(await gather_templates(iambic_repo.file_path, template_type))
 
 
-async def get_aws_accounts(tenant: str) -> List[SpokeAccount]:
-    return ModelAdapter(SpokeAccount).load_config("spoke_accounts", tenant).models
+async def get_config_data_for_repo(tenant: str):
+    iambic_repo_config = (
+        ModelAdapter(IambicRepoConfig).load_config("iambic_repos", tenant).model
+    )
+    iambic_repo = IambicRepo(
+        tenant=tenant,
+        repo_name=iambic_repo_config.repo_name,
+        repo_uri=f"https://oauth:{iambic_repo_config.access_token}@github.com/{iambic_repo_config.repo_name}",
+    )
+    return await load_config_template(iambic_repo.file_path)
 
 
-async def get_aws_orgs(tenant: str) -> List[OrgAccount]:
-    return ModelAdapter(OrgAccount).load_config("org_accounts", tenant).models
-    
-
-async def convert_aws_accounts_to_iambic(aws_accounts: List[SpokeAccount], aws_assume_account: HubAccount) -> List[AWSAccount]:
-    return [
-        AWSAccount(
-            account_id=x.account_id,
-            account_name=x.account_name,
-            assume_role_arn=aws_assume_account.id # need arn
-        ) for x in aws_accounts
-    ]
+def get_role_arn(account_id: str, role_name: str) -> str:
+    return f"arn:aws:iam::{account_id}:role/{role_name}"
 
 
-async def convert_aws_orgs_to_iambic(aws_orgs: List[OrgAccount]) -> List[AWSOrganization]:
-    base_rule = BaseAWSOrgRule()
-    return [
-        AWSOrganization(
-            org_id=x.org_id,
-            org_name=x.owner,
-            default_rule=base_rule,
-        ) for x in aws_orgs
-    ]
+def get_aws_account_from_template(aws_accounts: AWSAccount, account_name) -> AWSAccount:
+    aws_account = [x for x in aws_accounts.accounts if x.account_name == account_name]
+    if len(aws_account) == 0:
+        # TODO: how should this be handled?
+        log.warn(
+            f"No corresponding account id known for Iambic included_account {account_name}"
+        )
+        return None
+    return aws_account[0]
 
 
-async def get_account_data(tenant: str, template_type: str):
-    role_templates = load_templates(await gather_templates(template_type))
-    configs = load_templates(await gather_templates("CORE::CONFIG"))
-    aws_accounts = await get_aws_accounts(tenant)
-    orgs = await get_aws_orgs(tenant)
-    iambic_accounts = await convert_aws_accounts_to_iambic(aws_accounts)
-    iambic_orgs = await convert_aws_orgs_to_iambic(orgs)
-    aws_config = AWSConfig(
-        organizations=iambic_orgs,
-        accounts=iambic_accounts,
+async def get_arns_for_included_accounts(
+    aws_accounts: AWSAccount, role_template: [RoleTemplate]
+) -> List[str]:
+    arns = []
+    for included_account in role_template.included_accounts:
+        aws_account = get_aws_account_from_template(aws_accounts, included_account)
+        if aws_account is None:
+            # TODO: how to handle?
+            continue
+        arns.append(get_role_arn(aws_account, role_template.identifier))
+    return arns
+
+
+async def get_arn_to_role_template_mapping(
+    aws_accounts: AWSAccount, role_template: RoleTemplate
+) -> Dict[str, RoleTemplate]:
+    arn_mapping = {}
+    for included_account in role_template.included_accounts:
+        aws_account = get_aws_account_from_template(aws_accounts, included_account)
+        if aws_account is None:
+            # TODO: how to handle?
+            continue
+        role_arn = get_role_arn(aws_account.account_id, role_template.identifier)
+        arn_mapping[
+            role_arn
+        ] = role_template  # role_templates might represent multiple arns
+    return arn_mapping
+
+
+async def explode_roles_for_accounts(
+    aws_accounts: AWSAccount, iambic_roles: List[RoleTemplate]
+) -> List[str]:
+    role_arns = []
+    for role in iambic_roles:
+        role_arns.extend(await get_arns_for_included_accounts(aws_accounts, role))
+    return role_arns
+
+
+async def explode_role_templates_for_accounts(
+    aws_accounts: AWSAccount, iambic_roles: List[RoleTemplate]
+) -> Dict[str, RoleTemplate]:
+    arn_mappings = {}
+    for role in iambic_roles:
+        arn_mappings.update(await get_arn_to_role_template_mapping(aws_accounts, role))
+    return arn_mappings
+
+
+async def sync_role_access(tenant: str):
+    template_type = "Role"
+
+    ground_truth_roles = await get_data_for_template_type(tenant, template_type)
+    config_template = await get_config_data_for_repo(tenant)
+
+    arn_role_template_mapping = await explode_role_templates_for_accounts(
+        config_template.aws, ground_truth_roles
     )
 
+    known_roles = await list_role_access(tenant)
+    create_roles = {
+        k: v for k, v in arn_role_template_mapping.items() if k not in known_roles
+    }
+    remove_roles = {x for x in known_roles if x not in arn_role_template_mapping.keys()}
+    # configs = load_templates(await gather_templates("CORE::CONFIG"))
     for config_path in configs:
-        config = Config.noq_load(aws_config, config_path)
+        config = Config(aws=aws_config, **yaml.load(open(config_path)))
         # Need to populate AWSOrganization in iambic before calling setup_aws_accounts
 
-        await config.setup_aws_accounts()
+        # await config.setup_aws_accounts()
         for aws_account in config.aws_accounts:
             for template in role_templates:
                 role_access = template.get_attribute_val_for_account(
@@ -77,4 +142,4 @@ async def get_account_data(tenant: str, template_type: str):
 
 
 loop = asyncio.get_event_loop()
-loop.run_until_complete(get_account_data("localhost", "ROLE"))
+loop.run_until_complete(sync_role_access("localhost"))

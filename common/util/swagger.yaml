@@ -3225,6 +3225,20 @@ components:
             - applied_awaiting_execution
             - applied_and_success
             - applied_and_failure
+
+    IambicRepoConfig:
+      type: object
+      required:
+        - repo_name
+        - access_token
+      properties:
+        repo_name:
+          type: string
+          description: The name of the repository that has the IambicRepo
+        access_token:
+          type: string
+          description: The access token that provides repo access to the IambicRepo
+
     IambicTemplateChange:
       type: object
       required:
