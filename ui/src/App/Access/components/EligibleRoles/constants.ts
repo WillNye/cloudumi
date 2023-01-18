@@ -1,24 +1,28 @@
 export const eligibleRolesColumns = [
   {
+    Header: 'AWS Console Sign-In',
     accessor: 'arn',
-    width: '220px'
+    width: '220px',
+    sortable: false
   },
   {
-    Header: 'Name',
+    Header: 'Account Details',
     accessor: 'name',
     sortable: true
   },
   {
-    Header: 'Role',
+    Header: 'Role Name',
     accessor: 'roleName',
     sortable: true
   },
   {
     accessor: 'viewDetails',
-    width: '50px'
+    width: '50px',
+    sortable: false
   },
   {
     accessor: 'moreActions',
-    width: '50px'
+    width: '50px',
+    sortable: false
   }
 ];

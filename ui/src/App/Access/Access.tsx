@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 
 import css from './Access.module.css';
@@ -6,7 +6,7 @@ import { ROLES_TABS } from './constants';
 import EligibleRoles from './components/EligibleRoles/EligibleRoles';
 import AllRoles from './components/AllRoles';
 import { Breadcrumbs } from 'shared/elements/Breadcrumbs';
-import { Button } from 'shared/elements/Button';
+import { getEligibleRoles } from 'core/API/roles';
 
 export interface AccessRole {
   arn: string;
@@ -27,17 +27,24 @@ type AccessProps = AccessQueryResult;
 
 export const Access: FC<AccessProps> = ({ data }) => {
   const [currentTab, setCurrentTab] = useState(ROLES_TABS.ELIGIBLE_ROLES);
+  const [eligibleRolesData, setEligibleRolesData] = useState([]);
+
+  useEffect(function onMount() {
+    getEligibleRoles().then(({ data }) => {
+      setEligibleRolesData(data.data);
+    });
+  }, []);
 
   return (
     <div className={css.container}>
       <h3 className={css.header}>Role Access</h3>
 
-      <Breadcrumbs
+      {/* <Breadcrumbs
         items={[
           { name: 'Roles', url: '/' },
           { name: 'My Roles', url: '/' }
         ]}
-      />
+      /> */}
       <div>
         <nav className={css.nav}>
           <ul className={css.navList}>
@@ -61,7 +68,7 @@ export const Access: FC<AccessProps> = ({ data }) => {
         </nav>
       </div>
       {currentTab === ROLES_TABS.ELIGIBLE_ROLES ? (
-        <EligibleRoles data={data} />
+        <EligibleRoles data={eligibleRolesData} />
       ) : (
         <AllRoles />
       )}
