@@ -36,6 +36,7 @@ interface DialogProps {
   children: ReactNode;
   footer?: ReactNode;
   size?: 'small' | 'medium' | 'large' | 'fullWidth';
+  disablePadding?: boolean;
 }
 
 export const Dialog = ({
@@ -44,8 +45,21 @@ export const Dialog = ({
   header,
   children,
   footer,
-  size = 'fullWidth'
+  size = 'fullWidth',
+  disablePadding
 }: DialogProps) => {
+  useEffect(() => {
+    if (showDialog) {
+      document.getElementById('root').style.overflow = 'hidden';
+    } else {
+      document.getElementById('root').style.overflow = 'auto';
+    }
+
+    return () => {
+      document.getElementById('root').style.overflow = 'auto';
+    };
+  }, [showDialog]);
+
   const handleCloseDialog = useCallback(
     () => setShowDialog(false),
     [setShowDialog]
@@ -55,9 +69,10 @@ export const Dialog = ({
   const dialogClases = useMemo(
     () =>
       classNames(styles.dialogContainer, {
-        [styles[size]]: size
+        [styles[size]]: size,
+        [styles.disablePadding]: disablePadding
       }),
-    [size]
+    [size, disablePadding]
   );
 
   return (

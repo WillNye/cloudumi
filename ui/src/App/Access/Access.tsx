@@ -30,9 +30,7 @@ export const Access: FC<AccessProps> = ({ data }) => {
 
   return (
     <div className={css.container}>
-      <br />
-      <h3>Role Access</h3>
-      <br />
+      <h3 className={css.header}>Role Access</h3>
 
       <Breadcrumbs
         items={[
@@ -40,22 +38,28 @@ export const Access: FC<AccessProps> = ({ data }) => {
           { name: 'My Roles', url: '/' }
         ]}
       />
-      <br />
-      <br />
       <div>
-        <Button
-          onClick={() => setCurrentTab(ROLES_TABS.ELIGIBLE_ROLES)}
-          fullWidth
-        >
-          My Roles
-        </Button>
-        <Button onClick={() => setCurrentTab(ROLES_TABS.ALL_ROES)} fullWidth>
-          All Roles
-        </Button>
+        <nav className={css.nav}>
+          <ul className={css.navList}>
+            <li
+              className={`${css.navItem} ${
+                currentTab === ROLES_TABS.ELIGIBLE_ROLES ? css.isActive : ''
+              }`}
+              onClick={() => setCurrentTab(ROLES_TABS.ELIGIBLE_ROLES)}
+            >
+              <div className={css.text}>My Roles</div>
+            </li>
+            <li
+              className={`${css.navItem} ${
+                currentTab === ROLES_TABS.ALL_ROES ? css.isActive : ''
+              }`}
+              onClick={() => setCurrentTab(ROLES_TABS.ALL_ROES)}
+            >
+              <div className={css.text}>All Roles</div>
+            </li>
+          </ul>
+        </nav>
       </div>
-
-      <br />
-      <br />
       {currentTab === ROLES_TABS.ELIGIBLE_ROLES ? (
         <EligibleRoles data={data} />
       ) : (
