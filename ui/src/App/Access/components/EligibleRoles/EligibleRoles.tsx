@@ -1,22 +1,26 @@
 import { PropertyFilter, PropertyFilterProps } from '@noqdev/cloudscape';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import RoleCredentialSummary from './components/RoleCredentialSummary';
+import RoleCredentialSummary from '../common/RoleCredentialSummary';
 
-import MoreActions from './components/MoreActions';
+import MoreActions from '../common/MoreActions';
 import { Table } from 'shared/elements/Table';
 import { eligibleRolesColumns } from './constants';
 import { Button } from 'shared/elements/Button';
 
 import css from './EligibleRoles.module.css';
 
-const EligibleRoles = ({ data }) => {
+const EligibleRoles = ({ data, getData, isLoading }) => {
+  useEffect(function onMount() {
+    getData();
+  }, []);
+
   const [query, setQuery] = useState<PropertyFilterProps.Query>({
     tokens: [],
     operation: 'and'
   });
 
-  const tableRowss = useMemo(() => {
+  const tableRows = useMemo(() => {
     return data.map(item => {
       return {
         ...item,
@@ -51,7 +55,7 @@ const EligibleRoles = ({ data }) => {
       <div className={css.container}>
         <div className={css.filter}>
           <PropertyFilter
-            expandToViewport
+            // expandToViewport
             onChange={({ detail }) => setQuery(detail)}
             query={query}
             i18nStrings={{
@@ -186,7 +190,14 @@ const EligibleRoles = ({ data }) => {
             ]}
           />
         </div>
-        <Table data={tableRowss} columns={eligibleRolesColumns} border="row" />
+        <div className={css.table}>
+          <Table
+            data={tableRows}
+            columns={eligibleRolesColumns}
+            border="row"
+            isLoading={isLoading}
+          />
+        </div>
       </div>
     </>
   );

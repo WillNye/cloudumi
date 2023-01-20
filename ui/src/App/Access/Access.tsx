@@ -1,12 +1,16 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useCallback, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 
 import css from './Access.module.css';
 import { ROLES_TABS } from './constants';
 import EligibleRoles from './components/EligibleRoles/EligibleRoles';
 import AllRoles from './components/AllRoles';
-import { Breadcrumbs } from 'shared/elements/Breadcrumbs';
-import { getEligibleRoles } from 'core/API/roles';
+import {
+  getAllRoles,
+  getEligibleRoles,
+  getRoleCredentials
+} from 'core/API/roles';
+import { extractErrorMessage } from 'core/API/utils';
 
 export interface AccessRole {
   arn: string;
@@ -28,23 +32,57 @@ type AccessProps = AccessQueryResult;
 export const Access: FC<AccessProps> = ({ data }) => {
   const [currentTab, setCurrentTab] = useState(ROLES_TABS.ELIGIBLE_ROLES);
   const [eligibleRolesData, setEligibleRolesData] = useState([]);
+  const [allRolesData, setAllRolesData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(function onMount() {
-    getEligibleRoles().then(({ data }) => {
-      setEligibleRolesData(data.data);
-    });
+    // getAllRoles().then(({ data }) => {
+    //   setAllRolesData(data.data);
+    // });
+    // const role = {
+    //   requested_role: 'arn:aws:iam::759357822767:role/noqmeter_null_test_role'
+    // };
+    // getRoleCredentials(role).then(({ data }) => {
+    //   console.log('==========request========', data, '===========');
+    // });
+  }, []);
+
+  const callGetEligibleRoles = useCallback(() => {
+    setIsLoading(true);
+    setErrorMsg(null);
+    getEligibleRoles()
+      .then(({ data }) => {
+        setEligibleRolesData(data.data);
+      })
+      .catch(error => {
+        const errorMessage = extractErrorMessage(error);
+        setErrorMsg(errorMessage);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
+
+  const callGetAllRoles = useCallback(() => {
+    setIsLoading(true);
+    setErrorMsg(null);
+    getAllRoles()
+      .then(({ data }) => {
+        setAllRolesData(data.data);
+      })
+      .catch(error => {
+        const errorMessage = extractErrorMessage(error);
+        setErrorMsg(errorMessage);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, []);
 
   return (
     <div className={css.container}>
       <h3 className={css.header}>Role Access</h3>
-
-      {/* <Breadcrumbs
-        items={[
-          { name: 'Roles', url: '/' },
-          { name: 'My Roles', url: '/' }
-        ]}
-      /> */}
       <div>
         <nav className={css.nav}>
           <ul className={css.navList}>
@@ -68,9 +106,17 @@ export const Access: FC<AccessProps> = ({ data }) => {
         </nav>
       </div>
       {currentTab === ROLES_TABS.ELIGIBLE_ROLES ? (
-        <EligibleRoles data={eligibleRolesData} />
+        <EligibleRoles
+          data={eligibleRolesData}
+          getData={callGetEligibleRoles}
+          isLoading={isLoading}
+        />
       ) : (
-        <AllRoles />
+        <AllRoles
+          data={allRolesData}
+          getData={callGetAllRoles}
+          isLoading={isLoading}
+        />
       )}
     </div>
   );

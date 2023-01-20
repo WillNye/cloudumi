@@ -54,8 +54,11 @@ const RoleCredentialSummary = () => {
             </div>
             <div className={styles.container}>
               <div>
-                Use the appropriate set of commands to configure AWS credentials
-                for your environment.
+                {/* <Icon name="info" size="medium" /> */}
+                <p>
+                  Use the appropriate set of commands to configure AWS
+                  credentials for your environment.
+                </p>
               </div>
               <div className={styles.subHeader}>Noq CLI</div>
               <p className={styles.secondaryText}>
@@ -82,7 +85,9 @@ const RoleCredentialSummary = () => {
               </div>
 
               <div className={styles.subHeader}>Credential Export</div>
-              <p className={styles.secondaryText}>noq export prod/prod_admin</p>
+              <div className={styles.codeBlock}>
+                <p>noq export prod/prod_admin</p>
+              </div>
             </div>
           </div>
         </div>
