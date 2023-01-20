@@ -191,7 +191,7 @@
       "type": "python",
       "request": "launch",
       "module": "alembic",
-      "args": ["upgrade", "head"],
+      "args": ["upgrade", "heads"],
       "justMyCode": false,
       "console": "integratedTerminal",
       "env": {

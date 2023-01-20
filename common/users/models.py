@@ -12,13 +12,14 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    ForeignKey,
     Integer,
     String,
     UniqueConstraint,
     and_,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, selectinload
+from sqlalchemy.orm import backref, relationship, selectinload
 from sqlalchemy.sql import select
 
 from common.config.globals import ASYNC_PG_SESSION
@@ -40,8 +41,8 @@ class User(SoftDeleteMixin, Base):
     __tablename__ = "users"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     active = Column(Boolean, default=True)
-    username = Column(String, nullable=False)
-    email: str = Column(String, nullable=False)
+    username = Column(String, nullable=False, index=True)
+    email: str = Column(String, nullable=False, index=True)
     email_type: str = Column(String, nullable=True)
     locale: str = Column(String, nullable=True)
     external_id: str = Column(String, nullable=True)
@@ -69,7 +70,9 @@ class User(SoftDeleteMixin, Base):
     mfa_primary_method = Column(String(64), nullable=True)
     mfa_phone_number = Column(String(128), nullable=True)
     last_successful_mfa_code = Column(String(64), nullable=True)
-    tenant = Column(String, nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenant.id"), nullable=False)
+
+    tenant = relationship("tenant", backref=backref("users", order_by=username))
 
     # TODO: When we're soft-deleting, we need our own methods to get these groups
     # because `deleted=true`. Create async delete function to update the relationship

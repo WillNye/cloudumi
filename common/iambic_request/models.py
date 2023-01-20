@@ -15,7 +15,7 @@ from pydantic import BaseModel as PydanticBaseModel
 from pydantic.fields import Any
 from sqlalchemy import Column, ForeignKey, Index, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY, ENUM, UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import backref, relationship
 
 from common.config import config
 from common.lib import noq_json as json
@@ -566,12 +566,14 @@ class Request(SoftDeleteMixin, Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     repo_name = Column(String)
     pull_request_id = Column(Integer)
-    tenant = Column(String)
+    tenant_id = Column(Integer, ForeignKey("tenant.id"))
     status = Column(RequestStatus, default="Pending")
 
     allowed_approvers = Column(ARRAY(String), default=dict)
     approved_by = Column(ARRAY(String), default=dict)
     rejected_by = Column(String, nullable=True)
+
+    tenant = relationship("tenant", backref=backref("request", order_by="Request.created_at"))
 
     comments = relationship(
         "RequestComment",

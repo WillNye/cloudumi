@@ -1,9 +1,9 @@
 import uuid
 from uuid import uuid4
 
-from sqlalchemy import Column, String, UniqueConstraint, and_
+from sqlalchemy import Column, ForeignKey, Integer, String, UniqueConstraint, and_
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, selectinload
+from sqlalchemy.orm import backref, relationship, selectinload
 from sqlalchemy.sql import select
 
 from common.config.globals import ASYNC_PG_SESSION
@@ -19,15 +19,16 @@ from common.pg_core.models import Base, SoftDeleteMixin
 class Group(SoftDeleteMixin, Base):
     __tablename__ = "groups"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String)
+    name = Column(String, index=True)
     description = Column(String)
-    tenant = Column(String, nullable=False)
+    tenant_id = Column(Integer(), ForeignKey("tenant.id"))
     email = Column(String)
     __table_args__ = (
         UniqueConstraint("tenant", "name", name="uq_tenant_name"),
         UniqueConstraint("tenant", "email", name="uq_group_tenant_email"),
     )
 
+    tenant = relationship("tenant", backref=backref("groups", order_by=name))
     users = relationship(
         "User",
         secondary=GroupMembership.__table__,
