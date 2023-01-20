@@ -23,12 +23,12 @@ class Group(SoftDeleteMixin, Base):
     description = Column(String)
     tenant_id = Column(Integer(), ForeignKey("tenant.id"))
     email = Column(String)
+    tenant = relationship("tenant", backref=backref("groups", order_by=name))
     __table_args__ = (
         UniqueConstraint("tenant", "name", name="uq_tenant_name"),
         UniqueConstraint("tenant", "email", name="uq_group_tenant_email"),
     )
 
-    tenant = relationship("tenant", backref=backref("groups", order_by=name))
     users = relationship(
         "User",
         secondary=GroupMembership.__table__,

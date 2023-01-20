@@ -12,6 +12,13 @@ from common.groups.models import Group  # noqa: F401,E402
 
 # We must import  models here for them to be recognized
 from common.iambic_request.models import Request, RequestComment  # noqa: F401,E402
+from common.identity.models import (  # noqa: F401,E402
+    AWSAccount,
+    IdentityRole,
+    RoleAccess,
+    RoleAccessTypes,
+    Tenant,
+)
 from common.pg_core.models import Base
 from common.users.models import User  # noqa: F401,E402
 
