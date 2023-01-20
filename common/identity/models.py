@@ -6,8 +6,8 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import backref, relationship
 from sqlalchemy.types import Enum
 
-from common.users.models import User
 from common.pg_core.models import Base, SoftDeleteMixin
+from common.users.models import User
 
 
 class RoleAccessTypes(enum.Enum):
@@ -34,6 +34,7 @@ class AWSAccount(SoftDeleteMixin, Base):
 
     tenant = relationship("Tenant", backref=backref("aws_account", order_by=number))
 
+
 class IdentityRole(SoftDeleteMixin, Base):
     __tablename__ = "identity_role"
 
@@ -42,7 +43,9 @@ class IdentityRole(SoftDeleteMixin, Base):
     role_name = Column(String)
     role_arn = Column(String, index=True)
 
-    tenant = relationship("Tenant", backref=backref("identity_role", order_by=role_name))
+    tenant = relationship(
+        "Tenant", backref=backref("identity_role", order_by=role_name)
+    )
 
 
 class RoleAccess(SoftDeleteMixin, Base):
@@ -52,7 +55,9 @@ class RoleAccess(SoftDeleteMixin, Base):
     tenant_id = Column(Integer(), ForeignKey("tenant.id"))
     type = Column(Enum(RoleAccessTypes))
     user_id = Column(Integer(), ForeignKey("users.id"))
-    group_id = Column(Integer(), ForeignKey("groups.id"))  # Might become a foreign key to group table
+    group_id = Column(
+        Integer(), ForeignKey("groups.id")
+    )  # Might become a foreign key to group table
     identity_role_id = Column(Integer(), ForeignKey("identity_role.id"))
     cli_only = Column(Boolean, default=False)
     expiration = Column(DateTime, nullable=True)
@@ -62,7 +67,9 @@ class RoleAccess(SoftDeleteMixin, Base):
 
     user = relationship("User", backref=backref("role_access", order_by=expiration))
     group = relationship("Group", backref=backref("role_access", order_by=expiration))
-    identity_role = relationship("IdentityRole", backref=backref("role_access", uselist=False))
+    identity_role = relationship(
+        "IdentityRole", backref=backref("role_access", uselist=False)
+    )
 
     def dict(self):
         return dict(
