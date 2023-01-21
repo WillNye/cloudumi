@@ -17,7 +17,7 @@
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <option name="_new_keywords" value="&quot;&quot;" />
     <option name="_new_parameters" value="&quot;&quot;" />
-    <option name="_new_additionalArguments" value="&quot;--no-cov -k test_delete_unauthorized_user --ignore-glob \u0027bazel*\u0027&quot;" />
+    <option name="_new_additionalArguments" value="&quot;--no-cov -k test_filter --ignore-glob \u0027bazel*\u0027 --ignore\u003dfunctional_tests&quot;" />
     <option name="_new_target" value="&quot;$PROJECT_DIR$/&quot;" />
     <option name="_new_targetType" value="&quot;PATH&quot;" />
     <method v="2" />

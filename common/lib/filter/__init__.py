@@ -34,7 +34,7 @@ class FilterOperator(Enum):
 class FilterToken(BaseModel):
     propertyKey: Optional[str]
     operator: FilterOperator
-    value: str | int | float
+    value: int | float | str
 
 
 class FilterOperation(Enum):
@@ -44,48 +44,66 @@ class FilterOperation(Enum):
 
 class Filter(BaseModel):
     tokens: list[FilterToken] = []
-    operation: FilterOperation = "and"
+    operation: FilterOperation = FilterOperation._and
 
 
 class FilterModel(BaseModel):
     pagination: FilterPagination
     sorting: FilterSorting
-    filtering: dict = None
+    filtering: Filter = None
 
 
 # async def filter_data(data, filter, page_size=None, current_page_index=None, sorting_column=None, sorting_descending=False)
 async def filter_data(data, filter_obj):
-    filter = FilterModel.parse_obj(filter_obj)
+    options = FilterModel.parse_obj(filter_obj)
+    filter = options.filtering
+    sorting = options.sorting
+    pagination = options.pagination
     filtered_data = []
     for item in data:
-        match = False
+        if not filter or not filter.tokens:
+            filtered_data.append(item)
+            continue
         if filter.operation == FilterOperation._and:
             match = True
             for token in filter.tokens:
-                prop_val = token.propertyKey
+                prop_val = item[token.propertyKey]
                 if token.operator == FilterOperator.equals:
                     match = match and prop_val == token.value
                 elif token.operator == FilterOperator.not_equals:
                     match = match and prop_val != token.value
                 elif token.operator == FilterOperator.contains:
                     match = match and prop_val in token.value
+                elif token.operator == FilterOperator.greater_than:
+                    match = match and prop_val > token.value
+                elif token.operator == FilterOperator.less_than:
+                    match = match and prop_val < token.value
+            if match:
+                filtered_data.append(item)
         elif filter.operation == FilterOperation._or:
             match = False
             for token in filter.tokens:
-                prop_val = token.propertyKey
-                if token["operator"] == "=":
-                    match = match or prop_val == token["value"]
-                elif token["operator"] == "!:":
-                    match = match or prop_val != token["value"]
-                elif token["operator"] == ":":
-                    match = match or prop_val in token["value"]
-        if match:
-            filtered_data.append(item)
-    if sorting_column:
-        filtered_data.sort(key=lambda x: x[sorting_column], reverse=sorting_descending)
-    if page_size and current_page_index:
-        start = current_page_index * page_size
-        end = start + page_size
+                prop_val = item[token.propertyKey]
+                if token.operator == FilterOperator.equals:
+                    match = match or prop_val == token.value
+                elif token.operator == FilterOperator.not_equals:
+                    match = match or prop_val != token.value
+                elif token.operator == FilterOperator.contains:
+                    match = match or prop_val in token.value
+                elif token.operator == FilterOperator.greater_than:
+                    match = match or prop_val > token.value
+                elif token.operator == FilterOperator.less_than:
+                    match = match or prop_val < token.value
+            if match:
+                filtered_data.append(item)
+    if sorting.sortingColumn:
+        filtered_data.sort(
+            key=lambda x: x[sorting.sortingColumn.sortingField],
+            reverse=sorting.sortingDescending,
+        )
+    if pagination.pageSize and pagination.currentPageIndex:
+        start = (pagination.currentPageIndex - 1) * pagination.pageSize
+        end = start + pagination.pageSize
         paginated_data = filtered_data[start:end]
     else:
         paginated_data = filtered_data
