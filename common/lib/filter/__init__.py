@@ -36,6 +36,7 @@ class FilterOperator(Enum):
     equals = "="
     not_equals = "!="
     contains = ":"
+    does_not_contain = "!:"
     greater_than = ">"
     less_than = "<"
 
@@ -83,6 +84,8 @@ async def filter_data(data, filter_obj) -> DataTableResponse:
                     match = match and prop_val != token.value
                 elif token.operator == FilterOperator.contains:
                     match = match and token.value in prop_val
+                elif token.operator == FilterOperator.does_not_contain:
+                    match = match and token.value not in prop_val
                 elif token.operator == FilterOperator.greater_than:
                     match = match and prop_val > token.value
                 elif token.operator == FilterOperator.less_than:
@@ -99,6 +102,8 @@ async def filter_data(data, filter_obj) -> DataTableResponse:
                     match = match or prop_val != token.value
                 elif token.operator == FilterOperator.contains:
                     match = match or token.value in prop_val
+                elif token.operator == FilterOperator.does_not_contain:
+                    match = match or token.value not in prop_val
                 elif token.operator == FilterOperator.greater_than:
                     match = match or prop_val > token.value
                 elif token.operator == FilterOperator.less_than:
@@ -150,6 +155,12 @@ async def filter_data_with_sqlalchemy(filter_obj, tenant, Table):
                                     f"%{token.value}%"
                                 )
                             )
+                        elif token.operator == FilterOperator.does_not_contain:
+                            conditions.append(
+                                getattr(Table, token.propertyKey).notilike(
+                                    f"%{token.value}%"
+                                )
+                            )
                         elif token.operator == FilterOperator.greater_than:
                             conditions.append(
                                 getattr(Table, token.propertyKey) > token.value
@@ -173,6 +184,12 @@ async def filter_data_with_sqlalchemy(filter_obj, tenant, Table):
                         elif token.operator == FilterOperator.contains:
                             conditions.append(
                                 getattr(Table, token.propertyKey).ilike(
+                                    f"%{token.value}%"
+                                )
+                            )
+                        elif token.operator == FilterOperator.does_not_contain:
+                            conditions.append(
+                                getattr(Table, token.propertyKey).notilike(
                                     f"%{token.value}%"
                                 )
                             )

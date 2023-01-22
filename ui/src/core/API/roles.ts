@@ -1,13 +1,13 @@
 import axios from '../Axios';
-import { V1_API_URL, V2_API_URL } from './constants';
+import { V1_API_URL, V2_API_URL, V4_API_URL } from './constants';
 
 type RoleCredentialsParams = {
   requested_role: string;
 };
 
-export const getEligibleRoles = () => {
-  const url = `${V2_API_URL}/eligible_roles`;
-  return axios.get(url);
+export const getEligibleRoles = query => {
+  const url = `${V4_API_URL}/roles`;
+  return axios.post(url, query);
 };
 
 export const getAllRoles = () => {

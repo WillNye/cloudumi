@@ -27,7 +27,7 @@ class RolesHandlerV4(BaseHandler):
         GET /api/v4/aws/roles
         """
         tenant = self.ctx.tenant
-        body = tornado.escape.json_decode(self.request.body)
+        body = tornado.escape.json_decode(self.request.body or "{}")
 
         group_mapping = get_plugin_by_name(
             config.get_tenant_specific_key(

@@ -48,10 +48,10 @@ export const Access: FC<AccessProps> = ({ data }) => {
     // });
   }, []);
 
-  const callGetEligibleRoles = useCallback(() => {
+  const callGetEligibleRoles = useCallback((query = {}) => {
     setIsLoading(true);
     setErrorMsg(null);
-    getEligibleRoles()
+    getEligibleRoles(query)
       .then(({ data }) => {
         setEligibleRolesData(data.data);
       })
