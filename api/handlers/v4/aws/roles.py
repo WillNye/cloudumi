@@ -27,7 +27,7 @@ from common.models import DataTableResponse, WebResponse
 log = config.get_logger()
 
 
-class RolesHandler(BaseHandler):
+class RolesHandlerV4(BaseHandler):
     """Handler for /api/v4/aws/roles
 
     Api endpoint to list and filter roles
