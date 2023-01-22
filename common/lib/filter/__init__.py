@@ -10,6 +10,7 @@ from common.config.globals import ASYNC_PG_SESSION
 from common.group_memberships.models import GroupMembership  # noqa: F401, E402
 from common.groups.models import Group  # noqa: F401, E402
 from common.lib.pydantic import BaseModel
+from common.models import DataTableResponse
 from common.pg_core.models import Base  # noqa: F401,E402
 from common.users.models import User  # noqa: F401, E402
 
@@ -61,13 +62,13 @@ class FilterModel(BaseModel):
     filtering: Filter = None
 
 
-# async def filter_data(data, filter, page_size=None, current_page_index=None, sorting_column=None, sorting_descending=False)
-async def filter_data(data, filter_obj):
+async def filter_data(data, filter_obj) -> DataTableResponse:
     options = FilterModel.parse_obj(filter_obj)
     filter = options.filtering
     sorting = options.sorting
     pagination = options.pagination
     filtered_data = []
+    total_count = len(data)
     for item in data:
         if not filter or not filter.tokens:
             filtered_data.append(item)
@@ -81,7 +82,7 @@ async def filter_data(data, filter_obj):
                 elif token.operator == FilterOperator.not_equals:
                     match = match and prop_val != token.value
                 elif token.operator == FilterOperator.contains:
-                    match = match and prop_val in token.value
+                    match = match and token.value in prop_val
                 elif token.operator == FilterOperator.greater_than:
                     match = match and prop_val > token.value
                 elif token.operator == FilterOperator.less_than:
@@ -97,13 +98,14 @@ async def filter_data(data, filter_obj):
                 elif token.operator == FilterOperator.not_equals:
                     match = match or prop_val != token.value
                 elif token.operator == FilterOperator.contains:
-                    match = match or prop_val in token.value
+                    match = match or token.value in prop_val
                 elif token.operator == FilterOperator.greater_than:
                     match = match or prop_val > token.value
                 elif token.operator == FilterOperator.less_than:
                     match = match or prop_val < token.value
             if match:
                 filtered_data.append(item)
+    filtered_count = len(filtered_data)
     if sorting and sorting.sortingColumn:
         filtered_data.sort(
             key=lambda x: x[sorting.sortingColumn.sortingField],
@@ -115,7 +117,10 @@ async def filter_data(data, filter_obj):
         paginated_data = filtered_data[start:end]
     else:
         paginated_data = filtered_data
-    return paginated_data
+
+    return DataTableResponse(
+        totalCount=total_count, filteredCount=filtered_count, data=paginated_data
+    )
 
 
 async def filter_data_with_sqlalchemy(filter_obj, tenant, Table):
