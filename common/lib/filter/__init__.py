@@ -118,7 +118,7 @@ async def filter_data(data, filter_obj):
     return paginated_data
 
 
-async def filter_data_with_sqlalchemy(filter_obj, Table):
+async def filter_data_with_sqlalchemy(filter_obj, tenant, Table):
     options = FilterModel.parse_obj(filter_obj)
     filter = options.filtering
     sorting = options.sorting
@@ -127,9 +127,9 @@ async def filter_data_with_sqlalchemy(filter_obj, Table):
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
             query = select(Table)
+            conditions = [getattr(Table, "tenant") == tenant]
             if filter and filter.tokens:
                 if filter.operation == FilterOperation._and:
-                    conditions = []
                     for token in filter.tokens:
                         if token.operator == FilterOperator.equals:
                             conditions.append(
