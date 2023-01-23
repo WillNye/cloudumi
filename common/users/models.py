@@ -72,7 +72,7 @@ class User(SoftDeleteMixin, Base):
     last_successful_mfa_code = Column(String(64), nullable=True)
     tenant_id = Column(Integer, ForeignKey("tenant.id"), nullable=False)
 
-    tenant = relationship("tenant", backref=backref("users", order_by=username))
+    tenant = relationship("Tenant", backref=backref("users", order_by=username))
 
     # TODO: When we're soft-deleting, we need our own methods to get these groups
     # because `deleted=true`. Create async delete function to update the relationship
@@ -86,8 +86,8 @@ class User(SoftDeleteMixin, Base):
     )
 
     __table_args__ = (
-        UniqueConstraint("tenant", "username", name="uq_tenant_username"),
-        UniqueConstraint("tenant", "email", name="uq_tenant_email"),
+        UniqueConstraint("tenant_id", "username", name="uq_tenant_username"),
+        UniqueConstraint("tenant_id", "email", name="uq_tenant_email"),
     )
 
     async def delete(self):

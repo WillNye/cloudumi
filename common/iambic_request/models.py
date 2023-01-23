@@ -23,6 +23,7 @@ from common.lib.asyncio import aio_wrapper
 from common.lib.storage import TenantFileStorageHandler
 from common.models import IambicTemplateChange
 from common.pg_core.models import Base, SoftDeleteMixin
+from common.tenants.models import Tenant  # noqa: F401
 
 TENANT_REPO_DIR = Path(config.get("_global_.tenant_storage.base_path")).expanduser()
 if not TENANT_REPO_DIR:
@@ -574,7 +575,7 @@ class Request(SoftDeleteMixin, Base):
     rejected_by = Column(String, nullable=True)
 
     tenant = relationship(
-        "tenant", backref=backref("request", order_by="Request.created_at")
+        "Tenant", backref=backref("request", order_by="Request.created_at")
     )
 
     comments = relationship(
@@ -586,24 +587,24 @@ class Request(SoftDeleteMixin, Base):
     )
 
     __table_args__ = (
-        Index("request_tenant_created_at_idx", "tenant", "deleted", "created_at"),
+        Index("request_tenant_created_at_idx", "tenant_id", "deleted", "created_at"),
         Index(
             "request_tenant_with_status_created_at_idx",
-            "tenant",
+            "tenant_id",
             "status",
             "deleted",
             "created_at",
         ),
         Index(
             "request_created_by_created_at_idx",
-            "tenant",
+            "tenant_id",
             "deleted",
             "created_by",
             "created_at",
         ),
         Index(
             "request_created_by_with_status_created_at_idx",
-            "tenant",
+            "tenant_id",
             "status",
             "deleted",
             "created_by",

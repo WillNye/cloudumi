@@ -14,6 +14,7 @@ from common.pg_core.filters import (
     determine_page_from_offset,
 )
 from common.pg_core.models import Base, SoftDeleteMixin
+from common.tenants.models import Tenant  # noqa: F401
 
 
 class Group(SoftDeleteMixin, Base):
@@ -23,10 +24,10 @@ class Group(SoftDeleteMixin, Base):
     description = Column(String)
     tenant_id = Column(Integer(), ForeignKey("tenant.id"))
     email = Column(String)
-    tenant = relationship("tenant", backref=backref("groups", order_by=name))
+    tenant = relationship("Tenant", backref=backref("groups", order_by=name))
     __table_args__ = (
-        UniqueConstraint("tenant", "name", name="uq_tenant_name"),
-        UniqueConstraint("tenant", "email", name="uq_group_tenant_email"),
+        UniqueConstraint("tenant_id", "name", name="uq_tenant_name"),
+        UniqueConstraint("tenant_id", "email", name="uq_group_tenant_email"),
     )
 
     users = relationship(
