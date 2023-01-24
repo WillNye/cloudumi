@@ -87,78 +87,76 @@ export const Table = <T, D>({
     );
 
   return (
-    <div className={styles.tableContainer}>
-      <table {...getTableProps()} className={classes}>
-        <thead>
-          {headerGroups.map((headerGroup, index) => (
-            <tr key={index} {...headerGroup.getHeaderGroupProps()}>
-              {headerGroup.headers.map((column, idx) => (
-                <th
-                  key={idx}
-                  {...column.getHeaderProps({
-                    style: {
-                      minWidth: column.minWidth,
-                      width: column.width,
-                      maxWidth: column.maxWidth
-                    },
-                    ...(column?.sortable && {
-                      ...column.getSortByToggleProps()
-                    })
-                  })}
-                  // className={styles.th}
-                >
-                  <div className={styles.center}>
-                    <span>{column.render('Header')}</span>
-                    <span>
-                      {column.isSorted ? (
-                        column.isSortedDesc ? (
-                          <Icon name="sort-descending" size="large" />
-                        ) : (
-                          <Icon name="sort-ascending" size="large" />
-                        )
+    <table {...getTableProps()} className={classes}>
+      <thead>
+        {headerGroups.map((headerGroup, index) => (
+          <tr key={index} {...headerGroup.getHeaderGroupProps()}>
+            {headerGroup.headers.map((column, idx) => (
+              <th
+                key={idx}
+                {...column.getHeaderProps({
+                  style: {
+                    minWidth: column.minWidth,
+                    width: column.width,
+                    maxWidth: column.maxWidth
+                  },
+                  ...(column?.sortable && {
+                    ...column.getSortByToggleProps()
+                  })
+                })}
+                className={styles.th}
+              >
+                <div className={styles.center}>
+                  <span>{column.render('Header')}</span>
+                  <span>
+                    {column.isSorted ? (
+                      column.isSortedDesc ? (
+                        <Icon name="sort-descending" size="large" />
                       ) : (
-                        <Fragment />
-                      )}
-                    </span>
-                  </div>
-                  <div>{column.canFilter ? column.render('Filter') : null}</div>
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        {isLoading ? (
-          <td colSpan={columns.length}>
-            <div className={styles.tableLoader}>
-              <div>
-                <Loader />
-                <div className={styles.loaderText}>Loading...</div>
-              </div>
+                        <Icon name="sort-ascending" size="large" />
+                      )
+                    ) : (
+                      <Fragment />
+                    )}
+                  </span>
+                </div>
+                <div>{column.canFilter ? column.render('Filter') : null}</div>
+              </th>
+            ))}
+          </tr>
+        ))}
+      </thead>
+      {isLoading ? (
+        <td colSpan={columns.length}>
+          <div className={styles.tableLoader}>
+            <div>
+              <Loader />
+              <div className={styles.loaderText}>Loading...</div>
             </div>
-          </td>
-        ) : (
-          <tbody {...getTableBodyProps()} className={styles.tableBody}>
-            {rows.map((row, index) => {
-              prepareRow(row);
-              return (
-                <tr key={index} {...row.getRowProps()} className={styles.tr}>
-                  {row.cells.map((cell, idx) => {
-                    return (
-                      <td
-                        key={idx}
-                        {...cell.getCellProps()}
-                        className={styles.td}
-                      >
-                        {cell.render('Cell')}
-                      </td>
-                    );
-                  })}
-                </tr>
-              );
-            })}
-          </tbody>
-        )}
-      </table>
-    </div>
+          </div>
+        </td>
+      ) : (
+        <tbody {...getTableBodyProps()} className={styles.tableBody}>
+          {rows.map((row, index) => {
+            prepareRow(row);
+            return (
+              <tr key={index} {...row.getRowProps()} className={styles.tr}>
+                {row.cells.map((cell, idx) => {
+                  return (
+                    <td
+                      key={idx}
+                      {...cell.getCellProps()}
+                      className={styles.td}
+                    >
+                      {cell.render('Cell')}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      )}
+    </table>
   );
 };

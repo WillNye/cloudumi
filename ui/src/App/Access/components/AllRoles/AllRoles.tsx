@@ -9,16 +9,44 @@ import { eligibleRolesColumns } from '../EligibleRoles/constants';
 import { Button } from 'shared/elements/Button';
 
 import css from './AllRoles.module.css';
+import { ROLE_PROPERTY_SEARCH_FILTER } from 'App/Access/constants';
 
 const AllRoles = ({ data, getData, isLoading }) => {
-  const [query, setQuery] = useState<PropertyFilterProps.Query>({
+  const [filter, setFilter] = useState<PropertyFilterProps.Query>({
     tokens: [],
     operation: 'and'
   });
 
-  useEffect(function onMount() {
-    getData();
-  }, []);
+  const [query, setQuery] = useState({
+    pagination: {
+      currentPageIndex: 1,
+      pageSize: 30
+    },
+    sorting: {
+      sortingColumn: {
+        id: 'id',
+        sortingField: 'account_name',
+        header: 'Account Name',
+        minWidth: 180
+      },
+      sortingDescending: false
+    },
+    filtering: filter
+  });
+
+  useEffect(
+    function onQueryUpdate() {
+      getData(query);
+    },
+    [query, getData]
+  );
+
+  useEffect(() => {
+    setQuery(exstingQuery => ({
+      ...exstingQuery,
+      filtering: filter
+    }));
+  }, [filter]);
 
   const tableRows = useMemo(() => {
     return data.map(item => {
@@ -56,13 +84,12 @@ const AllRoles = ({ data, getData, isLoading }) => {
         <div className={css.filter}>
           <PropertyFilter
             expandToViewport
-            onChange={({ detail }) => setQuery(detail)}
-            query={query}
+            onChange={({ detail }) => setFilter(detail)}
+            query={filter}
             i18nStrings={{
               filteringAriaLabel: 'your choice',
               dismissAriaLabel: 'Dismiss',
-              filteringPlaceholder:
-                'Filter distributions by text, property or value',
+              filteringPlaceholder: ROLE_PROPERTY_SEARCH_FILTER,
               groupValuesText: 'Values',
               groupPropertiesText: 'Properties',
               operatorsText: 'Operators',
@@ -91,101 +118,25 @@ const AllRoles = ({ data, getData, isLoading }) => {
               enteredTextLabel: text => `Use: "${text}"`
             }}
             countText="5 matches"
-            filteringOptions={[
-              {
-                propertyKey: 'instanceid',
-                value: 'i-2dc5ce28a0328391'
-              },
-              {
-                propertyKey: 'instanceid',
-                value: 'i-d0312e022392efa0'
-              },
-              {
-                propertyKey: 'instanceid',
-                value: 'i-070eef935c1301e6'
-              },
-              {
-                propertyKey: 'instanceid',
-                value: 'i-3b44795b1fea36ac'
-              },
-              { propertyKey: 'state', value: 'Stopped' },
-              { propertyKey: 'state', value: 'Stopping' },
-              { propertyKey: 'state', value: 'Pending' },
-              { propertyKey: 'state', value: 'Running' },
-              {
-                propertyKey: 'instancetype',
-                value: 't3.small'
-              },
-              {
-                propertyKey: 'instancetype',
-                value: 't2.small'
-              },
-              { propertyKey: 'instancetype', value: 't3.nano' },
-              {
-                propertyKey: 'instancetype',
-                value: 't2.medium'
-              },
-              {
-                propertyKey: 'instancetype',
-                value: 't3.medium'
-              },
-              {
-                propertyKey: 'instancetype',
-                value: 't2.large'
-              },
-              { propertyKey: 'instancetype', value: 't2.nano' },
-              {
-                propertyKey: 'instancetype',
-                value: 't2.micro'
-              },
-              {
-                propertyKey: 'instancetype',
-                value: 't3.large'
-              },
-              {
-                propertyKey: 'instancetype',
-                value: 't3.micro'
-              },
-              { propertyKey: 'averagelatency', value: '17' },
-              { propertyKey: 'averagelatency', value: '53' },
-              { propertyKey: 'averagelatency', value: '73' },
-              { propertyKey: 'averagelatency', value: '74' },
-              { propertyKey: 'averagelatency', value: '107' },
-              { propertyKey: 'averagelatency', value: '236' },
-              { propertyKey: 'averagelatency', value: '242' },
-              { propertyKey: 'averagelatency', value: '375' },
-              { propertyKey: 'averagelatency', value: '402' },
-              { propertyKey: 'averagelatency', value: '636' },
-              { propertyKey: 'averagelatency', value: '639' },
-              { propertyKey: 'averagelatency', value: '743' },
-              { propertyKey: 'averagelatency', value: '835' },
-              { propertyKey: 'averagelatency', value: '981' },
-              { propertyKey: 'averagelatency', value: '995' }
-            ]}
+            filteringOptions={[]}
             filteringProperties={[
               {
-                key: 'instanceid',
+                key: 'account_name',
                 operators: ['=', '!=', ':', '!:'],
-                propertyLabel: 'Instance ID',
-                groupValuesLabel: 'Instance ID values'
+                propertyLabel: 'Account Name',
+                groupValuesLabel: 'Account Name values'
               },
               {
-                key: 'state',
+                key: 'account_id',
                 operators: ['=', '!=', ':', '!:'],
-                propertyLabel: 'State',
-                groupValuesLabel: 'State values'
+                propertyLabel: 'Account ID',
+                groupValuesLabel: 'Account ID values'
               },
               {
-                key: 'instancetype',
+                key: 'role_name',
                 operators: ['=', '!=', ':', '!:'],
-                propertyLabel: 'Instance type',
-                groupValuesLabel: 'Instance type values'
-              },
-              {
-                key: 'averagelatency',
-                operators: ['=', '!=', '>', '<', '<=', '>='],
-                propertyLabel: 'Average latency',
-                groupValuesLabel: 'Average latency values'
+                propertyLabel: 'Role Name',
+                groupValuesLabel: 'Role Name values'
               }
             ]}
           />

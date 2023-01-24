@@ -9,7 +9,7 @@ import { eligibleRolesColumns } from './constants';
 import { Button } from 'shared/elements/Button';
 
 import css from './EligibleRoles.module.css';
-import id from 'date-fns/esm/locale/id/index.js';
+import { ROLE_PROPERTY_SEARCH_FILTER } from 'App/Access/constants';
 
 const EligibleRoles = ({ data, getData, isLoading }) => {
   const [filter, setFilter] = useState<PropertyFilterProps.Query>({
@@ -34,20 +34,18 @@ const EligibleRoles = ({ data, getData, isLoading }) => {
     filtering: filter
   });
 
-  useEffect(function onMount() {
-    getData(query);
-  }, []);
-
-  // Fetch new data when query changes
-  useEffect(() => {
-    getData(query);
-  }, [query]);
+  useEffect(
+    function onQueryUpdate() {
+      getData(query);
+    },
+    [query, getData]
+  );
 
   useEffect(() => {
-    setQuery({
-      ...query,
+    setQuery(exstingQuery => ({
+      ...exstingQuery,
       filtering: filter
-    });
+    }));
   }, [filter]);
 
   const tableRows = useMemo(() => {
@@ -85,14 +83,13 @@ const EligibleRoles = ({ data, getData, isLoading }) => {
       <div className={css.container}>
         <div className={css.filter}>
           <PropertyFilter
-            // expandToViewport
+            expandToViewport
             onChange={({ detail }) => setFilter(detail)}
             query={filter}
             i18nStrings={{
               filteringAriaLabel: 'your choice',
               dismissAriaLabel: 'Dismiss',
-              filteringPlaceholder:
-                'Filter distributions by text, property or value',
+              filteringPlaceholder: ROLE_PROPERTY_SEARCH_FILTER,
               groupValuesText: 'Values',
               groupPropertiesText: 'Properties',
               operatorsText: 'Operators',

@@ -1,12 +1,47 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Icon } from 'shared/elements/Icon';
 import { Dialog } from 'shared/layers/Dialog';
 
 import styles from './RoleCredentialSummary.module.css';
-import { Button } from 'shared/elements/Button';
+import { ROLE_SUMMARY_LINKS } from './constants';
+import { useCopyToClipboard } from 'react-use';
 
 const RoleCredentialSummary = () => {
   const [showDialog, setShowDialog] = useState(false);
+  const [activeLink, setActiveLink] = useState(ROLE_SUMMARY_LINKS.NOQ_CLI);
+
+  const [copiedText, copyText] = useCopyToClipboard();
+
+  const dialogRef = useRef<HTMLDivElement>();
+  const noqCLIRef = useRef<HTMLDivElement>();
+  const environmentVariablesRef = useRef<HTMLDivElement>();
+  const awsProfileRef = useRef<HTMLDivElement>();
+
+  const handleOnClick = useCallback(
+    (newLink: ROLE_SUMMARY_LINKS) => {
+      setActiveLink(newLink);
+
+      let activeRef;
+
+      if (newLink === ROLE_SUMMARY_LINKS.NOQ_CLI) {
+        activeRef = noqCLIRef;
+      }
+
+      if (newLink === ROLE_SUMMARY_LINKS.ENVIRONMENT_VARIABLES) {
+        activeRef = environmentVariablesRef;
+      }
+
+      if (newLink === ROLE_SUMMARY_LINKS.AWS_PROFILE) {
+        activeRef = awsProfileRef;
+      }
+
+      dialogRef?.current.scrollTo({
+        top: activeRef?.current.offsetTop,
+        behavior: 'smooth'
+      });
+    },
+    [awsProfileRef, dialogRef, environmentVariablesRef, noqCLIRef]
+  );
 
   return (
     <>
@@ -21,33 +56,47 @@ const RoleCredentialSummary = () => {
         setShowDialog={setShowDialog}
         size="medium"
         disablePadding
+        header="Code and Comands"
+        ref={dialogRef}
       >
         <div className={styles.roleSummary}>
-          <div className={styles.header}>
-            <div>Code and Comands</div>
-            <div
-              className={styles.pointer}
-              onClick={() => setShowDialog(false)}
-            >
-              <Icon name="close" size="large" />
-            </div>
-          </div>
-
           <div className={styles.content}>
             <div className={styles.sideNav}>
               <nav className={styles.nav}>
                 <ul className={styles.navList}>
-                  <li className={styles.navItem}>
-                    <Button variant="text">Noq CLI</Button>
+                  <li
+                    className={`${styles.navItem} ${
+                      activeLink === ROLE_SUMMARY_LINKS.NOQ_CLI
+                        ? styles.active
+                        : ''
+                    }`}
+                    onClick={() => handleOnClick(ROLE_SUMMARY_LINKS.NOQ_CLI)}
+                  >
+                    Noq CLI
                   </li>
-                  <li className={styles.navItem}>
-                    <Button variant="text">Environment Vars</Button>
+                  <li
+                    className={`${styles.navItem} ${
+                      activeLink === ROLE_SUMMARY_LINKS.ENVIRONMENT_VARIABLES
+                        ? styles.active
+                        : ''
+                    }`}
+                    onClick={() =>
+                      handleOnClick(ROLE_SUMMARY_LINKS.ENVIRONMENT_VARIABLES)
+                    }
+                  >
+                    Environment Vars
                   </li>
-                  <li className={styles.navItem}>
-                    <Button variant="text">AWS Profile</Button>
-                  </li>
-                  <li className={styles.navItem}>
-                    <Button variant="text">Credentials</Button>
+                  <li
+                    className={`${styles.navItem} ${
+                      activeLink === ROLE_SUMMARY_LINKS.AWS_PROFILE
+                        ? styles.active
+                        : ''
+                    }`}
+                    onClick={() =>
+                      handleOnClick(ROLE_SUMMARY_LINKS.AWS_PROFILE)
+                    }
+                  >
+                    AWS Profile
                   </li>
                 </ul>
               </nav>
@@ -60,7 +109,9 @@ const RoleCredentialSummary = () => {
                   credentials for your environment.
                 </p>
               </div>
-              <div className={styles.subHeader}>Noq CLI</div>
+              <div className={styles.sectionHeader} ref={noqCLIRef}>
+                Noq CLI
+              </div>
               <p className={styles.secondaryText}>
                 To retrieve AWS credentials on demand
               </p>
@@ -87,6 +138,33 @@ const RoleCredentialSummary = () => {
               <div className={styles.subHeader}>Credential Export</div>
               <div className={styles.codeBlock}>
                 <p>noq export prod/prod_admin</p>
+              </div>
+
+              <div
+                className={styles.sectionHeader}
+                ref={environmentVariablesRef}
+              >
+                Environment Variables
+              </div>
+              <p className={styles.secondaryText}>
+                To configure your workspace
+              </p>
+              <div className={styles.codeBlock}>
+                <p>export AWS_ACCESS_KEY_ID=ASIAYOLWP5232BHVOPPI</p>
+                <p>export AWS_SECRET_ACCESS_KEY=5YT0Ibw3vp1nxYIBM...</p>
+                <p>export AWS_SESSION_TOKEN=IQoJb3JpZ2luX2VjEDAaCX....</p>
+              </div>
+
+              <div ref={awsProfileRef} className={styles.sectionHeader}>
+                AWS Profile
+              </div>
+              <p className={styles.secondaryText}>
+                Add a profile in your AWS credentials file
+              </p>
+              <div className={styles.codeBlock}>
+                <p>aws_access_key_id=ASIAYOLWP5232BHVOPPI</p>
+                <p>aws_secret_access_key=5YT0Ibw3vp1nxYIBM...</p>
+                <p>aws_session_token=IQoJb3JpZ2luX2VjEDAaCX....</p>
               </div>
             </div>
           </div>

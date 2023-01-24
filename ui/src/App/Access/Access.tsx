@@ -37,15 +37,12 @@ export const Access: FC<AccessProps> = ({ data }) => {
   const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(function onMount() {
-    // getAllRoles().then(({ data }) => {
-    //   setAllRolesData(data.data);
-    // });
-    // const role = {
-    //   requested_role: 'arn:aws:iam::759357822767:role/noqmeter_null_test_role'
-    // };
-    // getRoleCredentials(role).then(({ data }) => {
-    //   console.log('==========request========', data, '===========');
-    // });
+    const role = {
+      requested_role: 'arn:aws:iam::759357822767:role/noqmeter_null_test_role'
+    };
+    getRoleCredentials(role).then(({ data }) => {
+      console.log('==========request========', data, '===========');
+    });
   }, []);
 
   const callGetEligibleRoles = useCallback((query = {}) => {

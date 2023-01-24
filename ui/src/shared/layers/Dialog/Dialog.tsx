@@ -4,10 +4,14 @@ import {
   useRef,
   ReactNode,
   Dispatch,
-  useMemo
+  useMemo,
+  forwardRef,
+  Ref
 } from 'react';
 import styles from './Dialog.module.css';
 import classNames from 'classnames';
+import { createPortal } from 'react-dom';
+import { Icon } from 'shared/elements/Icon';
 
 const useClickOutside = callback => {
   const ref = useRef(null);
@@ -39,56 +43,60 @@ interface DialogProps {
   disablePadding?: boolean;
 }
 
-export const Dialog = ({
-  showDialog,
-  setShowDialog,
-  header,
-  children,
-  footer,
-  size = 'fullWidth',
-  disablePadding
-}: DialogProps) => {
-  useEffect(() => {
-    if (showDialog) {
-      document.getElementById('root').style.overflow = 'hidden';
-    } else {
-      document.getElementById('root').style.overflow = 'auto';
-    }
+export const Dialog = forwardRef(
+  (
+    {
+      showDialog,
+      setShowDialog,
+      header,
+      children,
+      footer,
+      size = 'fullWidth',
+      disablePadding
+    }: DialogProps,
+    ref: Ref<HTMLDivElement>
+  ) => {
+    const handleCloseDialog = useCallback(
+      () => setShowDialog(false),
+      [setShowDialog]
+    );
+    const dialogRef = useClickOutside(handleCloseDialog);
+    const resolvedRef = useMemo(() => ref ?? dialogRef, [ref, dialogRef]);
 
-    return () => {
-      document.getElementById('root').style.overflow = 'auto';
-    };
-  }, [showDialog]);
+    const dialogClasses = useMemo(
+      () =>
+        classNames(styles.dialogContainer, {
+          [styles[size]]: size,
+          [styles.disablePadding]: disablePadding
+        }),
+      [size, disablePadding]
+    );
 
-  const handleCloseDialog = useCallback(
-    () => setShowDialog(false),
-    [setShowDialog]
-  );
-  const dialogRef = useClickOutside(handleCloseDialog);
-
-  const dialogClases = useMemo(
-    () =>
-      classNames(styles.dialogContainer, {
-        [styles[size]]: size,
-        [styles.disablePadding]: disablePadding
-      }),
-    [size, disablePadding]
-  );
-
-  return (
-    <>
-      {showDialog && (
-        <>
-          <div className={styles.overlay} onClick={handleCloseDialog} />
-          <div className={dialogClases} ref={dialogRef}>
-            <div className={styles.dialog}>
-              <span>{header}</span>
-              {children}
-              <span>{footer}</span>
-            </div>
-          </div>
-        </>
-      )}
-    </>
-  );
-};
+    return (
+      <>
+        {showDialog &&
+          createPortal(
+            <>
+              <div className={styles.overlay} onClick={handleCloseDialog} />
+              <div className={dialogClasses} ref={resolvedRef}>
+                <div className={styles.dialog}>
+                  <div className={styles.header}>
+                    {header && <div>{header}</div>}
+                    <div
+                      className={styles.pointer}
+                      onClick={() => setShowDialog(false)}
+                    >
+                      <Icon name="close" size="large" />
+                    </div>
+                  </div>
+                  {children}
+                  <span>{footer}</span>
+                </div>
+              </div>
+            </>,
+            document.body
+          )}
+      </>
+    );
+  }
+);
