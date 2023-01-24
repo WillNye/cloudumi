@@ -1,5 +1,5 @@
 from sqlalchemy import Column, ForeignKey, Integer, String
-from sqlalchemy.orm import backref, relationship
+from sqlalchemy.orm import relationship
 
 from common.pg_core.models import Base, SoftDeleteMixin
 
@@ -12,6 +12,4 @@ class IdentityRole(SoftDeleteMixin, Base):
     role_name = Column(String)
     role_arn = Column(String, index=True)
 
-    tenant = relationship(
-        "Tenant", backref=backref("identity_role", order_by=role_name)
-    )
+    tenant = relationship("Tenant", back_populates="identity_role", order_by=role_name)

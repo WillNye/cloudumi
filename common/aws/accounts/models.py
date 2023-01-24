@@ -1,5 +1,5 @@
 from sqlalchemy import Column, ForeignKey, Integer, String
-from sqlalchemy.orm import backref, relationship
+from sqlalchemy.orm import relationship
 
 from common.pg_core.models import Base, SoftDeleteMixin
 
@@ -12,4 +12,4 @@ class AWSAccount(SoftDeleteMixin, Base):
     number = Column(String, index=True)
     tenant_id = ForeignKey("tenant.id")
 
-    tenant = relationship("Tenant", backref=backref("aws_account", order_by=number))
+    tenant = relationship("Tenant", back_populates="aws_account", order_by=number)

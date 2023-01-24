@@ -2,7 +2,7 @@ import enum
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import backref, relationship
+from sqlalchemy.orm import relationship
 from sqlalchemy.types import Enum
 
 from common.pg_core.models import Base, SoftDeleteMixin
@@ -31,10 +31,10 @@ class RoleAccess(SoftDeleteMixin, Base):
     cloud_provider = Column(String, default="aws")
     signature = Column(String, nullable=True)
 
-    user = relationship("User", backref=backref("role_access", order_by=expiration))
-    group = relationship("Group", backref=backref("role_access", order_by=expiration))
+    user = relationship("User", back_populates="role_access", order_by=expiration)
+    group = relationship("Group", back_populates="role_access", order_by=expiration)
     identity_role = relationship(
-        "IdentityRole", backref=backref("role_access", uselist=False)
+        "IdentityRole", back_populates="role_access", uselist=False
     )
 
     def dict(self):

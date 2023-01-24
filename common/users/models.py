@@ -19,7 +19,7 @@ from sqlalchemy import (
     and_,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import backref, relationship, selectinload
+from sqlalchemy.orm import relationship, selectinload
 from sqlalchemy.sql import select
 
 from common.config.globals import ASYNC_PG_SESSION
@@ -72,7 +72,7 @@ class User(SoftDeleteMixin, Base):
     last_successful_mfa_code = Column(String(64), nullable=True)
     tenant_id = Column(Integer, ForeignKey("tenant.id"), nullable=False)
 
-    tenant = relationship("Tenant", backref=backref("users", order_by=username))
+    tenant = relationship("Tenant", back_populates="users", order_by=username)
 
     # TODO: When we're soft-deleting, we need our own methods to get these groups
     # because `deleted=true`. Create async delete function to update the relationship
