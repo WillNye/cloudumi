@@ -3,7 +3,7 @@ import { Icon } from 'shared/elements/Icon';
 import { Dialog } from 'shared/layers/Dialog';
 
 import styles from './RoleCredentialSummary.module.css';
-import { ROLE_SUMMARY_LINKS } from './constants';
+import { HEADER_FIXED_HIEGHT, ROLE_SUMMARY_LINKS } from './constants';
 import { useCopyToClipboard } from 'react-use';
 
 const RoleCredentialSummary = () => {
@@ -36,7 +36,7 @@ const RoleCredentialSummary = () => {
       }
 
       dialogRef?.current.scrollTo({
-        top: activeRef?.current.offsetTop,
+        top: activeRef?.current.offsetTop - HEADER_FIXED_HIEGHT,
         behavior: 'smooth'
       });
     },
