@@ -5,7 +5,10 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import backref, relationship
 from sqlalchemy.types import Enum
 
+from common.groups.models import Group
+from common.identity.models import IdentityRole
 from common.pg_core.models import Base, SoftDeleteMixin
+from common.users.models import User
 
 
 class RoleAccessTypes(enum.Enum):
@@ -21,9 +24,7 @@ class RoleAccess(SoftDeleteMixin, Base):
     tenant_id = Column(Integer(), ForeignKey("tenant.id"))
     type = Column(Enum(RoleAccessTypes))
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
-    group_id = (
-        Column(UUID(as_uuid=True), ForeignKey("groups.id", ondelete="CASCADE")),
-    )
+    group_id = Column(UUID(as_uuid=True), ForeignKey("groups.id", ondelete="CASCADE"))
     identity_role_id = Column(Integer(), ForeignKey("identity_role.id"))
     cli_only = Column(Boolean, default=False)
     expiration = Column(DateTime, nullable=True)
@@ -31,11 +32,12 @@ class RoleAccess(SoftDeleteMixin, Base):
     cloud_provider = Column(String, default="aws")
     signature = Column(String, nullable=True)
 
-    user = relationship("User", backref=backref("role_access", order_by=expiration))
-    group = relationship("Group", backref=backref("role_access", order_by=expiration))
+    user = relationship("User")
+    group = relationship("Group", primaryjoin="Group.id == RoleAccess.group_id")
     identity_role = relationship(
-        "IdentityRole", backref=backref("role_access", uselist=False)
+        "IdentityRole", primaryjoin="IdentityRole.id == RoleAccess.identity_role_id"
     )
+    tenant = relationship("Tenant", primaryjoin="Tenant.id == RoleAccess.tenant_id")
 
     def dict(self):
         return dict(

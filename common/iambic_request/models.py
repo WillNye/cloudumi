@@ -574,9 +574,7 @@ class Request(SoftDeleteMixin, Base):
     approved_by = Column(ARRAY(String), default=dict)
     rejected_by = Column(String, nullable=True)
 
-    tenant = relationship(
-        "Tenant", backref=backref("request", order_by="Request.created_at")
-    )
+    tenant = relationship("Tenant")
 
     comments = relationship(
         "RequestComment",

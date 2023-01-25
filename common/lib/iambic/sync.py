@@ -1,25 +1,37 @@
 import asyncio
+import datetime
 from typing import Dict, List
 
 from iambic.aws.iam.role.models import RoleTemplate
 from iambic.aws.models import AWSAccount
 from iambic.config.utils import load_template as load_config_template
+from iambic.core.models import BaseTemplate
 from iambic.core.parser import load_templates
 from iambic.core.utils import gather_templates, yaml
 
 from common.config import config
 from common.config.models import ModelAdapter
 from common.iambic_request.models import IambicRepo
-from common.identity.role_access_crud import list_role_access, update_role_access
+from common.identity.role_access_crud import (
+    create_role_access,
+    get_role_access,
+    list_role_access,
+    update_role_access,
+)
 from common.models import IambicRepoConfig
+from common.role_access.models import RoleAccessTypes
 
 log = config.get_logger()
 
 
-async def get_data_for_template_type(tenant: str, template_type: str):
+async def get_data_for_template_type(
+    tenant: str, template_type: str
+) -> List[BaseTemplate]:
     iambic_repo_config = (
         ModelAdapter(IambicRepoConfig).load_config("iambic_repos", tenant).model
     )
+    if not iambic_repo_config:
+        return []
     iambic_repo = IambicRepo(
         tenant=tenant,
         repo_name=iambic_repo_config.repo_name,
@@ -33,6 +45,8 @@ async def get_config_data_for_repo(tenant: str):
     iambic_repo_config = (
         ModelAdapter(IambicRepoConfig).load_config("iambic_repos", tenant).model
     )
+    if not iambic_repo_config:
+        return None
     iambic_repo = IambicRepo(
         tenant=tenant,
         repo_name=iambic_repo_config.repo_name,
@@ -113,6 +127,9 @@ async def sync_role_access(tenant: str):
     ground_truth_roles = await get_data_for_template_type(tenant, template_type)
     config_template = await get_config_data_for_repo(tenant)
 
+    if not config_template:
+        return None
+
     arn_role_template_mapping = await explode_role_templates_for_accounts(
         config_template.aws, ground_truth_roles
     )
@@ -121,28 +138,48 @@ async def sync_role_access(tenant: str):
     create_roles = {
         k: v for k, v in arn_role_template_mapping.items() if k not in known_roles
     }
+    update_roles = {
+        k: v for k, v in arn_role_template_mapping.items() if k in known_roles
+    }
     remove_roles = {x for x in known_roles if x not in arn_role_template_mapping.keys()}
     # configs = load_templates(await gather_templates("CORE::CONFIG"))
-    for config_path in configs:
-        config = Config(aws=aws_config, **yaml.load(open(config_path)))
-        # Need to populate AWSOrganization in iambic before calling setup_aws_accounts
 
-        # await config.setup_aws_accounts()
-        for aws_account in config.aws_accounts:
-            for template in role_templates:
-                role_access = template.get_attribute_val_for_account(
-                    aws_account, "role_access", as_boto_dict=False
-                )
-                role_access
-                # for user in role_access.users:
-                #     ...
-                # for group in role_access.groups:
-                #     ...
+    created_by = updated_by = "iambic"
 
-                # expires_at = (
-                #     role_access.expires_at
-                # )  # Write this to postgres to know if is breakglass
-                # Write the aws account plus role access somewhere?
+    for role_arn, role_template in create_roles.items():
+        await create_role_access(
+            tenant,
+            created_by,
+            created_at=datetime.datetime.now(),
+            type=RoleAccessTypes.credential_access,  # TODO: figure out where this comes from
+            user_id=None,  # TODO: need to figure out where user comes from
+            group_id=None,  # TODO: need to figure out where group comes from
+            identity_role=role_arn,
+            cli_only=False,  # TODO: need to figure out where cli_only comes from
+            expiration=role_template.expires_at,
+            request_id=None,  # TODO: need to figure out where request_id comes from
+            cloud_provider="aws",
+        )
+
+    for role_arn, role_template in update_roles.items():
+        role = await get_role_access(tenant, role_arn)
+        await update_role_access(
+            tenant,
+            role.id,
+            updated_by,
+            type=RoleAccessTypes.credential_access,  # TODO: figure out where this comes from
+            user_id=None,  # TODO: need to figure out where user comes from
+            group_id=None,  # TODO: need to figure out where group comes from
+            identity_role=role_arn,
+            cli_only=False,  # TODO: need to figure out where cli_only comes from
+            expiration=role_template.expires_at,
+            request_id=None,  # TODO: need to figure out where request_id comes from
+            cloud_provider="aws",
+        )
+
+    for role_arn in remove_roles:
+        role = await get_role_access(tenant, role_arn)
+        await delete_role_access(tenant, role.id)
 
 
 loop = asyncio.get_event_loop()

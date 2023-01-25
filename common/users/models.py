@@ -72,7 +72,7 @@ class User(SoftDeleteMixin, Base):
     last_successful_mfa_code = Column(String(64), nullable=True)
     tenant_id = Column(Integer, ForeignKey("tenant.id"), nullable=False)
 
-    tenant = relationship("Tenant", backref=backref("users", order_by=username))
+    tenant = relationship("Tenant")
 
     # TODO: When we're soft-deleting, we need our own methods to get these groups
     # because `deleted=true`. Create async delete function to update the relationship

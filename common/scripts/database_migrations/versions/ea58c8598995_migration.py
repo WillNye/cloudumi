@@ -1,8 +1,8 @@
 """migration
 
-Revision ID: b00ffe6300e9
+Revision ID: ea58c8598995
 Revises: 3b751f90a520
-Create Date: 2023-01-23 11:51:51.877045
+Create Date: 2023-01-24 14:22:50.984075
 
 """
 import sqlalchemy as sa
@@ -10,7 +10,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "b00ffe6300e9"
+revision = "ea58c8598995"
 down_revision = "3b751f90a520"
 branch_labels = None
 depends_on = None
@@ -73,12 +73,14 @@ def upgrade() -> None:
             nullable=True,
         ),
         sa.Column("user_id", postgresql.UUID(as_uuid=True), nullable=True),
+        sa.Column("group_id", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column("identity_role_id", sa.Integer(), nullable=True),
         sa.Column("cli_only", sa.Boolean(), nullable=True),
         sa.Column("expiration", sa.DateTime(), nullable=True),
         sa.Column("request_id", sa.String(), nullable=True),
         sa.Column("cloud_provider", sa.String(), nullable=True),
         sa.Column("signature", sa.String(), nullable=True),
+        sa.ForeignKeyConstraint(["group_id"], ["groups.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(
             ["identity_role_id"],
             ["identity_role.id"],

@@ -1,37 +1,69 @@
 import datetime
 import uuid
-from typing import Union
+from typing import Optional, Union
 
 from sqlalchemy import select, update
 
 from common.config.globals import ASYNC_PG_SESSION
 from common.exceptions.exceptions import NoMatchingRequest, Unauthorized
-from common.identity.models import RoleAccess, RoleAccessTypes
 from common.pg_core.filters import create_filter_from_url_params
+from common.role_access.models import RoleAccess, RoleAccessTypes
+from common.tenants.models import Tenant
 
 
-async def list_role_access(tenant: str, **filter_kwargs) -> list[RoleAccess]:
+async def list_role_access(tenant_name: str, **filter_kwargs) -> list[RoleAccess]:
     filter_kwargs.setdefault("order_by", "-created_at")
 
     # Figure out filters and custom ordering
     async with ASYNC_PG_SESSION() as session:
+        tenant_rows = await session.execute(
+            select(Tenant).filter(Tenant.name == tenant_name)
+        )
+        tenant = tenant_rows.scalars().first()
+        if tenant is None:
+            return []
         stmt = select(RoleAccess).filter(RoleAccess.tenant == tenant)
 
-        stmt = create_filter_from_url_params(stmt, **filter_kwargs)
+        # stmt = create_filter_from_url_params(stmt, **filter_kwargs)
         items = await session.execute(stmt)
     return items.scalars().all()
 
 
+async def delete_role_access(tenant_name: str, role_access_id: Union[str, uuid.UUID]):
+    async with ASYNC_PG_SESSION() as session:
+        tenant = await session.execute(
+            select(Tenant).filter(Tenant.name == tenant_name)
+        )
+        async with session.begin():
+            await session.execute(
+                update(RoleAccess)
+                .where(RoleAccess.id == role_access_id)
+                .where(RoleAccess.tenant == tenant)
+                .values(deleted=True, deleted_at=datetime.datetime.utcnow())
+            )
+
+
 async def get_role_access(
-    tenant: str, role_access_id: Union[str, uuid.UUID]
+    tenant: str,
+    role_access_id: Optional[Union[str, uuid.UUID]] = None,
+    role_arn: Optional[str] = None,
 ) -> RoleAccess:
     try:
         async with ASYNC_PG_SESSION() as session:
-            stmt = (
-                select(RoleAccess)
-                .filter(RoleAccess.id == role_access_id)
-                .filter(RoleAccess.tenant == tenant)
-            )
+            if role_access_id:
+                stmt = (
+                    select(RoleAccess)
+                    .filter(RoleAccess.id == role_access_id)
+                    .filter(RoleAccess.tenant == tenant)
+                )
+            elif role_arn:
+                stmt = (
+                    select(RoleAccess)
+                    .filter(RoleAccess.identity_role == role_arn)
+                    .filter(RoleAccess.tenant == tenant)
+                )
+            else:
+                raise NoMatchingRequest
 
             items = await session.execute(stmt)
             request: RoleAccess = items.scalars().unique().one()

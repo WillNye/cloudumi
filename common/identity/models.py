@@ -8,10 +8,8 @@ class IdentityRole(SoftDeleteMixin, Base):
     __tablename__ = "identity_role"
 
     id = Column(Integer(), primary_key=True, autoincrement=True)
-    tenant_id = ForeignKey("tenant.id")
+    tenant_id = Column(Integer, ForeignKey("tenant.id"))
     role_name = Column(String)
     role_arn = Column(String, index=True)
 
-    tenant = relationship(
-        "Tenant", backref=backref("identity_role", order_by=role_name)
-    )
+    tenant = relationship("Tenant", primaryjoin="Tenant.id == IdentityRole.tenant_id")

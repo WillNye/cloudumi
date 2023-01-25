@@ -27,8 +27,12 @@ async def rebuild_tables():
         await conn.run_sync(Base.metadata.create_all)
     async with ASYNC_PG_ENGINE.begin() as conn:
         tenant = Tenant(
-            name="cloudumidev_com",
-            organization_id="cloudumidev_com",
+            name="localhost",
+            organization_id="localhost",
+        )
+        tenant_cloudumidev = Tenant(
+            name="cloudumidev",
+            organization_id="cloudumidev",
         )
         user = await User.create(
             tenant,
@@ -44,6 +48,20 @@ async def rebuild_tables():
             description="test",
         )
         await GroupMembership.create(user, group)
+        user2 = await User.create(
+            tenant_cloudumidev,
+            "admin_user@noq.dev",
+            "admin_user@noq.dev",
+            "Password!1",
+            email_verified=True,
+        )
+        group2 = await Group.create(
+            tenant=tenant_cloudumidev,
+            name="noq_admins",
+            email="noq_admins@noq.dev",
+            description="test",
+        )
+        await GroupMembership.create(user2, group2)
 
 
 def run_alembic_migrations():
