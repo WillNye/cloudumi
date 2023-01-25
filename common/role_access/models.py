@@ -1,13 +1,16 @@
 import enum
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import and_, Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import select
 from sqlalchemy.types import Enum
+from common.config.globals import ASYNC_PG_SESSION
 
 from common.groups.models import Group
 from common.identity.models import IdentityRole
 from common.pg_core.models import Base, SoftDeleteMixin
+from common.tenants.models import Tenant
 from common.users.models import User
 
 
@@ -38,6 +41,22 @@ class RoleAccess(SoftDeleteMixin, Base):
         "IdentityRole", primaryjoin="IdentityRole.id == RoleAccess.identity_role_id"
     )
     tenant = relationship("Tenant", primaryjoin="Tenant.id == RoleAccess.tenant_id")
+
+    async def get_by_user_and_role_arn(self, tenant_name: str, user: User, role_arn: str):
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                tenant = await Tenant.get_by_name(tenant_name)
+                identity_role = await IdentityRole.get_by_role_arn(tenant_name, role_arn)
+                stmt = select(RoleAccess).where(
+                    and_(
+                        RoleAccess.tenant == tenant,
+                        RoleAccess.user == user,
+                        RoleAccess.identity_role == identity_role,
+                        RoleAccess.deleted == False,  # noqa
+                    )
+                )
+                role_access = await session.execute(stmt)
+                return role_access.scalars().first()
 
     def dict(self):
         return dict(

@@ -1,6 +1,6 @@
 import datetime
 import uuid
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from sqlalchemy import select, update
 
@@ -9,6 +9,12 @@ from common.exceptions.exceptions import NoMatchingRequest, Unauthorized
 from common.pg_core.filters import create_filter_from_url_params
 from common.role_access.models import RoleAccess, RoleAccessTypes
 from common.tenants.models import Tenant
+
+
+if TYPE_CHECKING:
+    from common.users.models import User
+    from common.groups.models import Group
+    from common.identity.models import IdentityRole
 
 
 async def list_role_access(tenant_name: str, **filter_kwargs) -> list[RoleAccess]:
@@ -27,6 +33,21 @@ async def list_role_access(tenant_name: str, **filter_kwargs) -> list[RoleAccess
         # stmt = create_filter_from_url_params(stmt, **filter_kwargs)
         items = await session.execute(stmt)
     return items.scalars().all()
+
+
+async def query_role_access(tenant_name: str, user: Optional[User], group: Optional[Group], identity_role: Optional[IdentityRole]):
+    async with ASYNC_PG_SESSION() as session:
+        tenant = Tenant.get_by_name(tenant_name)
+        select_stmt = select(RoleAccess).filter(RoleAccess.tenant == tenant)
+        if user:
+            select_stmt = select_stmt.filter(RoleAccess.user == user)
+        if group:
+            select_stmt = select_stmt.filter(RoleAccess.group == group)
+        if identity_role:
+            select_stmt = select_stmt.filter(RoleAccess.identity_role == identity_role)
+        items = await session.execute(select_stmt)
+        role_access: RoleAccess = items.scalars().unique().all()
+        return role_access
 
 
 async def delete_role_access(tenant_name: str, role_access_id: Union[str, uuid.UUID]):
