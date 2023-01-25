@@ -19,7 +19,7 @@ from sqlalchemy import (
     and_,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import backref, relationship, selectinload
+from sqlalchemy.orm import relationship, selectinload
 from sqlalchemy.sql import select
 
 from common.config.globals import ASYNC_PG_SESSION

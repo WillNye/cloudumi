@@ -15,7 +15,7 @@ from pydantic import BaseModel as PydanticBaseModel
 from pydantic.fields import Any
 from sqlalchemy import Column, ForeignKey, Index, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY, ENUM, UUID
-from sqlalchemy.orm import backref, relationship
+from sqlalchemy.orm import relationship
 
 from common.config import config
 from common.lib import noq_json as json
