@@ -24,7 +24,7 @@ class Group(SoftDeleteMixin, Base):
     description = Column(String)
     tenant_id = Column(Integer(), ForeignKey("tenant.id"))
     email = Column(String)
-    tenant = relationship("Tenant", back_populates="groups", order_by=name)
+    tenant = relationship("Tenant", order_by=name)
     __table_args__ = (
         UniqueConstraint("tenant_id", "name", name="uq_tenant_name"),
         UniqueConstraint("tenant_id", "email", name="uq_group_tenant_email"),

@@ -1,12 +1,16 @@
 import enum
+import uuid
+from datetime import datetime
+from typing import Optional, Union
 
-from sqlalchemy import and_, Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, and_
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import select
+from sqlalchemy.sql import select, update
 from sqlalchemy.types import Enum
-from common.config.globals import ASYNC_PG_SESSION
 
+from common.config.globals import ASYNC_PG_SESSION
+from common.exceptions.exceptions import NoMatchingRequest
 from common.groups.models import Group
 from common.identity.models import IdentityRole
 from common.pg_core.models import Base, SoftDeleteMixin
@@ -42,11 +46,16 @@ class RoleAccess(SoftDeleteMixin, Base):
     )
     tenant = relationship("Tenant", primaryjoin="Tenant.id == RoleAccess.tenant_id")
 
-    async def get_by_user_and_role_arn(self, tenant_name: str, user: User, role_arn: str):
+    @classmethod
+    async def get_by_user_and_role_arn(
+        cls, tenant_name: str, user: User, role_arn: str
+    ):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 tenant = await Tenant.get_by_name(tenant_name)
-                identity_role = await IdentityRole.get_by_role_arn(tenant_name, role_arn)
+                identity_role = await IdentityRole.get_by_role_arn(
+                    tenant_name, role_arn
+                )
                 stmt = select(RoleAccess).where(
                     and_(
                         RoleAccess.tenant == tenant,
@@ -74,3 +83,126 @@ class RoleAccess(SoftDeleteMixin, Base):
             created_by=self.created_by,
             created_at=self.created_at,
         )
+
+    @classmethod
+    async def delete(cls, tenant, role_access_id):
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                await session.execute(
+                    update(RoleAccess)
+                    .where(RoleAccess.id == role_access_id)
+                    .where(RoleAccess.tenant == tenant)
+                    .values(deleted=True, deleted_at=datetime.utcnow())
+                )
+
+    @classmethod
+    async def get_by_id(cls, tenant, role_access_id):
+        try:
+            async with ASYNC_PG_SESSION() as session:
+                if role_access_id:
+                    stmt = (
+                        select(RoleAccess)
+                        .filter(RoleAccess.id == role_access_id)
+                        .filter(RoleAccess.tenant == tenant)
+                    )
+                else:
+                    raise NoMatchingRequest
+
+                items = await session.execute(stmt)
+                request: RoleAccess = items.scalars().unique().one()
+                return request
+        except Exception:
+            raise NoMatchingRequest
+
+    @classmethod
+    async def get_by_arn(cls, tenant, role_arn):
+        try:
+            async with ASYNC_PG_SESSION() as session:
+                identity_role = await IdentityRole.get_by_role_arn(role_arn)
+                if role_arn:
+                    stmt = (
+                        select(RoleAccess)
+                        .filter(RoleAccess.identity_role == identity_role)
+                        .filter(RoleAccess.tenant == tenant)
+                    )
+                else:
+                    raise NoMatchingRequest
+
+                items = await session.execute(stmt)
+                request: RoleAccess = items.scalars().unique().one()
+                return request
+        except Exception:
+            raise NoMatchingRequest
+
+    @classmethod
+    async def list(cls, tenant):
+        async with ASYNC_PG_SESSION() as session:
+            stmt = select(RoleAccess).filter(RoleAccess.tenant == tenant)
+
+            # stmt = create_filter_from_url_params(stmt, **filter_kwargs)
+            items = await session.execute(stmt)
+        return items.scalars().all()
+
+    @classmethod
+    async def query(
+        cls,
+        tenant: Tenant,
+        user: Optional[User],
+        group: Optional[Group],
+        identity_role: Optional[IdentityRole],
+    ):
+        async with ASYNC_PG_SESSION() as session:
+            select_stmt = select(RoleAccess).filter(RoleAccess.tenant == tenant)
+            if user:
+                select_stmt = select_stmt.filter(RoleAccess.user == user)
+            if group:
+                select_stmt = select_stmt.filter(RoleAccess.group == group)
+            if identity_role:
+                select_stmt = select_stmt.filter(
+                    RoleAccess.identity_role == identity_role
+                )
+            items = await session.execute(select_stmt)
+            role_access: RoleAccess = items.scalars().unique().all()
+            return role_access
+
+    @classmethod
+    async def update(
+        cls,
+        tenant: str,
+        role_access_id: Union[str, uuid.UUID],
+        updated_by: str,
+        type: Optional[RoleAccessTypes] = None,
+        user: Optional[User] = None,
+        group: Optional[Group] = None,
+        identity_role: Optional[IdentityRole] = None,
+        cli_only: Optional[bool] = None,
+        expiration: Optional[datetime] = None,
+        request_id: Optional[str] = None,
+        cloud_provider: Optional[str] = "aws",
+        signature: Optional[str] = None,
+    ):
+        arguments = locals()
+        role_access = await RoleAccess.get_by_id(tenant, role_access_id)
+        if (
+            (
+                role_access.created_by != updated_by
+                and updated_by not in role_access.allowed_approvers
+            )
+            or role_access.status != "Pending"
+            or role_access.deleted
+        ):
+            raise RuntimeError("Unable to update this role_access")
+
+        updates = [
+            arg
+            for arg in arguments
+            if arg and arg != "role_access_id" and arg != "tenant"
+        ]
+
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                await session.execute(
+                    update(RoleAccess)
+                    .where(RoleAccess.id == role_access_id)
+                    .values(*updates)
+                )

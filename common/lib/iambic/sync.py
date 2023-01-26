@@ -11,15 +11,13 @@ from iambic.core.utils import gather_templates, yaml
 
 from common.config import config
 from common.config.models import ModelAdapter
+from common.groups.models import Group
 from common.iambic_request.models import IambicRepo
-from common.identity.role_access_crud import (
-    create_role_access,
-    get_role_access,
-    list_role_access,
-    update_role_access,
-)
+from common.identity.models import IdentityRole
 from common.models import IambicRepoConfig
-from common.role_access.models import RoleAccessTypes
+from common.role_access.models import RoleAccess, RoleAccessTypes
+from common.tenants.models import Tenant
+from common.users.models import User
 
 log = config.get_logger()
 
@@ -121,11 +119,12 @@ async def get_effective_role_access():
     pass
 
 
-async def sync_role_access(tenant: str):
+async def sync_role_access(tenant_name: str):
     template_type = "Role"
 
-    ground_truth_roles = await get_data_for_template_type(tenant, template_type)
-    config_template = await get_config_data_for_repo(tenant)
+    tenant = await Tenant.get_by_name(tenant_name)
+    ground_truth_roles = await get_data_for_template_type(tenant.name, template_type)
+    config_template = await get_config_data_for_repo(tenant.name)
 
     if not config_template:
         return None
@@ -134,7 +133,7 @@ async def sync_role_access(tenant: str):
         config_template.aws, ground_truth_roles
     )
 
-    known_roles = await list_role_access(tenant)
+    known_roles = await RoleAccess.list(tenant)
     create_roles = {
         k: v for k, v in arn_role_template_mapping.items() if k not in known_roles
     }
@@ -147,39 +146,72 @@ async def sync_role_access(tenant: str):
     created_by = updated_by = "iambic"
 
     for role_arn, role_template in create_roles.items():
-        await create_role_access(
-            tenant,
-            created_by,
-            created_at=datetime.datetime.now(),
-            type=RoleAccessTypes.credential_access,  # TODO: figure out where this comes from
-            user_id=None,  # TODO: need to figure out where user comes from
-            group_id=None,  # TODO: need to figure out where group comes from
-            identity_role=role_arn,
-            cli_only=False,  # TODO: need to figure out where cli_only comes from
-            expiration=role_template.expires_at,
-            request_id=None,  # TODO: need to figure out where request_id comes from
-            cloud_provider="aws",
-        )
+        identity_role = await IdentityRole.get_by_role_arn(tenant, role_arn)
+        if identity_role is None:
+            await IdentityRole.create(tenant, role_template.identifier, role_arn)
+        if access_rules := role_template.access_rules:
+            for user_email in access_rules.users:
+                user = await User.get_by_email(tenant, user_email)
+                if user:
+                    await RoleAccess.create(
+                        tenant,
+                        created_by,
+                        created_at=datetime.datetime.now(),
+                        type=RoleAccessTypes.credential_access,  # TODO: figure out where this comes from
+                        user=user,  # TODO: need to figure out where user comes from
+                        identity_role=identity_role,
+                        cli_only=False,
+                        expiration=role_template.expires_at,
+                        cloud_provider="aws",
+                    )
+                for group_name in access_rules.groups:
+                    group = await Group.get_by_name(tenant, group_name)
+                    if group:
+                        await RoleAccess.create(
+                            tenant,
+                            created_by,
+                            created_at=datetime.datetime.now(),
+                            type=RoleAccessTypes.credential_access,  # TODO: figure out where this comes from
+                            group=group,
+                            identity_role=identity_role,
+                            cli_only=False,
+                            expiration=role_template.expires_at,
+                            cloud_provider="aws",
+                        )
 
     for role_arn, role_template in update_roles.items():
-        role = await get_role_access(tenant, role_arn)
-        await update_role_access(
-            tenant,
-            role.id,
-            updated_by,
-            type=RoleAccessTypes.credential_access,  # TODO: figure out where this comes from
-            user_id=None,  # TODO: need to figure out where user comes from
-            group_id=None,  # TODO: need to figure out where group comes from
-            identity_role=role_arn,
-            cli_only=False,  # TODO: need to figure out where cli_only comes from
-            expiration=role_template.expires_at,
-            request_id=None,  # TODO: need to figure out where request_id comes from
-            cloud_provider="aws",
-        )
+        role = await RoleAccess.get_by_arn(tenant, role_arn=role_arn)
+        if access_rules := role_template.access_rules:
+            for user_email in access_rules.users:
+                user = await User.get_by_email(tenant, user_email)
+                if user:
+                    await RoleAccess.update(
+                        tenant=tenant,
+                        role_access_id=role.id,
+                        updated_by=updated_by,
+                        type=RoleAccessTypes.credential_access,  # TODO: figure out where this comes from
+                        user=user,  # TODO: need to figure out where user comes from
+                        cli_only=False,
+                        expiration=role_template.expires_at,
+                        cloud_provider="aws",
+                    )
+            for group_name in access_rules.groups:
+                group = await Group.get_by_name(tenant, group_name)
+                if group:
+                    await RoleAccess.update(
+                        tenant=tenant,
+                        role_access_id=role.id,
+                        updated_by=updated_by,
+                        type=RoleAccessTypes.credential_access,  # TODO: figure out where this comes from
+                        group=group,  # TODO: need to figure out where user comes from
+                        cli_only=False,
+                        expiration=role_template.expires_at,
+                        cloud_provider="aws",
+                    )
 
     for role_arn in remove_roles:
-        role = await get_role_access(tenant, role_arn)
-        await delete_role_access(tenant, role.id)
+        role = await RoleAccess.get_by_arn(tenant, role_arn)
+        await RoleAccess.delete(tenant, role.id)
 
 
 loop = asyncio.get_event_loop()

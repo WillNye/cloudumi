@@ -12,4 +12,4 @@ class AWSAccount(SoftDeleteMixin, Base):
     number = Column(String, index=True)
     tenant_id = ForeignKey("tenant.id")
 
-    tenant = relationship("Tenant", back_populates="aws_account", order_by=number)
+    tenant = relationship("Tenant", order_by=number)
