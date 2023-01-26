@@ -11,6 +11,7 @@ import { IndeterminateCheckbox } from './Filters';
 import styles from './Table.module.css';
 import { Icon } from '../Icon';
 import { Loader } from '../Loader';
+import { EmptyState } from '../EmptyState';
 
 interface TableProps<T, D> {
   spacing?: 'expanded' | 'compact';
@@ -135,7 +136,7 @@ export const Table = <T, D>({
             </div>
           </div>
         </td>
-      ) : (
+      ) : rows.length ? (
         <tbody {...getTableBodyProps()} className={styles.tableBody}>
           {rows.map((row, index) => {
             prepareRow(row);
@@ -156,6 +157,12 @@ export const Table = <T, D>({
             );
           })}
         </tbody>
+      ) : (
+        <td colSpan={columns.length}>
+          <div className={styles.tableEmpty}>
+            <EmptyState />
+          </div>
+        </td>
       )}
     </table>
   );

@@ -82,6 +82,10 @@
     flex-direction: column;
   }
 
+  .tableEmpty {
+    padding-top: 20px;
+  }
+
   .loaderText {
     color: var(--gray-100);
   }

@@ -50,13 +50,10 @@ const EligibleRoles = ({ data, getData, isLoading }) => {
 
   const tableRows = useMemo(() => {
     return data.map(item => {
+      const roleName = item.role_name.match(/\[(.+?)\]\((.+?)\)/)[1];
       return {
         ...item,
-        roleName: (
-          <Link to={`/resources/edit/${item.arn}`}>
-            {item.role_name.match(/\[(.+?)\]\((.+?)\)/)[1]}
-          </Link>
-        ),
+        roleName: <Link to={`/resources/edit/${item.arn}`}>{roleName}</Link>,
         name: (
           <div>
             <div>{item.account_name}</div>
@@ -68,11 +65,18 @@ const EligibleRoles = ({ data, getData, isLoading }) => {
             fullWidth
             color={item.inactive_tra ? 'secondary' : 'primary'}
             size="small"
+            href={item.redirect_uri}
+            asAnchor
           >
             {item.inactive_tra ? 'Request Temporary Access' : 'Signin'}
           </Button>
         ),
-        viewDetails: <RoleCredentialSummary />,
+        viewDetails: (
+          <RoleCredentialSummary
+            arn={item.arn}
+            role={`${item.account_name}/${roleName}`}
+          />
+        ),
         moreActions: <MoreActions />
       };
     });

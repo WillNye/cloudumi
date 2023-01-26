@@ -5,11 +5,7 @@ import css from './Access.module.css';
 import { ROLES_TABS } from './constants';
 import EligibleRoles from './components/EligibleRoles/EligibleRoles';
 import AllRoles from './components/AllRoles';
-import {
-  getAllRoles,
-  getEligibleRoles,
-  getRoleCredentials
-} from 'core/API/roles';
+import { getAllRoles, getEligibleRoles } from 'core/API/roles';
 import { extractErrorMessage } from 'core/API/utils';
 
 export interface AccessRole {
@@ -35,15 +31,6 @@ export const Access: FC<AccessProps> = ({ data }) => {
   const [allRolesData, setAllRolesData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
-
-  useEffect(function onMount() {
-    const role = {
-      requested_role: 'arn:aws:iam::759357822767:role/noqmeter_null_test_role'
-    };
-    getRoleCredentials(role).then(({ data }) => {
-      console.log('==========request========', data, '===========');
-    });
-  }, []);
 
   const callGetEligibleRoles = useCallback((query = {}) => {
     setIsLoading(true);

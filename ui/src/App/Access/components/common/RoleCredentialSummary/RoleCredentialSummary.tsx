@@ -1,16 +1,56 @@
-import { useCallback, useRef, useState } from 'react';
+import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from 'shared/elements/Icon';
 import { Dialog } from 'shared/layers/Dialog';
 
 import styles from './RoleCredentialSummary.module.css';
 import { HEADER_FIXED_HIEGHT, ROLE_SUMMARY_LINKS } from './constants';
-import { useCopyToClipboard } from 'react-use';
+import { getRoleCredentials } from 'core/API/roles';
+import { CodeBlock } from 'shared/elements/CodeBlock';
+import { Notification, NotificationType } from 'shared/elements/Notification';
 
-const RoleCredentialSummary = () => {
+type RoleCredentialSummaryProps = {
+  arn: string;
+  role: string;
+};
+
+type AWSCredentials = {
+  AccessKeyId: string;
+  SecretAccessKey: string;
+  SessionToken: string;
+  Expiration: number;
+};
+
+const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
+  arn,
+  role
+}) => {
   const [showDialog, setShowDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [activeLink, setActiveLink] = useState(ROLE_SUMMARY_LINKS.NOQ_CLI);
+  const [crendentials, setCredentials] = useState<AWSCredentials | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const [copiedText, copyText] = useCopyToClipboard();
+  useEffect(
+    function onMount() {
+      if (showDialog) {
+        const role = {
+          requested_role: arn
+        };
+        setIsLoading(true);
+        getRoleCredentials(role)
+          .then(({ data }) => {
+            setCredentials(data.Credentials);
+          })
+          .catch(error => {
+            setErrorMsg('Unable to get AWS Credentials for this role');
+          })
+          .finally(() => {
+            setIsLoading(false);
+          });
+      }
+    },
+    [arn, showDialog]
+  );
 
   const dialogRef = useRef<HTMLDivElement>();
   const noqCLIRef = useRef<HTMLDivElement>();
@@ -21,11 +61,7 @@ const RoleCredentialSummary = () => {
     (newLink: ROLE_SUMMARY_LINKS) => {
       setActiveLink(newLink);
 
-      let activeRef;
-
-      if (newLink === ROLE_SUMMARY_LINKS.NOQ_CLI) {
-        activeRef = noqCLIRef;
-      }
+      let activeRef = noqCLIRef;
 
       if (newLink === ROLE_SUMMARY_LINKS.ENVIRONMENT_VARIABLES) {
         activeRef = environmentVariablesRef;
@@ -58,6 +94,7 @@ const RoleCredentialSummary = () => {
         disablePadding
         header="Code and Comands"
         ref={dialogRef}
+        isLoading={isLoading}
       >
         <div className={styles.roleSummary}>
           <div className={styles.content}>
@@ -103,7 +140,6 @@ const RoleCredentialSummary = () => {
             </div>
             <div className={styles.container}>
               <div>
-                {/* <Icon name="info" size="medium" /> */}
                 <p>
                   Use the appropriate set of commands to configure AWS
                   credentials for your environment.
@@ -116,28 +152,28 @@ const RoleCredentialSummary = () => {
                 To retrieve AWS credentials on demand
               </p>
               <div className={styles.subHeader}>Credential Process</div>
-              <div className={styles.codeBlock}>
-                <p>noq credential_process -g prod/prod_admin</p>
-                <p>export AWS_PROFILE=prod/prod_admin</p>
-              </div>
+              <CodeBlock>
+                <p>{`noq credential_process -g ${role}`}</p>
+                <p>{`export AWS_PROFILE=${role}`}</p>
+              </CodeBlock>
 
               <div className={styles.subHeader}>ECS Credential Provider</div>
-              <div className={styles.codeBlock}>
+              <CodeBlock>
                 <p>
                   noq serve & export
                   AWS_CONTAINER_CREDENTIALS_FULL_URI=http://localhost:9091/ecs/prod/prod_admin
                 </p>
-              </div>
+              </CodeBlock>
 
               <div className={styles.subHeader}>Write Credentials to File</div>
-              <div className={styles.codeBlock}>
-                <p>noq file -p prod/prod_admin prod/prod_admin</p>
-                <p>export AWS_PROFILE=prod/prod_admin</p>
-              </div>
+              <CodeBlock>
+                <p>{`noq file -p ${role}`}</p>
+                <p>{`export AWS_PROFILE=${role}`}</p>
+              </CodeBlock>
 
               <div className={styles.subHeader}>Credential Export</div>
               <div className={styles.codeBlock}>
-                <p>noq export prod/prod_admin</p>
+                <CodeBlock>{`noq export ${role}`}</CodeBlock>
               </div>
 
               <div
@@ -149,11 +185,23 @@ const RoleCredentialSummary = () => {
               <p className={styles.secondaryText}>
                 To configure your workspace
               </p>
-              <div className={styles.codeBlock}>
-                <p>export AWS_ACCESS_KEY_ID=ASIAYOLWP5232BHVOPPI</p>
-                <p>export AWS_SECRET_ACCESS_KEY=5YT0Ibw3vp1nxYIBM...</p>
-                <p>export AWS_SESSION_TOKEN=IQoJb3JpZ2luX2VjEDAaCX....</p>
-              </div>
+              {crendentials ? (
+                <CodeBlock>
+                  <p>export AWS_ACCESS_KEY_ID=${crendentials?.AccessKeyId}</p>
+                  <p>
+                    export AWS_SECRET_ACCESS_KEY=$
+                    {crendentials?.SecretAccessKey}
+                  </p>
+                  <p>export AWS_SESSION_TOKEN=${crendentials?.SessionToken}</p>
+                </CodeBlock>
+              ) : (
+                <Notification
+                  header="Missing credentials"
+                  type={NotificationType.WARNING}
+                  message={errorMsg}
+                  showCloseIcon={false}
+                />
+              )}
 
               <div ref={awsProfileRef} className={styles.sectionHeader}>
                 AWS Profile
@@ -161,11 +209,20 @@ const RoleCredentialSummary = () => {
               <p className={styles.secondaryText}>
                 Add a profile in your AWS credentials file
               </p>
-              <div className={styles.codeBlock}>
-                <p>aws_access_key_id=ASIAYOLWP5232BHVOPPI</p>
-                <p>aws_secret_access_key=5YT0Ibw3vp1nxYIBM...</p>
-                <p>aws_session_token=IQoJb3JpZ2luX2VjEDAaCX....</p>
-              </div>
+              {crendentials ? (
+                <CodeBlock>
+                  <p>aws_access_key_id={crendentials?.AccessKeyId}</p>
+                  <p>aws_secret_access_key={crendentials?.SecretAccessKey}</p>
+                  <p>aws_session_token={crendentials?.SessionToken}</p>
+                </CodeBlock>
+              ) : (
+                <Notification
+                  header="Missing credentials"
+                  type={NotificationType.WARNING}
+                  message={errorMsg}
+                  showCloseIcon={false}
+                />
+              )}
             </div>
           </div>
         </div>

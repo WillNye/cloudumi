@@ -12,6 +12,7 @@ import styles from './Dialog.module.css';
 import classNames from 'classnames';
 import { createPortal } from 'react-dom';
 import { Icon } from 'shared/elements/Icon';
+import { Loader } from 'shared/elements/Loader';
 
 const useClickOutside = callback => {
   const ref = useRef(null);
@@ -41,6 +42,7 @@ interface DialogProps {
   footer?: ReactNode;
   size?: 'small' | 'medium' | 'large' | 'fullWidth';
   disablePadding?: boolean;
+  isLoading?: boolean;
 }
 
 export const Dialog = forwardRef(
@@ -52,7 +54,8 @@ export const Dialog = forwardRef(
       children,
       footer,
       size = 'fullWidth',
-      disablePadding
+      disablePadding,
+      isLoading
     }: DialogProps,
     ref: Ref<HTMLDivElement>
   ) => {
@@ -89,7 +92,15 @@ export const Dialog = forwardRef(
                       <Icon name="close" size="large" />
                     </div>
                   </div>
-                  {children}
+                  {isLoading ? (
+                    <div className={styles.loader}>
+                      <div>
+                        <Loader />
+                      </div>
+                    </div>
+                  ) : (
+                    children
+                  )}
                   <span>{footer}</span>
                 </div>
               </div>

@@ -51,6 +51,7 @@ const AllRoles = ({ data, getData, isLoading }) => {
   const tableRows = useMemo(() => {
     return data.map(item => {
       const arn = item.arn.match(/\[(.+?)\]\((.+?)\)/)[1];
+      const roleName = arn.split(':role').pop();
       return {
         ...item,
         roleName: <Link to={`/resources/edit/${arn}`}>{arn}</Link>,
@@ -66,13 +67,20 @@ const AllRoles = ({ data, getData, isLoading }) => {
               fullWidth
               color={item.inactive_tra ? 'secondary' : 'primary'}
               size="small"
+              href={item.redirect_uri}
+              asAnchor
             >
               {item.inactive_tra ? 'Request Temporary Access' : 'Signin'}
             </Button>
           ) : (
             <Fragment />
           ),
-        viewDetails: <RoleCredentialSummary />,
+        viewDetails: (
+          <RoleCredentialSummary
+            arn={item.arn}
+            role={`${item.account_name}${roleName}`}
+          />
+        ),
         moreActions: <MoreActions />
       };
     });
