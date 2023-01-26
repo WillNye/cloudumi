@@ -85,7 +85,17 @@ class RoleAccess(SoftDeleteMixin, Base):
         )
 
     @classmethod
-    async def create(cls, tenant, type, identity_role, cli_only, expiration, created_by, group=None, user=None):
+    async def create(
+        cls,
+        tenant,
+        type,
+        identity_role,
+        cli_only,
+        expiration,
+        created_by,
+        group=None,
+        user=None,
+    ):
         role_access = RoleAccess(
             tenant=tenant,
             type=type,

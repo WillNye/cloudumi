@@ -1,5 +1,4 @@
 import asyncio
-import datetime
 from typing import Dict, List
 
 from iambic.aws.iam.role.models import RoleTemplate
@@ -7,7 +6,7 @@ from iambic.aws.models import AWSAccount
 from iambic.config.utils import load_template as load_config_template
 from iambic.core.models import BaseTemplate
 from iambic.core.parser import load_templates
-from iambic.core.utils import gather_templates, yaml
+from iambic.core.utils import gather_templates
 
 from common.config import config
 from common.config.models import ModelAdapter
@@ -61,7 +60,7 @@ def get_aws_account_from_template(aws_accounts: AWSAccount, account_name) -> AWS
     aws_account = [x for x in aws_accounts.accounts if x.account_name == account_name]
     if len(aws_account) == 0:
         # TODO: how should this be handled?
-        log.warn(
+        log.warning(
             f"No corresponding account id known for Iambic included_account {account_name}"
         )
         return None

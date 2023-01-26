@@ -1,12 +1,8 @@
-import uuid
-from typing import Optional, Union
-
 from sqlalchemy import Column, ForeignKey, Integer, String, and_
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import select
 
 from common.config.globals import ASYNC_PG_SESSION
-from common.groups.models import Group
 from common.pg_core.models import Base, SoftDeleteMixin
 from common.tenants.models import Tenant
 
