@@ -85,6 +85,23 @@ class RoleAccess(SoftDeleteMixin, Base):
         )
 
     @classmethod
+    async def create(cls, tenant, type, identity_role, cli_only, expiration, created_by, group=None, user=None):
+        role_access = RoleAccess(
+            tenant=tenant,
+            type=type,
+            user=user,
+            group=group,
+            identity_role=identity_role,
+            cli_only=cli_only,
+            expiration=expiration,
+            created_by=created_by,
+            created_at=datetime.utcnow(),
+        )
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                session.add(role_access)
+
+    @classmethod
     async def delete(cls, tenant, role_access_id):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
@@ -138,6 +155,19 @@ class RoleAccess(SoftDeleteMixin, Base):
     async def list(cls, tenant):
         async with ASYNC_PG_SESSION() as session:
             stmt = select(RoleAccess).filter(RoleAccess.tenant == tenant)
+
+            # stmt = create_filter_from_url_params(stmt, **filter_kwargs)
+            items = await session.execute(stmt)
+        return items.scalars().all()
+
+    @classmethod
+    async def list_by_user(cls, tenant: Tenant, user: User):
+        async with ASYNC_PG_SESSION() as session:
+            stmt = (
+                select(RoleAccess)
+                .filter(RoleAccess.tenant == tenant)
+                .filter(RoleAccess.user == user)
+            )
 
             # stmt = create_filter_from_url_params(stmt, **filter_kwargs)
             items = await session.execute(stmt)
