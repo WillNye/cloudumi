@@ -3,8 +3,17 @@ import uuid
 from datetime import datetime
 from typing import Optional, Union
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, and_
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+    and_,
+)
+from sqlalchemy.dialects.postgresql import UUID, insert
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import select, update
 from sqlalchemy.types import Enum
@@ -32,7 +41,9 @@ class RoleAccess(SoftDeleteMixin, Base):
     type = Column(Enum(RoleAccessTypes))
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
     group_id = Column(UUID(as_uuid=True), ForeignKey("groups.id", ondelete="CASCADE"))
-    identity_role_id = Column(Integer(), ForeignKey("identity_role.id"))
+    identity_role_id = Column(
+        Integer(), ForeignKey("identity_role.id"), ondelete="CASCADE"
+    )
     cli_only = Column(Boolean, default=False)
     expiration = Column(DateTime, nullable=True)
     request_id = Column(String)
@@ -45,6 +56,15 @@ class RoleAccess(SoftDeleteMixin, Base):
         "IdentityRole", primaryjoin="IdentityRole.id == RoleAccess.identity_role_id"
     )
     tenant = relationship("Tenant", primaryjoin="Tenant.id == RoleAccess.tenant_id")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "user_id", "identity_role_id", name="uq_tenant_user_role"
+        ),
+        UniqueConstraint(
+            "tenant_id", "group_id", "identity_role_id", name="uq_tenant_group_role"
+        ),
+    )
 
     @classmethod
     async def get_by_user_and_role_arn(
@@ -87,29 +107,52 @@ class RoleAccess(SoftDeleteMixin, Base):
     @classmethod
     async def create(
         cls,
-        tenant,
-        type,
-        identity_role,
-        cli_only,
-        expiration,
-        created_by,
-        group=None,
-        user=None,
+        tenant: Tenant,
+        type: RoleAccessTypes,
+        identity_role: IdentityRole,
+        cli_only: bool,
+        expiration: datetime,
+        created_by: str,
+        group: Group = None,
+        user: User = None,
     ):
-        role_access = RoleAccess(
-            tenant=tenant,
-            type=type,
-            user=user,
-            group=group,
-            identity_role=identity_role,
-            cli_only=cli_only,
-            expiration=expiration,
-            created_by=created_by,
-            created_at=datetime.utcnow(),
-        )
+        created_at = datetime.utcnow()
+        insert_stmt_data = {
+            "tenant_id": tenant.id,
+            "type": type,
+            "identity_role_id": identity_role.id,
+            "cli_only": cli_only,
+            "expiration": expiration,
+            "created_by": created_by,
+            "created_at": created_at,
+        }
+        if user:
+            insert_stmt_data["user_id"] = user.id
+        elif group:
+            insert_stmt_data["group_id"] = group.id
+        else:
+            raise ValueError("Must provide either a user or group")
+        upsert_stmt_data = insert_stmt_data.copy()
+        upsert_stmt_data.pop("created_by")
+        upsert_stmt_data.pop("created_at")
+        upsert_stmt_data["deleted"] = False
+        upsert_stmt_data["deleted_at"] = None
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
-                session.add(role_access)
+                insert_stmt = insert(cls).values(insert_stmt_data)
+                if user:
+                    insert_stmt = insert_stmt.on_conflict_do_update(
+                        index_elements=["tenant_id", "user_id", "identity_role_id"],
+                        set_=upsert_stmt_data,
+                    )
+                elif group:
+                    insert_stmt = insert_stmt.on_conflict_do_update(
+                        index_elements=["tenant_id", "group_id", "identity_role_id"],
+                        set_=upsert_stmt_data,
+                    )
+                else:
+                    raise ValueError("Must provide either user or group")
+                await session.execute(insert_stmt)
 
     @classmethod
     async def delete(cls, tenant, role_access_id):

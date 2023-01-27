@@ -2,17 +2,19 @@ import asyncio
 from typing import Dict, List
 
 from iambic.aws.iam.role.models import RoleTemplate
-from iambic.aws.models import AWSAccount
+from iambic.aws.models import AWSAccount as IambicAWSAccount
 from iambic.config.utils import load_template as load_config_template
 from iambic.core.models import BaseTemplate
 from iambic.core.parser import load_templates
 from iambic.core.utils import gather_templates
 
+from common.aws.accounts.models import AWSAccount
 from common.config import config
 from common.config.models import ModelAdapter
 from common.groups.models import Group
 from common.iambic_request.models import IambicRepo
 from common.identity.models import IdentityRole
+from common.lib.iambic.util import effective_accounts
 from common.models import IambicRepoConfig
 from common.role_access.models import RoleAccess, RoleAccessTypes
 from common.tenants.models import Tenant
@@ -56,7 +58,9 @@ def get_role_arn(account_id: str, role_name: str) -> str:
     return f"arn:aws:iam::{account_id}:role/{role_name}"
 
 
-def get_aws_account_from_template(aws_accounts: AWSAccount, account_name) -> AWSAccount:
+def get_aws_account_from_template(
+    aws_accounts: IambicAWSAccount, account_name
+) -> AWSAccount:
     aws_account = [x for x in aws_accounts.accounts if x.account_name == account_name]
     if len(aws_account) == 0:
         # TODO: how should this be handled?
@@ -65,19 +69,6 @@ def get_aws_account_from_template(aws_accounts: AWSAccount, account_name) -> AWS
         )
         return None
     return aws_account[0]
-
-
-async def get_arns_for_included_accounts(
-    aws_accounts: AWSAccount, role_template: [RoleTemplate]
-) -> List[str]:
-    arns = []
-    for included_account in role_template.included_accounts:
-        aws_account = get_aws_account_from_template(aws_accounts, included_account)
-        if aws_account is None:
-            # TODO: how to handle?
-            continue
-        arns.append(get_role_arn(aws_account, role_template.identifier))
-    return arns
 
 
 async def get_arn_to_role_template_mapping(
@@ -96,15 +87,6 @@ async def get_arn_to_role_template_mapping(
     return arn_mapping
 
 
-async def explode_roles_for_accounts(
-    aws_accounts: AWSAccount, iambic_roles: List[RoleTemplate]
-) -> List[str]:
-    role_arns = []
-    for role in iambic_roles:
-        role_arns.extend(await get_arns_for_included_accounts(aws_accounts, role))
-    return role_arns
-
-
 async def explode_role_templates_for_accounts(
     aws_accounts: AWSAccount, iambic_roles: List[RoleTemplate]
 ) -> Dict[str, RoleTemplate]:
@@ -114,97 +96,94 @@ async def explode_role_templates_for_accounts(
     return arn_mappings
 
 
-async def get_effective_role_access():
-    pass
-
-
-async def sync_role_access(tenant_name: str):
-    template_type = "Role"
+async def sync_aws_accounts(tenant_name: str):
+    created_by = "iambic"
 
     tenant = await Tenant.get_by_name(tenant_name)
-    ground_truth_roles = await get_data_for_template_type(tenant.name, template_type)
     config_template = await get_config_data_for_repo(tenant.name)
 
     if not config_template:
-        return None
+        raise ValueError("Iambic config template could not be loaded")
 
-    arn_role_template_mapping = await explode_role_templates_for_accounts(
-        config_template.aws, ground_truth_roles
+    aws_accounts = config_template.aws.accounts
+
+    for account in aws_accounts:
+        await AWSAccount.create(
+            tenant,
+            account.account_name,
+            account.account_id,
+            created_by,
+        )
+
+
+async def __help_get_role_mappings(tenant_name: str) -> Dict[str, RoleTemplate]:
+    template_type = "Role"
+
+    tenant = await Tenant.get_by_name(tenant_name)
+    aws_accounts = await AWSAccount.get_by_tenant(tenant)
+    ground_truth_roles = await get_data_for_template_type(tenant.name, template_type)
+    return await explode_role_templates_for_accounts(aws_accounts, ground_truth_roles)
+
+
+async def sync_identity_roles(tenant_name: str):
+    created_by = "iambic"
+
+    tenant = await Tenant.get_by_name(tenant_name)
+    role_mappings = await __help_get_role_mappings(tenant_name)
+
+    known_roles = await IdentityRole.get_all(tenant)
+    remove_roles = [x for x in known_roles if x.role_arn not in role_mappings.keys()]
+
+    for role_access in remove_roles:
+        await IdentityRole.delete(tenant, role_access.id)
+
+    for role_arn, role_template in role_mappings.items():
+        await IdentityRole.create(
+            tenant, role_template.identifier, role_arn, created_by
+        )
+
+
+async def sync_role_access(tenant_name: str):
+    tenant = await Tenant.get_by_name(tenant_name)
+    arn_role_mappings: Dict[str, RoleTemplate] = await __help_get_role_mappings(
+        tenant_name
     )
+    aws_accounts = await AWSAccount.get_by_tenant(tenant)
 
-    known_roles = await RoleAccess.list(tenant)
-    create_roles = {
-        k: v for k, v in arn_role_template_mapping.items() if k not in known_roles
-    }
-    update_roles = {
-        k: v for k, v in arn_role_template_mapping.items() if k in known_roles
-    }
-    remove_roles = {x for x in known_roles if x not in arn_role_template_mapping.keys()}
-    # configs = load_templates(await gather_templates("CORE::CONFIG"))
+    created_by = "iambic"
 
-    created_by = updated_by = "iambic"
-
-    for role in remove_roles:
-        await RoleAccess.delete(tenant, role.id)
-
-    for role_arn, role_template in create_roles.items():
-        identity_role = await IdentityRole.get_by_role_arn(tenant, role_arn)
-        if identity_role is None:
-            await IdentityRole.create(tenant, role_template.identifier, role_arn)
+    for role_arn, role_template in arn_role_mappings.items():
         if access_rules := role_template.access_rules:
             for access_rule in access_rules:
-                for user_email in access_rule.users:
-                    user = await User.get_by_email(tenant, user_email)
-                    if user:
+                effective_aws_accounts = await effective_accounts(
+                    access_rule, aws_accounts
+                )
+                for effective_aws_account in effective_aws_accounts:
+                    role_arn = get_role_arn(
+                        effective_aws_account.account_name, role_template.identifier
+                    )
+                    identity_role = IdentityRole.get_by_role_arn(tenant, role_arn)
+                    for user_email in access_rule.users:
+                        user = await User.get_by_email(tenant, user_email)
                         await RoleAccess.create(
                             tenant=tenant,
-                            created_by=created_by,
-                            type=RoleAccessTypes.credential_access,  # TODO: figure out where this comes from
-                            user=user,  # TODO: need to figure out where user comes from
+                            type=RoleAccessTypes.credential_access,
                             identity_role=identity_role,
                             cli_only=False,
-                            expiration=role_template.expires_at,
+                            expiration=access_rule.expiration,
+                            created_by=created_by,
+                            user=user,
                         )
-                for group_name in access_rule.groups:
-                    group = await Group.get_by_name(tenant, group_name)
-                    if group:
+                    for group_name in access_rule.groups:
+                        group = await Group.get_by_name(tenant, group_name)
                         await RoleAccess.create(
                             tenant=tenant,
+                            type=RoleAccessTypes.credential_access,
+                            identity_role=identity_role,
+                            cli_only=False,
+                            expiration=access_rule.expiration,
                             created_by=created_by,
-                            type=RoleAccessTypes.credential_access,  # TODO: figure out where this comes from
                             group=group,
-                            identity_role=identity_role,
-                            cli_only=False,
-                            expiration=role_template.expires_at,
-                        )
-
-    for role_arn, role_template in update_roles.items():
-        role = await RoleAccess.get_by_arn(tenant, role_arn=role_arn)
-        if access_rules := role_template.access_rules:
-            for access_rule in access_rules:
-                for user_email in access_rule.users:
-                    user = await User.get_by_email(tenant, user_email)
-                    if user:
-                        await RoleAccess.update(
-                            tenant=tenant,
-                            role_access_id=role.id,
-                            updated_by=updated_by,
-                            type=RoleAccessTypes.credential_access,  # TODO: figure out where this comes from
-                            user=user,  # TODO: need to figure out where user comes from
-                            cli_only=False,
-                            expiration=role_template.expires_at,
-                        )
-                for group_name in access_rule.groups:
-                    group = await Group.get_by_name(tenant, group_name)
-                    if group:
-                        await RoleAccess.update(
-                            tenant=tenant,
-                            role_access_id=role.id,
-                            updated_by=updated_by,
-                            type=RoleAccessTypes.credential_access,  # TODO: figure out where this comes from
-                            group=group,  # TODO: need to figure out where user comes from
-                            cli_only=False,
-                            expiration=role_template.expires_at,
                         )
 
 
