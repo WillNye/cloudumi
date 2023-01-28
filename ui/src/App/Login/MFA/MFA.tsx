@@ -1,22 +1,43 @@
 import { useAuth } from 'core/Auth';
-import { ChallengeName } from 'core/Auth/constants';
 import { FC, useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { AuthCode } from 'shared/form/AuthCode';
 import css from './MFA.module.css';
+import { verifyMFA } from 'core/API/auth';
+import { AxiosError } from 'axios';
+import { extractErrorMessage } from 'core/API/utils';
+import { Notification, NotificationType } from 'shared/elements/Notification';
 
 export const MFA: FC = () => {
-  const { confirmSignIn, user } = useAuth();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { user, getUser } = useAuth();
+  const navigate = useNavigate();
 
   const verifyTOTPCode = useCallback(
     async (val: string) => {
-      await confirmSignIn(val);
+      setIsLoading(true);
+      try {
+        await verifyMFA({
+          mfa_token: val
+        });
+        await getUser();
+        setIsLoading(false);
+        navigate('/');
+      } catch (error) {
+        const err = error as AxiosError;
+        const errorRes = err?.response;
+        const errorMsg = extractErrorMessage(errorRes?.data);
+        setErrorMessage(errorMsg || 'An error occurred while logging in');
+        setIsLoading(false);
+      }
     },
-    [confirmSignIn]
+    [getUser, navigate]
   );
 
-  if (user?.challengeName !== ChallengeName.SOFTWARE_TOKEN_MFA) {
+  if (!user?.mfa_verification_required) {
     return <Navigate to="/" />;
   }
 
@@ -27,13 +48,29 @@ export const MFA: FC = () => {
       </Helmet>
       <div className={css.container}>
         <h1>MFA</h1>
+        {/* TODO (Kayizzi) - MFA text appears black in Chrome and it is hard to read */}
+        {/* TODO (Kayizzi) - MFA component needs to return error on invalid MFA */}
+        <br />
         <AuthCode
+          disabled={isLoading}
           onChange={val => {
+            setErrorMessage(null);
             if (val?.length === 6) {
+              // TODO (Kayizzi) - If invalid MFA is entered , often times the user cannot retry
+              // because the session has already been used. We need to handle this and get a new session
+              // {"__type":"NotAuthorizedException","message":"Invalid session for the user, session can only be used once."}
               verifyTOTPCode(val);
             }
           }}
         />
+        <br />
+        {errorMessage && (
+          <Notification
+            type={NotificationType.ERROR}
+            header={errorMessage}
+            showCloseIcon={false}
+          />
+        )}
       </div>
     </>
   );

@@ -12,35 +12,35 @@ export const Navbar = () => {
         <img src={Logo} alt="Logo" />
       </div>
       <nav className={styles.sidebarNav}>
-        <Link to="">
+        <Link to="/">
           <Tooltip text="Access" alignment="right">
             <div>
               <Icon name="lock" width="26px" height="26px" />
             </div>
           </Tooltip>
         </Link>
-        <Link to="">
+        <Link to="/request">
           <Tooltip text="Requests" alignment="right">
             <div>
               <Icon width="26px" height="26px" name="pointer" />
             </div>
           </Tooltip>
         </Link>
-        <Link to="">
+        <Link to="/profile">
           <Tooltip text="Users" alignment="right">
             <div>
               <Icon width="26px" height="26px" name="profile" />
             </div>
           </Tooltip>
         </Link>
-        <Link to="">
+        <Link to="/notifications">
           <Tooltip text="Notifications" alignment="right">
             <div>
               <Icon width="26px" height="26px" name="notifications" />
             </div>
           </Tooltip>
         </Link>
-        <Link to="">
+        <Link to="/settings">
           <Tooltip text="Settings" alignment="right">
             <div>
               <Icon width="26px" height="26px" name="settings" />

@@ -11,7 +11,7 @@ from common.lib.redis import RedisHandler
 
 async def generate_random_password(uchars=3, lchars=3, dchars=2, schars=2):
     # Generates a 10 characters long random string
-    # with 3 upper case, 3 lowe case, 2 digits and 2 special characters
+    # with 3 upper case, 3 lower case, 2 digits and 2 special characters
 
     str_uchars, str_lchars, str_dchars, str_schars = "", "", "", ""
 
@@ -55,23 +55,25 @@ async def check_password_strength(
 ) -> Optional[Union[Dict[str, str], Dict[str, List[str]]]]:
     password_policy_args = {
         "strength": config.get_tenant_specific_key(
-            "auth.password_policy.strength", tenant, 0.5
+            "auth.password_policy.strength", tenant
         ),
-        "entropy_bits": config.get_tenant_specific_key(
+        "entropybits": config.get_tenant_specific_key(
             "auth.password_policy.entry_bits", tenant
         ),
-        "length": config.get_tenant_specific_key("auth.password_policy.length", tenant),
+        "length": config.get_tenant_specific_key(
+            "auth.password_policy.length", tenant, 8
+        ),
         "uppercase": config.get_tenant_specific_key(
-            "auth.password_policy.uppercase", tenant
+            "auth.password_policy.uppercase", tenant, 1
         ),
         "numbers": config.get_tenant_specific_key(
-            "auth.password_policy.numbers", tenant
+            "auth.password_policy.numbers", tenant, 1
         ),
         "special": config.get_tenant_specific_key(
-            "auth.password_policy.special", tenant
+            "auth.password_policy.special", tenant, 1
         ),
         "nonletters": config.get_tenant_specific_key(
-            "auth.password_policy.nonletters", tenant
+            "auth.password_policy.nonletters", tenant, 1
         ),
     }
 
@@ -86,4 +88,8 @@ async def check_password_strength(
     errors: List[str] = [str(e) for e in errors]
 
     if errors:
-        return {"message": "Password doesn't have enough entropy.", "errors": errors}
+        return {
+            "message": "Password doesn't have enough entropy. Try making it stronger",
+            "errors": errors,
+            "requirements": password_policy_args,
+        }

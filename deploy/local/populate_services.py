@@ -1,4 +1,5 @@
 import asyncio
+import multiprocessing
 import os
 import time
 from secrets import token_urlsafe
@@ -125,7 +126,9 @@ headers:
   role_login:
     enabled: true
 url: https://localhost:3000
-application_admin: engineering@noq.dev
+application_admin:
+  - engineering@noq.dev
+  - curtis@noq.dev
 secrets:
   jwt_secret: {token_urlsafe(32)}
   auth:
@@ -291,19 +294,27 @@ headers:
   role_login:
     enabled: true
 url: https://cloudumidev.com
-application_admin: engineering@noq.dev
+application_admin:
+  - engineering@noq.dev
+  - noq_admins
 secrets:
+  scim:
+    bearer_token: local_secret_scim_bearer_token
   jwt_secret: {token_urlsafe(32)}
   auth:
     oidc:
-      client_id: '3vqhl3rfcfoqhl88g47norqick'
-      client_secret: 'u6k40gpgkjkltcsk03040e3n848gppp0h066nh55f1k1ftltmjp'
+      client_id: '6f44pcgu8dk978njp3frkt9p1k'
+      # client_id: '3vqhl3rfcfoqhl88g47norqick'
+      # client_secret: 'u6k40gpgkjkltcsk03040e3n848gppp0h066nh55f1k1ftltmjp'
   cognito:
     config:
-      user_pool_id: 'us-west-2_EQ5XHIluC'
-      user_pool_client_id: '3vqhl3rfcfoqhl88g47norqick'
-      user_pool_client_secret: 'u6k40gpgkjkltcsk03040e3n848gppp0h066nh55f1k1ftltmjp'
-      user_pool_region: 'us-west-2'
+      user_pool_id: 'us-east-1_CNoZribID'
+      user_pool_client_id: '6f44pcgu8dk978njp3frkt9p1k'
+      user_pool_region: 'us-east-1'
+      # user_pool_id: 'us-west-2_EQ5XHIluC'
+      # user_pool_client_id: '3vqhl3rfcfoqhl88g47norqick'
+      # user_pool_client_secret: 'u6k40gpgkjkltcsk03040e3n848gppp0h066nh55f1k1ftltmjp'
+      # user_pool_region: 'us-west-2'
 account_ids_to_name:
   "759357822767": "development"
 auth:
@@ -313,6 +324,7 @@ auth:
   challenge_url:
     enabled: true
   get_user_by_oidc: true
+  require_mfa: true
 get_user_by_oidc_settings:
   custom_role_attributes:
     - name: 'custom:role_arns'
@@ -325,7 +337,8 @@ get_user_by_oidc_settings:
     - profile
     - aws.cognito.signin.user.admin
   resource: noq_tenant
-  metadata_url: https://cognito-idp.us-west-2.amazonaws.com/us-west-2_EQ5XHIluC/.well-known/openid-configuration
+  metadata_url: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_CNoZribID/.well-known/openid-configuration
+  # metadata_url: https://cognito-idp.us-west-2.amazonaws.com/us-west-2_EQ5XHIluC/.well-known/openid-configuration
   jwt_verify: true
   jwt_email_key: email
   jwt_groups_key: "cognito:groups"
@@ -571,9 +584,21 @@ async_to_sync(ddb.update_static_config_for_tenant)(
     cloudumi_saml_config, override_email, "cloudumisamldev_com"
 )
 
-# Force rebuild SQL tables, deleting all existing data
-from common.scripts.initialize_postgres import run_alembic_migrations  # noqa: F401,E402
 
-run_alembic_migrations()
-# Force a re-cache of cloud resources with updated configuration
-import common.scripts.initialize_redis  # noqa: F401,E402
+def create_tables():
+    from common.scripts.initialize_postgres import (  # noqa: F401,E402
+        rebuild_tables,
+        run_alembic_migrations,
+    )
+
+    asyncio.run(rebuild_tables())
+    run_alembic_migrations()
+
+
+if __name__ == "__main__":
+    p = multiprocessing.Process(target=create_tables)
+    # Force rebuild SQL tables, deleting all existing data.
+    p.start()
+    p.join()
+    # Force a re-cache of cloud resources with updated configuration
+    import common.scripts.initialize_redis  # noqa: F401,E402

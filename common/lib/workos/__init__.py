@@ -176,7 +176,7 @@ class WorkOS:
             groups,
             self.tenant,
             exp=expiration,
-            mfa_setup=None,
+            mfa_setup_required=None,
         )
 
         request.set_cookie(

@@ -9,7 +9,6 @@ export interface ButtonProps
     React.ButtonHTMLAttributes<HTMLButtonElement>,
     'onAnimationStart' | 'onDragStart' | 'onDragEnd' | 'onDrag'
   > {
-  // Examples on how to use color/variants...
   color?: 'default' | 'primary' | 'secondary' | 'error';
   variant?: 'filled' | 'outline' | 'text';
   fullWidth?: boolean;

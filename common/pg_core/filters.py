@@ -8,19 +8,28 @@ DEFAULT_PAGE = 1
 DEFAULT_SIZE = 20
 
 OPERATOR_MAP = {
+    "and": operators.and_,
+    "or": operators.or_,
     "eq": operators.eq,
     "gt": operators.gt,
-    "lte": operators.lt,
-    "gte": operators.ge,
+    "lte": operators.le,
+    "lt": operators.lt,
     "le": operators.le,
+    "gte": operators.ge,
+    "ge": operators.ge,
+    "ne": operators.ne,
+    "not": operators.ne,
     "contains": operators.contains_op,
+    "co": operators.contains_op,
     "in": operators.in_op,
     "exact": operators.eq,
     "iexact": operators.ilike_op,
     "startswith": operators.startswith_op,
+    "sw": operators.startswith_op,
     "istartswith": lambda c, x: c.ilike(x.replace("%", "%%") + "%"),
     "iendswith": lambda c, x: c.ilike("%" + x.replace("%", "%%")),
     "endswith": operators.endswith_op,
+    "ew": operators.endswith_op,
     "isnull": lambda c, x: x and c != None or c == None,  # noqa: E711, E712
     # 'range':        operators.between_op,
     "year": lambda c, x: extract("year", c) == x,
@@ -33,6 +42,12 @@ def paginate_query(query: Query, page: int = DEFAULT_PAGE, size: int = DEFAULT_S
     return query.offset((page - 1) * size).limit(size)
 
 
+def determine_page_from_offset(offset: int, size: int = DEFAULT_SIZE):
+    if size == 0:
+        size = DEFAULT_SIZE
+    return int(offset / size) + 1
+
+
 def create_filter_from_url_params(
     query: Query,
     page: int = DEFAULT_PAGE,
@@ -40,6 +55,8 @@ def create_filter_from_url_params(
     order_by: str = None,
     **kwargs
 ) -> Query:
+    if size == 0:
+        size = DEFAULT_SIZE
     from_entity = query._filter_by_zero()
 
     for arg, val in kwargs.items():

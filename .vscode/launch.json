@@ -201,6 +201,17 @@
       }
     },
     {
+      "name": "Launch Chrome - New UI",
+      "request": "launch",
+      "type": "pwa-chrome",
+      "url": "https://localhost:3000",
+      "webRoot": "${workspaceFolder}/ui/",
+      "env": {
+        "INTERPRETER_OPTIONS": "",
+        "PARENT_ENVS": true
+      }
+    },
+    {
       "name": "Python: Current File",
       "type": "python",
       "request": "launch",
@@ -230,7 +241,7 @@
       }
     },
     {
-      "name": "Local Config: CloudUmi API with Burp Proxy",
+      "name": "Local Config: CloudUmi API - HTTP PROXY",
       "type": "python",
       "request": "launch",
       "program": "${workspaceFolder}/api/__main__.py",
@@ -241,13 +252,12 @@
         // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
         "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
-        // "PYTHONASYNCIODEBUG": "1",
+        "PYTHONASYNCIODEBUG": "1",
         "AWS_REGION": "us-west-2",
         "RUNTIME_PROFILE": "API",
-        "HTTP_PROXY": "http://127.0.0.1:8080",
-        "HTTPS_PROXY": "http://127.0.0.1:8080",
-        "AWS_CA_BUNDLE": "/home/ccastrapel/.config/noq/burpsuite.pem",
-        "REQUESTS_CA_BUNDLE": "/home/ccastrapel/.config/noq/burpsuite.pem"
+        "HTTP_PROXY": "http://localhost:8080",
+        "HTTPS_PROXY": "http://localhost:8080",
+        "AWS_CA_BUNDLE": "/usr/local/share/ca-certificates/burpsuite.crt"
       }
     }
   ]

@@ -1,8 +1,19 @@
 .container {
-  width: 100vw;
+  margin: auto;
+  width: 95%;
   height: 100vh;
   display: flex;
-  justify-content: center;
-  align-items: center;
+  /* justify-content: center; */
+  /* align-items: flex-start; */
   flex-direction: column;
+
+  .filter {
+    width: 100%;
+    margin: 50px 0;
+  }
+
+  .tableSecondaryText {
+    color: var(--gray-200);
+    padding-top: 10px;
+  }
 }

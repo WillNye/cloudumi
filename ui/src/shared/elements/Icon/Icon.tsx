@@ -1,5 +1,5 @@
 import React, { Suspense, useMemo } from 'react';
-import styles from './icon.module.css';
+import styles from './Icon.module.css';
 
 const iconPaths = import.meta.glob('../../../assets/icons/*.svg');
 

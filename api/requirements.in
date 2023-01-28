@@ -30,6 +30,7 @@ ptvsd
 pydantic
 PyGithub
 pyjwt
+pyotp
 python-terraform
 pytz
 PyYAML

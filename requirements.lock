@@ -664,6 +664,8 @@ pynacl==1.5.0
     #   pygithub
 pynamodax==6.1.4
     # via -r ./common/requirements.in
+pyotp==2.8.0
+    # via -r ./api/requirements.in
 pyparsing==3.0.9
     # via httplib2
 pyphen==0.13.2
@@ -941,6 +943,8 @@ tqdm==4.64.1
     # via checkov
 types-toml==0.10.8.1
     # via responses
+types-ujson==5.6.0.0
+    # via -r ./common/requirements.in
 typing-extensions==4.4.0
     # via
     #   -r ./api/requirements.in

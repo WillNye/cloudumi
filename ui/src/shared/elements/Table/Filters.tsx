@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { Ref, RefObject } from 'react';
 import { useMemo, useState } from 'react';
 import { useAsyncDebounce } from 'react-table';
+import { Checkbox } from 'shared/form/Checkbox';
 import { Input } from 'shared/form/Input';
 
 export const GlobalFilter = ({
@@ -169,19 +170,27 @@ export const NumberRangeColumnFilter = ({
   );
 };
 
+interface IndeterminateCheckboxProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {
+  indeterminate: boolean;
+}
+
 export const IndeterminateCheckbox = React.forwardRef(
-  ({ indeterminate, ...rest }, ref) => {
-    const defaultRef = React.useRef();
-    const resolvedRef = ref || defaultRef;
+  (
+    { indeterminate, ...rest }: IndeterminateCheckboxProps,
+    ref: React.Ref<HTMLInputElement>
+  ) => {
+    const defaultRef = React.useRef<HTMLInputElement>();
+    const resolvedRef = useMemo(() => ref ?? defaultRef, [ref, defaultRef]);
 
     React.useEffect(() => {
+      // @ts-ignore
       resolvedRef.current.indeterminate = indeterminate;
     }, [resolvedRef, indeterminate]);
 
     return (
-      <>
-        <Input type="checkbox" ref={resolvedRef} {...rest} />
-      </>
+      // @ts-ignore
+      <Checkbox {...rest} ref={resolvedRef} />
     );
   }
 );

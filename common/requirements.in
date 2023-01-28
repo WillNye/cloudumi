@@ -7,3 +7,4 @@ python3-saml
 pynamodax
 slack_bolt
 workos
+types-ujson

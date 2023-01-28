@@ -41,7 +41,6 @@ service_task_definition_map = [
 cluster_name = "noq-dev-shared-prod-1"
 subnets = ["subnet-0335e107c814d63f5", "subnet-06b4ff38d90fa1b9b"]
 security_groups = ["sg-0e7a1ca3c697feb53"]
-os.environ["AWS_PROFILE"] = "prod/prod_admin"
 region = "us-west-2"
 account_id = "940552945933"
 kms_key_arn = (
@@ -58,6 +57,9 @@ response = ecr_client.get_authorization_token(
 )
 
 ecs_client = boto3.client("ecs", region_name=region)
+
+identity_res = boto3.client("sts").get_caller_identity()
+identity = identity_res["Arn"].replace(":sts:", ":iam:").replace("assumed-role", "role")
 
 try:
     ecs_client.create_cluster(
@@ -212,5 +214,5 @@ for task in task_details["tasks"]:
     task_id = task["taskArn"].split("/")[-1]
     print("ARN {} : ".format(task["taskDefinitionArn"]))
     print(
-        f"AWS_PROFILE={os.environ['AWS_PROFILE']} ecs-cli logs --region {region} --task-id {task_id} -c {cluster_name} --follow\n"
+        f"AWS_PROFILE={os.environ.get('AWS_PROFILE', identity)} ecs-cli logs --region {region} --task-id {task_id} -c {cluster_name} --follow\n"
     )

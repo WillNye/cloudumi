@@ -104,6 +104,7 @@ class EligibleRoleHandler(BaseHandler):
         tenant = self.ctx.tenant
 
         roles = []
+        # TODO: Fix expensive function call
         active_tra_roles = await get_user_active_tra_roles_by_tag(tenant, self.user)
         friendly_names = await get_account_id_to_name_mapping(tenant)
 
@@ -159,7 +160,7 @@ class EligibleRoleHandler(BaseHandler):
         # ]
         pending_requests = []
         ### TODO  # noqa: E265,E266
-
+        # TODO: Fix expensive function call
         for role in await get_tra_supported_roles_by_tag(
             self.eligible_roles + active_tra_roles,
             self.groups + [self.user],

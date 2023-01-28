@@ -47,9 +47,9 @@ export const Compact = () => {
   );
 };
 
-export const Spaced = () => {
+export const Expanded = () => {
   return (
-    <Table columns={columns} data={data} spacing="spaced" border="basic" />
+    <Table columns={columns} data={data} spacing="expanded" border="basic" />
   );
 };
 
@@ -176,7 +176,8 @@ export const Filter = () => {
       data={data}
       striped
       border="basic"
-      spacing="spaced"
+      spacing="expanded"
+      selectable
     />
   );
 };

@@ -86,7 +86,7 @@ _global_:
   tornado:
     debug: false
     port: 8092
-    xsrf: true
+    xsrf: false # TODO: Change to true when not testing locally
     xsrf_cookie_kwargs:
       samesite: strict
   plugins:

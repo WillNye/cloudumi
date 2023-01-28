@@ -16,6 +16,11 @@ Amplify.configure({
     // identityPoolId: 'us-east-1_CNoZribID',
 
     // REQUIRED - Amazon Cognito Region
+
+    // TODO (Kayizzi) These must not be hardcoded. These must be retrieved from the backend
+    // because it will be different per tenant. We also need to figure out how to handle
+    // non-federated SAML/OIDC Auth
+
     region: 'us-east-1',
 
     // OPTIONAL - Amazon Cognito Federated Identity Pool Region
@@ -26,7 +31,13 @@ Amplify.configure({
     userPoolId: 'us-east-1_CNoZribID',
 
     // OPTIONAL - Amazon Cognito Web Client ID (26-char alphanumeric string)
-    userPoolWebClientId: '6f44pcgu8dk978njp3frkt9p1k'
+    userPoolWebClientId: '6f44pcgu8dk978njp3frkt9p1k',
+
+    oauth: {
+      scope: ['email', 'profile', 'openid'],
+      clientId: '6f44pcgu8dk978njp3frkt9p1k',
+      responseType: 'code'
+    }
   }
 });
 
