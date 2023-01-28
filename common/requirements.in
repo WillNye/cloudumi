@@ -8,3 +8,4 @@ pynamodax
 slack_bolt
 workos
 types-ujson
+databases[asyncpg]

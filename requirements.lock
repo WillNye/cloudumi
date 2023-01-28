@@ -57,7 +57,9 @@ async-timeout==4.0.2
     #   aiohttp
     #   redis
 asyncpg==0.27.0
-    # via -r ./common/util/requirements.in
+    # via
+    #   -r ./common/util/requirements.in
+    #   databases
 asynctest==0.13.0
     # via
     #   -r ./api/util/requirements-test.in
@@ -245,6 +247,8 @@ cyclonedx-python-lib==3.1.1
     # via checkov
 cython==0.29.32
     # via -r ./requirements.in
+databases[asyncpg]==0.7.0
+    # via -r ./common/requirements.in
 debugpy==1.6.4
     # via -r ./api/requirements.in
 decorator==5.1.1
@@ -364,7 +368,9 @@ google-auth-httplib2==0.1.0
 googleapis-common-protos==1.57.0
     # via google-api-core
 greenlet==2.0.1
-    # via -r ./common/util/requirements.in
+    # via
+    #   -r ./common/util/requirements.in
+    #   sqlalchemy
 html5lib==1.1
     # via weasyprint
 httplib2==0.21.0
@@ -672,6 +678,12 @@ pyphen==0.13.2
     # via weasyprint
 pyrsistent==0.19.2
     # via jsonschema
+pyston==2.3.5
+    # via
+    #   checkov
+    #   pyston-autoload
+pyston-autoload==2.3.5
+    # via checkov
 pytest==7.2.0
     # via
     #   -r ./api/util/requirements-test.in
@@ -852,6 +864,13 @@ sentry-sdk==1.12.1
     #   -r ./common/util/requirements.in
 setupmeta==3.3.2
     # via -r ./common/util/requirements.in
+setuptools==65.6.3
+    # via
+    #   cyclonedx-python-lib
+    #   flake8-import-order
+    #   jsonschema
+    #   nodeenv
+    #   pytest-tornado
 simplejson==3.18.0
     # via
     #   -r ./api/requirements.in
@@ -901,6 +920,7 @@ sqlalchemy==1.4.45
     # via
     #   -r ./common/util/requirements.in
     #   alembic
+    #   databases
 stevedore==4.1.1
     # via bandit
 tabulate==0.9.0
@@ -1031,12 +1051,3 @@ zipp==3.11.0
     # via importlib-metadata
 zopfli==0.2.2
     # via fonttools
-
-# The following packages are considered to be unsafe in a requirements file:
-setuptools==65.6.3
-    # via
-    #   cyclonedx-python-lib
-    #   flake8-import-order
-    #   jsonschema
-    #   nodeenv
-    #   pytest-tornado

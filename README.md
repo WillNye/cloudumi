@@ -245,3 +245,19 @@ Go to Postman, and login as engineering@noq.dev
 - Change the appropriate parameters, including registration_code
 - Select the `Prod Tenant Registration (Shared)` Environment
 - Submit your request
+
+## Slack bot
+
+The Slack app requires a static publicly accessible URL with a valid SSL certificate. localtunnel is a good option to configure this. ngrok is another one but it can get annoying when the domain changes every time you restart the tunnel. Setting up an actual domain with an actual certificate works well. In this example, we will set up a certificate for parlicy.com:
+
+```bash
+sudo certbot certonly -d "*.parlicy.com" --manual --preferred-challenges=dns
+```
+
+Then configure the DNS TXT records on your domain provider.
+
+Once the certificate is generated, run the frontend with the following configuration:
+
+SSL_CRT_FILE=/etc/letsencrypt/live/parlicy.com/cert.pem
+SSL_KEY_FILE=/etc/letsencrypt/live/parlicy.com/privkey.pem
+NODE_EXTRA_CA_CERTS=/etc/letsencrypt/live/parlicy.com/chain.pem
