@@ -26,3 +26,21 @@ export const eligibleRolesColumns = [
     sortable: false
   }
 ];
+
+export const allRolesColumns = [
+  {
+    Header: 'Account Details',
+    accessor: 'name',
+    sortable: true
+  },
+  {
+    Header: 'Role Name',
+    accessor: 'roleName',
+    sortable: true
+  },
+  {
+    accessor: 'moreActions',
+    width: '50px',
+    sortable: false
+  }
+];

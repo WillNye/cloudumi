@@ -1,15 +1,13 @@
 import { PropertyFilter, PropertyFilterProps } from '@noqdev/cloudscape';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import RoleCredentialSummary from '../common/RoleCredentialSummary';
 
 import MoreActions from '../common/MoreActions';
 import { Table } from 'shared/elements/Table';
-import { eligibleRolesColumns } from '../EligibleRoles/constants';
-import { Button } from 'shared/elements/Button';
+import { allRolesColumns } from '../EligibleRoles/constants';
 
-import css from './AllRoles.module.css';
 import { ROLE_PROPERTY_SEARCH_FILTER } from 'App/Access/constants';
+import css from './AllRoles.module.css';
 
 const AllRoles = ({ data, getData, isLoading }) => {
   const [filter, setFilter] = useState<PropertyFilterProps.Query>({
@@ -60,26 +58,6 @@ const AllRoles = ({ data, getData, isLoading }) => {
             <div>{item.account_name}</div>
             <div className={css.tableSecondaryText}>{item.account_id}</div>
           </div>
-        ),
-        arn:
-          item.inactive_tra !== undefined ? (
-            <Button
-              fullWidth
-              color={item.inactive_tra ? 'secondary' : 'primary'}
-              size="small"
-              href={item.redirect_uri}
-              asAnchor
-            >
-              {item.inactive_tra ? 'Request Temporary Access' : 'Signin'}
-            </Button>
-          ) : (
-            <Fragment />
-          ),
-        viewDetails: (
-          <RoleCredentialSummary
-            arn={item.arn}
-            role={`${item.account_name}${roleName}`}
-          />
         ),
         moreActions: <MoreActions />
       };
@@ -152,7 +130,7 @@ const AllRoles = ({ data, getData, isLoading }) => {
         <div className={css.table}>
           <Table
             data={tableRows}
-            columns={eligibleRolesColumns}
+            columns={allRolesColumns}
             border="row"
             isLoading={isLoading}
           />
