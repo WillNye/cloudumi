@@ -8,9 +8,11 @@ import { Avatar } from '../Avatar';
 export const Navbar = () => {
   return (
     <aside className={styles.sidebar}>
-      <div className={styles.sidebarLogo}>
-        <img src={Logo} alt="Logo" />
-      </div>
+      <Link to="/">
+        <div className={styles.sidebarLogo}>
+          <img src={Logo} alt="Logo" />
+        </div>
+      </Link>
       <nav className={styles.sidebarNav}>
         <Link to="/">
           <Tooltip text="Access" alignment="right">

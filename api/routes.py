@@ -8,6 +8,7 @@ from api.handlers.v3.slack.install import (
     AsyncSlackOAuthHandler,
 )
 from api.handlers.v3.typeahead import UserAndGroupTypeAheadHandler
+from api.handlers.v4.aws.roles import RolesHandlerV4
 from api.handlers.v4.groups.manage_group_memberships import (
     ManageGroupMembershipsHandler,
 )
@@ -417,6 +418,7 @@ def make_app(jwt_validator=None):
         (r"/api/v4/scim/v2/Users/(.*)", ScimV2UserHandler),
         (r"/api/v4/scim/v2/Groups/?", ScimV2GroupsHandler),
         (r"/api/v4/scim/v2/Group/(.*)", ScimV2GroupHandler),
+        (r"/api/v4/roles", RolesHandlerV4),
     ]
     # TODO: fix:
 
