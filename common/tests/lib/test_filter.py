@@ -36,8 +36,9 @@ class TestFilterData(IsolatedAsyncioTestCase):
             "operation": "and",
         }
         expected_output = [{"id": 3, "name": "Bob", "age": 35, "city": "New York"}]
+        res = await filter_data(self.data, {**self.base_filter, "filtering": filter})
         self.assertEqual(
-            await filter_data(self.data, {**self.base_filter, "filtering": filter}),
+            res.data,
             expected_output,
         )
 
@@ -58,8 +59,9 @@ class TestFilterData(IsolatedAsyncioTestCase):
         ]
 
         expected_output = sorted(expected_output, key=lambda x: x["name"])
+        res = await filter_data(self.data, {**self.base_filter, "filtering": filter})
         self.assertEqual(
-            await filter_data(self.data, {**self.base_filter, "filtering": filter}),
+            res.data,
             expected_output,
         )
 
@@ -68,8 +70,9 @@ class TestFilterData(IsolatedAsyncioTestCase):
 
         expected_output = sorted(self.data, key=lambda x: x["name"])
         filter = {}
+        res = await filter_data(self.data, {**self.base_filter, "filtering": filter})
         self.assertEqual(
-            await filter_data(self.data, {**self.base_filter, "filtering": filter}),
+            res.data,
             expected_output,
         )
 
@@ -78,8 +81,9 @@ class TestFilterData(IsolatedAsyncioTestCase):
 
         filter = {"operation": "and"}
         expected_output = sorted(self.data, key=lambda x: x["name"])
+        res = await filter_data(self.data, {**self.base_filter, "filtering": filter})
         self.assertEqual(
-            await filter_data(self.data, {**self.base_filter, "filtering": filter}),
+            res.data,
             expected_output,
         )
 
@@ -90,8 +94,9 @@ class TestFilterData(IsolatedAsyncioTestCase):
             "tokens": [{"propertyKey": "city", "operator": "=", "value": "Irvine"}]
         }
         expected_output = []
+        res = await filter_data(self.data, {**self.base_filter, "filtering": filter})
         self.assertEqual(
-            await filter_data(self.data, {**self.base_filter, "filtering": filter}),
+            res.data,
             expected_output,
         )
 
