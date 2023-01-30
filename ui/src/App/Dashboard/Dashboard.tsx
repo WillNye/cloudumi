@@ -6,9 +6,9 @@ export const Dashboard = () => {
   return (
     <div className={styles.dashboard}>
       <Navbar />
-      <div className={styles.content}>
+      <main className={styles.mainContent}>
         <Outlet />
-      </div>
+      </main>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { Ref, RefObject } from 'react';
+import React from 'react';
 import { useMemo, useState } from 'react';
 import { useAsyncDebounce } from 'react-table';
 import { Checkbox } from 'shared/form/Checkbox';
