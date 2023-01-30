@@ -125,7 +125,7 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
       <Dialog
         showDialog={showDialog}
         setShowDialog={setShowDialog}
-        size="medium"
+        size="large"
         disablePadding
         header="Code and Comands"
         isLoading={isLoading}
