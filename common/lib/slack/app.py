@@ -470,4 +470,8 @@ async def get_slack_app_for_tenant(tenant):
         ack=handle_ack,
         lazy=[partial(request_access_tenant, tenant=tenant)],
     )
+    tenant_slack_app.command("request_access")(
+        ack=handle_ack,
+        lazy=[partial(request_access_tenant, tenant=tenant)],
+    )
     return tenant_slack_app
