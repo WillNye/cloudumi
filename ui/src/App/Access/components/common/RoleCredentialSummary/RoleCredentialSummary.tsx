@@ -187,12 +187,11 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
               </p>
               {crendentials ? (
                 <CodeBlock>
-                  <p>export AWS_ACCESS_KEY_ID=${crendentials?.AccessKeyId}</p>
+                  <p>export AWS_ACCESS_KEY_ID={crendentials?.AccessKeyId}</p>
                   <p>
-                    export AWS_SECRET_ACCESS_KEY=$
-                    {crendentials?.SecretAccessKey}
+                    export AWS_SECRET_ACCESS_KEY={crendentials?.SecretAccessKey}
                   </p>
-                  <p>export AWS_SESSION_TOKEN=${crendentials?.SessionToken}</p>
+                  <p>export AWS_SESSION_TOKEN={crendentials?.SessionToken}</p>
                 </CodeBlock>
               ) : (
                 <Notification
@@ -211,6 +210,7 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
               </p>
               {crendentials ? (
                 <CodeBlock>
+                  <p>{`[${role}]`}</p>
                   <p>aws_access_key_id={crendentials?.AccessKeyId}</p>
                   <p>aws_secret_access_key={crendentials?.SecretAccessKey}</p>
                   <p>aws_session_token={crendentials?.SessionToken}</p>
