@@ -3,15 +3,13 @@
   position: relative;
   background-color: var(--gray-800);
   color: var(--gray-200);
-  overflow-x: auto;
   line-height: 1.5rem;
   border-radius: var(--border-radius-md);
   font-weight: 500;
-  overflow: hidden;
 
   pre {
     padding: var(--spacing-lg);
-    overflow-y: scroll;
+    overflow-y: auto;
   }
 
   .copyBtn {
