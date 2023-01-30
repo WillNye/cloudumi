@@ -7,6 +7,7 @@ import { HEADER_FIXED_HIEGHT, ROLE_SUMMARY_LINKS } from './constants';
 import { getRoleCredentials } from 'core/API/roles';
 import { CodeBlock } from 'shared/elements/CodeBlock';
 import { Notification, NotificationType } from 'shared/elements/Notification';
+import { useIntersection } from 'react-use';
 
 type RoleCredentialSummaryProps = {
   arn: string;
@@ -30,6 +31,45 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
   const [crendentials, setCredentials] = useState<AWSCredentials | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const dialogRef = useRef<HTMLDivElement>();
+  const noqCLIRef = useRef<HTMLDivElement>();
+  const environmentVariablesRef = useRef<HTMLDivElement>();
+  const awsProfileRef = useRef<HTMLDivElement>();
+
+  const noqCLIIntersection = useIntersection(noqCLIRef, {});
+  const awsProfileIntersection = useIntersection(awsProfileRef, {});
+  const environmentVariableIntersection = useIntersection(
+    environmentVariablesRef,
+    {}
+  );
+
+  useEffect(
+    function onNoqCLIIntersection() {
+      if (noqCLIIntersection?.isIntersecting) {
+        setActiveLink(ROLE_SUMMARY_LINKS.NOQ_CLI);
+      }
+    },
+    [noqCLIIntersection]
+  );
+
+  useEffect(
+    function onAwsProfileIntersection() {
+      if (awsProfileIntersection?.isIntersecting) {
+        setActiveLink(ROLE_SUMMARY_LINKS.AWS_PROFILE);
+      }
+    },
+    [awsProfileIntersection]
+  );
+
+  useEffect(
+    function onEnvironmentVariableIntersection() {
+      if (environmentVariableIntersection?.isIntersecting) {
+        setActiveLink(ROLE_SUMMARY_LINKS.ENVIRONMENT_VARIABLES);
+      }
+    },
+    [environmentVariableIntersection]
+  );
+
   useEffect(
     function onMount() {
       if (showDialog) {
@@ -51,11 +91,6 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
     },
     [arn, showDialog]
   );
-
-  const dialogRef = useRef<HTMLDivElement>();
-  const noqCLIRef = useRef<HTMLDivElement>();
-  const environmentVariablesRef = useRef<HTMLDivElement>();
-  const awsProfileRef = useRef<HTMLDivElement>();
 
   const handleOnClick = useCallback(
     (newLink: ROLE_SUMMARY_LINKS) => {
@@ -93,7 +128,6 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
         size="medium"
         disablePadding
         header="Code and Comands"
-        ref={dialogRef}
         isLoading={isLoading}
       >
         <div className={styles.roleSummary}>
@@ -138,7 +172,7 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
                 </ul>
               </nav>
             </div>
-            <div className={styles.container}>
+            <div className={styles.container} ref={dialogRef}>
               <div>
                 <p>
                   Use the appropriate set of commands to configure AWS
@@ -199,6 +233,7 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
                   type={NotificationType.WARNING}
                   message={errorMsg}
                   showCloseIcon={false}
+                  fullWidth
                 />
               )}
 
@@ -221,6 +256,7 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
                   type={NotificationType.WARNING}
                   message={errorMsg}
                   showCloseIcon={false}
+                  fullWidth
                 />
               )}
             </div>

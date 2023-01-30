@@ -1,5 +1,6 @@
 .codeBlock {
   padding: var(--spacing-sm);
+  position: relative;
   background-color: var(--gray-800);
   color: var(--gray-200);
   overflow-x: auto;
@@ -15,7 +16,7 @@
 
   .copyBtn {
     position: absolute;
-    right: 0;
-    padding-right: 25px;
+    right: 5px;
+    top: 5px;
   }
 }

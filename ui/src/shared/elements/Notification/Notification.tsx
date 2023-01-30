@@ -2,6 +2,7 @@ import { FC, ReactNode } from 'react';
 
 import styles from './Notification.module.css';
 import { Icon } from '../Icon';
+import classNames from 'classnames';
 
 export enum NotificationType {
   ERROR = 'error',
@@ -17,6 +18,7 @@ interface NotificationProps {
   children?: ReactNode;
   onClose?: () => void;
   showCloseIcon?: boolean;
+  fullWidth?: boolean;
 }
 
 export const Notification: FC<NotificationProps> = ({
@@ -25,10 +27,15 @@ export const Notification: FC<NotificationProps> = ({
   header,
   children,
   showCloseIcon = true,
-  onClose
+  onClose,
+  fullWidth
 }) => {
   return (
-    <div className={styles.notification}>
+    <div
+      className={classNames(styles.notification, {
+        [styles.fullWidth]: fullWidth
+      })}
+    >
       {type && (
         <Icon name={`notification-${type}`} color="primary" size="large" />
       )}
