@@ -11,10 +11,12 @@ from tornado.httputil import HTTPServerRequest
 
 from common.config import config
 from common.handlers.base import TornadoRequestHandler
+from common.lib.slack.app import get_slack_app_for_tenant
 from common.lib.slack.models import (
     SlackTenantInstallRelationship,
     TenantOauthRelationship,
     get_slack_bot,
+    get_tenant_from_team_id,
 )
 from common.models import WebResponse
 from common.tenants.models import Tenant
@@ -23,11 +25,24 @@ from common.tenants.models import Tenant
 class AsyncSlackEventsHandler(TornadoRequestHandler):
     def initialize(self, app: AsyncApp):  # type: ignore
         self.app = app
+        body = tornado.escape.json_decode(self.request.body)
+        self.slack_team_id = body.get("team_id")
+        self.slack_app = None
 
     async def post(self):
-        bolt_resp: BoltResponse = await self.app.async_dispatch(
-            to_async_bolt_request(self.request)
-        )
+        if self.slack_team_id:
+            tenant = await get_tenant_from_team_id(self.slack_team_id)
+            if tenant:
+                self.tenant = tenant.name
+                self.slack_app = await get_slack_app_for_tenant(self.tenant)
+        if self.slack_app:
+            bolt_resp: BoltResponse = await self.slack_app.async_dispatch(
+                to_async_bolt_request(self.request)
+            )
+        else:
+            bolt_resp: BoltResponse = await self.app.async_dispatch(
+                to_async_bolt_request(self.request)
+            )
         set_response(self, bolt_resp)
         return
 

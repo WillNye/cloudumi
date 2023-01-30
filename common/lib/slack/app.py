@@ -1,9 +1,11 @@
 import datetime
 import logging
 import time
+from functools import partial
 from typing import Optional
 from uuid import uuid4
 
+import jmespath
 from databases import Database
 from slack_bolt.async_app import AsyncApp
 from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
@@ -16,6 +18,7 @@ from sqlalchemy import MetaData, Table, and_, desc
 
 from api.handlers.v2.typeahead import get_matching_identity_typahead
 from common.config import config, globals
+from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.iambic.git import IambicGit
 from common.lib.slack.models import BOTS_TABLE, INSTALLATIONS_TABLE, OAUTH_STATES_TABLE
 from common.lib.slack.workflows import (
@@ -26,26 +29,11 @@ from common.lib.slack.workflows import (
     unauthorized_change_sample,
 )
 
-# We get a Slack access token and authorization token for each tenant
-# TODO: https://stackoverflow.com/questions/69638910/app-architecture-for-integrating-slack-api-with-a-multi-tenant-silo-model-deploy
-# Initializes your app with your bot token and socket mode handler
-# TODO: Why doesn't this respond to shortcut?
-
-# Steps: Make sure we create a private versioned bucket for this with logging
-# Make sure AWS Secrets Manager is updated with slack secrets like dev is
-# Make sure SaaS role has s3 rw to state buckets
-# Redirect URI must be a subdirectory of the app's redirect uri
-
-# TODO: Install URI:
-# https://slack.com/oauth/v2/authorize?client_id=2599804276914.4178506792386&scope=app_mentions:read,channels:history,channels:join,channels:manage,channels:read,chat:write,chat:write.customize,chat:write.public,commands,dnd:read,emoji:read,files:read,files:write,groups:history,groups:read,groups:write,im:history,im:read,im:write,metadata.message:read,mpim:history,mpim:read,mpim:write,pins:read,pins:write,reactions:read,reactions:write,users:read,users:read.email,dnd:read,files:read,files:write,links:read,links:write,metadata.message:read,usergroups:read,usergroups:write,users.profile:read,users:write,commands&user_scope=&state=corp_noq_dev
-
 scopes = """app_mentions:read,channels:history,channels:join,channels:read,chat:write,chat:write.public,emoji:read,groups:history,groups:read,groups:write,im:history,im:read,im:write,mpim:history,mpim:read,mpim:write,pins:read,pins:write,reactions:read,reactions:write,users:read,users:read.email,channels:manage,chat:write.customize,dnd:read,files:read,files:write,links:read,links:write,metadata.message:read,usergroups:read,usergroups:write,users.profile:read,users:write""".split(
     ","
 )
 
 logger = logging.getLogger(__name__)
-
-# https://slack.com/oauth/v2/authorize?client_id=2599804276914.4178506792386&scope=app_mentions:read,channels:history,channels:join,channels:read,chat:write,chat:write.public,emoji:read,groups:history,groups:read,groups:write,im:history,im:read,im:write,mpim:history,mpim:read,mpim:write,pins:read,pins:write,reactions:read,reactions:write,users:read,users:read.email,channels:manage,chat:write.customize,dnd:read,files:read,files:write,links:read,links:write,metadata.message:read,usergroups:read,usergroups:write,users.profile:read,users:write,commands&user_scope=&state=corp_noq_dev
 
 
 class AsyncSQLAlchemyInstallationStore(AsyncInstallationStore):
@@ -173,7 +161,6 @@ class AsyncSQLAlchemyOAuthStateStore(AsyncOAuthStateStore):
 
 
 database_url = globals.ASYNC_PG_CONN_STR
-# TODO: Encrypt / verify uri in state.
 
 installation_store = AsyncSQLAlchemyInstallationStore(
     client_id=config.get("_global_.secrets.slack.client_id"),
@@ -191,16 +178,7 @@ oauth_settings = AsyncOAuthSettings(
     client_id=config.get("_global_.secrets.slack.client_id"),
     client_secret=config.get("_global_.secrets.slack.client_secret"),
     state_store=oauth_state_store,
-    # TODO: Fix these
     scopes=scopes,
-    # installation_store=NoqSlackInstallationStore(
-    #     s3_client=boto3.client("s3", region_name="us-west-2"), # TODO Configurable
-    #     bucket_name=config.get("_global_.s3_slack_installation_store_bucket"),
-    #     client_id=config.get("_global_.secrets.slack.client_id"),
-    # ),
-    # state_store=AmazonS3OAuthStateStore(s3_client=boto3.client("s3", region_name="us-west-2"), # TODO Configurable
-    #     bucket_name=config.get("_global_.s3_slack_installation_store_bucket"),
-    #     expiration_seconds=600),
     install_path="/api/v3/slack/install",
     redirect_uri_path="/api/v3/slack/oauth_redirect",
 )
@@ -208,7 +186,7 @@ oauth_settings = AsyncOAuthSettings(
 slack_app = AsyncApp(
     logger=logger,
     installation_store=installation_store,
-    token=config.get("_global_.secrets.slack.bot_token"),
+    # token=config.get("_global_.secrets.slack.bot_token"),
     signing_secret=config.get("_global_.secrets.slack.signing_secret"),
     oauth_settings=oauth_settings,
     process_before_response=True,
@@ -229,6 +207,44 @@ async def handle_request_access_command(ack, body, logger):
 async def message_hello(message, say):
     # say() sends a message to the channel where the event was triggered
     await say(f"Hey there <@{message['user']}>!")
+
+
+async def message_hello_tenant(body, client, logger, respond, say, context, tenant):
+    # say() sends a message to the channel where the event was triggered
+    await say(f"Hey there {tenant}!")
+
+
+async def handle_select_resources_options_tenant(
+    ack, respond, body, client, logger, tenant
+):
+    redis_key = config.get_tenant_specific_key(
+        "cache_organization_structure.redis.key.org_structure_key",
+        tenant,
+        f"{tenant}_IAMBIC_TEMPLATES",
+    )
+    template_dicts = await retrieve_json_data_from_redis_or_s3(
+        template_dicts,
+        redis_key=redis_key,
+        tenant=tenant,
+    )
+
+    res = jmespath.search(
+        f"[?template_type=='NOQ::Google::Group' && contains(properties.name, '{body['value']}')]",
+        template_dicts,
+    )
+    options = []
+    for typeahead_entry in res:
+        if typeahead_entry["principal"]["principal_type"] == "AwsResource":
+            options.append(
+                {
+                    "text": {
+                        "type": "plain_text",
+                        "text": typeahead_entry["principal"]["principal_arn"],
+                    },
+                    "value": typeahead_entry["principal"]["principal_arn"],
+                }
+            )
+    await ack(options=options)
 
 
 async def message_alert():
@@ -302,10 +318,10 @@ async def request_permissions(ack, body, client):
     )
 
 
-@slack_app.action("select_resources")
-async def handle_select_resources_action(ack, body, client, logger):
-    await ack()
-    logger.info(body)
+# @slack_app.action("select_resources")
+# async def handle_select_resources_action(ack, body, client, logger):
+#     await ack()
+#     logger.info(body)
 
 
 @slack_app.middleware  # or app.use(log_request)
@@ -314,73 +330,12 @@ async def log_request(logger, body, next):
     return await next()
 
 
-@slack_app.event("app_mention")
-async def event_test(ack, body, say, logger):
-    logger.info(body)
-    say("What's up?")
+def create_log_request_handler(tenant):
+    async def _log_request(logger, body, next):
+        logger.debug(body)
+        return await next()
 
-
-@slack_app.options("select_resources")
-async def handle_select_resources_options(ack, respond, body, client, logger):
-    # TODO: Need to get list of resources to request access to
-    await ack()
-    tenant = "localhost"  # TODO fix
-    user = "curtis@noq.dev"
-    groups = []  # Need SCIM integration?
-    typeahead = await get_matching_identity_typahead(
-        tenant, body["value"], user, groups
-    )
-    options = []
-    for typeahead_entry in typeahead:
-        if typeahead_entry["principal"]["principal_type"] == "AwsResource":
-            options.append(
-                {
-                    "text": {
-                        "type": "plain_text",
-                        "text": typeahead_entry["principal"]["principal_arn"],
-                    },
-                    "value": typeahead_entry["principal"]["principal_arn"],
-                }
-            )
-    await ack(options=options)
-
-
-# TODO: remove this?
-async def handle_request_access_to_resource_long_process(respond, logger, body):
-    tenant = "localhost"  # TODO fix
-    # TODO: Need to pre-clone to EBS
-    iambic = IambicGit(tenant)
-    role_arns = [
-        x["value"]
-        for x in body["view"]["state"]["values"]["request_access"]["select_resources"][
-            "selected_options"
-        ]
-    ]
-    duration = int(
-        body["view"]["state"]["values"]["duration"]["duration"]["selected_option"][
-            "value"
-        ]
-    )
-    justification = body["view"]["state"]["values"]["justification"]["justification"][
-        "value"
-    ]
-    slack_user = body["user"]["username"]
-    res = await iambic.create_role_access_pr(
-        role_arns,
-        slack_user,
-        duration,
-        justification,
-    )
-
-    # TODO: Identify the file associated with a role
-    # TODO: Link the appropriate GitHub Username to the request
-    # TODO: Submit a PR
-    # TODO: Iambic auto-approve the PR based on rules in the git repo
-    # TODO: Return PR URL
-    res = await respond(
-        {"response_action": "update", "view": request_access_to_resource_success}
-    )
-    print(res)
+    return _log_request
 
 
 async def handle_request_access_to_resource_ack(ack):
@@ -388,7 +343,9 @@ async def handle_request_access_to_resource_ack(ack):
 
 
 # @slack_app.view("request_access_to_resource")
-async def handle_request_access_to_resource(body, client, logger, respond):
+async def handle_request_access_to_resource_tenant(
+    body, client, logger, respond, tenant
+):
     # TODO: Clone known repos to shared EBS volume, logically separated by tenant
     # If repo exists, git pull
     # await ack({
@@ -402,7 +359,6 @@ async def handle_request_access_to_resource(body, client, logger, respond):
     #     hash=body['view']['hash'],
     #     view=request_access_to_resource_success,
     # )
-    tenant = "localhost"  # TODO fix
     # TODO: Need to pre-clone to EBS
     iambic = IambicGit(tenant)
     role_arns = [
@@ -452,11 +408,6 @@ async def handle_request_access_to_resource(body, client, logger, respond):
     )
 
 
-# def main():
-#     handler = AsyncSocketModeHandler(app, os.environ["SLACK_APP_TOKEN"])
-#     handler.start_async()
-
-
 @slack_app.event("user_change")
 async def handle_user_change_events(body, logger):
     logger.info(body)
@@ -467,12 +418,56 @@ async def handle_user_status_changed_events(body, logger):
     logger.info(body)
 
 
-slack_app.view("request_access_to_resource")(
-    ack=handle_request_access_to_resource_ack, lazy=[handle_request_access_to_resource]
-)
-
-
 # slack_app.view("request_access_to_resource")(
-#     ack=handle_request_access_to_resource,
-#     lazy=[handle_request_access_to_resource_long_process]
+#     ack=handle_request_access_to_resource_ack, lazy=[handle_request_access_to_resource]
 # )
+
+
+async def handle_ack(ack):
+    await ack()
+
+
+async def request_access_tenant(ack, body, client, tenant):
+    # Acknowledge the command request
+    await ack()
+    # Call views_open with the built-in client
+    await client.views_open(
+        # Pass a valid trigger_id within 3 seconds of receiving it
+        trigger_id=body["trigger_id"],
+        # View payload
+        view=request_access_to_resource_block,
+    )
+
+
+async def get_slack_app_for_tenant(tenant):
+    tenant_slack_app = AsyncApp(
+        name=tenant,
+        logger=logger,
+        installation_store=installation_store,
+        # token=config.get("_global_.secrets.slack.bot_token"),
+        signing_secret=config.get("_global_.secrets.slack.signing_secret"),
+        oauth_settings=oauth_settings,
+        process_before_response=True,
+    )
+    tenant_slack_app.use(create_log_request_handler(tenant))
+    # tenant_slack_app.middleware(partial(log_request_tenant, tenant=tenant))
+
+    tenant_slack_app.message("hello_tenant")(
+        ack=handle_ack,
+        lazy=[partial(message_hello_tenant, tenant=tenant)],
+    )
+
+    tenant_slack_app.options("select_resources")(
+        ack=handle_ack,
+        lazy=[partial(handle_select_resources_options_tenant, tenant=tenant)],
+    )
+
+    tenant_slack_app.view("request_access_to_resource")(
+        ack=handle_request_access_to_resource_ack,
+        lazy=[partial(handle_request_access_to_resource_tenant, tenant=tenant)],
+    )
+    tenant_slack_app.shortcut("request_access")(
+        ack=handle_ack,
+        lazy=[partial(request_access_tenant, tenant=tenant)],
+    )
+    return tenant_slack_app
