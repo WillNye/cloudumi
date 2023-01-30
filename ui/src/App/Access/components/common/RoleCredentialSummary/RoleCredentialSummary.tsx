@@ -187,22 +187,19 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
               </p>
               <div className={styles.subHeader}>Credential Process</div>
               <CodeBlock>
-                <p>{`noq credential_process -g ${role}`}</p>
-                <p>{`export AWS_PROFILE=${role}`}</p>
+                {`noq credential_process -g ${role}
+export AWS_PROFILE=${role}`}
               </CodeBlock>
 
               <div className={styles.subHeader}>ECS Credential Provider</div>
               <CodeBlock>
-                <p>
-                  noq serve & export
-                  AWS_CONTAINER_CREDENTIALS_FULL_URI=http://localhost:9091/ecs/prod/prod_admin
-                </p>
+                {`noq serve & export AWS_CONTAINER_CREDENTIALS_FULL_URI=${window.location.origin}/ecs/${role} `}
               </CodeBlock>
 
               <div className={styles.subHeader}>Write Credentials to File</div>
               <CodeBlock>
-                <p>{`noq file -p ${role}`}</p>
-                <p>{`export AWS_PROFILE=${role}`}</p>
+                {`noq file -p ${role}
+export AWS_PROFILE=${role}`}
               </CodeBlock>
 
               <div className={styles.subHeader}>Credential Export</div>
@@ -221,11 +218,9 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
               </p>
               {crendentials ? (
                 <CodeBlock>
-                  <p>export AWS_ACCESS_KEY_ID={crendentials?.AccessKeyId}</p>
-                  <p>
-                    export AWS_SECRET_ACCESS_KEY={crendentials?.SecretAccessKey}
-                  </p>
-                  <p>export AWS_SESSION_TOKEN={crendentials?.SessionToken}</p>
+                  {`export AWS_ACCESS_KEY_ID=${crendentials?.AccessKeyId}
+export AWS_SECRET_ACCESS_KEY=${crendentials?.SecretAccessKey}
+export AWS_SESSION_TOKEN=${crendentials?.SessionToken}`}
                 </CodeBlock>
               ) : (
                 <Notification
@@ -245,10 +240,10 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
               </p>
               {crendentials ? (
                 <CodeBlock>
-                  <p>{`[${role}]`}</p>
-                  <p>aws_access_key_id={crendentials?.AccessKeyId}</p>
-                  <p>aws_secret_access_key={crendentials?.SecretAccessKey}</p>
-                  <p>aws_session_token={crendentials?.SessionToken}</p>
+                  {`[${role}]
+aws_access_key_id=${crendentials?.AccessKeyId}
+aws_secret_access_key=${crendentials?.SecretAccessKey}
+aws_session_token=${crendentials?.SessionToken}`}
                 </CodeBlock>
               ) : (
                 <Notification
