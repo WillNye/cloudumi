@@ -1,7 +1,5 @@
-# Data filter for tables using CloudScape Property Filter
-from datetime import date, datetime
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy import and_, or_
 from sqlalchemy.sql import select
@@ -44,7 +42,7 @@ class FilterOperator(Enum):
 class FilterToken(BaseModel):
     propertyKey: Optional[str]
     operator: FilterOperator
-    value: int | date | datetime | float | str
+    value: Any
 
 
 class FilterOperation(Enum):
