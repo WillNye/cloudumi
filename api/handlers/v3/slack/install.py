@@ -2,6 +2,7 @@ import re
 from urllib.parse import urljoin
 
 import tornado
+import ujson as json
 from slack_bolt.adapter.tornado.handler import set_response
 from slack_bolt.async_app import AsyncApp
 from slack_bolt.oauth.async_oauth_flow import AsyncOAuthFlow
@@ -25,8 +26,34 @@ from common.tenants.models import Tenant
 class AsyncSlackEventsHandler(TornadoRequestHandler):
     def initialize(self, app: AsyncApp):  # type: ignore
         self.app = app
-        body = tornado.escape.json_decode(self.request.body)
-        self.slack_team_id = body.get("team_id")
+        if self.request.body_arguments:
+            try:
+                self.slack_team_id = self.request.body_arguments["team_id"][0].decode(
+                    "utf-8"
+                )
+                self.app_id = self.request.body_arguments["api_app_id"][0].decode(
+                    "utf-8"
+                )
+                self.enterprise_id = None
+            except KeyError:
+                self.slack_team_id = None
+                self.app_id = None
+                self.enterprise_id = None
+            if not self.slack_team_id:
+                try:
+                    payload = json.loads(self.request.body_arguments["payload"][0])
+                    self.slack_team_id = payload["team"]["id"]
+                    self.app_id = payload["api_app_id"]
+                    self.enterprise_id = None
+                except KeyError:
+                    self.slack_team_id = None
+                    self.app_id = None
+                    self.enterprise_id = None
+        else:
+            body = tornado.escape.json_decode(self.request.body)
+            self.slack_team_id = body.get("team_id")
+            self.app_id = body.get("api_app_id")
+            self.enterprise_id = None
         self.slack_app = None
 
     async def post(self):
@@ -34,7 +61,9 @@ class AsyncSlackEventsHandler(TornadoRequestHandler):
             tenant = await get_tenant_from_team_id(self.slack_team_id)
             if tenant:
                 self.tenant = tenant.name
-                self.slack_app = await get_slack_app_for_tenant(self.tenant)
+                self.slack_app = await get_slack_app_for_tenant(
+                    self.tenant, self.enterprise_id, self.slack_team_id, self.app_id
+                )
         if self.slack_app:
             bolt_resp: BoltResponse = await self.slack_app.async_dispatch(
                 to_async_bolt_request(self.request)
@@ -141,8 +170,8 @@ class AsyncSlackOAuthHandler(TornadoRequestHandler):
                     return
                 team_id = match.group(1)
                 app_id = match.group(2)
-                slack_bot_id = await get_slack_bot(team_id, app_id)
-                await SlackTenantInstallRelationship.create(tenant, slack_bot_id)
+                slack_bot = await get_slack_bot(team_id, app_id)
+                await SlackTenantInstallRelationship.create(tenant, slack_bot.id)
                 # Unfortunately, Slack isn't giving us many options to get the actual team
                 # Or enterprise IDs back.
                 # team_id_parse = re.search(r'team=([A-Z0-9]+)?[&\"]', bolt_resp.body)

@@ -6,6 +6,7 @@ from typing import Optional
 from uuid import uuid4
 
 import jmespath
+import ujson as json
 from databases import Database
 from slack_bolt.async_app import AsyncApp
 from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
@@ -18,9 +19,17 @@ from sqlalchemy import MetaData, Table, and_, desc
 
 from api.handlers.v2.typeahead import get_matching_identity_typahead
 from common.config import config, globals
+from common.iambic_request.request_crud import create_request
+from common.iambic_request.utils import get_iambic_repo
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.iambic.git import IambicGit
-from common.lib.slack.models import BOTS_TABLE, INSTALLATIONS_TABLE, OAUTH_STATES_TABLE
+from common.lib.slack.models import (
+    BOTS_TABLE,
+    INSTALLATIONS_TABLE,
+    OAUTH_STATES_TABLE,
+    get_slack_bot,
+    get_slack_bot_authorization,
+)
 from common.lib.slack.workflows import (
     remove_unused_identities_sample,
     request_access_to_resource_block,
@@ -28,6 +37,7 @@ from common.lib.slack.workflows import (
     request_permissions_to_resource_block,
     unauthorized_change_sample,
 )
+from common.models import IambicTemplateChange
 
 scopes = """app_mentions:read,channels:history,channels:join,channels:read,chat:write,chat:write.public,emoji:read,groups:history,groups:read,groups:write,im:history,im:read,im:write,mpim:history,mpim:read,mpim:write,pins:read,pins:write,reactions:read,reactions:write,users:read,users:read.email,channels:manage,chat:write.customize,dnd:read,files:read,files:write,links:read,links:write,metadata.message:read,usergroups:read,usergroups:write,users.profile:read,users:write""".split(
     ","
@@ -223,7 +233,6 @@ async def handle_select_resources_options_tenant(
         f"{tenant}_IAMBIC_TEMPLATES",
     )
     template_dicts = await retrieve_json_data_from_redis_or_s3(
-        template_dicts,
         redis_key=redis_key,
         tenant=tenant,
     )
@@ -234,16 +243,20 @@ async def handle_select_resources_options_tenant(
     )
     options = []
     for typeahead_entry in res:
-        if typeahead_entry["principal"]["principal_type"] == "AwsResource":
-            options.append(
-                {
-                    "text": {
-                        "type": "plain_text",
-                        "text": typeahead_entry["principal"]["principal_arn"],
-                    },
-                    "value": typeahead_entry["principal"]["principal_arn"],
-                }
-            )
+        options.append(
+            {
+                "text": {
+                    "type": "plain_text",
+                    "text": typeahead_entry["properties"]["name"],
+                },
+                "value": json.dumps(
+                    {
+                        "template_type": typeahead_entry["template_type"],
+                        "file_path": typeahead_entry["file_path"],
+                    }
+                ),
+            }
+        )
     await ack(options=options)
 
 
@@ -318,10 +331,8 @@ async def request_permissions(ack, body, client):
     )
 
 
-# @slack_app.action("select_resources")
-# async def handle_select_resources_action(ack, body, client, logger):
-#     await ack()
-#     logger.info(body)
+async def handle_select_resources_tenant(ack, body, client, logger, tenant):
+    await ack()
 
 
 @slack_app.middleware  # or app.use(log_request)
@@ -344,22 +355,24 @@ async def handle_request_access_to_resource_ack(ack):
 
 # @slack_app.view("request_access_to_resource")
 async def handle_request_access_to_resource_tenant(
-    body, client, logger, respond, tenant
+    body, client, logger, respond, tenant, tenant_slack_app
 ):
-    # TODO: Clone known repos to shared EBS volume, logically separated by tenant
-    # If repo exists, git pull
-    # await ack({
-    #         "response_action": "clear"
-    #     })  # Respond immediately to ack to avoid timeout
-    # await ack(response_action="update", view=request_access_to_resource_success)
+    # TODO: Use IambicGit to make a request
+    # TODO: Convert Slack username to e-mail
+    user = body["user"]["username"]
+    justification = "justification"  # TODO: Get from body
+    iambic_repo = await get_iambic_repo(tenant)
+    user_email = await tenant_slack_app.client.users_info(user=body["user"]["id"])
+    selected_options = body["view"]["state"]["values"]["request_access"][
+        "select_resources"
+    ]["selected_options"]
+    for option in selected_options:
+        value = json.loads(option["value"])
+        template_type = value["template_type"]
+        path = value["file_path"]
+    changes = [IambicTemplateChange(path, body)]
     logger.info(body)
-    # client.views_update(
-    #     #token=bot_token,
-    #     view_id=body['view']['id'],
-    #     hash=body['view']['hash'],
-    #     view=request_access_to_resource_success,
-    # )
-    # TODO: Need to pre-clone to EBS
+    res = await create_request(tenant, user, justification, changes)
     iambic = IambicGit(tenant)
     role_arns = [
         x["value"]
@@ -439,7 +452,12 @@ async def request_access_tenant(ack, body, client, tenant):
     )
 
 
-async def get_slack_app_for_tenant(tenant):
+async def handle_user_change_events(body, logger, tenant):
+    pass
+
+
+async def get_slack_app_for_tenant(tenant, enterprise_id, team_id, app_id):
+    authorization = await get_slack_bot_authorization(enterprise_id, team_id, app_id)
     tenant_slack_app = AsyncApp(
         name=tenant,
         logger=logger,
@@ -448,6 +466,7 @@ async def get_slack_app_for_tenant(tenant):
         signing_secret=config.get("_global_.secrets.slack.signing_secret"),
         oauth_settings=oauth_settings,
         process_before_response=True,
+        authorize=authorization,
     )
     tenant_slack_app.use(create_log_request_handler(tenant))
     # tenant_slack_app.middleware(partial(log_request_tenant, tenant=tenant))
@@ -457,21 +476,34 @@ async def get_slack_app_for_tenant(tenant):
         lazy=[partial(message_hello_tenant, tenant=tenant)],
     )
 
-    tenant_slack_app.options("select_resources")(
+    tenant_slack_app.action("select_resources")(
         ack=handle_ack,
-        lazy=[partial(handle_select_resources_options_tenant, tenant=tenant)],
+        lazy=[partial(handle_select_resources_tenant, tenant=tenant)],
+    )
+
+    tenant_slack_app.options("select_resources")(
+        partial(handle_select_resources_options_tenant, tenant=tenant)
     )
 
     tenant_slack_app.view("request_access_to_resource")(
         ack=handle_request_access_to_resource_ack,
-        lazy=[partial(handle_request_access_to_resource_tenant, tenant=tenant)],
+        lazy=[
+            partial(
+                handle_request_access_to_resource_tenant,
+                tenant=tenant,
+                tenant_slack_app=tenant_slack_app,
+            )
+        ],
     )
     tenant_slack_app.shortcut("request_access")(
         ack=handle_ack,
         lazy=[partial(request_access_tenant, tenant=tenant)],
     )
-    tenant_slack_app.command("request_access")(
+    tenant_slack_app.command("/request_access")(
         ack=handle_ack,
         lazy=[partial(request_access_tenant, tenant=tenant)],
+    )
+    tenant_slack_app.event("user_change")(
+        partial(handle_user_change_events, tenant=tenant)
     )
     return tenant_slack_app

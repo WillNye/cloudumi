@@ -2,6 +2,7 @@ import datetime
 import os
 import time
 
+import ujson as json
 from git import Repo
 from git.exc import GitCommandError
 from github import Github
@@ -11,23 +12,31 @@ from iambic.core.parser import load_templates
 from iambic.core.utils import gather_templates
 from ruamel.yaml import YAML
 
-from common.config import config
+from common.config import config, models
 from common.lib.cache import store_json_results_in_redis_and_s3
 from common.lib.yaml import yaml
+from common.models import IambicRepoDetails
+
+IAMBIC_REPOS_BASE_KEY = "iambic_repos"
 
 
 class IambicGit:
     def __init__(self, tenant: str) -> None:
         self.tenant: str = tenant
         self.global_repo_base_path: str = config.get("_global_.git.repo_base_path")
-        self.git_repositories: dict[
-            str, dict[str, str]
-        ] = config.get_tenant_specific_key("secrets.git.repositories", tenant, {})
+        self.git_repositories = []
         self.tenant_repo_base_path: str = os.path.expanduser(
             os.path.join(self.global_repo_base_path, tenant)
         )
         os.makedirs(os.path.dirname(self.tenant_repo_base_path), exist_ok=True)
         self.repos = {}
+
+    async def set_git_repositories(self) -> None:
+        self.git_repositories: list[IambicRepoDetails] = (
+            models.ModelAdapter(IambicRepoDetails)
+            .load_config(IAMBIC_REPOS_BASE_KEY, self.tenant)
+            .models
+        )
 
     async def get_default_branch(self, repo) -> str:
         return next(
@@ -36,18 +45,24 @@ class IambicGit:
 
     async def clone_or_pull_git_repos(self) -> None:
         # TODO: Formalize the model for secrets
-        for repo_name, repository in self.git_repositories.items():
-            git_uri = repository["uri"]
-            # TODO: Enforce logical separation of tenant data
-            repo_path = os.path.join(self.tenant_repo_base_path, repo_name)
+        await self.set_git_repositories()
+        for repository in self.git_repositories:
+            repo_name = repository.repo_name
+            access_token = repository.access_token
+            repo_path = os.path.join(self.tenant_repo_base_path, repository.repo_name)
+            git_uri = f"https://oauth:{access_token}@github.com/{repo_name}"
             try:
                 # TODO: async
-                repo = Repo.clone_from(git_uri, repo_path)
+                repo = Repo.clone_from(
+                    git_uri,
+                    repo_path,
+                    config="core.symlinks=false",
+                )
                 default_branch = await self.get_default_branch(repo)
                 self.repos[repo_name] = {
                     "repo": repo,
                     "path": repo_path,
-                    "gh": Github(repository["access_token"]),
+                    "gh": Github(repository.access_token),
                     "default_branch": default_branch,
                 }
             except GitCommandError as e:
@@ -66,19 +81,24 @@ class IambicGit:
                 self.repos[repo_name] = {
                     "repo": repo,
                     "path": repo_path,
-                    "gh": Github(repository["access_token"]),
+                    "gh": Github(repository.access_token),
                     "default_branch": default_branch,
                 }
-        return self.repos
+        return
 
     async def gather_templates_for_tenant(self):
-        for repo_name, repository in self.git_repositories.items():
+        await self.set_git_repositories()
+        for repository in self.git_repositories:
+            repo_name = repository.repo_name
             repo_path = os.path.join(self.tenant_repo_base_path, repo_name)
             template_paths = await gather_templates(repo_path)
             self.templates = load_templates(template_paths)
             group_typeahead = []
-            template_dicts = [template.dict() for template in self.templates]
-            # TODO: Search for Google groups that match `leg` like legal@noq.dev
+            template_dicts = []
+            for template in self.templates:
+                d = json.loads(template.json())
+                d["file_path"] = d["file_path"].replace(self.tenant_repo_base_path, "")
+                template_dicts.append(d)
             # jmespath.search("[?template_type=='NOQ::Google::Group' && contains(properties.name, 'leg')]", template_dicts)
             redis_key = config.get_tenant_specific_key(
                 "cache_organization_structure.redis.key.org_structure_key",

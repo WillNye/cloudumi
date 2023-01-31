@@ -1,10 +1,15 @@
 import asyncio
+import copy
 import multiprocessing
 import os
 import time
 from secrets import token_urlsafe
 
 from asgiref.sync import async_to_sync
+
+from common.config.config import dict_merge
+from common.lib.aws.aws_secret_manager import get_aws_secret
+from common.lib.yaml import yaml
 
 os.environ.setdefault(
     "CONFIG_LOCATION", "configs/development_account/saas_development.yaml"
@@ -15,9 +20,15 @@ override_email = os.getenv("OVERRIDE_EMAIL", "user@noq.dev")
 import common.scripts.initialize_dynamodb  # noqa: F401, E402
 from common.lib.dynamo import RestrictedDynamoHandler  # noqa: F401, E402
 
+# We store sensitive secrets in AWS Secrets Manager. For example,
+# Iambic repo configuration.
+# We fetch these secrets and merge them into Tenant configuration
+tenant_secrets_arn = "arn:aws:secretsmanager:us-west-2:759357822767:secret:dev/tenant_secrets_configuration-HcMJCi"
+tenant_secrets = yaml.load(get_aws_secret(tenant_secrets_arn))
+
 loop = asyncio.get_event_loop()
 
-tenant_config = f"""
+localhost_tenant_config_raw = f"""
 _development_user_override: {override_email}
 _development_run_celery_tasks_1_min: true
 _development_groups_override:
@@ -131,6 +142,8 @@ application_admin:
   - curtis@noq.dev
 secrets:
   jwt_secret: {token_urlsafe(32)}
+  scim:
+    bearer_token: local_secret_scim_bearer_token
   auth:
     oidc:
       client_id: j14h62of81s6s5f2ivfkdfe3v
@@ -185,6 +198,10 @@ policy_request_autoapprove_rules:
         }}
 """
 
+localhost_tenant_config = yaml.load(localhost_tenant_config_raw)
+dict_merge(localhost_tenant_config, tenant_secrets)
+tenant_config = yaml.dump(localhost_tenant_config)
+
 # Store tenant information in DynamoDB
 
 ddb = RestrictedDynamoHandler()
@@ -193,7 +210,7 @@ async_to_sync(ddb.update_static_config_for_tenant)(
     tenant_config, override_email, "localhost"
 )
 
-cloudumi_config = f"""
+cloudumi_config_raw = f"""
 cache_self_service_typeahead:
   cache_resource_templates: true
 cloudtrail:
@@ -304,17 +321,11 @@ secrets:
   auth:
     oidc:
       client_id: '6f44pcgu8dk978njp3frkt9p1k'
-      # client_id: '3vqhl3rfcfoqhl88g47norqick'
-      # client_secret: 'u6k40gpgkjkltcsk03040e3n848gppp0h066nh55f1k1ftltmjp'
   cognito:
     config:
       user_pool_id: 'us-east-1_CNoZribID'
       user_pool_client_id: '6f44pcgu8dk978njp3frkt9p1k'
       user_pool_region: 'us-east-1'
-      # user_pool_id: 'us-west-2_EQ5XHIluC'
-      # user_pool_client_id: '3vqhl3rfcfoqhl88g47norqick'
-      # user_pool_client_secret: 'u6k40gpgkjkltcsk03040e3n848gppp0h066nh55f1k1ftltmjp'
-      # user_pool_region: 'us-west-2'
 account_ids_to_name:
   "759357822767": "development"
 auth:
@@ -385,10 +396,11 @@ policy_request_autoapprove_rules:
             ]
         }}
 """
-
 # Store cloudumidev information in DynamoDB
+cloudumidev_tenant_config = yaml.load(cloudumi_config_raw)
+dict_merge(cloudumidev_tenant_config, tenant_secrets)
+cloudumi_config = yaml.dump(cloudumidev_tenant_config)
 
-ddb = RestrictedDynamoHandler()
 
 async_to_sync(ddb.update_static_config_for_tenant)(
     cloudumi_config, override_email, "cloudumidev_com"
@@ -576,9 +588,10 @@ policy_request_autoapprove_rules:
         }}
 """
 
+cloudumi_saml_tenant_config = yaml.load(cloudumi_saml_config)
+dict_merge(cloudumi_saml_tenant_config, tenant_secrets)
+cloudumi_saml_config = yaml.dump(cloudumi_saml_tenant_config)
 # Store cloudumisamldev information in DynamoDB
-
-ddb = RestrictedDynamoHandler()
 
 async_to_sync(ddb.update_static_config_for_tenant)(
     cloudumi_saml_config, override_email, "cloudumisamldev_com"

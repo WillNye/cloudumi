@@ -277,7 +277,6 @@ remove_unused_identities_sample = [
 ]
 
 
-
 unauthorized_change_sample = [
     {
         "type": "section",
@@ -347,7 +346,7 @@ request_access_to_resource_success = json.loads(
             "type": "section",
             "text": {
                 "type": "plain_text",
-                "text": "Submitting response. We will send the status to #noq-requests",
+                "text": "Submitting response.",
                 "emoji": true
             }
         }
@@ -676,7 +675,8 @@ self_service_request_permissions_step_2_option_selection = json.loads(
 }"""
 )
 
-select_desired_managed_policies_modal = json.loads("""{
+select_desired_managed_policies_modal = json.loads(
+    """{
 	"type": "modal",
 	"callback_id": "request_permissions_to_resource",
 	"title": {
@@ -811,4 +811,5 @@ select_desired_managed_policies_modal = json.loads("""{
 			}
 		}
 	]
-}""")
+}"""
+)

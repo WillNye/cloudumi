@@ -43,6 +43,7 @@
   "scripts": {
     "start": "react-scripts --openssl-legacy-provider start || react-scripts start",
     "start_tls": "HTTPS=true react-scripts --openssl-legacy-provider start || HTTPS=true react-scripts start",
+    "start_slack_tls": "NODE_EXTRA_CA_CERTS=/etc/letsencrypt/live/parlicy.com/_.parlicy.com.chained.pem react-scripts start",
     "build": "BUILD_PATH='./dist' react-scripts --openssl-legacy-provider build || BUILD_PATH='./dist' react-scripts build",
     "test": "react-scripts --openssl-legacy-provider test --env=jsdom || react-scripts test --env=jsdom",
     "eject": "react-scripts --openssl-legacy-provider eject || react-scripts eject",
@@ -74,6 +75,7 @@
     "@testing-library/react": "^12.1.4",
     "@testing-library/user-event": "^13.5.0",
     "babel-eslint": "^10.1.0",
+    "dotenv": "^16.0.3",
     "eslint": "^7.11.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-config-react-app": "6",

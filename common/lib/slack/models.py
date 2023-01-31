@@ -1,11 +1,13 @@
 from operator import and_
 
+from slack_bolt.authorization import AuthorizeResult
 from slack_sdk.oauth.installation_store.sqlalchemy import SQLAlchemyInstallationStore
 from slack_sdk.oauth.state_store.sqlalchemy import SQLAlchemyOAuthStateStore
 from sqlalchemy import Column, ForeignKey, Integer, String, UniqueConstraint, desc
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import select
 
+from common.config import config
 from common.config.globals import ASYNC_PG_SESSION
 from common.pg_core.models import Base, SoftDeleteMixin
 from common.tenants.models import Tenant  # noqa: F401,E402
@@ -25,6 +27,8 @@ OAUTH_STATES_TABLE = SQLAlchemyOAuthStateStore.build_oauth_states_table(
     table_name=SQLAlchemyOAuthStateStore.default_table_name,
 )
 
+log = config.get_logger()
+
 
 class SlackBot(Base):
     __tablename__ = "slack_bots"
@@ -35,17 +39,43 @@ async def get_slack_bot(team_id, app_id):
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
             stmt = (
-                select(BOTS_TABLE)
+                select(SlackBot)
                 .where(
                     and_(
-                        BOTS_TABLE.c.team_id == team_id,
-                        BOTS_TABLE.c.app_id == app_id,
+                        SlackBot.team_id == team_id,
+                        SlackBot.app_id == app_id,
                     )
                 )
-                .order_by(desc(BOTS_TABLE.c.id))
+                .order_by(desc(SlackBot.id))
             )
             bot = await session.execute(stmt)
             return bot.scalars().first()
+
+
+async def get_slack_bot_authorization(enterprise_id, team_id, app_id):
+    # TODO: Cache the authorization
+    slack_bot = await get_slack_bot(team_id, app_id)
+    # enterprise_id doesn't exist for some teams
+    is_valid_enterprise = (
+        True
+        if (
+            ("enterprise_id" not in slack_bot.enterprise_id)
+            or (enterprise_id == slack_bot.enterprise_id)
+        )
+        else False
+    )
+    if (is_valid_enterprise == True) and (slack_bot.team_id == team_id):
+        # Return an instance of AuthorizeResult
+        # If you don't store bot_id and bot_user_id, could also call `from_auth_test_response` with your bot_token to automatically fetch them
+        return AuthorizeResult(
+            enterprise_id=enterprise_id,
+            team_id=team_id,
+            bot_token=slack_bot.bot_token,
+            bot_id=slack_bot.bot_id,
+            bot_user_id=slack_bot.bot_user_id,
+        )
+
+    log.error("No authorization information was found")
 
 
 async def get_tenant_from_team_id(team_id):
