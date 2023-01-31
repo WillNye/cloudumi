@@ -1,15 +1,14 @@
-from datetime import datetime
-
 from sqlalchemy import Column, ForeignKey, Integer, String, UniqueConstraint, and_
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import insert, select
+from sqlalchemy.sql import delete, select
 
 from common.config.globals import ASYNC_PG_SESSION
-from common.pg_core.models import Base, SoftDeleteMixin
+from common.pg_core.models import Base
 from common.tenants.models import Tenant
 
 
-class IdentityRole(SoftDeleteMixin, Base):
+class IdentityRole(Base):
     __tablename__ = "identity_role"
 
     id = Column(Integer(), primary_key=True, autoincrement=True)
@@ -25,7 +24,10 @@ class IdentityRole(SoftDeleteMixin, Base):
 
     @classmethod
     async def create(
-        cls, tenant: Tenant, role_name: str, role_arn: str, created_by: str
+        cls,
+        tenant: Tenant,
+        role_name: str,
+        role_arn: str,
     ):
         # Massage data
         upsert_stmt_data = {
@@ -34,10 +36,6 @@ class IdentityRole(SoftDeleteMixin, Base):
             "role_arn": role_arn,
         }
         insert_stmt_data = upsert_stmt_data.copy()
-        insert_stmt_data["created_by"] = created_by
-        insert_stmt_data["created_at"] = datetime.utcnow()
-        upsert_stmt_data["deleted"] = False
-        upsert_stmt_data["deleted_at"] = None
 
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
@@ -52,18 +50,11 @@ class IdentityRole(SoftDeleteMixin, Base):
     async def delete(cls, tenant: Tenant, role_id: int):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
-                stmt = select(IdentityRole).where(
-                    and_(
-                        IdentityRole.tenant == tenant,
-                        IdentityRole.id == role_id,
-                        IdentityRole.deleted == False,  # noqa
+                session.execute(
+                    delete(IdentityRole).where(
+                        and_(IdentityRole.id == role_id, IdentityRole.tenant == tenant)
                     )
                 )
-                role = await session.execute(stmt)
-                role = role.scalars().first()
-                role.deleted = True
-                session.add(role)
-                await session.commit()
 
     @classmethod
     async def get_all(cls, tenant: Tenant):
@@ -72,7 +63,6 @@ class IdentityRole(SoftDeleteMixin, Base):
                 stmt = select(IdentityRole).where(
                     and_(
                         IdentityRole.tenant == tenant,
-                        IdentityRole.deleted == False,  # noqa
                     )
                 )
                 roles = await session.execute(stmt)
@@ -86,7 +76,6 @@ class IdentityRole(SoftDeleteMixin, Base):
                     and_(
                         IdentityRole.tenant == tenant,
                         IdentityRole.id == role_id,
-                        IdentityRole.deleted == False,  # noqa
                     )
                 )
                 user = await session.execute(stmt)
@@ -100,7 +89,6 @@ class IdentityRole(SoftDeleteMixin, Base):
                     and_(
                         IdentityRole.tenant == tenant,
                         IdentityRole.role_arn == role_arn,
-                        IdentityRole.deleted == False,  # noqa
                     )
                 )
                 user = await session.execute(stmt)

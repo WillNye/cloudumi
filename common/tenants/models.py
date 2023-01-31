@@ -24,3 +24,15 @@ class Tenant(SoftDeleteMixin, Base):
                 )
                 tenant = await session.execute(stmt)
                 return tenant.scalars().first()
+
+    @classmethod
+    async def get_all(cls):
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = select(Tenant).where(
+                    and_(
+                        Tenant.deleted == False,  # noqa
+                    )
+                )
+                tenants = await session.execute(stmt)
+                return tenants.scalars().all()

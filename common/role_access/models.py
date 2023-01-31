@@ -15,14 +15,14 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID, insert
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import select, update
+from sqlalchemy.sql import delete, select, update
 from sqlalchemy.types import Enum
 
 from common.config.globals import ASYNC_PG_SESSION
 from common.exceptions.exceptions import NoMatchingRequest
 from common.groups.models import Group
 from common.identity.models import IdentityRole
-from common.pg_core.models import Base, SoftDeleteMixin
+from common.pg_core.models import Base
 from common.tenants.models import Tenant
 from common.users.models import User
 
@@ -33,7 +33,7 @@ class RoleAccessTypes(enum.Enum):
     tra_active_user = 3
 
 
-class RoleAccess(SoftDeleteMixin, Base):
+class RoleAccess(Base):
     __tablename__ = "role_access"
 
     id = Column(Integer(), primary_key=True, autoincrement=True)
@@ -42,7 +42,7 @@ class RoleAccess(SoftDeleteMixin, Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
     group_id = Column(UUID(as_uuid=True), ForeignKey("groups.id", ondelete="CASCADE"))
     identity_role_id = Column(
-        Integer(), ForeignKey("identity_role.id"), ondelete="CASCADE"
+        Integer(), ForeignKey("identity_role.id", ondelete="CASCADE")
     )
     cli_only = Column(Boolean, default=False)
     expiration = Column(DateTime, nullable=True)
@@ -66,27 +66,6 @@ class RoleAccess(SoftDeleteMixin, Base):
         ),
     )
 
-    @classmethod
-    async def get_by_user_and_role_arn(
-        cls, tenant_name: str, user: User, role_arn: str
-    ):
-        async with ASYNC_PG_SESSION() as session:
-            async with session.begin():
-                tenant = await Tenant.get_by_name(tenant_name)
-                identity_role = await IdentityRole.get_by_role_arn(
-                    tenant_name, role_arn
-                )
-                stmt = select(RoleAccess).where(
-                    and_(
-                        RoleAccess.tenant == tenant,
-                        RoleAccess.user == user,
-                        RoleAccess.identity_role == identity_role,
-                        RoleAccess.deleted == False,  # noqa
-                    )
-                )
-                role_access = await session.execute(stmt)
-                return role_access.scalars().first()
-
     def dict(self):
         return dict(
             id=self.id,
@@ -100,8 +79,6 @@ class RoleAccess(SoftDeleteMixin, Base):
             request_id=self.request_id,
             cloud_provider=self.cloud_provider,
             signature=self.signature,
-            created_by=self.created_by,
-            created_at=self.created_at,
         )
 
     @classmethod
@@ -112,19 +89,15 @@ class RoleAccess(SoftDeleteMixin, Base):
         identity_role: IdentityRole,
         cli_only: bool,
         expiration: datetime,
-        created_by: str,
         group: Group = None,
         user: User = None,
     ):
-        created_at = datetime.utcnow()
         insert_stmt_data = {
             "tenant_id": tenant.id,
             "type": type,
             "identity_role_id": identity_role.id,
             "cli_only": cli_only,
             "expiration": expiration,
-            "created_by": created_by,
-            "created_at": created_at,
         }
         if user:
             insert_stmt_data["user_id"] = user.id
@@ -133,10 +106,6 @@ class RoleAccess(SoftDeleteMixin, Base):
         else:
             raise ValueError("Must provide either a user or group")
         upsert_stmt_data = insert_stmt_data.copy()
-        upsert_stmt_data.pop("created_by")
-        upsert_stmt_data.pop("created_at")
-        upsert_stmt_data["deleted"] = False
-        upsert_stmt_data["deleted_at"] = None
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 insert_stmt = insert(cls).values(insert_stmt_data)
@@ -159,11 +128,32 @@ class RoleAccess(SoftDeleteMixin, Base):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 await session.execute(
-                    update(RoleAccess)
-                    .where(RoleAccess.id == role_access_id)
-                    .where(RoleAccess.tenant == tenant)
-                    .values(deleted=True, deleted_at=datetime.utcnow())
+                    delete(RoleAccess).where(
+                        and_(
+                            RoleAccess.id == role_access_id, RoleAccess.tenant == tenant
+                        )
+                    )
                 )
+
+    @classmethod
+    async def get_by_user_and_role_arn(
+        cls, tenant_name: str, user: User, role_arn: str
+    ):
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                tenant = await Tenant.get_by_name(tenant_name)
+                identity_role = await IdentityRole.get_by_role_arn(
+                    tenant_name, role_arn
+                )
+                stmt = select(RoleAccess).where(
+                    and_(
+                        RoleAccess.tenant == tenant,
+                        RoleAccess.user == user,
+                        RoleAccess.identity_role == identity_role,
+                    )
+                )
+                role_access = await session.execute(stmt)
+                return role_access.scalars().first()
 
     @classmethod
     async def get_by_id(cls, tenant, role_access_id):
@@ -267,13 +257,8 @@ class RoleAccess(SoftDeleteMixin, Base):
         arguments = locals()
         role_access = await RoleAccess.get_by_id(tenant, role_access_id)
         if (
-            (
-                role_access.created_by != updated_by
-                and updated_by not in role_access.allowed_approvers
-            )
-            or role_access.status != "Pending"
-            or role_access.deleted
-        ):
+            updated_by not in role_access.allowed_approvers
+        ) or role_access.status != "Pending":
             raise RuntimeError("Unable to update this role_access")
 
         updates = [
