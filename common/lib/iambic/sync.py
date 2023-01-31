@@ -1,3 +1,4 @@
+import asyncio
 from typing import Dict, List
 
 from iambic.aws.iam.role.models import RoleTemplate
@@ -182,3 +183,24 @@ async def sync_role_access(tenant_name: str):
                         log.warning(
                             f"Could not find identity role for arn {role_arn} in tenant {tenant.name}"
                         )
+
+
+async def sync_all_the_things():
+    async def _sync_all_the_things(tenant_name: str):
+        try:
+            await sync_aws_accounts(tenant_name)
+        except Exception as e:
+            log.exception(f"Error syncing aws accounts for tenant {tenant_name}: {e}")
+        try:
+            await sync_identity_roles(tenant_name)
+        except Exception as e:
+            log.exception(
+                f"Error synching identity roles for tenant {tenant_name}: {e}"
+            )
+        try:
+            await sync_role_access(tenant_name)
+        except Exception as e:
+            log.exception(f"Error synching role access for tenant {tenant_name}: {e}")
+
+    tenants = await Tenant.get_all()
+    await asyncio.gather(*[_sync_all_the_things(t.name) for t in tenants])

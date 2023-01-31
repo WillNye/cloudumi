@@ -90,11 +90,7 @@ from common.lib.cloudtrail.auto_perms import detect_cloudtrail_denies_and_update
 from common.lib.event_bridge.role_updates import detect_role_changes_and_update_cache
 from common.lib.generic import un_wrap_json_and_dump_values
 from common.lib.git import store_iam_resources_in_git
-from common.lib.iambic.sync import (
-    sync_aws_accounts,
-    sync_identity_roles,
-    sync_role_access,
-)
+from common.lib.iambic.sync import sync_all_the_things
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import get_aws_config_history_url_for_resource
 from common.lib.pynamo import NoqModel
@@ -109,7 +105,6 @@ from common.lib.timeout import Timeout
 from common.lib.v2.notifications import cache_notifications_to_redis_s3
 from common.lib.workos import WorkOS
 from common.models import SpokeAccount
-from common.tenants.models import Tenant
 from identity.lib.groups.groups import (
     cache_identity_groups_for_tenant,
     cache_identity_requests_for_tenant,
@@ -2815,11 +2810,7 @@ def cache_iambic_data() -> Dict:
         "message": "Caching Iambic Data",
     }
     log.debug(log_data)
-    tenants = async_to_sync(Tenant.get_all)()
-    for tenant in tenants:
-        async_to_sync(sync_aws_accounts)(tenant.name)
-        async_to_sync(sync_identity_roles)(tenant.name)
-        async_to_sync(sync_role_access)(tenant.name)
+    async_to_sync(sync_all_the_things)()
 
     return log_data
 
