@@ -244,7 +244,8 @@ async def handle_select_resources_options_tenant(
     )
     # Old filter: f"[?template_type=='NOQ::Google::Group' && contains(properties.name, '{body['value']}')]",
     res = jmespath.search(
-        f"[?contains(properties.name, '{body['value']}')]",
+        # f"[?contains(properties.name, '{body['value']}')]",
+        f"[?template_type=='NOQ::Google::Group' && contains(properties.name, '{body['value']}')]",
         template_dicts,
     )
     options = []
