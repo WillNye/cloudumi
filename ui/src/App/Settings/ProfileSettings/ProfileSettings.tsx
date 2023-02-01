@@ -1,11 +1,12 @@
 import { useAuth } from 'core/Auth';
 import { FC, useCallback } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { PasswordMeter } from 'shared/elements/PasswordMeter';
-import css from './ChangePassword.module.css';
+import css from './ProfileSettings.module.css';
+import { Input } from 'shared/form/Input';
+import { Button } from 'shared/elements/Button';
 
 const changePasswordSchema = Yup.object().shape({
   oldPassword: Yup.string().required('Required'),
@@ -15,7 +16,7 @@ const changePasswordSchema = Yup.object().shape({
     .oneOf([Yup.ref('newPassword')], 'Passwords must match')
 });
 
-export const ChangePassword: FC = () => {
+export const ProfileSettings: FC = () => {
   const { user } = useAuth();
 
   const {
@@ -42,21 +43,20 @@ export const ChangePassword: FC = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Change Password</title>
-      </Helmet>
       <div className={css.container}>
-        <h1>Change Password</h1>
+        <h4>Change Password</h4>
+        <br />
+
         <form onSubmit={handleSubmit(onSubmit)}>
-          <input
+          <Input
             type="password"
             autoCapitalize="none"
             autoCorrect="off"
             {...register('oldPassword')}
           />
           <br />
-          <br />
-          <input
+
+          <Input
             type="password"
             autoCapitalize="none"
             autoCorrect="off"
@@ -64,7 +64,8 @@ export const ChangePassword: FC = () => {
           />
           <PasswordMeter value={passwordValue} />
           <br />
-          <input
+
+          <Input
             type="password"
             autoCapitalize="none"
             autoCorrect="off"
@@ -74,12 +75,13 @@ export const ChangePassword: FC = () => {
             <p>{errors.confirmNewPassword.message}</p>
           )}
           <br />
-          <br />
-          <button type="submit" disabled={isSubmitting || !isValid}>
+          <Button type="submit" disabled={isSubmitting || !isValid}>
             {isSubmitting ? 'Resetting Password...' : 'Reset Password'}
-          </button>
+          </Button>
         </form>
       </div>
     </>
   );
 };
+
+export default ProfileSettings;

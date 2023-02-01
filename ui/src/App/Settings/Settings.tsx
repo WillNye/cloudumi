@@ -3,15 +3,21 @@ import { Route, Routes } from 'react-router-dom';
 import NotFound from '../NotFound';
 import Integrations from './Integrations';
 import Accounts from './Accounts';
-import General from './General';
-import Individual from './Individual';
+import SettingsMenu from './SettingsMenu';
+import ProfileSettings from './ProfileSettings';
+import { Helmet } from 'react-helmet-async';
 
 export const Settings: FC = () => (
-  <Routes>
-    <Route path="/" element={<General />} />
-    <Route path="/integrations/" element={<Integrations />} />
-    <Route path="/accounts/" element={<Accounts />} />
-    <Route path="/personal" element={<Individual />} />
-    <Route path="*" element={<NotFound fullPage />} />
-  </Routes>
+  <>
+    <Helmet>
+      <title>Settings</title>
+    </Helmet>
+    <Routes>
+      <Route path="/" element={<SettingsMenu />} />
+      <Route path="/integrations" element={<Integrations />} />
+      <Route path="/profile" element={<ProfileSettings />} />
+      <Route path="/accounts/*" element={<Accounts />} />
+      <Route path="*" element={<NotFound fullPage />} />
+    </Routes>
+  </>
 );

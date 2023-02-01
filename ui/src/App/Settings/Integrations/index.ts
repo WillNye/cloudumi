@@ -1,1 +1,1 @@
-export { Integrations as default } from './Integrations';
+export { default } from './IntegrationSettings';

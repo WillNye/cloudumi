@@ -128,14 +128,18 @@ export const Table = <T, D>({
         ))}
       </thead>
       {isLoading ? (
-        <td colSpan={columns.length}>
-          <div className={styles.tableLoader}>
-            <div>
-              <Loader />
-              <div className={styles.loaderText}>Loading...</div>
-            </div>
-          </div>
-        </td>
+        <tbody>
+          <tr>
+            <td colSpan={columns.length}>
+              <div className={styles.tableLoader}>
+                <div>
+                  <Loader />
+                  <div className={styles.loaderText}>Loading...</div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
       ) : rows.length ? (
         <tbody {...getTableBodyProps()} className={styles.tableBody}>
           {rows.map((row, index) => {
@@ -158,11 +162,15 @@ export const Table = <T, D>({
           })}
         </tbody>
       ) : (
-        <td colSpan={columns.length}>
-          <div className={styles.tableEmpty}>
-            <EmptyState />
-          </div>
-        </td>
+        <tbody>
+          <tr>
+            <td colSpan={columns.length}>
+              <div className={styles.tableEmpty}>
+                <EmptyState />
+              </div>
+            </td>
+          </tr>
+        </tbody>
       )}
     </table>
   );

@@ -16,7 +16,7 @@ import { useAxiosInterceptors } from './hooks';
 
 export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [invalidTenant, setInvalidTenant] = useState(false);
   const [internalServerError, setInternalServerError] = useState(false);
 
