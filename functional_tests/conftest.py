@@ -1,6 +1,7 @@
 import asyncio
 import os
 import urllib
+import urllib.parse
 from http.cookies import SimpleCookie
 
 import ujson as json
@@ -123,9 +124,9 @@ class FunctionalTest(AsyncHTTPTestCase):
         if self.cookies:
             headers["Cookie"] = self._render_cookie_back()
 
-        if body and body_type == "json":
+        if body is not None and body_type == "json":
             body = json.dumps(body)
-        if body and body_type == "urlencode":
+        if body is not None and body_type == "urlencode":
             body = urllib.parse.urlencode(body)
         if method == "post":
             r = self.fetch(
