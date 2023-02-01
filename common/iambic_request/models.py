@@ -264,6 +264,7 @@ class BasePullRequest(PydanticBaseModel):
     tenant: str
     repo_name: str
     pull_request_id: int = None
+    pull_request_url: str = None
     request_id: str = None
     requested_by: str = None
 
@@ -546,6 +547,7 @@ class GitHubPullRequest(BasePullRequest):
             base=self.repo.default_branch_name,
         )
         self.pull_request_id = self.pr_obj.number
+        self.pull_request_url = self.pr_obj.html_url
 
     async def _update_request(self):
         await aio_wrapper(
@@ -566,6 +568,7 @@ class Request(SoftDeleteMixin, Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     repo_name = Column(String)
     pull_request_id = Column(Integer)
+    pull_request_url = Column(String)
     tenant = Column(String)
     status = Column(RequestStatus, default="Pending")
 
@@ -612,6 +615,7 @@ class Request(SoftDeleteMixin, Base):
             "id": str(self.id),
             "repo_name": self.repo_name,
             "pull_request_id": self.pull_request_id,
+            "pull_request_url": self.pull_request_url,
             "tenant": self.tenant,
             "status": self.status
             if isinstance(self.status, str)

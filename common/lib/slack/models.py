@@ -52,16 +52,27 @@ async def get_slack_bot(team_id, app_id):
             return bot.scalars().first()
 
 
-async def get_slack_bot_authorization(enterprise_id, team_id, app_id):
+async def get_slack_bot_from_team_id(team_id):
+    async with ASYNC_PG_SESSION() as session:
+        async with session.begin():
+            stmt = (
+                select(SlackBot)
+                .where(
+                    SlackBot.team_id == team_id,
+                )
+                .order_by(desc(SlackBot.id))
+            )
+            bot = await session.execute(stmt)
+            return bot.scalars().first()
+
+
+async def get_slack_bot_authorization(enterprise_id, team_id, logger):
     # TODO: Cache the authorization
-    slack_bot = await get_slack_bot(team_id, app_id)
+    slack_bot = await get_slack_bot_from_team_id(team_id)
     # enterprise_id doesn't exist for some teams
     is_valid_enterprise = (
         True
-        if (
-            ("enterprise_id" not in slack_bot.enterprise_id)
-            or (enterprise_id == slack_bot.enterprise_id)
-        )
+        if ((not slack_bot.enterprise_id) or (enterprise_id == slack_bot.enterprise_id))
         else False
     )
     if (is_valid_enterprise == True) and (slack_bot.team_id == team_id):
@@ -75,7 +86,7 @@ async def get_slack_bot_authorization(enterprise_id, team_id, app_id):
             bot_user_id=slack_bot.bot_user_id,
         )
 
-    log.error("No authorization information was found")
+    logger.error("No authorization information was found")
 
 
 async def get_tenant_from_team_id(team_id):

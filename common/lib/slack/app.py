@@ -19,6 +19,7 @@ from sqlalchemy import MetaData, Table, and_, desc
 
 from api.handlers.v2.typeahead import get_matching_identity_typahead
 from common.config import config, globals
+from common.iambic_request.models import GitHubPullRequest
 from common.iambic_request.request_crud import create_request
 from common.iambic_request.utils import get_iambic_repo
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
@@ -188,7 +189,9 @@ oauth_settings = AsyncOAuthSettings(
     client_id=config.get("_global_.secrets.slack.client_id"),
     client_secret=config.get("_global_.secrets.slack.client_secret"),
     state_store=oauth_state_store,
+    installation_store=installation_store,
     scopes=scopes,
+    user_scopes=scopes,
     install_path="/api/v3/slack/install",
     redirect_uri_path="/api/v3/slack/oauth_redirect",
 )
@@ -227,6 +230,9 @@ async def message_hello_tenant(body, client, logger, respond, say, context, tena
 async def handle_select_resources_options_tenant(
     ack, respond, body, client, logger, tenant
 ):
+    # TODO: we must figure out the provider so we know what to Typahead against
+    # But the provider is empty
+    provider = body["view"]["state"]  # ['values'].get("provider_dropdown")
     redis_key = config.get_tenant_specific_key(
         "cache_organization_structure.redis.key.org_structure_key",
         tenant,
@@ -236,9 +242,9 @@ async def handle_select_resources_options_tenant(
         redis_key=redis_key,
         tenant=tenant,
     )
-
+    # Old filter: f"[?template_type=='NOQ::Google::Group' && contains(properties.name, '{body['value']}')]",
     res = jmespath.search(
-        f"[?template_type=='NOQ::Google::Group' && contains(properties.name, '{body['value']}')]",
+        f"[?contains(properties.name, '{body['value']}')]",
         template_dicts,
     )
     options = []
@@ -361,40 +367,76 @@ async def handle_request_access_to_resource_tenant(
     # TODO: Convert Slack username to e-mail
     user = body["user"]["username"]
     justification = "justification"  # TODO: Get from body
+    iambic = IambicGit(tenant)
     iambic_repo = await get_iambic_repo(tenant)
-    user_email = await tenant_slack_app.client.users_info(user=body["user"]["id"])
+    # TODO: Figure out how to get user info
+    # user_email = await tenant_slack_app.client.users_info(user=body["user"]["id"])
+    user_info = await client.users_info(user=body["user"]["id"])
+    user_email = user_info._initial_data["user"]["profile"]["email"]
     selected_options = body["view"]["state"]["values"]["request_access"][
         "select_resources"
     ]["selected_options"]
+    duration = body["view"]["state"]["values"]["duration"]["duration"][
+        "selected_option"
+    ]["value"]
+    template_changes = []
     for option in selected_options:
         value = json.loads(option["value"])
         template_type = value["template_type"]
-        path = value["file_path"]
-    changes = [IambicTemplateChange(path, body)]
-    logger.info(body)
-    res = await create_request(tenant, user, justification, changes)
-    iambic = IambicGit(tenant)
-    role_arns = [
-        x["value"]
-        for x in body["view"]["state"]["values"]["request_access"]["select_resources"][
-            "selected_options"
-        ]
-    ]
-    duration = int(
-        body["view"]["state"]["values"]["duration"]["duration"]["selected_option"][
-            "value"
-        ]
+        path = value["file_path"][1:]
+        template = await iambic.google_add_user_to_group(
+            template_type, path, user, duration
+        )
+        template_changes.append(
+            IambicTemplateChange(path=path, body=template.get_body())
+        )
+    if not template_changes:
+        await respond(
+            response_action="errors",
+            errors={
+                "select_resources": "You must select at least one resource to request access to"
+            },
+        )
+        return
+
+    request_id = str(uuid4())
+    pull_request_id = None
+    request_pr = GitHubPullRequest(
+        access_token=iambic_repo.access_token,
+        repo_name=iambic_repo.repo_name,
+        tenant=tenant,
+        request_id=request_id,
+        requested_by=user_email,
+        merge_on_approval=iambic_repo.merge_on_approval,
+        pull_request_id=pull_request_id,
     )
-    justification = body["view"]["state"]["values"]["justification"]["justification"][
-        "value"
-    ]
-    slack_user = body["user"]["username"]
-    res = await iambic.create_role_access_pr(
-        role_arns,
-        slack_user,
-        duration,
-        justification,
-    )
+
+    await request_pr.create_request(justification, template_changes)
+    request_details = await request_pr.get_request_details()
+    pr_url = request_details["pull_request_url"]
+    # logger.info(body)
+    # res = await create_request(tenant, user, justification, template_changes)
+    # role_arns = [
+    #     x["value"]
+    #     for x in body["view"]["state"]["values"]["request_access"]["select_resources"][
+    #         "selected_options"
+    #     ]
+    # ]
+    # duration = int(
+    #     body["view"]["state"]["values"]["duration"]["duration"]["selected_option"][
+    #         "value"
+    #     ]
+    # )
+    # justification = body["view"]["state"]["values"]["justification"]["justification"][
+    #     "value"
+    # ]
+    # slack_user = body["user"]["username"]
+    # res = await iambic.create_role_access_pr(
+    #     role_arns,
+    #     slack_user,
+    #     duration,
+    #     justification,
+    # )
     # TODO: Identify the file associated with a role
     # TODO: Link the appropriate GitHub Username to the request
     # TODO: Submit a PR
@@ -409,13 +451,14 @@ async def handle_request_access_to_resource_tenant(
     # )
     # await respond("Submitted", response_type="ephemeral")
     # Send a message to the user
-    role_arns_text = ", ".join(role_arns)
-    pr_url = res["github_pr"]
-    conversation = await client.conversations_open(users=body["user"]["id"])
+    # role_arns_text = ", ".join(role_arns)
+    # pr_url = res["github_pr"]
+    # conversation = await client.conversations_open(users=body["user"]["id"])
+    channel_id = "C045MFZ2A10"
     await client.chat_postMessage(
-        channel=conversation["channel"]["id"],
+        channel=channel_id,
         text=(
-            f"Your request for access to {role_arns_text} has been submitted.\n\n"
+            f"A request for access has been submitted.\n\n"
             f"You may view it here: {pr_url}"
         ),
     )
@@ -457,16 +500,14 @@ async def handle_user_change_events(body, logger, tenant):
 
 
 async def get_slack_app_for_tenant(tenant, enterprise_id, team_id, app_id):
-    authorization = await get_slack_bot_authorization(enterprise_id, team_id, app_id)
     tenant_slack_app = AsyncApp(
         name=tenant,
         logger=logger,
         installation_store=installation_store,
         # token=config.get("_global_.secrets.slack.bot_token"),
         signing_secret=config.get("_global_.secrets.slack.signing_secret"),
-        oauth_settings=oauth_settings,
         process_before_response=True,
-        authorize=authorization,
+        # authorize=get_slack_bot_authorization,
     )
     tenant_slack_app.use(create_log_request_handler(tenant))
     # tenant_slack_app.middleware(partial(log_request_tenant, tenant=tenant))

@@ -4,124 +4,178 @@ request_permissions_to_resource_block = None  # TODO
 
 request_access_to_resource_block = json.loads(
     """
-                                              {
-    "type": "modal",
-    "callback_id": "request_access_to_resource",
-    "title": {
-        "type": "plain_text",
-        "text": "Noq",
-        "emoji": true
-    },
-    "submit": {
-        "type": "plain_text",
-        "text": "Submit Request",
-        "emoji": true
-    },
-    "close": {
-        "type": "plain_text",
-        "text": "Cancel",
-        "emoji": true
-    },
-    "blocks": [
-        {
-            "type": "section",
-            "block_id": "request_access",
-            "text": {
-                "type": "mrkdwn",
-                "text": "Request Access to one or more roles"
-            },
-            "accessory": {
-                "action_id": "select_resources",
-                "type": "multi_external_select",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Select resources"
-                },
-                "min_query_length": 3
-            }
-        },
-        {
-            "type": "input",
-            "block_id": "duration",
-            "element": {
-                "type": "static_select",
-                "options": [
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "1 Hour",
-                            "emoji": true
-                        },
-                        "value": "3600"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "2 Hours",
-                            "emoji": true
-                        },
-                        "value": "7200"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "4 Hours",
-                            "emoji": true
-                        },
-                        "value": "14400"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "8 Hours",
-                            "emoji": true
-                        },
-                        "value": "28800"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "24 Hours",
-                            "emoji": true
-                        },
-                        "value": "86400"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Never",
-                            "emoji": true
-                        },
-                        "value": "no_expire"
-                    }
-                ],
-                "action_id": "duration"
-            },
-            "label": {
-                "type": "plain_text",
-                "text": "Expiration",
-                "emoji": true
-            }
-        },
-        {
-            "type": "input",
-            "block_id": "justification",
-            "element": {
-                "type": "plain_text_input",
-                "multiline": true,
-                "action_id": "justification",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "I need access for..."
-                }
-            },
-            "label": {
-                "type": "plain_text",
-                "text": "Justification",
-                "emoji": true
-            }
-        }
-    ]
+{
+	"type": "modal",
+	"callback_id": "request_access_to_resource",
+	"title": {
+		"type": "plain_text",
+		"text": "Noq",
+		"emoji": true
+	},
+	"submit": {
+		"type": "plain_text",
+		"text": "Submit Request",
+		"emoji": true
+	},
+	"close": {
+		"type": "plain_text",
+		"text": "Cancel",
+		"emoji": true
+	},
+	"blocks": [
+		{
+			"type": "input",
+			"block_id": "app",
+			"element": {
+				"type": "static_select",
+				"options": [
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "Okta Apps",
+							"emoji": true
+						},
+						"value": "NOQ::Okta::App"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "Okta Groups",
+							"emoji": true
+						},
+						"value": "NOQ::Okta::Group"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "AWS IC Permission Sets",
+							"emoji": true
+						},
+						"value": "NOQ::AWS::IdentityCenter::PermissionSet"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "AWS IAM Roles",
+							"emoji": true
+						},
+						"value": "NOQ::AWS::IAM::Role"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "Google Groups",
+							"emoji": true
+						},
+						"value": "NOQ::Google::Group"
+					}
+				]
+			},
+			"label": {
+				"type": "plain_text",
+				"text": "Select Application",
+				"emoji": true
+			}
+		},
+		{
+			"type": "section",
+			"block_id": "request_access",
+			"text": {
+				"type": "mrkdwn",
+				"text": "*Request Access to one or more resources*"
+			},
+			"accessory": {
+				"action_id": "select_resources",
+				"type": "multi_external_select",
+				"placeholder": {
+					"type": "plain_text",
+					"text": "Select resources"
+				},
+				"min_query_length": 3
+			}
+		},
+		{
+			"type": "input",
+			"block_id": "duration",
+			"element": {
+				"type": "static_select",
+				"options": [
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "1 Hour",
+							"emoji": true
+						},
+						"value": "3600"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "2 Hours",
+							"emoji": true
+						},
+						"value": "7200"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "4 Hours",
+							"emoji": true
+						},
+						"value": "14400"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "8 Hours",
+							"emoji": true
+						},
+						"value": "28800"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "24 Hours",
+							"emoji": true
+						},
+						"value": "86400"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "Never",
+							"emoji": true
+						},
+						"value": "no_expire"
+					}
+				],
+				"action_id": "duration"
+			},
+			"label": {
+				"type": "plain_text",
+				"text": "Expiration",
+				"emoji": true
+			}
+		},
+		{
+			"type": "input",
+			"block_id": "justification",
+			"element": {
+				"type": "plain_text_input",
+				"multiline": true,
+				"action_id": "justification",
+				"placeholder": {
+					"type": "plain_text",
+					"text": "I need access for..."
+				}
+			},
+			"label": {
+				"type": "plain_text",
+				"text": "Justification",
+				"emoji": true
+			}
+		}
+	]
 }
 """
 )

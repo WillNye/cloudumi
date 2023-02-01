@@ -10,6 +10,7 @@ from iambic.core.parser import load_templates
 
 # TODO: Still need to get Iambic installed in the SaaS. This is a localhost hack.
 from iambic.core.utils import gather_templates
+from iambic.google.group.models import GroupMember
 from ruamel.yaml import YAML
 
 from common.config import config, models
@@ -129,6 +130,49 @@ class IambicGit:
                 continue
             okta_groups.append(repo_name)
         return okta_groups
+
+    async def request_access_to_groups(
+        self, groups: list[str], slack_user: str, duration: int, justification: str
+    ) -> None:
+        errors = []
+        await self.clone_or_pull_git_repos()
+
+    async def retrieve_iambic_template(self, template_path: str):
+        await self.set_git_repositories()
+        for repository in self.git_repositories:
+            if not template_path.startswith(repository.repo_name):
+                continue
+            full_path = os.path.join(self.tenant_repo_base_path, template_path)
+            if not os.path.exists(full_path):
+                continue
+
+            return load_templates([full_path])
+        raise Exception("Template not found")
+
+    async def google_add_user_to_group(
+        self, template_type: str, file_path: str, user_email: str, duration: int
+    ) -> None:
+        await self.clone_or_pull_git_repos()
+        errors = []
+        if template_type != "NOQ::Google::Group":
+            raise Exception("Template type is not a Google Group")
+        await self.clone_or_pull_git_repos()
+        templates = await self.retrieve_iambic_template(file_path)
+        if not templates:
+            raise Exception("Template not found")
+        template = templates[0]
+        if template.template_type != template_type:
+            raise Exception("Template type does not match")
+        expires_at = None
+        group_member = GroupMember(
+            email=user_email,
+            expires_at=expires_at,
+        )
+        if duration:
+            group_member.expires_at = f"in {duration} seconds"
+
+        template.properties.members.append(group_member)
+        return template
 
     async def create_role_access_pr(
         self, role_arns: list[str], slack_user: str, duration: int, justification: str
