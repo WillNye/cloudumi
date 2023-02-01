@@ -77,7 +77,6 @@ class RoleAccess(Base):
     def dict(self):
         return dict(
             id=self.id,
-            tenant_id=self.tenant_id,
             type=self.type.value,
             user=self.user.dict() if self.user else {},
             group=self.group.dict() if self.group else {},
