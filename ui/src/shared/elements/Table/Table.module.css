@@ -1,5 +1,6 @@
 .table {
   border-collapse: collapse;
+  overflow: scroll;
   width: 100%;
 
   th {
@@ -73,8 +74,30 @@
     }
   }
 
+  .tableLoader {
+    height: 150px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+
+  .tableEmpty {
+    padding-top: 20px;
+  }
+
+  .loaderText {
+    color: var(--gray-100);
+  }
+
   td {
     text-align: left;
     padding: 8px;
+  }
+
+  Table thead {
+    position: sticky;
+    top: 0px;
+    margin: 0 0 0 0;
   }
 }

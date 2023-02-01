@@ -50,12 +50,20 @@ class RoleAccess(Base):
     cloud_provider = Column(String, default="aws")
     signature = Column(String, nullable=True)
 
-    user = relationship("User")
-    group = relationship("Group", primaryjoin="Group.id == RoleAccess.group_id")
-    identity_role = relationship(
-        "IdentityRole", primaryjoin="IdentityRole.id == RoleAccess.identity_role_id"
+    user = relationship(
+        "User", lazy="joined", primaryjoin="User.id == RoleAccess.user_id"
     )
-    tenant = relationship("Tenant", primaryjoin="Tenant.id == RoleAccess.tenant_id")
+    group = relationship(
+        "Group", lazy="joined", primaryjoin="Group.id == RoleAccess.group_id"
+    )
+    identity_role = relationship(
+        "IdentityRole",
+        lazy="joined",
+        primaryjoin="IdentityRole.id == RoleAccess.identity_role_id",
+    )
+    tenant = relationship(
+        "Tenant", primaryjoin="Tenant.id == RoleAccess.tenant_id"
+    )  # do not need to resolve tenant
 
     __table_args__ = (
         UniqueConstraint(
@@ -71,9 +79,9 @@ class RoleAccess(Base):
             id=self.id,
             tenant_id=self.tenant_id,
             type=self.type.value,
-            user_id=self.user_id,
-            group_id=self.group_id,
-            identity_role_id=self.identity_role_id,
+            user=self.user.dict() if self.user else {},
+            group=self.group.dict() if self.group else {},
+            identity_role=self.identity_role.dict() if self.identity_role else {},
             cli_only=self.cli_only,
             expiration=self.expiration,
             request_id=self.request_id,
@@ -193,6 +201,13 @@ class RoleAccess(Base):
                 return request
         except Exception:
             raise NoMatchingRequest
+
+    @classmethod
+    async def get_by_attr(cls, attribute, value):
+        async with ASYNC_PG_SESSION() as session:
+            stmt = select(RoleAccess).filter(getattr(RoleAccess, attribute) == value)
+            items = await session.execute(stmt)
+            return items.scalars().first()
 
     @classmethod
     async def list(cls, tenant):

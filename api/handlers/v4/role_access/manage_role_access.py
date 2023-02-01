@@ -1,20 +1,43 @@
+from typing import List
+
+import tornado.escape
+import tornado.web
+
 from common.handlers.base import BaseAdminHandler
+from common.lib.filter import filter_data_with_sqlalchemy
 from common.models import WebResponse
 from common.role_access.models import RoleAccess
-from common.tenants.models import Tenant
-from common.users.models import User
 
 
 class ManageRoleAccessHandler(BaseAdminHandler):
-    async def get(self):
-        username = self.get_current_user()
-        tenant = Tenant.get_by_name(self.ctx.tenant)
-        user = User.get_by_username(self.ctx.tenant, username)
-        access_roles = await RoleAccess.list_by_user(tenant=tenant, user=user)
+    async def post(self):
+        data = tornado.escape.json_decode(self.request.body)
+        tenant_name = self.ctx.tenant
+
+        _filter = data.get("filter", {})
+
+        try:
+            objects: List[objects] = await filter_data_with_sqlalchemy(
+                _filter, tenant_name, RoleAccess
+            )
+        except Exception as exc:
+            errors = [str(exc)]
+            self.write(
+                WebResponse(
+                    errors=errors,
+                    status_code=500,
+                    count=len(errors),
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            self.set_status(500, reason=str(exc))
+            raise tornado.web.Finish()
+
+        res = [x.dict() for x in objects]
+
         self.write(
             WebResponse(
                 success="success",
                 status_code=200,
-                data={"access_roles": access_roles},
+                data={"access_roles": res},
             ).dict(exclude_unset=True, exclude_none=True)
         )

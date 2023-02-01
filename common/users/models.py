@@ -90,6 +90,16 @@ class User(SoftDeleteMixin, Base):
         UniqueConstraint("tenant_id", "email", name="uq_tenant_email"),
     )
 
+    def dict(self):
+        return dict(
+            id=str(self.id),
+            active=self.active,
+            username=self.username,
+            email=self.email,
+            display_name=self.display_name,
+            full_name=self.full_name,
+        )
+
     async def delete(self):
         # Delete all group memberships
         async with ASYNC_PG_SESSION() as session:
@@ -296,6 +306,13 @@ class User(SoftDeleteMixin, Base):
                     stmt = stmt.options(selectinload(User.groups))
                 users = await session.execute(stmt)
                 return users.scalars().all()
+
+    @classmethod
+    async def get_by_attr(cls, attribute, value):
+        async with ASYNC_PG_SESSION() as session:
+            stmt = select(User).filter(getattr(User, attribute) == value)
+            items = await session.execute(stmt)
+            return items.scalars().first()
 
     @classmethod
     async def create(cls, tenant, username, email, password, **kwargs):

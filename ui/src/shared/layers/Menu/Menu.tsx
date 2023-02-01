@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { Menu as ReaLayersMenu, MenuProps } from 'realayers';
+import { Menu as ReaLayersMenu, MenuProps } from 'reablocks';
 import { Card } from 'shared/layout/Card';
 import css from './Menu.module.css';
 

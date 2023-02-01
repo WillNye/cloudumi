@@ -22,6 +22,13 @@ class AWSAccount(Base):
 
     __table_args__ = (UniqueConstraint("tenant_id", "number", name="uq_tenant_number"),)
 
+    def dict(self):
+        return dict(
+            id=self.id,
+            name=self.name,
+            number=self.number,
+        )
+
     @classmethod
     async def create(cls, tenant: Tenant, name: str, number: str):
         upsert_stmt_data = {
@@ -60,3 +67,10 @@ class AWSAccount(Base):
                 stmt = select(AWSAccount).where(AWSAccount.tenant == tenant)
                 accounts = await session.execute(stmt)
                 return accounts.scalars().all()
+
+    @classmethod
+    async def get_by_attr(cls, attribute, value):
+        async with ASYNC_PG_SESSION() as session:
+            stmt = select(AWSAccount).filter(getattr(AWSAccount, attribute) == value)
+            items = await session.execute(stmt)
+            return items.scalars().first()

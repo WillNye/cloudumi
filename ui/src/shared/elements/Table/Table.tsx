@@ -10,6 +10,8 @@ import {
 import { IndeterminateCheckbox } from './Filters';
 import styles from './Table.module.css';
 import { Icon } from '../Icon';
+import { Loader } from '../Loader';
+import { EmptyState } from '../EmptyState';
 
 interface TableProps<T, D> {
   spacing?: 'expanded' | 'compact';
@@ -18,6 +20,7 @@ interface TableProps<T, D> {
   border?: 'basic' | 'celled' | 'row';
   striped?: boolean;
   selectable?: boolean;
+  isLoading?: boolean;
 }
 
 export const Table = <T, D>({
@@ -26,7 +29,8 @@ export const Table = <T, D>({
   spacing,
   striped = false,
   border,
-  selectable = false
+  selectable = false,
+  isLoading = false
 }: TableProps<T, D>) => {
   const classes = classNames(styles.table, {
     [styles[spacing]]: spacing,
@@ -97,7 +101,9 @@ export const Table = <T, D>({
                     width: column.width,
                     maxWidth: column.maxWidth
                   },
-                  ...(column?.sortable && { ...column.getSortByToggleProps() })
+                  ...(column?.sortable && {
+                    ...column.getSortByToggleProps()
+                  })
                 })}
                 className={styles.th}
               >
@@ -121,22 +127,43 @@ export const Table = <T, D>({
           </tr>
         ))}
       </thead>
-      <tbody {...getTableBodyProps()}>
-        {rows.map((row, index) => {
-          prepareRow(row);
-          return (
-            <tr key={index} {...row.getRowProps()} className={styles.tr}>
-              {row.cells.map((cell, idx) => {
-                return (
-                  <td key={idx} {...cell.getCellProps()} className={styles.td}>
-                    {cell.render('Cell')}
-                  </td>
-                );
-              })}
-            </tr>
-          );
-        })}
-      </tbody>
+      {isLoading ? (
+        <td colSpan={columns.length}>
+          <div className={styles.tableLoader}>
+            <div>
+              <Loader />
+              <div className={styles.loaderText}>Loading...</div>
+            </div>
+          </div>
+        </td>
+      ) : rows.length ? (
+        <tbody {...getTableBodyProps()} className={styles.tableBody}>
+          {rows.map((row, index) => {
+            prepareRow(row);
+            return (
+              <tr key={index} {...row.getRowProps()} className={styles.tr}>
+                {row.cells.map((cell, idx) => {
+                  return (
+                    <td
+                      key={idx}
+                      {...cell.getCellProps()}
+                      className={styles.td}
+                    >
+                      {cell.render('Cell')}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      ) : (
+        <td colSpan={columns.length}>
+          <div className={styles.tableEmpty}>
+            <EmptyState />
+          </div>
+        </td>
+      )}
     </table>
   );
 };

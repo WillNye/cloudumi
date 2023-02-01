@@ -34,8 +34,17 @@ class Group(SoftDeleteMixin, Base):
         "User",
         secondary=GroupMembership.__table__,
         back_populates="groups",
+        lazy="joined",
         foreign_keys=[GroupMembership.user_id, GroupMembership.group_id],
     )
+
+    def dict(self):
+        return dict(
+            id=str(self.id),
+            name=self.name,
+            description=self.description,
+            email=self.email,
+        )
 
     async def write(self):
         async with ASYNC_PG_SESSION() as session:
@@ -73,6 +82,13 @@ class Group(SoftDeleteMixin, Base):
                 )
                 group = await session.execute(stmt)
                 return group.scalars().first()
+
+    @classmethod
+    async def get_by_attr(cls, attribute, value):
+        async with ASYNC_PG_SESSION() as session:
+            stmt = select(Group).filter(getattr(Group, attribute) == value)
+            items = await session.execute(stmt)
+            return items.scalars().first()
 
     @classmethod
     async def create(cls, **kwargs):

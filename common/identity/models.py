@@ -22,6 +22,13 @@ class IdentityRole(Base):
         UniqueConstraint("tenant_id", "role_arn", name="uq_tenant_role_arn"),
     )
 
+    def dict(self):
+        return dict(
+            id=self.id,
+            role_name=self.role_name,
+            role_arn=self.role_arn,
+        )
+
     @classmethod
     async def create(
         cls,
@@ -93,3 +100,12 @@ class IdentityRole(Base):
                 )
                 user = await session.execute(stmt)
                 return user.scalars().first()
+
+    @classmethod
+    async def get_by_attr(cls, attribute, value):
+        async with ASYNC_PG_SESSION() as session:
+            stmt = select(IdentityRole).filter(
+                getattr(IdentityRole, attribute) == value
+            )
+            items = await session.execute(stmt)
+            return items.scalars().first()
