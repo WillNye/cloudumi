@@ -18,15 +18,13 @@ from sqlalchemy.dialects.postgresql import ARRAY, ENUM, UUID
 from sqlalchemy.orm import relationship
 
 from common.config import config
+from common.config.globals import TENANT_STORAGE_BASE_PATH
 from common.lib import noq_json as json
 from common.lib.asyncio import aio_wrapper
+from common.lib.iambic.git import get_iambic_repo_path
 from common.lib.storage import TenantFileStorageHandler
 from common.models import IambicTemplateChange
 from common.pg_core.models import Base, SoftDeleteMixin
-
-TENANT_REPO_DIR = Path(config.get("_global_.tenant_storage.base_path")).expanduser()
-if not TENANT_REPO_DIR:
-    raise EnvironmentError("_global_.tenant_storage.base_path must be set")
 
 log = config.get_logger(__name__)
 
@@ -52,9 +50,7 @@ class IambicRepo:
         self.request_id = request_id
         self.requested_by = requested_by
         self.use_request_branch = use_request_branch
-        self._default_file_path = os.path.join(
-            TENANT_REPO_DIR, f"{self.tenant}/iambic_template_repos/{self.repo_name}"
-        )
+        self._default_file_path = get_iambic_repo_path(self.tenant, self.repo_name)
         self.remote_name = remote_name
         self.repo = None
         self._default_branch_name = None
@@ -73,7 +69,7 @@ class IambicRepo:
             os.path.dirname(self.request_file_path), exist_ok=True
         )
         self.repo.git.worktree(
-            "add", self.request_file_path, f"-b{self.request_branch_name}"
+            "add", "--track", f"-b{self.request_branch_name}", self.request_file_path
         )
         self.repo = Repo(self.request_file_path)
 
@@ -205,7 +201,7 @@ class IambicRepo:
         assert self.request_id
         assert self.requested_by
         return os.path.join(
-            TENANT_REPO_DIR,
+            TENANT_STORAGE_BASE_PATH,
             f"{self.tenant}/iambic_template_user_workspaces/{self.requested_by}/{self.repo_name}/{self.request_branch_name}",
         )
 

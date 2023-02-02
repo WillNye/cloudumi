@@ -24,58 +24,63 @@ request_access_to_resource_block = json.loads(
 	},
 	"blocks": [
 		{
-			"type": "input",
-			"block_id": "app",
-			"element": {
-				"type": "static_select",
-				"options": [
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "Okta Apps",
-							"emoji": true
-						},
-						"value": "NOQ::Okta::App"
-					},
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "Okta Groups",
-							"emoji": true
-						},
-						"value": "NOQ::Okta::Group"
-					},
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "AWS IC Permission Sets",
-							"emoji": true
-						},
-						"value": "NOQ::AWS::IdentityCenter::PermissionSet"
-					},
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "AWS IAM Roles",
-							"emoji": true
-						},
-						"value": "NOQ::AWS::IAM::Role"
-					},
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "Google Groups",
-							"emoji": true
-						},
-						"value": "NOQ::Google::Group"
-					}
-				]
-			},
-			"label": {
-				"type": "plain_text",
-				"text": "Select Application",
-				"emoji": true
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "*Select an App*"
 			}
+		},
+		{
+			"type": "actions",
+			"block_id": "app_block",
+			"elements": [
+				{
+					"type": "static_select",
+					"action_id": "select_app_type",
+					"options": [
+						{
+							"text": {
+								"type": "plain_text",
+								"text": "Okta Apps",
+								"emoji": true
+							},
+							"value": "NOQ::Okta::App"
+						},
+						{
+							"text": {
+								"type": "plain_text",
+								"text": "Okta Groups",
+								"emoji": true
+							},
+							"value": "NOQ::Okta::Group"
+						},
+						{
+							"text": {
+								"type": "plain_text",
+								"text": "AWS IC Permission Sets",
+								"emoji": true
+							},
+							"value": "NOQ::AWS::IdentityCenter::PermissionSet"
+						},
+						{
+							"text": {
+								"type": "plain_text",
+								"text": "AWS IAM Roles",
+								"emoji": true
+							},
+							"value": "NOQ::AWS::IAM::Role"
+						},
+						{
+							"text": {
+								"type": "plain_text",
+								"text": "Google Groups",
+								"emoji": true
+							},
+							"value": "NOQ::Google::Group"
+						}
+					]
+				}
+			]
 		},
 		{
 			"type": "section",
@@ -400,7 +405,7 @@ request_access_to_resource_success = json.loads(
             "type": "section",
             "text": {
                 "type": "plain_text",
-                "text": "Submitting response.",
+                "text": "Submitting response... Please wait.",
                 "emoji": true
             }
         }
@@ -609,62 +614,64 @@ select_desired_permissions_modal = json.loads(
 
 self_service_step_1_option_selection = json.loads(
     """{
-    "type": "modal",
-    "title": {
-        "type": "plain_text",
-        "text": "Noq",
-        "emoji": true
-    },
-    "submit": {
-        "type": "plain_text",
-        "text": "Next",
-        "emoji": true
-    },
-    "close": {
-        "type": "plain_text",
-        "text": "Cancel",
-        "emoji": true
-    },
-    "blocks": [
-        {
-            "type": "input",
-            "element": {
-                "type": "radio_buttons",
-                "options": [
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Request Access",
-                            "emoji": true
-                        },
-                        "value": "request_access_to_identity"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Request Cloud Permissions",
-                            "emoji": true
-                        },
-                        "value": "request_permissions_for_identity"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Create a cloud identity or resource",
-                            "emoji": true
-                        },
-                        "value": "create_cloud_identity_or_resource"
-                    }
-                ],
-                "action_id": "self-service-step-1-option-selection"
-            },
-            "label": {
-                "type": "plain_text",
-                "text": "What would you like to do?",
-                "emoji": true
-            }
-        }
-    ]
+	"type": "modal",
+	"callback_id": "self_service_step_1",
+	"title": {
+		"type": "plain_text",
+		"text": "Noq",
+		"emoji": true
+	},
+	"submit": {
+		"type": "plain_text",
+		"text": "Next",
+		"emoji": true
+	},
+	"close": {
+		"type": "plain_text",
+		"text": "Cancel",
+		"emoji": true
+	},
+	"blocks": [
+		{
+			"type": "input",
+			"block_id": "self_service_step_1_block",
+			"element": {
+				"type": "radio_buttons",
+				"options": [
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "Request Access",
+							"emoji": true
+						},
+						"value": "request_access_to_identity"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "Request Cloud Permissions",
+							"emoji": true
+						},
+						"value": "request_permissions_for_identity"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "Create a cloud identity or resource",
+							"emoji": true
+						},
+						"value": "create_cloud_identity_or_resource"
+					}
+				],
+				"action_id": "self_service_step_1_option_selection"
+			},
+			"label": {
+				"type": "plain_text",
+				"text": "What would you like to do?",
+				"emoji": true
+			}
+		}
+	]
 }"""
 )
 
@@ -867,3 +874,36 @@ select_desired_managed_policies_modal = json.loads(
 	]
 }"""
 )
+
+
+self_service_submission_success = """
+{
+  "type": "modal",
+  "callback_id": "request_success",
+  "title": {
+    "type": "plain_text",
+    "text": "Request Successful"
+  },
+  "blocks": [
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "Your request has been successfully submitted. Click the link below to view more details:"
+      }
+    },
+    {
+      "type": "section",
+      "block_id": "view_details_section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "{{pull_request_url}}"
+      }
+    }
+  ],
+  "submit": {
+    "type": "plain_text",
+    "text": "Close"
+  }
+}
+"""

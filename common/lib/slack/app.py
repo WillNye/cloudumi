@@ -1,6 +1,8 @@
 import datetime
 import logging
 import time
+import zlib
+from collections import defaultdict
 from functools import partial
 from typing import Optional
 from uuid import uuid4
@@ -36,6 +38,8 @@ from common.lib.slack.workflows import (
     request_access_to_resource_block,
     request_access_to_resource_success,
     request_permissions_to_resource_block,
+    self_service_step_1_option_selection,
+    self_service_submission_success,
     unauthorized_change_sample,
 )
 from common.models import IambicTemplateChange
@@ -213,7 +217,7 @@ async def respond_to_ack(body, ack):
 @slack_app.command("/request_access")
 async def handle_request_access_command(ack, body, logger):
     await ack()
-    logger.info(body)
+    # logger.info(body)
 
 
 @slack_app.message("hello")
@@ -248,23 +252,45 @@ async def handle_select_resources_options_tenant(
         f"[?template_type=='NOQ::Google::Group' && contains(properties.name, '{body['value']}')]",
         template_dicts,
     )
-    options = []
+    friendly_names = {
+        "NOQ::AWS::IAM::Group": "AWS IAM Groups",
+        "NOQ::AWS::IAM::ManagedPolicy": "AWS IAM Managed Policies",
+        "NOQ::AWS::IAM::Role": "AWS IAM Roles",
+        "NOQ::AWS::IAM::Users": "AWS IAM Users",
+        "NOQ::AWS::IdentityCenter::PermissionSet": "AWS Permission Sets",
+        "NOQ::Google::Group": "Google Groups",
+        "NOQ::Okta::App": "Okta Apps",
+        "NOQ::Okta::Group": "Okta Groups",
+        "NOQ::Okta::User": "Okta Users",
+    }
+    option_groups = defaultdict(list)
     for typeahead_entry in res:
-        options.append(
+        template_type = typeahead_entry["template_type"]
+        friendly_name = friendly_names.get(template_type, template_type)
+        if not option_groups.get(friendly_name):
+            option_groups[friendly_name] = {
+                "label": {"type": "plain_text", "text": friendly_name},
+                "options": [],
+            }
+
+        smaller_string = f'{typeahead_entry["template_type"]}|{typeahead_entry["repo_name"]}|{typeahead_entry["repo_relative_file_path"]}'
+
+        option_groups[friendly_name]["options"].append(
             {
                 "text": {
                     "type": "plain_text",
                     "text": typeahead_entry["properties"]["name"],
                 },
-                "value": json.dumps(
-                    {
-                        "template_type": typeahead_entry["template_type"],
-                        "file_path": typeahead_entry["file_path"],
-                    }
-                ),
+                # Warning: Slack docs specify the max length of options value is 75 characters
+                # but it is actually larger. Slack will not give you an error if this is exceeded.
+                "value": smaller_string,
             }
         )
-    await ack(options=options)
+    option_groups = [v for _, v in option_groups.items()]
+    option_groups_formatted = {
+        "option_groups": option_groups,
+    }
+    res = await ack(option_groups_formatted)
 
 
 async def message_alert():
@@ -284,7 +310,8 @@ async def message_alert():
 
 @slack_app.event("message")
 async def handle_message_events(body, logger):
-    logger.info(body)
+    pass
+    # logger.info(body)
 
 
 @slack_app.command("/hello-noq")
@@ -344,13 +371,13 @@ async def handle_select_resources_tenant(ack, body, client, logger, tenant):
 
 @slack_app.middleware  # or app.use(log_request)
 async def log_request(logger, body, next):
-    logger.debug(body)
+    # logger.debug(body)
     return await next()
 
 
 def create_log_request_handler(tenant):
     async def _log_request(logger, body, next):
-        logger.debug(body)
+        # logger.debug(body)
         return await next()
 
     return _log_request
@@ -382,12 +409,26 @@ async def handle_request_access_to_resource_tenant(
     ]["value"]
     template_changes = []
     for option in selected_options:
-        value = json.loads(option["value"])
-        template_type = value["template_type"]
-        path = value["file_path"][1:]
-        template = await iambic.google_add_user_to_group(
-            template_type, path, user, duration
-        )
+        value = option["value"].split("|")
+        if len(value) != 3:
+            raise Exception("Invalid selected options value")
+
+        template_type = value[0]
+        repo_name = value[1]
+        path = value[2][1:]
+        if template_type == "NOQ::Google::Group":
+            template = await iambic.google_add_user_to_group(
+                template_type, repo_name, path, user_email, duration
+            )
+        elif template_type == "NOQ::Okta::Group":
+            template = await iambic.okta_add_user_to_group(
+                template_type, repo_name, path, user, duration
+            )
+        # elif template_type == "NOQ::Okta::App":
+        #     template = await iambic.okta_add_user_to_app(
+        #         template_type, repo_name, path, user, duration
+        #     )
+
         template_changes.append(
             IambicTemplateChange(path=path, body=template.get_body())
         )
@@ -464,15 +505,27 @@ async def handle_request_access_to_resource_tenant(
         ),
     )
 
+    view_id = body["view"]["id"]
+    # Update view
+    await client.views_update(
+        view_id=view_id,
+        view=self_service_submission_success.replace(
+            "{{pull_request_url}}", pr_url
+        ),  # TODO change
+    )
+    print("here")  # TODO REMOVE
+
 
 @slack_app.event("user_change")
 async def handle_user_change_events(body, logger):
-    logger.info(body)
+    pass
+    # logger.info(body)
 
 
 @slack_app.event("user_status_changed")
 async def handle_user_status_changed_events(body, logger):
-    logger.info(body)
+    pass
+    # logger.info(body)
 
 
 # slack_app.view("request_access_to_resource")(
@@ -494,6 +547,101 @@ async def request_access_tenant(ack, body, client, tenant):
         # View payload
         view=request_access_to_resource_block,
     )
+
+
+async def request_access_step_1_tenant(ack, body, client, tenant):
+    # Acknowledge the command request
+    await ack()
+    # Call views_open with the built-in client
+    await client.views_open(
+        # Pass a valid trigger_id within 3 seconds of receiving it
+        trigger_id=body["trigger_id"],
+        # View payload
+        view=self_service_step_1_option_selection,
+    )
+
+
+def render_step_2_request_access():
+    return {
+        "type": "modal",
+        "callback_id": "modal_step_2",
+        "title": {"type": "plain_text", "text": "Request Access"},
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Please fill out the form below to request access.",
+                },
+            }
+        ],
+    }
+
+
+def render_step_2_request_new_cloud_permissions():
+    return {
+        "type": "modal",
+        "callback_id": "modal_step_2",
+        "title": {"type": "plain_text", "text": "Cloud Permissions"},
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Please fill out the form below to request new cloud permissions.",
+                },
+            }
+        ],
+    }
+
+
+def render_step_2_create_cloud_identity_or_resource():
+    return {
+        "type": "modal",
+        "callback_id": "modal_step_2",
+        "title": {"type": "plain_text", "text": "Create a Cloud Identity or Resource"},
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Please fill out the form below to create a cloud identity or resource.",
+                },
+            }
+        ],
+    }
+
+
+async def handle_select_app_type(ack, logger, body, client, respond, tenant):
+    # Acknowledge the action to confirm receipt
+    await ack()
+
+    # Get the value of the selected radio button
+    selected_option = ""
+    # Store in a temporary redis key (Really Slack?)
+
+
+async def handle_request_access_step_1_callback(
+    ack, logger, body, client, respond, tenant
+):
+    # Acknowledge the action to confirm receipt
+    await ack()
+
+    # Get the value of the selected radio button
+    selected_option = body["view"]["state"]["values"]["self_service_step_1_block"][
+        "self_service_step_1_option_selection"
+    ]["selected_option"]["value"]
+
+    # Render step 2 conditionally based on the selected option
+    if selected_option == "request_access_to_identity":
+        view = request_access_to_resource_block
+    elif selected_option == "request_permissions_for_identity":
+        view = render_step_2_request_new_cloud_permissions()
+    elif selected_option == "create_cloud_identity_or_resource":
+        view = render_step_2_create_cloud_identity_or_resource()
+    else:
+        raise Exception("Invalid option selected")
+    await ack(response_action="update", view=view)
 
 
 async def handle_user_change_events(body, logger, tenant):
@@ -537,15 +685,25 @@ async def get_slack_app_for_tenant(tenant, enterprise_id, team_id, app_id):
             )
         ],
     )
-    tenant_slack_app.shortcut("request_access")(
+    tenant_slack_app.shortcut("noq")(
         ack=handle_ack,
-        lazy=[partial(request_access_tenant, tenant=tenant)],
+        lazy=[partial(request_access_step_1_tenant, tenant=tenant)],
     )
-    tenant_slack_app.command("/request_access")(
+    tenant_slack_app.command("/noq")(
         ack=handle_ack,
-        lazy=[partial(request_access_tenant, tenant=tenant)],
+        lazy=[partial(request_access_step_1_tenant, tenant=tenant)],
     )
     tenant_slack_app.event("user_change")(
         partial(handle_user_change_events, tenant=tenant)
+    )
+    tenant_slack_app.view("self_service_step_1")(
+        partial(handle_request_access_step_1_callback, tenant=tenant)
+    )
+    tenant_slack_app.view_submission("self_service_step_1")(
+        partial(handle_request_access_step_1_callback, tenant=tenant)
+    )
+
+    tenant_slack_app.action("select_app_type")(
+        partial(handle_select_app_type, tenant=tenant)
     )
     return tenant_slack_app

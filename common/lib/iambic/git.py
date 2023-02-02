@@ -14,6 +14,7 @@ from iambic.google.group.models import GroupMember
 from ruamel.yaml import YAML
 
 from common.config import config, models
+from common.config.globals import TENANT_STORAGE_BASE_PATH
 from common.lib.cache import store_json_results_in_redis_and_s3
 from common.lib.yaml import yaml
 from common.models import IambicRepoDetails
@@ -21,13 +22,18 @@ from common.models import IambicRepoDetails
 IAMBIC_REPOS_BASE_KEY = "iambic_repos"
 
 
+def get_iambic_repo_path(tenant, repo_name):
+    return os.path.join(
+        TENANT_STORAGE_BASE_PATH, f"{tenant}/iambic_template_repos/{repo_name}"
+    )
+
+
 class IambicGit:
     def __init__(self, tenant: str) -> None:
         self.tenant: str = tenant
-        self.global_repo_base_path: str = config.get("_global_.git.repo_base_path")
         self.git_repositories = []
         self.tenant_repo_base_path: str = os.path.expanduser(
-            os.path.join(self.global_repo_base_path, tenant)
+            os.path.join(TENANT_STORAGE_BASE_PATH, tenant)
         )
         os.makedirs(os.path.dirname(self.tenant_repo_base_path), exist_ok=True)
         self.repos = {}
@@ -50,7 +56,7 @@ class IambicGit:
         for repository in self.git_repositories:
             repo_name = repository.repo_name
             access_token = repository.access_token
-            repo_path = os.path.join(self.tenant_repo_base_path, repository.repo_name)
+            repo_path = get_iambic_repo_path(self.tenant, repository.repo_name)
             git_uri = f"https://oauth:{access_token}@github.com/{repo_name}"
             try:
                 # TODO: async
@@ -98,7 +104,11 @@ class IambicGit:
             template_dicts = []
             for template in self.templates:
                 d = json.loads(template.json())
+                d["repo_name"] = repo_name
                 d["file_path"] = d["file_path"].replace(self.tenant_repo_base_path, "")
+                d["repo_relative_file_path"] = d["file_path"].replace(
+                    "/" + repo_name, ""
+                )
                 template_dicts.append(d)
             # jmespath.search("[?template_type=='NOQ::Google::Group' && contains(properties.name, 'leg')]", template_dicts)
             redis_key = config.get_tenant_specific_key(
@@ -137,27 +147,32 @@ class IambicGit:
         errors = []
         await self.clone_or_pull_git_repos()
 
-    async def retrieve_iambic_template(self, template_path: str):
+    async def retrieve_iambic_template(self, repo_name: str, template_path: str):
         await self.set_git_repositories()
         for repository in self.git_repositories:
-            if not template_path.startswith(repository.repo_name):
+            if not repository.repo_name == repo_name:
                 continue
-            full_path = os.path.join(self.tenant_repo_base_path, template_path)
+            full_path = os.path.join(
+                self.tenant_repo_base_path, repo_name, template_path
+            )
             if not os.path.exists(full_path):
                 continue
-
             return load_templates([full_path])
         raise Exception("Template not found")
 
     async def google_add_user_to_group(
-        self, template_type: str, file_path: str, user_email: str, duration: int
+        self,
+        template_type: str,
+        repo_name: str,
+        file_path: str,
+        user_email: str,
+        duration: int,
     ) -> None:
         await self.clone_or_pull_git_repos()
         errors = []
         if template_type != "NOQ::Google::Group":
             raise Exception("Template type is not a Google Group")
-        await self.clone_or_pull_git_repos()
-        templates = await self.retrieve_iambic_template(file_path)
+        templates = await self.retrieve_iambic_template(repo_name, file_path)
         if not templates:
             raise Exception("Template not found")
         template = templates[0]
@@ -168,7 +183,7 @@ class IambicGit:
             email=user_email,
             expires_at=expires_at,
         )
-        if duration:
+        if duration and duration != "no_expire":
             group_member.expires_at = f"in {duration} seconds"
 
         template.properties.members.append(group_member)
