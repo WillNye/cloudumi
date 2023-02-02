@@ -469,8 +469,10 @@ class BaseHandler(TornadoRequestHandler):
 
         # if tenant in ["localhost", "127.0.0.1"] and not self.user:
         # Check for development mode and a configuration override that specify the user and their groups.
-        if config.get("_global_.development") and config.get_tenant_specific_key(
-            "_development_user_override", tenant
+        if (
+            not self.user
+            and config.get("_global_.development")
+            and config.get_tenant_specific_key("_development_user_override", tenant)
         ):
             self.user = config.get_tenant_specific_key(
                 "_development_user_override", tenant
@@ -841,8 +843,10 @@ class BaseHandler(TornadoRequestHandler):
     async def set_groups(self):
         tenant = self.get_tenant_name()
 
-        if config.get("_global_.development") and config.get_tenant_specific_key(
-            "_development_groups_override", tenant
+        if (
+            not self.groups
+            and config.get("_global_.development")
+            and config.get_tenant_specific_key("_development_groups_override", tenant)
         ):
             self.groups = config.get_tenant_specific_key(
                 "_development_groups_override", tenant
