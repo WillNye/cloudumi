@@ -1,86 +1,59 @@
-import { useAuth } from 'core/Auth';
-import { FC, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
-import * as Yup from 'yup';
-import { yupResolver } from '@hookform/resolvers/yup';
-import { PasswordMeter } from 'shared/elements/PasswordMeter';
+import { FC, useCallback, useMemo, useState } from 'react';
 import css from './ProfileSettings.module.css';
 import { Input } from 'shared/form/Input';
 import { Button } from 'shared/elements/Button';
-
-const changePasswordSchema = Yup.object().shape({
-  oldPassword: Yup.string().required('Required'),
-  newPassword: Yup.string().required('Required'),
-  confirmNewPassword: Yup.string()
-    .required('Required')
-    .oneOf([Yup.ref('newPassword')], 'Passwords must match')
-});
+import { PROFILE_SETTINGS_TABS } from './constants';
+import ChangePassword from './components/ChangePassword';
+import UserDetails from './components/UserDetails';
 
 export const ProfileSettings: FC = () => {
-  const { user } = useAuth();
+  const [currentTab, setCurrentTab] = useState<PROFILE_SETTINGS_TABS>(
+    PROFILE_SETTINGS_TABS.DETAILS
+  );
 
-  const {
-    register,
-    watch,
-    handleSubmit,
-    formState: { isSubmitting, isValid, errors, touchedFields }
-  } = useForm({
-    mode: 'onChange',
-    reValidateMode: 'onChange',
-    resolver: yupResolver(changePasswordSchema),
-    defaultValues: {
-      oldPassword: '',
-      newPassword: '',
-      confirmNewPassword: ''
+  const content = useMemo(() => {
+    if (currentTab === PROFILE_SETTINGS_TABS.CHANGE_PASSWORD) {
+      return <ChangePassword />;
     }
-  });
 
-  const passwordValue = watch('newPassword');
-
-  const onSubmit = useCallback(async ({ oldPassword, newPassword }) => {
-    // TODO: Update password api route
-  }, []);
+    return <UserDetails />;
+  }, [currentTab]);
 
   return (
-    <>
-      <div className={css.container}>
-        <h4>Change Password</h4>
-        <br />
-
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <Input
-            type="password"
-            autoCapitalize="none"
-            autoCorrect="off"
-            {...register('oldPassword')}
-          />
-          <br />
-
-          <Input
-            type="password"
-            autoCapitalize="none"
-            autoCorrect="off"
-            {...register('newPassword')}
-          />
-          <PasswordMeter value={passwordValue} />
-          <br />
-
-          <Input
-            type="password"
-            autoCapitalize="none"
-            autoCorrect="off"
-            {...register('confirmNewPassword')}
-          />
-          {errors?.confirmNewPassword && touchedFields.confirmNewPassword && (
-            <p>{errors.confirmNewPassword.message}</p>
-          )}
-          <br />
-          <Button type="submit" disabled={isSubmitting || !isValid}>
-            {isSubmitting ? 'Resetting Password...' : 'Reset Password'}
-          </Button>
-        </form>
+    <div className={css.container}>
+      <p>
+        Manage and customize your personal account information. Update your
+        profile details, change your password, set notifications preferences,
+        and and manage your privacy preferences.
+      </p>
+      <br />
+      <div>
+        <nav className={css.nav}>
+          <ul className={css.navList}>
+            <li
+              className={`${css.navItem} ${
+                currentTab === PROFILE_SETTINGS_TABS.DETAILS && css.isActive
+              }`}
+              onClick={() => setCurrentTab(PROFILE_SETTINGS_TABS.DETAILS)}
+            >
+              <div className={css.text}>User Details</div>
+            </li>
+            <li
+              className={`${css.navItem} ${
+                currentTab === PROFILE_SETTINGS_TABS.CHANGE_PASSWORD &&
+                css.isActive
+              }`}
+              onClick={() =>
+                setCurrentTab(PROFILE_SETTINGS_TABS.CHANGE_PASSWORD)
+              }
+            >
+              <div className={css.text}>Change Password</div>
+            </li>
+          </ul>
+        </nav>
       </div>
-    </>
+      {content}
+    </div>
   );
 };
 

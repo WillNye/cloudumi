@@ -1,16 +1,10 @@
 .container {
-  width: 95%;
+  width: 100%;
   margin: auto;
   height: 100%;
   display: flex;
   flex-direction: column;
   padding-top: var(--spacing-lg);
-
-  .menu {
-    border: solid 2px var(--gray-200);
-    padding: var(--spacing-md);
-    border-radius: var(--border-radius-lg);
-  }
 
   .nav {
     display: flex;

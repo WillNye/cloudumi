@@ -6,23 +6,9 @@
   flex-direction: column;
   padding-top: var(--spacing-lg);
 
-  .card {
-    padding: var(--spacing-lg);
-    margin: var(--spacing-md) 0;
-    background-color: var(--gray-700);
-    border-radius: var(--border-radius-lg);
-    max-width: 500px;
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-
-    img {
-      padding-right: var(--spacing-md);
-    }
-  }
-
   .description {
-    padding: var(--spacing-lg) 0;
+    padding-top: var(--spacing-sm);
+    padding-bottom: var(--spacing-lg);
   }
 
   .header {
@@ -37,5 +23,51 @@
   .text {
     color: var(--gray-300);
     padding: 15px 0px;
+  }
+
+  .content {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: row;
+    height: 100%;
+  }
+
+  .outlet {
+    width: 100%;
+    height: 100%;
+    padding: 0 var(--spacing-lg);
+  }
+
+  .sideNav {
+    width: 320px;
+    height: 95%;
+    margin-bottom: var(--spacing-lg);
+    border-radius: var(--border-radius-lg);
+    background-color: var(--gray-700);
+  }
+
+  .nav {
+    height: 100%;
+  }
+
+  .navList {
+    list-style: none;
+    margin: 0;
+    padding: var(--spacing-sm);
+    white-space: nowrap;
+  }
+
+  .navItem {
+    margin: 5px 0;
+    padding: var(--spacing-sm);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--blue-200);
+    }
+
+    &.active {
+      color: var(--blue-400);
+    }
   }
 }

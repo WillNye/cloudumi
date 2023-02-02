@@ -2,12 +2,12 @@ import { useMemo } from 'react';
 
 import { Table } from 'shared/elements/Table';
 
-import { groupsMockData } from '../mockData';
-import { groupsTableColumns } from '../constants';
+import { groupsMockData } from '../../mockData';
+import { groupsTableColumns } from '../../constants';
 
-import css from './Groups.module.css';
+import css from './GroupsManagement.module.css';
 
-const Groups = () => {
+const GroupsManagement = () => {
   const tableRows = useMemo(() => {
     return groupsMockData.map(item => {
       return {
@@ -26,4 +26,4 @@ const Groups = () => {
   );
 };
 
-export default Groups;
+export default GroupsManagement;

@@ -2,12 +2,12 @@ import { useMemo } from 'react';
 
 import { Table } from 'shared/elements/Table';
 
-import { usersMockData } from '../mockData';
-import { userTableColumns } from '../constants';
+import { usersMockData } from '../../mockData';
+import { userTableColumns } from '../../constants';
 
-import css from './Users.module.css';
+import css from './UsersManagement.module.css';
 
-const Users = () => {
+const UsersManagement = () => {
   const tableRows = useMemo(() => {
     return usersMockData.map(item => {
       return {
@@ -26,4 +26,4 @@ const Users = () => {
   );
 };
 
-export default Users;
+export default UsersManagement;

@@ -1,3 +1,8 @@
+export enum ACCOUNT_SETTINGS_TABS {
+  USERS = 'USERS',
+  GROUPS = 'GROUPS'
+}
+
 export const userTableColumns = [
   {
     Header: 'Email',

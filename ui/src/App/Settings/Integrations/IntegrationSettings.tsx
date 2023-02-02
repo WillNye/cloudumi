@@ -2,9 +2,10 @@ import { Button } from 'shared/elements/Button';
 import styles from './IntegrationSettings.module.css';
 import { INTEGRATIONS_TABS } from './constants';
 import { useMemo, useState } from 'react';
-import NotificationSettings from './NotificationSettings';
-import AuthenticationSettings from './AuthenticationSettings';
-import CloudProviderSettings from './CloudProviderSettings';
+import NotificationSettings from './components/NotificationSettings';
+import AuthenticationSettings from './components/AuthenticationSettings';
+import CloudProviderSettings from './components/CloudProviderSettings';
+import IambicSettings from './components/IambicSettings';
 
 const IntegrationSettings = () => {
   const [currentTab, setCurrentTab] = useState<INTEGRATIONS_TABS>(
@@ -20,29 +21,29 @@ const IntegrationSettings = () => {
       return <CloudProviderSettings />;
     }
 
+    if (currentTab === INTEGRATIONS_TABS.IAMBIC) {
+      return <IambicSettings />;
+    }
+
     return <NotificationSettings />;
   }, [currentTab]);
 
   return (
     <div className={styles.container}>
-      <div className={styles.menu}>
-        <Button color="secondary">Authentication</Button>
-        <Button color="secondary" variant="text">
-          Cloud Provider
-        </Button>
-        <Button color="secondary" variant="text">
-          Authentication
-        </Button>
-      </div>
+      <p>
+        Set up Single Sign-On (SSO) and System for Cross-domain Identity
+        Management (SCIM) integrations, receive notifications, and connect with
+        cloud providers for secure and streamlined operations.
+      </p>
+      <br />
 
       <div>
         <nav className={styles.nav}>
           <ul className={styles.navList}>
             <li
               className={`${styles.navItem} ${
-                currentTab === INTEGRATIONS_TABS.AUTHENTICATION
-                  ? styles.isActive
-                  : ''
+                currentTab === INTEGRATIONS_TABS.AUTHENTICATION &&
+                styles.isActive
               }`}
               onClick={() => setCurrentTab(INTEGRATIONS_TABS.AUTHENTICATION)}
             >
@@ -50,9 +51,8 @@ const IntegrationSettings = () => {
             </li>
             <li
               className={`${styles.navItem} ${
-                currentTab === INTEGRATIONS_TABS.CLOUD_PROVIDER
-                  ? styles.isActive
-                  : ''
+                currentTab === INTEGRATIONS_TABS.CLOUD_PROVIDER &&
+                styles.isActive
               }`}
               onClick={() => setCurrentTab(INTEGRATIONS_TABS.CLOUD_PROVIDER)}
             >
@@ -60,13 +60,20 @@ const IntegrationSettings = () => {
             </li>
             <li
               className={`${styles.navItem} ${
-                currentTab === INTEGRATIONS_TABS.NOTIFICATIONS
-                  ? styles.isActive
-                  : ''
+                currentTab === INTEGRATIONS_TABS.NOTIFICATIONS &&
+                styles.isActive
               }`}
               onClick={() => setCurrentTab(INTEGRATIONS_TABS.NOTIFICATIONS)}
             >
               <div className={styles.text}>Notifications</div>
+            </li>
+            <li
+              className={`${styles.navItem} ${
+                currentTab === INTEGRATIONS_TABS.IAMBIC && styles.isActive
+              }`}
+              onClick={() => setCurrentTab(INTEGRATIONS_TABS.IAMBIC)}
+            >
+              <div className={styles.text}>Iambic</div>
             </li>
           </ul>
         </nav>

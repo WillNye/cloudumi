@@ -13,10 +13,11 @@ export const Settings: FC = () => (
       <title>Settings</title>
     </Helmet>
     <Routes>
-      <Route path="/" element={<SettingsMenu />} />
-      <Route path="/integrations" element={<Integrations />} />
-      <Route path="/profile" element={<ProfileSettings />} />
-      <Route path="/accounts/*" element={<Accounts />} />
+      <Route path="/" element={<SettingsMenu />}>
+        <Route path="/" element={<ProfileSettings />} />
+        <Route path="/integrations" element={<Integrations />} />
+        <Route path="/accounts" element={<Accounts />} />
+      </Route>
       <Route path="*" element={<NotFound fullPage />} />
     </Routes>
   </>
