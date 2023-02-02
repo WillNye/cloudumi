@@ -98,7 +98,9 @@ async def sync_aws_accounts(tenant_name: str):
     config_template = await get_config_data_for_repo(tenant.name)
 
     if not config_template:
-        raise ValueError("Iambic config template could not be loaded")
+        raise ValueError(
+            "Iambic config template could not be loaded; check your tenant configuration - you should have an iambic_repos key defined."
+        )
 
     aws_accounts = config_template.aws.accounts
     known_accounts = await AWSAccount.get_by_tenant(tenant)
@@ -166,7 +168,7 @@ async def sync_role_access(tenant_name: str):
                                 type=RoleAccessTypes.credential_access,
                                 identity_role=identity_role,
                                 cli_only=False,
-                                expiration=access_rule.expiration,
+                                expiration=access_rule.expires_at,
                                 user=user,
                             )
                         for group_name in access_rule.groups:
