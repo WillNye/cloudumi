@@ -1,7 +1,7 @@
 """migration
 
 Revision ID: b2877e6bce73
-Revises: 52712239dae8
+Revises: ea58c8598995
 Create Date: 2023-01-24 14:32:26.133570
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "b2877e6bce73"
-down_revision = "52712239dae8"
+down_revision = "ea58c8598995"
 branch_labels = None
 depends_on = None
 

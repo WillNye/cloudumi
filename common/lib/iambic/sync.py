@@ -14,7 +14,7 @@ from common.groups.models import Group
 from common.iambic_request.models import IambicRepo
 from common.identity.models import IdentityRole
 from common.lib.iambic.util import effective_accounts
-from common.models import IambicRepoConfig
+from common.models import IambicRepoDetails
 from common.role_access.models import RoleAccess, RoleAccessTypes
 from common.tenants.models import Tenant
 from common.users.models import User
@@ -26,7 +26,7 @@ async def get_data_for_template_type(
     tenant: str, template_type: str
 ) -> List[BaseTemplate]:
     iambic_repo_config = (
-        ModelAdapter(IambicRepoConfig).load_config("iambic_repos", tenant).model
+        ModelAdapter(IambicRepoDetails).load_config("iambic_repos", tenant).model
     )
     if not iambic_repo_config:
         return []
@@ -41,7 +41,7 @@ async def get_data_for_template_type(
 
 async def get_config_data_for_repo(tenant: str):
     iambic_repo_config = (
-        ModelAdapter(IambicRepoConfig).load_config("iambic_repos", tenant).model
+        ModelAdapter(IambicRepoDetails).load_config("iambic_repos", tenant).model
     )
     if not iambic_repo_config:
         return None
@@ -77,7 +77,7 @@ async def get_arn_to_role_template_mapping(
         if aws_account is None:
             # TODO: how to handle?
             continue
-        role_arn = get_role_arn(aws_account.number, role_template.identifier)
+        role_arn = get_role_arn(aws_account.account_id, role_template.identifier)
         arn_mapping[
             role_arn
         ] = role_template  # role_templates might represent multiple arns
@@ -111,7 +111,7 @@ async def sync_aws_accounts(tenant_name: str):
     ]
 
     for remove_account in remove_accounts:
-        await AWSAccount.delete(tenant, remove_account.number)
+        await AWSAccount.delete(tenant, remove_account.account_id)
 
     for account in aws_accounts:
         await AWSAccount.create(
@@ -157,7 +157,7 @@ async def sync_role_access(tenant_name: str):
                 effective_aws_accounts = effective_accounts(access_rule, aws_accounts)
                 for effective_aws_account in effective_aws_accounts:
                     role_arn = get_role_arn(
-                        effective_aws_account.number, role_template.identifier
+                        effective_aws_account.account_id, role_template.identifier
                     )
                     identity_role = await IdentityRole.get_by_role_arn(tenant, role_arn)
                     if identity_role:

@@ -15,7 +15,7 @@ def effective_accounts(
         included_accounts = [
             aws_account
             for aws_account in aws_accounts
-            if aws_account.number in resource.included_accounts
+            if aws_account.account_id in resource.included_accounts
             or aws_account.name in resource.included_accounts
         ]
     if resource.excluded_accounts == ["*"]:
@@ -24,7 +24,7 @@ def effective_accounts(
         excluded_accounts = [
             aws_account
             for aws_account in aws_accounts
-            if aws_account.number in resource.excluded_accounts
+            if aws_account.account_id in resource.excluded_accounts
             or aws_account.name in resource.excluded_accounts
         ]
 

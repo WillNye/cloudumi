@@ -13,20 +13,22 @@ class AWSAccount(Base):
 
     id = Column(Integer(), primary_key=True, autoincrement=True)
     name = Column(String)
-    number = Column(String, index=True)
+    account_id = Column(String, index=True)
     tenant_id = Column(ForeignKey("tenant.id"))
 
     tenant = relationship(
-        "Tenant", order_by=number, primaryjoin="Tenant.id == AWSAccount.tenant_id"
+        "Tenant", order_by=account_id, primaryjoin="Tenant.id == AWSAccount.tenant_id"
     )
 
-    __table_args__ = (UniqueConstraint("tenant_id", "number", name="uq_tenant_number"),)
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "account_id", name="uq_tenant_account_id"),
+    )
 
     def dict(self):
         return dict(
             id=self.id,
             name=self.name,
-            number=self.number,
+            account_id=self.account_id,
         )
 
     @classmethod
@@ -34,7 +36,7 @@ class AWSAccount(Base):
         upsert_stmt_data = {
             "tenant_id": tenant.id,
             "name": name,
-            "number": number,
+            "account_id": number,
         }
         insert_stmt_data = upsert_stmt_data.copy()
 
@@ -42,7 +44,7 @@ class AWSAccount(Base):
             async with session.begin():
                 insert_stmt = insert(cls).values(insert_stmt_data)
                 insert_stmt = insert_stmt.on_conflict_do_update(
-                    index_elements=["tenant_id", "number"],
+                    index_elements=["tenant_id", "account_id"],
                     set_=upsert_stmt_data,
                 )
                 await session.execute(insert_stmt)
@@ -54,7 +56,7 @@ class AWSAccount(Base):
                 session.execute(
                     delete(AWSAccount).where(
                         and_(
-                            AWSAccount.number == account_number,
+                            AWSAccount.account_id == account_number,
                             AWSAccount.tenant == tenant,
                         )
                     )
