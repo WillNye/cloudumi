@@ -3,13 +3,13 @@ from typing import List
 import tornado.escape
 import tornado.web
 
-from common.handlers.base import BaseAdminHandler
+from common.handlers.base import BaseHandler
 from common.lib.filter import filter_data_with_sqlalchemy
 from common.models import WebResponse
 from common.role_access.models import RoleAccess
 
 
-class ManageRoleAccessHandler(BaseAdminHandler):
+class ManageRoleAccessHandler(BaseHandler):
     async def post(self):
         data = tornado.escape.json_decode(self.request.body)
         tenant_name = self.ctx.tenant
