@@ -57,7 +57,7 @@ request_access_to_resource_block = json.loads(
 						{
 							"text": {
 								"type": "plain_text",
-								"text": "AWS IC Permission Sets",
+								"text": "AWS Identity Center Permission Sets",
 								"emoji": true
 							},
 							"value": "NOQ::AWS::IdentityCenter::PermissionSet"
@@ -96,7 +96,7 @@ request_access_to_resource_block = json.loads(
 					"type": "plain_text",
 					"text": "Select resources"
 				},
-				"min_query_length": 3
+				"min_query_length": 1
 			}
 		},
 		{
@@ -448,7 +448,7 @@ select_desired_permissions_modal = json.loads(
                     "type": "plain_text",
                     "text": "Select identities"
                 },
-                "min_query_length": 3
+                "min_query_length": 1
             }
         },
         {
@@ -465,7 +465,7 @@ select_desired_permissions_modal = json.loads(
                     "type": "plain_text",
                     "text": "Select resources"
                 },
-                "min_query_length": 3
+                "min_query_length": 1
             }
         },
         {
@@ -770,7 +770,7 @@ select_desired_managed_policies_modal = json.loads(
 					"type": "plain_text",
 					"text": "Select identities"
 				},
-				"min_query_length": 3
+				"min_query_length": 1
 			}
 		},
 		{
@@ -787,7 +787,7 @@ select_desired_managed_policies_modal = json.loads(
 					"type": "plain_text",
 					"text": "Select managed policies"
 				},
-				"min_query_length": 3
+				"min_query_length": 1
 			}
 		},
 		{

@@ -12,6 +12,7 @@ from iambic.core.parser import load_templates
 from iambic.core.utils import gather_templates
 from iambic.google.group.models import GroupMember
 from iambic.okta.group.models import OktaGroupTemplate, UserSimple
+from iambic.okta.models import Assignment
 from ruamel.yaml import YAML
 
 from common.config import config, models
@@ -160,6 +161,34 @@ class IambicGit:
                 continue
             return load_templates([full_path])
         raise Exception("Template not found")
+
+    async def okta_add_user_to_app(
+        self,
+        template_type: str,
+        repo_name: str,
+        file_path: str,
+        user_email: str,
+        duration: int,
+    ):
+        await self.clone_or_pull_git_repos()
+        if template_type != "NOQ::Okta::App":
+            raise Exception("Template type is not a Okta App")
+        templates = await self.retrieve_iambic_template(repo_name, file_path)
+        if not templates:
+            raise Exception("Template not found")
+        template = templates[0]
+        if template.template_type != template_type:
+            raise Exception("Template type does not match")
+        expires_at = None
+        assignment = Assignment(
+            user=user_email,
+            expires_at=expires_at,
+        )
+        if duration and duration != "no_expire":
+            assignment.expires_at = f"in {duration} seconds"
+
+        template.properties.assignments.append(assignment)
+        return template
 
     async def okta_add_user_to_group(
         self,

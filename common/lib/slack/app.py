@@ -253,6 +253,7 @@ async def handle_select_resources_options_tenant(
         redis_key=redis_key,
         tenant=tenant,
     )
+    # TODO: we need case insensitive search which for some god awful reason jmespath doesn't support
     if slack_app_type:
         # Old filter: f"[?template_type=='NOQ::Google::Group' && contains(properties.name, '{body['value']}')]",
         res = jmespath.search(
@@ -439,7 +440,7 @@ async def handle_request_access_to_resource_tenant(
             )
         elif template_type == "NOQ::Okta::App":
             template = await iambic.okta_add_user_to_app(
-                template_type, repo_name, path, user, duration
+                template_type, repo_name, path, user_email, duration
             )
 
         template_changes.append(
