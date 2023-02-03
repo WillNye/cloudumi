@@ -26,6 +26,7 @@ from common.iambic_request.request_crud import create_request
 from common.iambic_request.utils import get_iambic_repo
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.iambic.git import IambicGit
+from common.lib.redis import RedisHandler
 from common.lib.slack.models import (
     BOTS_TABLE,
     INSTALLATIONS_TABLE,
@@ -237,6 +238,12 @@ async def handle_select_resources_options_tenant(
     # TODO: we must figure out the provider so we know what to Typahead against
     # But the provider is empty
     provider = body["view"]["state"]  # ['values'].get("provider_dropdown")
+
+    red = RedisHandler().redis_sync(tenant)
+    token = body["token"]
+    hash = body["view"]["hash"]
+    slack_app_type = red.get(f"{tenant}_SLACK_APP_TYPE_{token}_{hash}")
+    red.get(f"{tenant}_SLACK_APP_TYPE_{token}_{hash}")
     redis_key = config.get_tenant_specific_key(
         "cache_organization_structure.redis.key.org_structure_key",
         tenant,
@@ -246,12 +253,18 @@ async def handle_select_resources_options_tenant(
         redis_key=redis_key,
         tenant=tenant,
     )
-    # Old filter: f"[?template_type=='NOQ::Google::Group' && contains(properties.name, '{body['value']}')]",
-    res = jmespath.search(
-        # f"[?contains(properties.name, '{body['value']}')]",
-        f"[?template_type=='NOQ::Google::Group' && contains(properties.name, '{body['value']}')]",
-        template_dicts,
-    )
+    if slack_app_type:
+        # Old filter: f"[?template_type=='NOQ::Google::Group' && contains(properties.name, '{body['value']}')]",
+        res = jmespath.search(
+            # f"[?contains(properties.name, '{body['value']}')]",
+            f"[?template_type=='{slack_app_type}' && contains(properties.name, '{body['value']}')]",
+            template_dicts,
+        )
+    else:
+        res = jmespath.search(
+            f"[?contains(properties.name, '{body['value']}')]",
+            template_dicts,
+        )
     friendly_names = {
         "NOQ::AWS::IAM::Group": "AWS IAM Groups",
         "NOQ::AWS::IAM::ManagedPolicy": "AWS IAM Managed Policies",
@@ -422,15 +435,15 @@ async def handle_request_access_to_resource_tenant(
             )
         elif template_type == "NOQ::Okta::Group":
             template = await iambic.okta_add_user_to_group(
+                template_type, repo_name, path, user_email, duration
+            )
+        elif template_type == "NOQ::Okta::App":
+            template = await iambic.okta_add_user_to_app(
                 template_type, repo_name, path, user, duration
             )
-        # elif template_type == "NOQ::Okta::App":
-        #     template = await iambic.okta_add_user_to_app(
-        #         template_type, repo_name, path, user, duration
-        #     )
 
         template_changes.append(
-            IambicTemplateChange(path=path, body=template.get_body())
+            IambicTemplateChange(path=path, body=template.get_body(exclude_unset=False))
         )
     if not template_changes:
         await respond(
@@ -615,10 +628,15 @@ def render_step_2_create_cloud_identity_or_resource():
 async def handle_select_app_type(ack, logger, body, client, respond, tenant):
     # Acknowledge the action to confirm receipt
     await ack()
-
+    red = RedisHandler().redis_sync(tenant)
+    # Token is unique to the user and workspace
+    token = body["token"]
+    # Hash is
+    hash = body["view"]["hash"]
     # Get the value of the selected radio button
-    selected_option = ""
+    selected_option = body["actions"][0]["selected_option"]["value"]
     # Store in a temporary redis key (Really Slack?)
+    red.setex(f"{tenant}_SLACK_APP_TYPE_{token}_{hash}", 300, selected_option)
 
 
 async def handle_request_access_step_1_callback(
@@ -706,4 +724,5 @@ async def get_slack_app_for_tenant(tenant, enterprise_id, team_id, app_id):
     tenant_slack_app.action("select_app_type")(
         partial(handle_select_app_type, tenant=tenant)
     )
+    tenant_slack_app.view("request_success")(handle_ack)
     return tenant_slack_app

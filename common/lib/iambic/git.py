@@ -11,6 +11,7 @@ from iambic.core.parser import load_templates
 # TODO: Still need to get Iambic installed in the SaaS. This is a localhost hack.
 from iambic.core.utils import gather_templates
 from iambic.google.group.models import GroupMember
+from iambic.okta.group.models import OktaGroupTemplate, UserSimple
 from ruamel.yaml import YAML
 
 from common.config import config, models
@@ -159,6 +160,34 @@ class IambicGit:
                 continue
             return load_templates([full_path])
         raise Exception("Template not found")
+
+    async def okta_add_user_to_group(
+        self,
+        template_type: str,
+        repo_name: str,
+        file_path: str,
+        user_email: str,
+        duration: int,
+    ) -> None:
+        await self.clone_or_pull_git_repos()
+        if template_type != "NOQ::Okta::Group":
+            raise Exception("Template type is not a Okta Group")
+        templates = await self.retrieve_iambic_template(repo_name, file_path)
+        if not templates:
+            raise Exception("Template not found")
+        template = templates[0]
+        if template.template_type != template_type:
+            raise Exception("Template type does not match")
+        expires_at = None
+        group_member = UserSimple(
+            username=user_email,
+            expires_at=expires_at,
+        )
+        if duration and duration != "no_expire":
+            group_member.expires_at = f"in {duration} seconds"
+
+        template.properties.members.append(group_member)
+        return template
 
     async def google_add_user_to_group(
         self,
