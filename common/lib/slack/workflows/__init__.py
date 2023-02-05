@@ -1,5 +1,7 @@
 import json
 
+from humanfriendly import format_timespan
+
 request_permissions_to_resource_block = None  # TODO
 
 request_access_to_resource_block = json.loads(
@@ -907,3 +909,81 @@ self_service_submission_success = """
   }
 }
 """
+
+
+def self_service_permissions_review_blocks(
+    requester, resources, duration, approvers, justification, pull_request_url
+):
+
+    if duration == "no_expire":
+        duration_friendly = "Forever"
+    else:
+        duration_friendly = format_timespan(int(duration))
+
+    resource_text = ""
+    for resource_type, resource_names in resources.items():
+        resource_type = resource_type.replace("NOQ::", "").replace("::", " ")
+        resource_text += f"{resource_type}: {', '.join(resource_names)}\n"
+
+    return [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": (
+                    "An access request is awaiting your review. "
+                    f"Please review it at {pull_request_url}"
+                ),
+            },
+        },
+        {
+            "type": "section",
+            "fields": [
+                {"type": "mrkdwn", "text": f"*Requester:*\n {requester}"},
+                {"type": "mrkdwn", "text": f"*Requested Resources:*\n {resource_text}"},
+            ],
+        },
+        {
+            "type": "section",
+            "fields": [
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Length of Access:*\n {duration_friendly}",
+                },
+                {"type": "mrkdwn", "text": f"*Approvers:*\n {approvers}"},
+            ],
+        },
+        {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": f"*Justification:*\n {justification}"},
+        },
+        # TODO: Allow approvers to approve or deny the request within Slack
+        # Caveat: Requests with changes to multiple files will require different
+        # approval flows
+        # {
+        #     "type": "actions",
+        #     "block_id": "approval_denial",
+        #     "elements": [
+        #         {
+        #             "type": "button",
+        #             "text": {
+        #                 "type": "plain_text",
+        #                 "text": "Approve"
+        #             },
+        #             "style": "primary",
+        #             "value": "approve",
+        #             "action_id": "approve_request"
+        #         },
+        #         {
+        #             "type": "button",
+        #             "text": {
+        #                 "type": "plain_text",
+        #                 "text": "Deny"
+        #             },
+        #             "style": "danger",
+        #             "value": "deny",
+        #             "action_id": "deny_request"
+        #         }
+        #     ]
+        # }
+    ]
