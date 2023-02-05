@@ -1,14 +1,12 @@
 import datetime
 import logging
 import time
-import zlib
 from collections import defaultdict
 from functools import partial
 from typing import Optional
 from uuid import uuid4
 
-import jmespath
-import ujson as json
+import jq
 from databases import Database
 from slack_bolt.async_app import AsyncApp
 from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
@@ -19,10 +17,8 @@ from slack_sdk.oauth.installation_store.async_installation_store import (
 from slack_sdk.oauth.state_store.async_state_store import AsyncOAuthStateStore
 from sqlalchemy import MetaData, Table, and_, desc
 
-from api.handlers.v2.typeahead import get_matching_identity_typahead
 from common.config import config, globals
 from common.iambic_request.models import GitHubPullRequest
-from common.iambic_request.request_crud import create_request
 from common.iambic_request.utils import get_iambic_repo
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.iambic.git import IambicGit
@@ -31,17 +27,14 @@ from common.lib.slack.models import (
     BOTS_TABLE,
     INSTALLATIONS_TABLE,
     OAUTH_STATES_TABLE,
-    get_slack_bot,
-    get_slack_bot_authorization,
 )
 from common.lib.slack.workflows import (
-    remove_unused_identities_sample,
     request_access_to_resource_block,
     request_access_to_resource_success,
     request_permissions_to_resource_block,
+    self_service_permissions_review_blocks,
     self_service_step_1_option_selection,
     self_service_submission_success,
-    unauthorized_change_sample,
 )
 from common.models import IambicTemplateChange
 
@@ -210,31 +203,19 @@ slack_app = AsyncApp(
     process_before_response=True,
 )
 
-
-async def respond_to_ack(body, ack):
-    await ack({"response_action": "clear"})
-
-
-@slack_app.command("/request_access")
-async def handle_request_access_command(ack, body, logger):
-    await ack()
-    # logger.info(body)
-
-
-@slack_app.message("hello")
-async def message_hello(message, say):
-    # say() sends a message to the channel where the event was triggered
-    await say(f"Hey there <@{message['user']}>!")
-
-
-async def message_hello_tenant(body, client, logger, respond, say, context, tenant):
-    # say() sends a message to the channel where the event was triggered
-    await say(f"Hey there {tenant}!")
-
-
 async def handle_select_resources_options_tenant(
-    ack, respond, body, client, logger, tenant
+    ack, body, tenant
 ):
+    """Handle the action of selecting resource options in a slack app dialog.
+
+    Arguments:
+        ack (func): Callback function to acknowledge the request.
+        body (dict): The request payload.
+        tenant (str): The tenant id.
+
+    Returns:
+        None: This function returns nothing.
+    """
     # TODO: we must figure out the provider so we know what to Typahead against
     # But the provider is empty
     provider = body["view"]["state"]  # ['values'].get("provider_dropdown")
@@ -253,19 +234,13 @@ async def handle_select_resources_options_tenant(
         redis_key=redis_key,
         tenant=tenant,
     )
-    # TODO: we need case insensitive search which for some god awful reason jmespath doesn't support
+
     if slack_app_type:
-        # Old filter: f"[?template_type=='NOQ::Google::Group' && contains(properties.name, '{body['value']}')]",
-        res = jmespath.search(
-            # f"[?contains(properties.name, '{body['value']}')]",
-            f"[?template_type=='{slack_app_type}' && contains(properties.name, '{body['value']}')]",
-            template_dicts,
-        )
+        res = jq.compile(f".[] | select(.template_type == \"{slack_app_type}\") | select((.properties.name | test(\"{body['value']}\"; \"i\")) or (.identifier | test(\"{body['value']}\"; \"i\")))?").input(template_dicts).all()
+        
     else:
-        res = jmespath.search(
-            f"[?contains(properties.name, '{body['value']}')]",
-            template_dicts,
-        )
+        res = jq.compile(f".[] | select((.properties.name | test(\"{body['value']}\"; \"i\")) or (.identifier | test(\"{body['value']}\"; \"i\")))?").input(template_dicts).all()
+
     friendly_names = {
         "NOQ::AWS::IAM::Group": "AWS IAM Groups",
         "NOQ::AWS::IAM::ManagedPolicy": "AWS IAM Managed Policies",
@@ -296,7 +271,8 @@ async def handle_select_resources_options_tenant(
                     "text": typeahead_entry["properties"]["name"],
                 },
                 # Warning: Slack docs specify the max length of options value is 75 characters
-                # but it is actually larger. Slack will not give you an error if this is exceeded.
+                # but it is actually larger. Slack will not give you an error if this is exceeded,
+                # and you will be left wandering aimlessly in the abyss.
                 "value": smaller_string,
             }
         )
@@ -305,21 +281,6 @@ async def handle_select_resources_options_tenant(
         "option_groups": option_groups,
     }
     res = await ack(option_groups_formatted)
-
-
-async def message_alert():
-    channel_id = "C045MFZ2A10"
-    await slack_app.client.chat_postMessage(
-        channel=channel_id,
-        text="Summer has come and passed",
-        blocks=unauthorized_change_sample,
-    )
-
-    await slack_app.client.chat_postMessage(
-        channel=channel_id,
-        text="Summer has come and passed",
-        blocks=remove_unused_identities_sample,
-    )
 
 
 @slack_app.event("message")
@@ -336,6 +297,7 @@ async def hello(body, ack):
 @slack_app.options("external_action")
 async def show_options(ack, respond, payload):
     await ack()
+    keyword = payload.get("value")
     options = [
         {
             "text": {"type": "plain_text", "text": "Option 1"},
@@ -346,11 +308,16 @@ async def show_options(ack, respond, payload):
             "value": "1-2",
         },
     ]
-    keyword = payload.get("value")
     if keyword is not None and len(keyword) > 0:
         options = [o for o in options if keyword in o["text"]["text"]]
+    if len(options) == 0:
+        options = [
+            {
+                "text": {"type": "plain_text", "text": "No Options"},
+                "value": "no-options",
+            }
+        ]
     await ack(options=options)
-    # await respond(options=options)
 
 
 @slack_app.shortcut("request_access")
@@ -422,6 +389,8 @@ async def handle_request_access_to_resource_tenant(
         "selected_option"
     ]["value"]
     template_changes = []
+    resources = defaultdict(list)
+    # TODO: We need git url of resources
     for option in selected_options:
         value = option["value"].split("|")
         if len(value) != 3:
@@ -434,14 +403,18 @@ async def handle_request_access_to_resource_tenant(
             template = await iambic.google_add_user_to_group(
                 template_type, repo_name, path, user_email, duration
             )
+            resources[template_type].append(template.properties.name)
+            
         elif template_type == "NOQ::Okta::Group":
             template = await iambic.okta_add_user_to_group(
                 template_type, repo_name, path, user_email, duration
             )
+            resources[template_type].append(template.properties.name)
         elif template_type == "NOQ::Okta::App":
             template = await iambic.okta_add_user_to_app(
                 template_type, repo_name, path, user_email, duration
             )
+            resources[template_type].append(template.properties.name)
 
         template_changes.append(
             IambicTemplateChange(path=path, body=template.get_body(exclude_unset=False))
@@ -470,6 +443,8 @@ async def handle_request_access_to_resource_tenant(
     await request_pr.create_request(justification, template_changes)
     request_details = await request_pr.get_request_details()
     pr_url = request_details["pull_request_url"]
+    
+    approvers = "engineering@noq.dev"
     # logger.info(body)
     # res = await create_request(tenant, user, justification, template_changes)
     # role_arns = [
@@ -511,12 +486,19 @@ async def handle_request_access_to_resource_tenant(
     # pr_url = res["github_pr"]
     # conversation = await client.conversations_open(users=body["user"]["id"])
     channel_id = "C045MFZ2A10"
+    slack_message_to_reviewers = self_service_permissions_review_blocks(
+        user_email,
+        resources,
+        duration,
+        approvers,
+        justification,
+        pr_url  
+    )
+
     await client.chat_postMessage(
         channel=channel_id,
-        text=(
-            f"A request for access has been submitted.\n\n"
-            f"You may view it here: {pr_url}"
-        ),
+        blocks=slack_message_to_reviewers,
+        text="An access request is awaiting your review.",
     )
 
     view_id = body["view"]["id"]
@@ -672,19 +654,12 @@ async def get_slack_app_for_tenant(tenant, enterprise_id, team_id, app_id):
         name=tenant,
         logger=logger,
         installation_store=installation_store,
-        # token=config.get("_global_.secrets.slack.bot_token"),
         signing_secret=config.get("_global_.secrets.slack.signing_secret"),
         process_before_response=True,
-        # authorize=get_slack_bot_authorization,
     )
     tenant_slack_app.use(create_log_request_handler(tenant))
     # tenant_slack_app.middleware(partial(log_request_tenant, tenant=tenant))
-
-    tenant_slack_app.message("hello_tenant")(
-        ack=handle_ack,
-        lazy=[partial(message_hello_tenant, tenant=tenant)],
-    )
-
+    
     tenant_slack_app.action("select_resources")(
         ack=handle_ack,
         lazy=[partial(handle_select_resources_tenant, tenant=tenant)],
