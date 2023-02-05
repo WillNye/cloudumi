@@ -377,6 +377,8 @@ httplib2==0.21.0
     # via
     #   google-api-python-client
     #   google-auth-httplib2
+humanfriendly==10.0
+    # via -r ./common/requirements.in
 humanize==4.4.0
     # via flower
 identify==2.5.11
