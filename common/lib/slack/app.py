@@ -23,11 +23,7 @@ from common.iambic_request.utils import get_iambic_repo
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.iambic.git import IambicGit
 from common.lib.redis import RedisHandler
-from common.lib.slack.models import (
-    BOTS_TABLE,
-    INSTALLATIONS_TABLE,
-    OAUTH_STATES_TABLE,
-)
+from common.lib.slack.models import BOTS_TABLE, INSTALLATIONS_TABLE, OAUTH_STATES_TABLE
 from common.lib.slack.workflows import (
     request_access_to_resource_block,
     request_access_to_resource_success,
@@ -203,9 +199,8 @@ slack_app = AsyncApp(
     process_before_response=True,
 )
 
-async def handle_select_resources_options_tenant(
-    ack, body, tenant
-):
+
+async def handle_select_resources_options_tenant(ack, body, tenant):
     """Handle the action of selecting resource options in a slack app dialog.
 
     Arguments:
@@ -236,10 +231,22 @@ async def handle_select_resources_options_tenant(
     )
 
     if slack_app_type:
-        res = jq.compile(f".[] | select(.template_type == \"{slack_app_type}\") | select((.properties.name | test(\"{body['value']}\"; \"i\")) or (.identifier | test(\"{body['value']}\"; \"i\")))?").input(template_dicts).all()
-        
+        res = (
+            jq.compile(
+                f".[] | select(.template_type == \"{slack_app_type}\") | select((.properties.name | test(\"{body['value']}\"; \"i\")) or (.identifier | test(\"{body['value']}\"; \"i\")))?"
+            )
+            .input(template_dicts)
+            .all()
+        )
+
     else:
-        res = jq.compile(f".[] | select((.properties.name | test(\"{body['value']}\"; \"i\")) or (.identifier | test(\"{body['value']}\"; \"i\")))?").input(template_dicts).all()
+        res = (
+            jq.compile(
+                f".[] | select((.properties.name | test(\"{body['value']}\"; \"i\")) or (.identifier | test(\"{body['value']}\"; \"i\")))?"
+            )
+            .input(template_dicts)
+            .all()
+        )
 
     friendly_names = {
         "NOQ::AWS::IAM::Group": "AWS IAM Groups",
@@ -404,7 +411,7 @@ async def handle_request_access_to_resource_tenant(
                 template_type, repo_name, path, user_email, duration
             )
             resources[template_type].append(template.properties.name)
-            
+
         elif template_type == "NOQ::Okta::Group":
             template = await iambic.okta_add_user_to_group(
                 template_type, repo_name, path, user_email, duration
@@ -443,7 +450,7 @@ async def handle_request_access_to_resource_tenant(
     await request_pr.create_request(justification, template_changes)
     request_details = await request_pr.get_request_details()
     pr_url = request_details["pull_request_url"]
-    
+
     approvers = "engineering@noq.dev"
     # logger.info(body)
     # res = await create_request(tenant, user, justification, template_changes)
@@ -487,12 +494,7 @@ async def handle_request_access_to_resource_tenant(
     # conversation = await client.conversations_open(users=body["user"]["id"])
     channel_id = "C045MFZ2A10"
     slack_message_to_reviewers = self_service_permissions_review_blocks(
-        user_email,
-        resources,
-        duration,
-        approvers,
-        justification,
-        pr_url  
+        user_email, resources, duration, approvers, justification, pr_url
     )
 
     await client.chat_postMessage(
@@ -659,7 +661,7 @@ async def get_slack_app_for_tenant(tenant, enterprise_id, team_id, app_id):
     )
     tenant_slack_app.use(create_log_request_handler(tenant))
     # tenant_slack_app.middleware(partial(log_request_tenant, tenant=tenant))
-    
+
     tenant_slack_app.action("select_resources")(
         ack=handle_ack,
         lazy=[partial(handle_select_resources_tenant, tenant=tenant)],
