@@ -407,7 +407,7 @@ request_access_to_resource_success = json.loads(
             "type": "section",
             "text": {
                 "type": "plain_text",
-                "text": "Submitting response... Please wait.",
+                "text": "Submitting request... Please wait.",
                 "emoji": true
             }
         }
