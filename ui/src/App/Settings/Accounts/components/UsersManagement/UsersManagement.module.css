@@ -12,6 +12,13 @@
     margin-top: 15px;
   }
 
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-lg) 0;
+  }
+
   .table {
     overflow-y: auto;
     padding-bottom: 25px;

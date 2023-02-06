@@ -10,11 +10,23 @@ export const userTableColumns = [
     sortable: true
   },
   {
+    Header: 'Status',
+    accessor: 'status'
+  },
+  {
+    Header: 'Managed By',
+    accessor: 'managed_by'
+  },
+  {
     Header: 'Groups',
     accessor: 'groups'
   },
   {
     accessor: 'edit',
+    width: '50px'
+  },
+  {
+    accessor: 'delete',
     width: '50px'
   }
 ];
@@ -26,11 +38,23 @@ export const groupsTableColumns = [
     sortable: true
   },
   {
+    Header: 'Description',
+    accessor: 'description'
+  },
+  {
+    Header: 'Managed By',
+    accessor: 'managed_by'
+  },
+  {
     Header: 'Users',
     accessor: 'users'
   },
   {
     accessor: 'edit',
+    width: '50px'
+  },
+  {
+    accessor: 'delete',
     width: '50px'
   }
 ];
