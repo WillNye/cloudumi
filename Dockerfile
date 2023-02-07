@@ -16,6 +16,9 @@ ENV BUILD_PATH=./frontend/build
 ENV DISABLE_ESLINT_PLUGIN=true
 ENV VIRTUAL_ENV=/app/env
 
+ENV IAMBIC_REPO_USER=${IAMBIC_REPO_USER}
+ENV IAMBIC_REPO_TOKEN=${IAMBIC_REPO_TOKEN}
+
 RUN mkdir /app
 WORKDIR /app
 # Add PIP Requirements
@@ -45,6 +48,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y insta
     python -m venv $VIRTUAL_ENV && \
     . env/bin/activate && \
     python -m pip install -r requirements.lock && \
+    python -m pip install git+https://${IAMBIC_REPO_USER}:${IAMBIC_REPO_TOKEN}@github.com/noqdev/iambic.git@main && \
     # Install yarn and frontend dependencies
     npm install yarn -g && \
     yarn --cwd frontend --dev && \

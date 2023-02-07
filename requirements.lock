@@ -11,9 +11,7 @@ aiodns==3.0.0
 aiofile==3.8.1
     # via aiopath
 aiofiles==22.1.0
-    # via
-    #   -r ./common/requirements.in
-    #   iambic
+    # via -r ./common/requirements.in
 aiohttp==3.8.3
     # via
     #   -r ./common/celery_tasks/requirements.in
@@ -32,7 +30,7 @@ aiozipkin==1.1.1
     # via
     #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
-alembic==1.9.1
+alembic==1.9.2
     # via -r ./common/util/requirements.in
 amqp==5.1.1
     # via
@@ -52,7 +50,6 @@ asgiref==3.6.0
     #   -r ./common/config/tests/requirements.in
     #   -r ./common/util/requirements.in
     #   -r ./util/tests/requirements.in
-    #   iambic
 async-lru==1.0.3
     # via -r ./common/lib/requirements.in
 async-timeout==4.0.2
@@ -65,7 +62,7 @@ asynctest==0.13.0
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
-atlassian-python-api==3.32.1
+atlassian-python-api==3.32.2
     # via
     #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
@@ -78,13 +75,13 @@ attrs==22.2.0
     #   pytest-mypy
 aws-error-utils==2.7.0
     # via -r ./common/lib/aws/access_undenied/requirements.in
-awscli==1.27.41
+awscli==1.27.65
     # via -r ./frontend/requirements.in
 bandit==1.7.4
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
-bc-detect-secrets==1.4.7
+bc-detect-secrets==1.4.9
     # via checkov
 bc-jsonpath-ng==1.5.8
     # via checkov
@@ -95,8 +92,7 @@ bcrypt==4.0.1
     #   -r ./api/requirements.in
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
-    #   paramiko
-beautifulsoup4==4.11.1
+beautifulsoup4==4.11.2
     # via
     #   mkdocs-pdf-export-plugin
     #   policy-sentry
@@ -105,12 +101,11 @@ billiard==3.6.4.0
     #   -r ./api/requirements.in
     #   -r ./common/celery_tasks/requirements.in
     #   celery
-black==22.12.0
+black==23.1.0
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
-    #   iambic
-bleach==5.0.1
+bleach==6.0.0
     # via
     #   -r ./common/util/requirements.in
     #   readme-renderer
@@ -122,7 +117,7 @@ boto==2.49.0
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
     #   cloudaux
-boto3==1.26.41
+boto3==1.26.65
     # via
     #   -r ./api/requirements.in
     #   -r ./common/config/requirements.in
@@ -134,10 +129,9 @@ boto3==1.26.41
     #   checkov
     #   cloudaux
     #   cloudsplaining
-    #   iambic
     #   moto
     #   parliament
-botocore==1.29.41
+botocore==1.29.65
     # via
     #   -r ./api/requirements.in
     #   -r ./common/config/requirements.in
@@ -155,7 +149,7 @@ brotli==1.0.9
     # via fonttools
 cached-property==1.5.2
     # via cloudsplaining
-cachetools==5.2.0
+cachetools==5.3.0
     # via
     #   -r ./common/lib/aws/access_undenied/requirements.in
     #   checkov
@@ -187,7 +181,7 @@ charset-normalizer==2.1.1
     #   aiohttp
     #   checkov
     #   requests
-checkov==2.2.229
+checkov==2.2.341
     # via -r ./common/util/requirements.in
 click==8.1.3
     # via
@@ -203,8 +197,6 @@ click==8.1.3
     #   click-plugins
     #   click-repl
     #   cloudsplaining
-    #   iambic
-    #   jsonschema2md2
     #   mkdocs
     #   policy-sentry
 click-didyoumean==0.3.0
@@ -234,7 +226,7 @@ configargparse==1.5.3
     # via checkov
 contextlib2==21.6.0
     # via schema
-coverage[toml]==7.0.2
+coverage[toml]==7.1.0
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
@@ -246,27 +238,23 @@ cryptography==39.0.0
     #   -r ./common/requirements.in
     #   -r ./common/util/requirements.in
     #   moto
-    #   paramiko
 cssselect2==0.7.0
     # via weasyprint
-cyclonedx-python-lib==3.1.1
+cyclonedx-python-lib==3.1.5
     # via checkov
-cython==0.29.32
+cython==0.29.33
     # via -r ./requirements.in
-dateparser==1.1.5
-    # via iambic
-debugpy==1.6.4
+debugpy==1.6.6
     # via -r ./api/requirements.in
 decorator==5.1.1
     # via bc-jsonpath-ng
 deep-merge==0.0.4
     # via checkov
-deepdiff==5.8.1
+deepdiff==6.2.3
     # via
     #   -r ./api/requirements.in
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
-    #   iambic
 defusedxml==0.7.1
     # via cloudaux
 deprecated==1.2.13
@@ -275,24 +263,15 @@ deprecated==1.2.13
     #   pygithub
 distlib==0.3.6
     # via virtualenv
-distro==1.8.0
-    # via docker-compose
-dnspython==2.2.1
+dnspython==2.3.0
     # via email-validator
-docker[ssh]==6.0.1
+docker==6.0.1
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
     #   checkov
-    #   docker-compose
-docker-compose==1.29.2
-    # via -r ./deploy/local/requirements.in
 dockerfile-parse==2.0.0
     # via checkov
-dockerpty==0.4.1
-    # via docker-compose
-docopt==0.6.2
-    # via docker-compose
 docutils==0.16
     # via
     #   awscli
@@ -305,17 +284,15 @@ ed25519==1.5
     # via
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
-elastic-apm==6.13.2
+elastic-apm==6.14.0
     # via -r ./common/util/requirements.in
-email-validator==1.3.0
+email-validator==1.3.1
     # via -r ./api/util/requirements.in
 exceptiongroup==1.1.0
     # via pytest
 execnet==1.9.0
     # via pytest-xdist
-faker==15.3.4
-    # via pydantic-factories
-fakeredis==2.4.0
+fakeredis==2.7.1
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./util/tests/requirements.in
@@ -325,14 +302,13 @@ filelock==3.9.0
     #   virtualenv
 flagpole==1.1.1
     # via cloudaux
-flake8==5.0.4
+flake8==6.0.0
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
     #   -r ./functional_tests/requirements.in
     #   flake8-docstrings
-    #   iambic
-flake8-docstrings==1.6.0
+flake8-docstrings==1.7.0
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
@@ -364,24 +340,20 @@ gitpython==3.1.30
     #   -r ./common/util/requirements.in
     #   bandit
     #   checkov
-    #   iambic
 google-api-core==2.11.0
     # via google-api-python-client
-google-api-python-client==2.70.0
-    # via
-    #   -r ./api/requirements.in
-    #   iambic
-google-auth==2.15.0
+google-api-python-client==2.76.0
+    # via -r ./api/requirements.in
+google-auth==2.16.0
     # via
     #   google-api-core
     #   google-api-python-client
     #   google-auth-httplib2
-    #   iambic
 google-auth-httplib2==0.1.0
     # via google-api-python-client
-googleapis-common-protos==1.57.0
+googleapis-common-protos==1.58.0
     # via google-api-core
-greenlet==2.0.1
+greenlet==2.0.2
     # via
     #   -r ./common/util/requirements.in
     #   sqlalchemy
@@ -391,11 +363,9 @@ httplib2==0.21.0
     # via
     #   google-api-python-client
     #   google-auth-httplib2
-humanize==4.4.0
+humanize==4.6.0
     # via flower
-iambic @ git+ssh://git@github.com/noqdev/iambic.git@main
-    # via -r ./common/lib/iambic/requirements.in
-identify==2.5.11
+identify==2.5.17
     # via pre-commit
 idna==3.4
     # via
@@ -403,22 +373,21 @@ idna==3.4
     #   email-validator
     #   requests
     #   yarl
+igraph==0.10.4
+    # via checkov
 importlib-metadata==6.0.0
     # via checkov
 inflection==0.5.1
     # via cloudaux
-iniconfig==1.1.1
+iniconfig==2.0.0
     # via pytest
 isodate==0.6.1
     # via python3-saml
-isort==5.11.4
-    # via iambic
 jinja2==3.1.2
     # via
     #   -r ./common/lib/requirements.in
     #   -r ./util/terraform_config_parser/requirements.in
     #   cloudsplaining
-    #   iambic
     #   mkdocs
     #   mkdocs-material
     #   moto
@@ -435,14 +404,11 @@ joblib==1.2.0
     #   cloudaux
 json-cfg==0.4.2
     # via parliament
-jsonschema==3.2.0
+jsonschema==4.17.3
     # via
     #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
     #   checkov
-    #   docker-compose
-jsonschema2md2==0.6.0
-    # via iambic
 junit-xml==1.9
     # via checkov
 kombu==5.2.4
@@ -472,11 +438,10 @@ markdown==3.3.7
     #   mkdocs
     #   mkdocs-material
     #   pymdown-extensions
-markupsafe==2.1.1
+markupsafe==2.1.2
     # via
     #   jinja2
     #   mako
-    #   moto
     #   werkzeug
 marshmallow==3.19.0
     # via
@@ -498,7 +463,7 @@ mkdocs==1.4.2
     #   mkdocs-plugin-inline-svg
     #   mkdocs-render-swagger-plugin
     #   mkdocs-video
-mkdocs-material==9.0.0
+mkdocs-material==9.0.11
     # via -r ./docs/requirements.in
 mkdocs-material-extensions==1.1.1
     # via mkdocs-material
@@ -508,15 +473,15 @@ mkdocs-plugin-inline-svg==0.1.0
     # via -r ./docs/requirements.in
 mkdocs-render-swagger-plugin==0.0.4
     # via -r ./docs/requirements.in
-mkdocs-video==1.3.0
+mkdocs-video==1.4.0
     # via -r ./docs/requirements.in
-mock==5.0.0
+mock==5.0.1
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./util/tests/requirements.in
 mockredis==0.1.3.dev0
     # via -r ./util/tests/requirements.in
-moto==4.0.12
+moto==4.1.2
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
@@ -526,12 +491,12 @@ multidict==6.0.4
     # via
     #   aiohttp
     #   yarl
-mypy==0.991
+mypy==1.0.0
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
     #   pytest-mypy
-mypy-extensions==0.4.3
+mypy-extensions==1.0.0
     # via
     #   black
     #   mypy
@@ -541,7 +506,7 @@ nodeenv==1.7.0
     # via pre-commit
 noq-dax-client==2.1.1
     # via -r ./common/requirements.in
-numpy==1.24.1
+numpy==1.24.2
     # via pandas
 oauthlib==3.2.2
     # via
@@ -551,12 +516,11 @@ okta==2.8.0
     # via
     #   -r ./api/requirements.in
     #   -r ./identity/requirements.in
-    #   iambic
 okta-jwt==1.3.5
     # via
     #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
-onelogin==3.0.1
+onelogin==3.1.0
     # via
     #   -r ./api/requirements.in
     #   -r ./common/lib/requirements.in
@@ -564,24 +528,25 @@ ordered-set==4.1.0
     # via deepdiff
 orderedmultidict==1.0.1
     # via furl
+orjson==3.8.5
+    # via deepdiff
 packageurl-python==0.10.4
     # via
     #   checkov
     #   cyclonedx-python-lib
-packaging==22.0
+packaging==23.0
     # via
     #   -r ./requirements.in
+    #   black
     #   checkov
     #   docker
     #   marshmallow
     #   mkdocs
     #   pytest
-pandas==1.5.2
+pandas==1.5.3
     # via
     #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
-paramiko==2.12.0
-    # via docker
 parliament==1.6.1
     # via
     #   -r ./common/lib/requirements.in
@@ -590,16 +555,14 @@ password-strength==0.0.3.post2
     # via
     #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
-pathspec==0.10.3
+pathspec==0.11.0
     # via black
-pbr==5.11.0
+pbr==5.11.1
     # via stevedore
 pdpyras==4.5.2
     # via -r ./common/util/requirements.in
 pillow==9.4.0
     # via weasyprint
-pipdeptree==2.3.3
-    # via mkdocs-material
 platformdirs==2.6.2
     # via
     #   black
@@ -608,7 +571,7 @@ pluggy==1.0.0
     # via pytest
 ply==3.11
     # via bc-jsonpath-ng
-policy-sentry==0.12.5
+policy-sentry==0.12.6
     # via
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
@@ -617,15 +580,14 @@ policyuniverse==1.5.0.20220613
     # via
     #   -r ./api/util/requirements.in
     #   checkov
-pre-commit==2.21.0
+pre-commit==3.0.4
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
     #   -r ./docs/requirements.in
-    #   iambic
-prettytable==3.5.0
+prettytable==3.6.0
     # via checkov
-prometheus-client==0.15.0
+prometheus-client==0.16.0
     # via flower
 prompt-toolkit==3.0.36
     # via click-repl
@@ -652,13 +614,13 @@ pycares==4.3.0
     # via aiodns
 pycep-parser==0.3.9
     # via checkov
-pycodestyle==2.9.1
+pycodestyle==2.10.0
     # via
     #   flake8
     #   flake8-import-order
 pycparser==2.21
     # via cffi
-pycryptodome==3.16.0
+pycryptodome==3.17
     # via okta
 pydantic==1.10.4
     # via
@@ -666,17 +628,13 @@ pydantic==1.10.4
     #   -r ./common/requirements.in
     #   -r ./common/templates/requirements.in
     #   -r ./common/util/requirements.in
-    #   iambic
-    #   pydantic-factories
-pydantic-factories==1.17.0
-    # via iambic
-pydash==5.1.2
+pydash==6.0.0
     # via okta
-pydocstyle==6.2.0
+pydocstyle==6.3.0
     # via flake8-docstrings
 pydyf==0.5.0
     # via weasyprint
-pyflakes==2.5.0
+pyflakes==3.0.1
     # via flake8
 pygithub==1.57
     # via
@@ -692,12 +650,10 @@ pyjwt==2.6.0
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
     #   pygithub
-pymdown-extensions==9.9
+pymdown-extensions==9.9.2
     # via mkdocs-material
 pynacl==1.5.0
-    # via
-    #   paramiko
-    #   pygithub
+    # via pygithub
 pynamodax==6.1.4
     # via -r ./common/requirements.in
 pyotp==2.8.0
@@ -714,7 +670,7 @@ pyston==2.3.5
     #   pyston-autoload
 pyston-autoload==2.3.5
     # via checkov
-pytest==7.2.0
+pytest==7.2.1
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/config/tests/requirements.in
@@ -723,7 +679,6 @@ pytest==7.2.0
     #   -r ./common/util/requirements-test.in
     #   -r ./functional_tests/requirements.in
     #   -r ./util/tests/requirements.in
-    #   iambic
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-html
@@ -738,14 +693,13 @@ pytest-asyncio==0.20.3
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
+    #   -r ./functional_tests/requirements.in
     #   -r ./util/tests/requirements.in
-    #   iambic
 pytest-cov==4.0.0
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
     #   -r ./functional_tests/requirements.in
-    #   iambic
 pytest-html==3.2.0
     # via
     #   -r ./api/util/requirements-test.in
@@ -776,14 +730,10 @@ pytest-xdist==3.1.0
 python-dateutil==2.8.2
     # via
     #   botocore
-    #   dateparser
-    #   faker
     #   ghp-import
     #   moto
     #   onelogin
     #   pandas
-python-dotenv==0.21.0
-    # via docker-compose
 python-jose==3.3.0
     # via
     #   okta
@@ -794,17 +744,14 @@ python-terraform==0.10.1
     # via -r ./api/requirements.in
 python3-saml==1.15.0
     # via -r ./common/requirements.in
-pytz==2022.7
+pytz==2022.7.1
     # via
     #   -r ./api/requirements.in
     #   -r ./common/config/requirements.in
     #   -r ./common/util/requirements.in
     #   celery
-    #   dateparser
     #   flower
     #   pandas
-pytz-deprecation-shim==0.1.0.post0
-    # via tzlocal
 pyyaml==5.4.1
     # via
     #   -r ./api/requirements.in
@@ -818,8 +765,6 @@ pyyaml==5.4.1
     #   bc-detect-secrets
     #   checkov
     #   cloudsplaining
-    #   docker-compose
-    #   jsonschema2md2
     #   mkdocs
     #   okta
     #   parliament
@@ -832,24 +777,22 @@ readme-renderer==37.3
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
-redis==4.4.0
+redis==4.4.2
     # via
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
     #   fakeredis
 regex==2022.10.31
     # via
-    #   dateparser
     #   mkdocs-material
     #   pycep-parser
-requests==2.28.1
+requests==2.28.2
     # via
     #   -r ./api/requirements.in
     #   atlassian-python-api
     #   bc-detect-secrets
     #   checkov
     #   docker
-    #   docker-compose
     #   google-api-core
     #   mkdocs-material
     #   moto
@@ -883,7 +826,6 @@ ruamel-yaml==0.17.21
     #   -r ./api/requirements.in
     #   -r ./common/config/requirements.in
     #   -r ./common/util/requirements.in
-    #   iambic
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
 s3transfer==0.6.0
@@ -899,15 +841,15 @@ semantic-version==2.10.0
     # via checkov
 semver==2.13.0
     # via -r ./util/terraform_config_parser/requirements.in
-sentry-sdk==1.12.1
+sentry-sdk==1.14.0
     # via
     #   -r ./api/requirements.in
     #   -r ./common/celery_tasks/requirements.in
     #   -r ./common/config/requirements.in
     #   -r ./common/util/requirements.in
-setupmeta==3.3.2
+setupmeta==3.4.0
     # via -r ./common/util/requirements.in
-simplejson==3.18.0
+simplejson==3.18.3
     # via
     #   -r ./api/requirements.in
     #   -r ./common/lib/requirements.in
@@ -918,28 +860,20 @@ six==1.16.0
     #   bleach
     #   click-repl
     #   cloudaux
-    #   dockerpty
     #   ecdsa
     #   furl
     #   google-auth
     #   google-auth-httplib2
     #   html5lib
     #   isodate
-    #   jsonschema
     #   junit-xml
     #   noq-dax-client
     #   okta-jwt
     #   orderedmultidict
-    #   paramiko
     #   password-strength
     #   python-dateutil
     #   requests-mock
     #   retrying
-    #   websocket-client
-slack-bolt==1.16.1
-    # via iambic
-slack-sdk==3.19.5
-    # via slack-bolt
 smmap==5.0.0
     # via gitdb
 sniffio==1.3.0
@@ -952,24 +886,22 @@ sortedcontainers==2.4.0
     #   fakeredis
 soupsieve==2.3.2.post1
     # via beautifulsoup4
-sqlalchemy==1.4.45
+sqlalchemy==2.0.2
     # via
     #   -r ./common/util/requirements.in
     #   alembic
 stevedore==4.1.1
     # via bandit
-structlog==22.3.0
-    # via iambic
 tabulate==0.9.0
     # via checkov
 tenacity==8.1.0
     # via
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
-termcolor==2.1.1
+termcolor==2.2.0
     # via checkov
 texttable==1.6.7
-    # via docker-compose
+    # via igraph
 tinycss2==1.2.1
     # via
     #   cssselect2
@@ -998,9 +930,9 @@ tornado==6.2
     #   pytest-tornado
 tqdm==4.64.1
     # via checkov
-types-toml==0.10.8.1
+types-toml==0.10.8.2
     # via responses
-types-ujson==5.6.0.0
+types-ujson==5.7.0.0
     # via -r ./common/requirements.in
 typing-extensions==4.4.0
     # via
@@ -1009,24 +941,19 @@ typing-extensions==4.4.0
     #   mypy
     #   pycep-parser
     #   pydantic
-    #   pydantic-factories
-tzdata==2022.7
-    # via pytz-deprecation-shim
-tzlocal==4.2
-    # via dateparser
-ujson==5.6.0
+    #   sqlalchemy
+ujson==5.7.0
     # via
     #   -r ./api/requirements.in
     #   -r ./common/celery_tasks/requirements.in
     #   -r ./common/config/requirements.in
     #   -r ./common/util/requirements.in
     #   -r ./functional_tests/requirements.in
-    #   iambic
 update-checker==0.18.0
     # via checkov
 uritemplate==4.1.1
     # via google-api-python-client
-urllib3==1.26.13
+urllib3==1.26.14
     # via
     #   -r ./api/requirements.in
     #   botocore
@@ -1050,11 +977,11 @@ vine==5.0.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.17.1
+virtualenv==20.18.0
     # via pre-commit
 watchdog==2.2.1
     # via mkdocs
-wcwidth==0.2.5
+wcwidth==0.2.6
     # via
     #   prettytable
     #   prompt-toolkit
@@ -1066,10 +993,8 @@ webencodings==0.5.1
     #   cssselect2
     #   html5lib
     #   tinycss2
-websocket-client==0.59.0
-    # via
-    #   docker
-    #   docker-compose
+websocket-client==1.5.1
+    # via docker
 werkzeug==2.2.2
     # via moto
 workos==1.21.0
@@ -1084,24 +1009,22 @@ xmltodict==0.13.0
     # via
     #   moto
     #   okta
-xxhash==3.2.0
-    # via iambic
 yappi==1.4.0
     # via -r ./api/requirements.in
 yarl==1.8.2
     # via
     #   aiohttp
+    #   checkov
     #   okta
-zipp==3.11.0
+zipp==3.12.1
     # via importlib-metadata
 zopfli==0.2.2
     # via fonttools
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==65.6.3
+setuptools==67.1.0
     # via
     #   cyclonedx-python-lib
     #   flake8-import-order
-    #   jsonschema
     #   nodeenv
     #   pytest-tornado
