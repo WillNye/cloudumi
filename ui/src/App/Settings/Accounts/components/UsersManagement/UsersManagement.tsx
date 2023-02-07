@@ -27,7 +27,12 @@ const UsersManagement = () => {
         <Button>Invite Member</Button>
       </div>
       <div className={css.table}>
-        <Table data={tableRows} columns={userTableColumns} border="row" />
+        <Table
+          data={tableRows}
+          columns={userTableColumns}
+          border="row"
+          selectable
+        />
       </div>
     </div>
   );

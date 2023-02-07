@@ -79,7 +79,8 @@ export const Table = <T, D>({
                 <div>
                   <IndeterminateCheckbox {...row.getToggleRowSelectedProps()} />
                 </div>
-              )
+              ),
+              width: '15px'
             },
             ...columns
           ]);

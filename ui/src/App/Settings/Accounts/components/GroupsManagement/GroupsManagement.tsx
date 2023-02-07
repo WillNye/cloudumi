@@ -8,6 +8,7 @@ import { groupsTableColumns } from '../../constants';
 import css from './GroupsManagement.module.css';
 import Delete from '../common/Delete';
 import GroupsModal from '../common/GroupsModal';
+import { Button } from 'shared/elements/Button';
 
 const GroupsManagement = () => {
   const tableRows = useMemo(() => {
@@ -23,8 +24,17 @@ const GroupsManagement = () => {
 
   return (
     <div className={css.container}>
+      <div className={css.header}>
+        <div>Groups ({groupsMockData.length})</div>
+        <Button>Add New Group</Button>
+      </div>
       <div className={css.table}>
-        <Table data={tableRows} columns={groupsTableColumns} border="row" />
+        <Table
+          data={tableRows}
+          columns={groupsTableColumns}
+          border="row"
+          selectable
+        />
       </div>
     </div>
   );

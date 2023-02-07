@@ -6,6 +6,13 @@
   overflow-y: hidden;
   margin: auto;
 
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-lg) 0;
+  }
+
   .filter {
     width: 100%;
     margin-bottom: 30px;
