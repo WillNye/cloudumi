@@ -12,6 +12,7 @@ from api.handlers.v4.scim.groups import ScimV2GroupHandler, ScimV2GroupsHandler
 from api.handlers.v4.scim.users import ScimV2UserHandler, ScimV2UsersHandler
 from api.handlers.v4.users.login import LoginHandler, MfaHandler
 from api.handlers.v4.users.manage_users import (
+    ManageListUsersHandler,
     ManageUsersHandler,
     PasswordResetSelfServiceHandler,
     UnauthenticatedEmailVerificationHandler,
@@ -396,6 +397,7 @@ def make_app(jwt_validator=None):
         (r"/api/v4/groups/?", ManageGroupsHandler),
         (r"/api/v4/group_memberships/?", ManageGroupMembershipsHandler),
         (r"/api/v4/users/?", ManageUsersHandler),
+        (r"/api/v4/list_users/?", ManageListUsersHandler),
         (r"/api/v4/users/password/complexity/?", PasswordComplexityHandler),
         (r"/api/v4/users/login/?", LoginHandler),
         (r"/api/v4/users/login/mfa/?", MfaHandler),

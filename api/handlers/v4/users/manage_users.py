@@ -9,12 +9,47 @@ from email_validator import validate_email
 
 from common.config.tenant_config import TenantConfig
 from common.handlers.base import BaseAdminHandler, BaseHandler, TornadoRequestHandler
+from common.lib.filter import filter_data_with_sqlalchemy
 from common.lib.jwt import generate_jwt_token
 from common.lib.password import check_password_strength, generate_random_password
 from common.lib.tenant.models import TenantDetails
 from common.lib.web import handle_generic_error_response
 from common.models import WebResponse
 from common.users.models import User
+
+
+class ManageListUsersHandler(BaseAdminHandler):
+    async def post(self):
+        data = tornado.escape.json_decode(self.request.body)
+        tenant_name = self.ctx.tenant
+
+        _filter = data.get("filter", {})
+
+        try:
+            objects: list[objects] = await filter_data_with_sqlalchemy(
+                _filter, tenant_name, User
+            )
+        except Exception as exc:
+            errors = [str(exc)]
+            self.write(
+                WebResponse(
+                    errors=errors,
+                    status_code=500,
+                    count=len(errors),
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            self.set_status(500, reason=str(exc))
+            raise tornado.web.Finish()
+
+        res = [x.dict() for x in objects]
+
+        self.write(
+            WebResponse(
+                success="success",
+                status_code=200,
+                data={"users": res},
+            ).dict(exclude_unset=True, exclude_none=True)
+        )
 
 
 # Define the handler for the create user route

@@ -87,6 +87,25 @@ class User(SoftDeleteMixin, Base):
         UniqueConstraint("tenant", "email", name="uq_tenant_email"),
     )
 
+    def get_status(self):
+        if not self.active:
+            return "inactive"
+        if not self.email_verified:
+            return "email_unverified"
+        if self.password_reset_required:
+            return "password_reset_required"
+        return "active"
+
+    def dict(self):
+        return dict(
+            id=str(self.id),
+            status=self.get_status(),
+            active=self.active,
+            email_verified=self.email_verified,
+            password_reset_required=self.password_reset_required,
+            email=self.email,
+        )
+
     async def delete(self):
         # Delete all group memberships
         async with ASYNC_PG_SESSION() as session:
