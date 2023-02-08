@@ -110,15 +110,13 @@ async def sync_aws_accounts(tenant_name: str):
         if x.name not in [x.account_name for x in aws_accounts]
     ]
 
-    for remove_account in remove_accounts:
-        await AWSAccount.delete(tenant, remove_account.account_id)
+    await AWSAccount.delete(tenant, [x.account_id for x in remove_accounts])
 
-    for account in aws_accounts:
-        await AWSAccount.create(
-            tenant,
-            account.account_name,
-            account.account_id,
-        )
+    # for account in aws_accounts:
+    await AWSAccount.bulk_create(
+        tenant,
+        [{"name": x.account_name, "account_id": x.account_id} for x in aws_accounts],
+    )
 
 
 async def __help_get_role_mappings(tenant_name: str) -> Dict[str, RoleTemplate]:
@@ -130,6 +128,18 @@ async def __help_get_role_mappings(tenant_name: str) -> Dict[str, RoleTemplate]:
     return await explode_role_templates_for_accounts(aws_accounts, ground_truth_roles)
 
 
+async def __get_users(tenant_name: str) -> List[User]:
+    tenant = await Tenant.get_by_name(tenant_name)
+    users = await User.get_all(tenant)
+    return {x.user_email: x for x in users}
+
+
+async def __get_groups(tenant_name: str) -> List[Group]:
+    tenant = await Tenant.get_by_name(tenant_name)
+    groups = await Group.get_all(tenant)
+    return {x.name: x for x in groups}
+
+
 async def sync_identity_roles(tenant_name: str):
     tenant = await Tenant.get_by_name(tenant_name)
     role_mappings = await __help_get_role_mappings(tenant_name)
@@ -137,11 +147,14 @@ async def sync_identity_roles(tenant_name: str):
     known_roles = await IdentityRole.get_all(tenant)
     remove_roles = [x for x in known_roles if x.role_arn not in role_mappings.keys()]
 
-    for role_access in remove_roles:
-        await IdentityRole.delete(tenant, role_access.id)
-
-    for role_arn, role_template in role_mappings.items():
-        await IdentityRole.create(tenant, role_template.identifier, role_arn)
+    await IdentityRole.delete(tenant, [x.id for x in remove_roles])
+    await IdentityRole.bulk_create(
+        tenant,
+        [
+            {"role_name": role_template.identifier, "role_arn": role_arn}
+            for role_arn, role_template in role_mappings.items()
+        ],
+    )
 
 
 async def sync_role_access(tenant_name: str):
@@ -150,9 +163,12 @@ async def sync_role_access(tenant_name: str):
         tenant_name
     )
     aws_accounts = await AWSAccount.get_by_tenant(tenant)
+    users = await __get_users(tenant_name)
+    groups = await __get_groups(tenant_name)
 
     for role_arn, role_template in arn_role_mappings.items():
         if access_rules := role_template.access_rules:
+            upserts = []
             for access_rule in access_rules:
                 effective_aws_accounts = effective_accounts(access_rule, aws_accounts)
                 for effective_aws_account in effective_aws_accounts:
@@ -161,30 +177,39 @@ async def sync_role_access(tenant_name: str):
                     )
                     identity_role = await IdentityRole.get_by_role_arn(tenant, role_arn)
                     if identity_role:
-                        for user_email in access_rule.users:
-                            user = await User.get_by_email(tenant, user_email)
-                            await RoleAccess.create(
-                                tenant=tenant,
-                                type=RoleAccessTypes.credential_access,
-                                identity_role=identity_role,
-                                cli_only=False,
-                                expiration=access_rule.expires_at,
-                                user=user,
+                        access_rule_users = (
+                            users if access_rule.users == "*" else access_rule.users
+                        )
+                        for user_email in access_rule_users:
+                            upserts.append(
+                                {
+                                    "tenant": tenant,
+                                    "type": RoleAccessTypes.credential_access,
+                                    "identity_role": identity_role,
+                                    "cli_only": False,
+                                    "expiration": access_rule.expires_at,
+                                    "user": users.get(user_email),
+                                }
                             )
-                        for group_name in access_rule.groups:
-                            group = await Group.get_by_name(tenant, group_name)
-                            await RoleAccess.create(
-                                tenant=tenant,
-                                type=RoleAccessTypes.credential_access,
-                                identity_role=identity_role,
-                                cli_only=False,
-                                expiration=access_rule.expires_at,
-                                group=group,
+                        access_rule_groups = (
+                            groups if access_rule.groups == "*" else access_rule.groups
+                        )
+                        for group_name in access_rule_groups:
+                            upserts.append(
+                                {
+                                    "tenant": tenant,
+                                    "type": RoleAccessTypes.credential_access,
+                                    "identity_role": identity_role,
+                                    "cli_only": False,
+                                    "expiration": access_rule.expires_at,
+                                    "group": groups.get(group_name),
+                                }
                             )
                     else:
                         log.warning(
                             f"Could not find identity role for arn {role_arn} in tenant {tenant.name}"
                         )
+            await RoleAccess.bulk_create(tenant, upserts)
 
 
 async def sync_all_the_things():

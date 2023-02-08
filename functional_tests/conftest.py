@@ -116,9 +116,6 @@ class FunctionalTest(AsyncHTTPTestCase):
         self.cookies["noq_auth"] = self.token
         headers["X-Forwarded-For"] = "127.0.0.1"
 
-        if self.cookies:
-            headers["Cookie"] = self._render_cookie_back()
-
         # Get XSRF token
         if method.lower() in ["post", "put", "delete"]:
             r = self.fetch("/", headers=headers)

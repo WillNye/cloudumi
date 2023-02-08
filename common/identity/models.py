@@ -54,12 +54,36 @@ class IdentityRole(Base):
                 await session.execute(insert_stmt)
 
     @classmethod
-    async def delete(cls, tenant: Tenant, role_id: int):
+    async def bulk_create(cls, tenant: Tenant, identity_role_data: list[dict]):
+        # Massage data
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                for identity_role in identity_role_data:
+                    role_name = identity_role["role_name"]
+                    role_arn = identity_role["role_arn"]
+                    upsert_stmt_data = {
+                        "tenant_id": tenant.id,
+                        "role_name": role_name,
+                        "role_arn": role_arn,
+                    }
+                    insert_stmt_data = upsert_stmt_data.copy()
+                    insert_stmt = insert(cls).values(insert_stmt_data)
+                    insert_stmt = insert_stmt.on_conflict_do_update(
+                        index_elements=["tenant_id", "role_arn"],
+                        set_=upsert_stmt_data,
+                    )
+                    await session.add(insert_stmt)
+                await session.flush()
+
+    @classmethod
+    async def delete(cls, tenant: Tenant, role_ids: list[int]):
+        if isinstance(role_ids, int):
+            role_ids = [role_ids]
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 session.execute(
                     delete(IdentityRole).where(
-                        and_(IdentityRole.id == role_id, IdentityRole.tenant == tenant)
+                        and_(IdentityRole.id in role_ids, IdentityRole.tenant == tenant)
                     )
                 )
 

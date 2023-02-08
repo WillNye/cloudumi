@@ -131,6 +131,43 @@ class RoleAccess(Base):
                 await session.execute(insert_stmt)
 
     @classmethod
+    async def bulk_create(cls, tenant: Tenant, role_access_data: list[dict]):
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                for role_access in role_access_data:
+                    insert_stmt_data = {
+                        "tenant_id": tenant.id,
+                        "type": role_access["type"],
+                        "identity_role_id": role_access["identity_role_id"],
+                        "cli_only": role_access["cli_only"],
+                        "expiration": role_access["expiration"],
+                    }
+                    if "user" in role_access.keys():
+                        insert_stmt_data["user"] = role_access["user"]
+                    elif "group" in role_access.keys():
+                        insert_stmt_data["group"] = role_access["group"]
+                    upsert_stmt_data = insert_stmt_data.copy()
+                    insert_stmt = insert(cls).values(insert_stmt_data)
+                    if role_access.get("user"):
+                        insert_stmt = insert_stmt.on_conflict_do_update(
+                            index_elements=["tenant_id", "user_id", "identity_role_id"],
+                            set_=upsert_stmt_data,
+                        )
+                    elif role_access.get("group"):
+                        insert_stmt = insert_stmt.on_conflict_do_update(
+                            index_elements=[
+                                "tenant_id",
+                                "group_id",
+                                "identity_role_id",
+                            ],
+                            set_=upsert_stmt_data,
+                        )
+                    else:
+                        raise ValueError("Must provide either user or group")
+                    await session.add(insert_stmt)
+                await session.flush()
+
+    @classmethod
     async def delete(cls, tenant, role_access_id):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():

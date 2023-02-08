@@ -50,13 +50,36 @@ class AWSAccount(Base):
                 await session.execute(insert_stmt)
 
     @classmethod
-    async def delete(cls, tenant: Tenant, account_number: int):
+    async def bulk_create(cls, tenant: Tenant, account_data: list[dict]):
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                for account in account_data:
+                    name = account.get("name")
+                    number = account.get("account_id")
+                    upsert_stmt_data = {
+                        "tenant_id": tenant.id,
+                        "name": name,
+                        "account_id": number,
+                    }
+                    insert_stmt_data = upsert_stmt_data.copy()
+                    insert_stmt = insert(cls).values(insert_stmt_data)
+                    insert_stmt = insert_stmt.on_conflict_do_update(
+                        index_elements=["tenant_id", "account_id"],
+                        set_=upsert_stmt_data,
+                    )
+                    await session.add(insert_stmt)
+                await session.flush()
+
+    @classmethod
+    async def delete(cls, tenant: Tenant, account_ids: list[int]):
+        if isinstance(account_ids, str):
+            account_ids = [account_ids]
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 session.execute(
                     delete(AWSAccount).where(
                         and_(
-                            AWSAccount.account_id == account_number,
+                            AWSAccount.account_id in account_ids,
                             AWSAccount.tenant == tenant,
                         )
                     )
