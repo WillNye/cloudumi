@@ -381,7 +381,6 @@ async def handle_request_access_to_resource_tenant(
 ):
     # TODO: Use IambicGit to make a request
     # TODO: Convert Slack username to e-mail
-    user = body["user"]["username"]
     justification = "justification"  # TODO: Get from body
     iambic = IambicGit(tenant)
     iambic_repo = await get_iambic_repo(tenant)
@@ -452,49 +451,18 @@ async def handle_request_access_to_resource_tenant(
     pr_url = request_details["pull_request_url"]
 
     approvers = "engineering@noq.dev"
-    # logger.info(body)
-    # res = await create_request(tenant, user, justification, template_changes)
-    # role_arns = [
-    #     x["value"]
-    #     for x in body["view"]["state"]["values"]["request_access"]["select_resources"][
-    #         "selected_options"
-    #     ]
-    # ]
-    # duration = int(
-    #     body["view"]["state"]["values"]["duration"]["duration"]["selected_option"][
-    #         "value"
-    #     ]
-    # )
-    # justification = body["view"]["state"]["values"]["justification"]["justification"][
-    #     "value"
-    # ]
-    # slack_user = body["user"]["username"]
-    # res = await iambic.create_role_access_pr(
-    #     role_arns,
-    #     slack_user,
-    #     duration,
-    #     justification,
-    # )
-    # TODO: Identify the file associated with a role
-    # TODO: Link the appropriate GitHub Username to the request
-    # TODO: Submit a PR
-    # TODO: Iambic auto-approve the PR based on rules in the git repo
-    # TODO: Return PR URL
-    # res = await respond({"response_action": "update", "view": request_access_to_resource_success})
-    # TODO: Test this new view
-    # await client.views_update(
-    #     view_id=body["view"]["id"],
-    #     hash=body["view"]["hash"],
-    #     view=request_access_to_resource_success,
-    # )
-    # await respond("Submitted", response_type="ephemeral")
-    # Send a message to the user
-    # role_arns_text = ", ".join(role_arns)
-    # pr_url = res["github_pr"]
-    # conversation = await client.conversations_open(users=body["user"]["id"])
     channel_id = "C045MFZ2A10"
     slack_message_to_reviewers = self_service_permissions_review_blocks(
         user_email, resources, duration, approvers, justification, pr_url
+    )
+    user_id = body["user"]["id"]
+
+    await client.chat_postMessage(
+        channel=user_id,
+        text=(
+            "Your request has been successfully submitted. "
+            f"Click the link below to view more details: {pr_url}"
+        ),
     )
 
     await client.chat_postMessage(
@@ -593,23 +561,6 @@ def render_step_2_request_new_cloud_permissions():
     }
 
 
-def render_step_2_create_cloud_identity_or_resource():
-    return {
-        "type": "modal",
-        "callback_id": "modal_step_2",
-        "title": {"type": "plain_text", "text": "Create a Cloud Identity or Resource"},
-        "blocks": [
-            {
-                "type": "section",
-                "text": {
-                    "type": "plain_text",
-                    "text": "Please fill out the form below to create a cloud identity or resource.",
-                },
-            }
-        ],
-    }
-
-
 async def handle_select_app_type(ack, logger, body, client, respond, tenant):
     # Acknowledge the action to confirm receipt
     await ack()
@@ -640,8 +591,6 @@ async def handle_request_access_step_1_callback(
         view = request_access_to_resource_block
     elif selected_option == "request_permissions_for_identity":
         view = render_step_2_request_new_cloud_permissions()
-    elif selected_option == "create_cloud_identity_or_resource":
-        view = render_step_2_create_cloud_identity_or_resource()
     else:
         raise Exception("Invalid option selected")
     await ack(response_action="update", view=view)

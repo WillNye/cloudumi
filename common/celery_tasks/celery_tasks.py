@@ -3008,14 +3008,17 @@ app.conf.timezone = "UTC"
 
 # TODO: Remove
 # TODO: Need a way to get signaled with files change in repo
-tenants = get_all_tenants()
-for tenant in tenants:
-    if tenant != "localhost":
-        continue
-    sync_iambic_templates_for_tenant(tenant)
-    iambic = IambicGit(tenant)
-    templates = asyncio.run(iambic.gather_templates_for_tenant())
-print("here")
+# tenants = get_all_tenants()
+# for tenant in tenants:
+#     if tenant != "localhost":
+#         continue
+#     sync_iambic_templates_for_tenant(tenant)
+#     iambic = IambicGit(tenant)
+#     templates = asyncio.run(iambic.gather_templates_for_tenant())
+# print("here")
 
 
 # sync_iambic_templates_all_tenants()
+
+# TODO: Message user with information about this being reviewed
+# TODO: Determine how to map IdP groups to Slack channels

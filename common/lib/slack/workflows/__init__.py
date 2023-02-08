@@ -98,7 +98,7 @@ request_access_to_resource_block = json.loads(
 					"type": "plain_text",
 					"text": "Select resources"
 				},
-				"min_query_length": 1
+				"min_query_length": 2
 			}
 		},
 		{
@@ -450,7 +450,7 @@ select_desired_permissions_modal = json.loads(
                     "type": "plain_text",
                     "text": "Select identities"
                 },
-                "min_query_length": 1
+                "min_query_length": 2
             }
         },
         {
@@ -467,7 +467,7 @@ select_desired_permissions_modal = json.loads(
                     "type": "plain_text",
                     "text": "Select resources"
                 },
-                "min_query_length": 1
+                "min_query_length": 2
             }
         },
         {
@@ -651,18 +651,10 @@ self_service_step_1_option_selection = json.loads(
 					{
 						"text": {
 							"type": "plain_text",
-							"text": "Request Cloud Permissions",
+							"text": "Request AWS Cloud Permissions",
 							"emoji": true
 						},
 						"value": "request_permissions_for_identity"
-					},
-					{
-						"text": {
-							"type": "plain_text",
-							"text": "Create a cloud identity or resource",
-							"emoji": true
-						},
-						"value": "create_cloud_identity_or_resource"
 					}
 				],
 				"action_id": "self_service_step_1_option_selection"
@@ -772,7 +764,7 @@ select_desired_managed_policies_modal = json.loads(
 					"type": "plain_text",
 					"text": "Select identities"
 				},
-				"min_query_length": 1
+				"min_query_length": 2
 			}
 		},
 		{
@@ -789,7 +781,7 @@ select_desired_managed_policies_modal = json.loads(
 					"type": "plain_text",
 					"text": "Select managed policies"
 				},
-				"min_query_length": 1
+				"min_query_length": 2
 			}
 		},
 		{
