@@ -8,7 +8,7 @@ from common.pg_core.models import Base
 from common.tenants.models import Tenant
 
 
-class IdentityRole(Base):
+class AwsIdentityRole(Base):
     __tablename__ = "identity_role"
 
     id = Column(Integer(), primary_key=True, autoincrement=True)
@@ -16,7 +16,9 @@ class IdentityRole(Base):
     role_name = Column(String)
     role_arn = Column(String, index=True)
 
-    tenant = relationship("Tenant", primaryjoin="Tenant.id == IdentityRole.tenant_id")
+    tenant = relationship(
+        "Tenant", primaryjoin="Tenant.id == AwsIdentityRole.tenant_id"
+    )
 
     __table_args__ = (
         UniqueConstraint("tenant_id", "role_arn", name="uq_tenant_role_arn"),
@@ -82,8 +84,11 @@ class IdentityRole(Base):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 session.execute(
-                    delete(IdentityRole).where(
-                        and_(IdentityRole.id in role_ids, IdentityRole.tenant == tenant)
+                    delete(AwsIdentityRole).where(
+                        and_(
+                            AwsIdentityRole.id in role_ids,
+                            AwsIdentityRole.tenant == tenant,
+                        )
                     )
                 )
 
@@ -91,9 +96,9 @@ class IdentityRole(Base):
     async def get_all(cls, tenant: Tenant):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
-                stmt = select(IdentityRole).where(
+                stmt = select(AwsIdentityRole).where(
                     and_(
-                        IdentityRole.tenant == tenant,
+                        AwsIdentityRole.tenant == tenant,
                     )
                 )
                 roles = await session.execute(stmt)
@@ -103,10 +108,10 @@ class IdentityRole(Base):
     async def get_by_id(cls, tenant: Tenant, role_id: int):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
-                stmt = select(IdentityRole).where(
+                stmt = select(AwsIdentityRole).where(
                     and_(
-                        IdentityRole.tenant == tenant,
-                        IdentityRole.id == role_id,
+                        AwsIdentityRole.tenant == tenant,
+                        AwsIdentityRole.id == role_id,
                     )
                 )
                 user = await session.execute(stmt)
@@ -116,10 +121,10 @@ class IdentityRole(Base):
     async def get_by_role_arn(cls, tenant: Tenant, role_arn: str):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
-                stmt = select(IdentityRole).where(
+                stmt = select(AwsIdentityRole).where(
                     and_(
-                        IdentityRole.tenant == tenant,
-                        IdentityRole.role_arn == role_arn,
+                        AwsIdentityRole.tenant == tenant,
+                        AwsIdentityRole.role_arn == role_arn,
                     )
                 )
                 user = await session.execute(stmt)
@@ -128,8 +133,8 @@ class IdentityRole(Base):
     @classmethod
     async def get_by_attr(cls, attribute, value):
         async with ASYNC_PG_SESSION() as session:
-            stmt = select(IdentityRole).filter(
-                getattr(IdentityRole, attribute) == value
+            stmt = select(AwsIdentityRole).filter(
+                getattr(AwsIdentityRole, attribute) == value
             )
             items = await session.execute(stmt)
             return items.scalars().first()

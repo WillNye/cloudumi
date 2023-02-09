@@ -13,7 +13,7 @@ from common.groups.models import Group  # noqa: F401,E402
 
 # We must import  models here for them to be recognized
 from common.iambic_request.models import Request, RequestComment  # noqa: F401,E402
-from common.identity.models import IdentityRole  # noqa: F401,E402
+from common.identity.models import AwsIdentityRole  # noqa: F401,E402
 from common.pg_core.models import Base
 from common.role_access.models import RoleAccess, RoleAccessTypes  # noqa: F401,E402
 from common.tenants.models import Tenant  # noqa: F401,E402

@@ -419,7 +419,7 @@ class WorkOSNoOrganizationId(BaseException):
 
 class NoMatchingTenant(BaseException):
     """
-    Tenant does not have a matching tenant
+    A matching tenant was not found
     """
 
     def __init__(self, msg=""):

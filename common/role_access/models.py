@@ -21,7 +21,7 @@ from sqlalchemy.types import Enum
 from common.config.globals import ASYNC_PG_SESSION
 from common.exceptions.exceptions import NoMatchingRequest
 from common.groups.models import Group
-from common.identity.models import IdentityRole
+from common.identity.models import AwsIdentityRole
 from common.pg_core.models import Base
 from common.tenants.models import Tenant
 from common.users.models import User
@@ -57,9 +57,9 @@ class RoleAccess(Base):
         "Group", lazy="joined", primaryjoin="Group.id == RoleAccess.group_id"
     )
     identity_role = relationship(
-        "IdentityRole",
+        "AwsIdentityRole",
         lazy="joined",
-        primaryjoin="IdentityRole.id == RoleAccess.identity_role_id",
+        primaryjoin="AwsIdentityRole.id == RoleAccess.identity_role_id",
     )
     tenant = relationship(
         "Tenant", primaryjoin="Tenant.id == RoleAccess.tenant_id"
@@ -93,7 +93,7 @@ class RoleAccess(Base):
         cls,
         tenant: Tenant,
         type: RoleAccessTypes,
-        identity_role: IdentityRole,
+        identity_role: AwsIdentityRole,
         cli_only: bool,
         expiration: datetime,
         group: Group = None,
@@ -186,7 +186,7 @@ class RoleAccess(Base):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 tenant = await Tenant.get_by_name(tenant_name)
-                identity_role = await IdentityRole.get_by_role_arn(
+                identity_role = await AwsIdentityRole.get_by_role_arn(
                     tenant_name, role_arn
                 )
                 stmt = select(RoleAccess).where(
@@ -222,7 +222,7 @@ class RoleAccess(Base):
     async def get_by_arn(cls, tenant, role_arn):
         try:
             async with ASYNC_PG_SESSION() as session:
-                identity_role = await IdentityRole.get_by_role_arn(role_arn)
+                identity_role = await AwsIdentityRole.get_by_role_arn(role_arn)
                 if role_arn:
                     stmt = (
                         select(RoleAccess)
@@ -273,7 +273,7 @@ class RoleAccess(Base):
         tenant: Tenant,
         user: Optional[User],
         group: Optional[Group],
-        identity_role: Optional[IdentityRole],
+        identity_role: Optional[AwsIdentityRole],
     ):
         async with ASYNC_PG_SESSION() as session:
             select_stmt = select(RoleAccess).filter(RoleAccess.tenant == tenant)
@@ -298,7 +298,7 @@ class RoleAccess(Base):
         type: Optional[RoleAccessTypes] = None,
         user: Optional[User] = None,
         group: Optional[Group] = None,
-        identity_role: Optional[IdentityRole] = None,
+        identity_role: Optional[AwsIdentityRole] = None,
         cli_only: Optional[bool] = None,
         expiration: Optional[datetime] = None,
         request_id: Optional[str] = None,

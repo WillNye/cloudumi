@@ -12,7 +12,7 @@ from common.config import config
 from common.config.models import ModelAdapter
 from common.groups.models import Group
 from common.iambic_request.models import IambicRepo
-from common.identity.models import IdentityRole
+from common.identity.models import AwsIdentityRole
 from common.lib.iambic.util import effective_accounts
 from common.models import IambicRepoDetails
 from common.role_access.models import RoleAccess, RoleAccessTypes
@@ -124,8 +124,10 @@ async def __help_get_role_mappings(tenant_name: str) -> Dict[str, RoleTemplate]:
 
     tenant = await Tenant.get_by_name(tenant_name)
     aws_accounts = await AWSAccount.get_by_tenant(tenant)
-    ground_truth_roles = await get_data_for_template_type(tenant.name, template_type)
-    return await explode_role_templates_for_accounts(aws_accounts, ground_truth_roles)
+    iambic_template_rules = await get_data_for_template_type(tenant.name, template_type)
+    return await explode_role_templates_for_accounts(
+        aws_accounts, iambic_template_rules
+    )
 
 
 async def __get_users(tenant_name: str) -> List[User]:
@@ -144,11 +146,11 @@ async def sync_identity_roles(tenant_name: str):
     tenant = await Tenant.get_by_name(tenant_name)
     role_mappings = await __help_get_role_mappings(tenant_name)
 
-    known_roles = await IdentityRole.get_all(tenant)
+    known_roles = await AwsIdentityRole.get_all(tenant)
     remove_roles = [x for x in known_roles if x.role_arn not in role_mappings.keys()]
 
-    await IdentityRole.delete(tenant, [x.id for x in remove_roles])
-    await IdentityRole.bulk_create(
+    await AwsIdentityRole.delete(tenant, [x.id for x in remove_roles])
+    await AwsIdentityRole.bulk_create(
         tenant,
         [
             {"role_name": role_template.identifier, "role_arn": role_arn}
@@ -175,7 +177,9 @@ async def sync_role_access(tenant_name: str):
                     role_arn = get_role_arn(
                         effective_aws_account.account_id, role_template.identifier
                     )
-                    identity_role = await IdentityRole.get_by_role_arn(tenant, role_arn)
+                    identity_role = await AwsIdentityRole.get_by_role_arn(
+                        tenant, role_arn
+                    )
                     if identity_role:
                         access_rule_users = (
                             users if access_rule.users == "*" else access_rule.users
@@ -212,8 +216,8 @@ async def sync_role_access(tenant_name: str):
             await RoleAccess.bulk_create(tenant, upserts)
 
 
-async def sync_all_the_things():
-    async def _sync_all_the_things(tenant_name: str):
+async def sync_all_iambic_data():
+    async def _sync_all_iambic_data(tenant_name: str):
         try:
             await sync_aws_accounts(tenant_name)
         except Exception as e:
@@ -230,4 +234,4 @@ async def sync_all_the_things():
             log.exception(f"Error synching role access for tenant {tenant_name}: {e}")
 
     tenants = await Tenant.get_all()
-    await asyncio.gather(*[_sync_all_the_things(t.name) for t in tenants])
+    await asyncio.gather(*[_sync_all_iambic_data(t.name) for t in tenants])

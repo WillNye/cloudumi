@@ -135,6 +135,27 @@ async def get_relationship_tables(Table) -> list[str]:
 
 
 async def get_dynamic_objects_from_filter_tokens(Table, token):
+    """
+    This function get_dynamic_objects_from_filter_tokens takes in a Table and a token and returns the token with updated values if necessary.
+
+    It's a necessary evil because of the way the `filter_data_with_sqlalchemy` gets into meta programming to build filters.
+    We have to resolve the relationship objects and since all pointers are lazily loaded, we have to actually import the
+    relevant model to get the object.
+
+    The function first retrieves related tables from the input Table using the get_relationship_tables function. Then, it splits the
+    value of the token's propertyKey into separate components and processes them accordingly. If the components contain more than one item,
+    the function attempts to import the relevant module and table based on the first component. If a matching module and table are found,
+    the token's propertyKey and value are updated accordingly.
+
+    If the token's value could not be found in the related table, an AttributeError will be raised.
+
+    :param Table: The input Table object.
+    :type Table: object
+    :param token: The input token object.
+    :type token: object
+    :return: The updated token object.
+    :rtype: object
+    """
     original_token_value = token.value
     rel_tables = await get_relationship_tables(Table)
     propertyKey_tokens = str(token.propertyKey).split(".")

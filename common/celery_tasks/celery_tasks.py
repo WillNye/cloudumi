@@ -90,7 +90,7 @@ from common.lib.cloudtrail.auto_perms import detect_cloudtrail_denies_and_update
 from common.lib.event_bridge.role_updates import detect_role_changes_and_update_cache
 from common.lib.generic import un_wrap_json_and_dump_values
 from common.lib.git import store_iam_resources_in_git
-from common.lib.iambic.sync import sync_all_the_things
+from common.lib.iambic.sync import sync_all_iambic_data
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import get_aws_config_history_url_for_resource
 from common.lib.pynamo import NoqModel
@@ -2803,14 +2803,14 @@ def workos_cache_users_from_directory() -> Dict:
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
-def cache_iambic_data() -> Dict:
+def cache_iambic_data_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
         "message": "Caching Iambic Data",
     }
     log.debug(log_data)
-    async_to_sync(sync_all_the_things)()
+    async_to_sync(sync_all_iambic_data)()
 
     return log_data
 
@@ -2966,8 +2966,8 @@ schedule = {
         "options": {"expires": 180},
         "schedule": get_schedule(60 * 6),
     },
-    "cache_iambic_data": {
-        "task": "common.celery_tasks.celery_tasks.cache_iambic_data",
+    "cache_iambic_data_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_iambic_data_for_all_tenants",
         "options": {"expires": 180},
         "schedule": get_schedule(60 * 6),
     },
