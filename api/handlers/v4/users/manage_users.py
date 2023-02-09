@@ -133,7 +133,9 @@ class ManageUsersHandler(BaseAdminHandler):
             )
             raise tornado.web.Finish()
 
-        created_user = await User.create(self.ctx.tenant, username, email, password)
+        created_user = await User.create(
+            self.ctx.tenant, username, email, password, managed_by="MANUAL"
+        )
 
         if not password_supplied:
             await created_user.send_password_via_email(tenant_url, password)

@@ -151,7 +151,10 @@ from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationAwsMarketplaceHandler,
     TenantRegistrationHandler,
 )
-from api.handlers.v4.groups.manage_groups import ManageGroupsHandler
+from api.handlers.v4.groups.manage_groups import (
+    ManageGroupsHandler,
+    ManageListGroupsHandler,
+)
 from api.handlers.v4.requests import IambicRequestCommentHandler, IambicRequestHandler
 from common.config import config
 from common.lib.sentry import before_send_event
@@ -395,6 +398,7 @@ def make_app(jwt_validator=None):
         ),
         (rf"/api/v4/requests/(?P<request_id>{UUID_REGEX})", IambicRequestHandler),
         (r"/api/v4/groups/?", ManageGroupsHandler),
+        (r"/api/v4/list_groups/?", ManageListGroupsHandler),
         (r"/api/v4/group_memberships/?", ManageGroupMembershipsHandler),
         (r"/api/v4/users/?", ManageUsersHandler),
         (r"/api/v4/list_users/?", ManageListUsersHandler),

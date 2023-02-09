@@ -12,6 +12,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    Enum,
     Integer,
     String,
     UniqueConstraint,
@@ -51,6 +52,7 @@ class User(SoftDeleteMixin, Base):
     email_verify_token_expiration: datetime = Column(DateTime, nullable=True)
     # TODO: Force password reset flow after temp password created (Or just send them a
     # password reset)
+    managed_by = Column(Enum("MANUAL", "SCIM", name="managed_by_enum"), nullable=True)
     password_reset_required: bool = Column(Boolean, default=False)
     password_hash = Column(String, nullable=False)
     password_reset_token = Column(String, nullable=True)
@@ -104,6 +106,7 @@ class User(SoftDeleteMixin, Base):
             email_verified=self.email_verified,
             password_reset_required=self.password_reset_required,
             email=self.email,
+            managed_by=self.managed_by,
         )
 
     async def delete(self):

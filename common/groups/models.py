@@ -35,6 +35,13 @@ class Group(SoftDeleteMixin, Base):
         foreign_keys=[GroupMembership.user_id, GroupMembership.group_id],
     )
 
+    def dict(self):
+        return dict(
+            id=str(self.id),
+            name=self.name,
+            description=self.description,
+        )
+
     async def write(self):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():

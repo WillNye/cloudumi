@@ -5,7 +5,42 @@ from email_validator import validate_email
 
 from common.groups.models import Group
 from common.handlers.base import BaseAdminHandler
+from common.lib.filter import filter_data_with_sqlalchemy
 from common.models import WebResponse
+
+
+class ManageListGroupsHandler(BaseAdminHandler):
+    async def post(self):
+        data = tornado.escape.json_decode(self.request.body)
+        tenant_name = self.ctx.tenant
+
+        _filter = data.get("filter", {})
+
+        try:
+            objects: list[objects] = await filter_data_with_sqlalchemy(
+                _filter, tenant_name, Group
+            )
+        except Exception as exc:
+            errors = [str(exc)]
+            self.write(
+                WebResponse(
+                    errors=errors,
+                    status_code=500,
+                    count=len(errors),
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            self.set_status(500, reason=str(exc))
+            raise tornado.web.Finish()
+
+        res = [x.dict() for x in objects]
+
+        self.write(
+            WebResponse(
+                success="success",
+                status_code=200,
+                data={"groups": res},
+            ).dict(exclude_unset=True, exclude_none=True)
+        )
 
 
 class ManageGroupsHandler(BaseAdminHandler):

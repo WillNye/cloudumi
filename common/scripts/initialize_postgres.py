@@ -27,6 +27,7 @@ async def rebuild_tables():
             "admin_user@noq.dev",
             "Password!1",
             email_verified=True,
+            managed_by="MANUAL",
         )
         group = await Group.create(
             tenant="cloudumidev_com",
