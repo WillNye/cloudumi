@@ -111,6 +111,7 @@ class ScimV2UsersHandler(ScimAuthHandler):
                     new_group = Group(
                         name=group["displayName"],
                         tenant=self.ctx.tenant,
+                        managed_by="SCIM",
                     )
                     await new_group.write()
                     await GroupMembership.create(user, new_group)
@@ -179,6 +180,7 @@ class ScimV2UserHandler(ScimAuthHandler):
                     new_group = Group(
                         name=group["displayName"],
                         tenant=self.ctx.tenant,
+                        managed_by="SCIM",
                     )
                     await new_group.write()
                     await GroupMembership.create(user, new_group)

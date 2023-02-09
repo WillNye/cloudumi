@@ -34,8 +34,26 @@ async def rebuild_tables():
             name="noq_admins",
             email="noq_admins@noq.dev",
             description="test",
+            managed_by="MANUAL",
         )
         await GroupMembership.create(user, group)
+
+        user2 = await User.create(
+            "localhost",
+            "admin_user@noq.dev",
+            "admin_user@noq.dev",
+            "Password!1",
+            email_verified=True,
+            managed_by="MANUAL",
+        )
+        group2 = await Group.create(
+            tenant="localhost",
+            name="noq_admins",
+            email="noq_admins@noq.dev",
+            description="test",
+            managed_by="MANUAL",
+        )
+        await GroupMembership.create(user2, group2)
 
 
 def run_alembic_migrations():

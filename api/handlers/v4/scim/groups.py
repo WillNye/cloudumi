@@ -68,7 +68,9 @@ class ScimV2GroupsHandler(ScimAuthHandler):
             users.append(user)
 
         try:
-            group = Group(name=displayName, tenant=self.ctx.tenant, users=users)
+            group = Group(
+                name=displayName, tenant=self.ctx.tenant, users=users, managed_by="SCIM"
+            )
             await group.write()
             group = await Group.get_by_id(self.ctx.tenant, group.id, get_users=True)
             serialized_group = await group.serialize_for_scim()
@@ -138,6 +140,7 @@ class ScimV2GroupHandler(ScimAuthHandler):
             users.append(user)
 
         group.users = users
+        group.managed_by = "SCIM"
         await group.write()
         serialized_group = await group.serialize_for_scim()
         self.set_header("Content-Type", "application/json")

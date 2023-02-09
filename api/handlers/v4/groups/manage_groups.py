@@ -97,6 +97,7 @@ class ManageGroupsHandler(BaseAdminHandler):
             name=group_name,
             email=group_email,
             description=group_description,
+            managed_by="MANUAL",
         )
 
         self.write(

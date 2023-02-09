@@ -200,22 +200,25 @@ AWS_PROFILE=prod/prod_admin ecsgo
 
 Select the appropriate cluster, service, and tasks to connect to the container of your choice.
 
-### Deprecated Bazel Instructions
+### Update your local database
 
-It may be useful to retrieve the environment variables used by the process in a Docker container running in Fargate.
-This is so you have your CONFIG_LOCATION, bazel PYTHONPATH, and aws ECS credential environment variables set
-appropriately without too much of a hassle. Run the following command to source all environment variables from the
-container's primary process (PID 1):
+We use Alembic to handle Database migrations. When developing, and working across multiple branches,
+sometimes it is just easier to delete your database and start over again with a fresh database.
+Also during development, we try to condense all alembic migrations into one single migration file
+per branch.
 
-```bash
-bash
+Here are the steps to follow to update your local database:
 
-ps -ef
-# PID for cloudumi/common/celery_tasks/run.py
+1. docker-compose -f deploy/docker-compose-dependencies.yaml down
+2. docker volume rm deploy_cloudumi-pg
 
-. <(xargs -0 bash -c 'printf "export %q\n" "$@"' -- < /proc/${THE_PID}/environ)
-for m in $(find /app -maxdepth 1 -type d -iname "cloudumi*"); do export PYTHONPATH=$PYTHONPATH:$m; done;
-```
+# Note: For Kayizzi, this didn't work for removing his database, you may want to manually delete the `noq` database using DBeaver or PG Admin
+
+# PG Admin runs on localhost:8080 through the Docker-Compose file.
+
+3. docker-compose -f deploy/docker-compose-dependencies.yaml up -d
+4. (In VSCode) Alembic Upgrade Head
+5. (In VSCode) Update Local Config and Populate Redis
 
 ### Connecting to Celery Flower
 
