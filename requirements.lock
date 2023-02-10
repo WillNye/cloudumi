@@ -386,7 +386,7 @@ httplib2==0.21.0
     #   google-auth-httplib2
 humanize==4.6.0
     # via flower
-iambic @ git+ssh://git@github.com/noqdev/iambic.git@main
+iambic @ git+http://github.com/noqdev/iambic.git@main
     # via -r ./common/lib/iambic/requirements.in
 identify==2.5.17
     # via pre-commit
