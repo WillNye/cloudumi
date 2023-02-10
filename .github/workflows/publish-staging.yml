@@ -16,6 +16,9 @@ jobs:
         with:
           fetch-depth: 0 # Fetches tags, which we need to determine version
       - name: Push all the things
+        env:
+          IAMBIC_REPO_USER: ${{ secrets.IAMBIC_REPO_USER }}
+          IAMBIC_REPO_TOKEN: ${{ secrets.IAMBIC_REPO_TOKEN }}
         run: |
           set -x
           sudo apt-get update

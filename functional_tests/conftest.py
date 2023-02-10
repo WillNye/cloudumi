@@ -4,6 +4,8 @@ import urllib
 import urllib.parse
 from http.cookies import SimpleCookie
 
+import aiohttp
+import pytest
 import ujson as json
 from _pytest.config import Config
 from pytest_cov.plugin import CovPlugin
@@ -142,3 +144,48 @@ class FunctionalTest(AsyncHTTPTestCase):
             r = self.fetch(path, body=body, headers=headers)
             return r
         raise Exception("Invalid method")
+
+
+@pytest.fixture(scope="session")
+def test_user_name():
+    return TEST_USER_NAME
+
+
+@pytest.fixture(scope="session")
+def test_user_groups():
+    return TEST_USER_GROUPS
+
+
+@pytest.fixture(scope="session")
+def test_user_domain():
+    return TEST_USER_DOMAIN
+
+
+@pytest.fixture(scope="session")
+async def valid_jwt_token():
+    return await generate_jwt_token(
+        TEST_USER_NAME,
+        TEST_USER_GROUPS,
+        TEST_USER_DOMAIN_US,
+        eula_signed=True,
+    )
+
+
+@pytest.fixture(scope="session")
+async def authenticated_client_session(valid_jwt_token, test_user_domain):
+    async with aiohttp.ClientSession() as session:
+        session.cookie_jar.update_cookies({"jwt": valid_jwt_token})
+        headers = {"Content-Type": "application/json"}
+        headers["Host"] = test_user_domain
+        session.cookie_jar.update_cookies({"noq_auth": valid_jwt_token})
+        headers["X-Forwarded-For"] = "127.0.0.1"
+
+        # Get XSRF token
+        session.get("/", headers=headers)
+
+        yield session
+
+
+@pytest.fixture
+def app_listening_on_port():
+    return 8092
