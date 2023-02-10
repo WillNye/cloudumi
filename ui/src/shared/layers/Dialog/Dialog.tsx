@@ -6,7 +6,8 @@ import {
   Dispatch,
   useMemo,
   forwardRef,
-  Ref
+  Ref,
+  Fragment
 } from 'react';
 import styles from './Dialog.module.css';
 import classNames from 'classnames';
@@ -43,6 +44,8 @@ interface DialogProps {
   size?: 'small' | 'medium' | 'large' | 'fullWidth';
   disablePadding?: boolean;
   isLoading?: boolean;
+  showCloseIcon?: boolean;
+  disableClickOutside?: boolean;
 }
 
 export const Dialog = forwardRef(
@@ -50,19 +53,23 @@ export const Dialog = forwardRef(
     {
       showDialog,
       setShowDialog,
-      header,
+      header = <Fragment />,
       children,
       footer,
       size = 'fullWidth',
       disablePadding,
-      isLoading
+      isLoading,
+      showCloseIcon = true,
+      disableClickOutside = true
     }: DialogProps,
     ref: Ref<HTMLDivElement>
   ) => {
-    const handleCloseDialog = useCallback(
-      () => setShowDialog(false),
-      [setShowDialog]
-    );
+    const handleCloseDialog = useCallback(() => {
+      if (disableClickOutside) {
+        return;
+      }
+      setShowDialog(false);
+    }, [setShowDialog, disableClickOutside]);
     const dialogRef = useClickOutside(handleCloseDialog);
     const resolvedRef = useMemo(() => ref ?? dialogRef, [ref, dialogRef]);
 
@@ -84,12 +91,12 @@ export const Dialog = forwardRef(
               <div className={dialogClasses} ref={resolvedRef}>
                 <div className={styles.dialog}>
                   <div className={styles.header}>
-                    {header && <div>{header}</div>}
+                    <div>{header}</div>
                     <div
                       className={styles.pointer}
                       onClick={() => setShowDialog(false)}
                     >
-                      <Icon name="close" size="large" />
+                      {showCloseIcon && <Icon name="close" size="large" />}
                     </div>
                   </div>
                   {isLoading ? (

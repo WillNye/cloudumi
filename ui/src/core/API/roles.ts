@@ -5,6 +5,12 @@ type RoleCredentialsParams = {
   requested_role: string;
 };
 
+type AWSRoleLoginParams = {
+  roleQuery: string;
+  search: string;
+  extraArgs: string;
+};
+
 export const getEligibleRoles = query => {
   const url = `${V4_API_URL}/roles`;
   return axios.post(url, query);
@@ -18,4 +24,13 @@ export const getAllRoles = () => {
 export const getRoleCredentials = (data: RoleCredentialsParams) => {
   const url = `${V1_API_URL}/get_credentials`;
   return axios.post(url, data);
+};
+
+export const awsRoleLogin = ({
+  roleQuery,
+  search,
+  extraArgs
+}: AWSRoleLoginParams) => {
+  const url = `${V2_API_URL}/role_login/${roleQuery}${search}${extraArgs}`;
+  return axios.get(url);
 };
