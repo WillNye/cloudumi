@@ -67,8 +67,7 @@ class AWSAccount(Base):
                         index_elements=["tenant_id", "account_id"],
                         set_=upsert_stmt_data,
                     )
-                    await session.add(insert_stmt)
-                await session.flush()
+                    await session.execute(insert_stmt)
 
     @classmethod
     async def delete(cls, tenant: Tenant, account_ids: list[int]):
@@ -76,10 +75,10 @@ class AWSAccount(Base):
             account_ids = [account_ids]
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
-                session.execute(
+                await session.execute(
                     delete(AWSAccount).where(
                         and_(
-                            AWSAccount.account_id in account_ids,
+                            AWSAccount.account_id.in_(account_ids),
                             AWSAccount.tenant == tenant,
                         )
                     )

@@ -74,8 +74,7 @@ class AwsIdentityRole(Base):
                         index_elements=["tenant_id", "role_arn"],
                         set_=upsert_stmt_data,
                     )
-                    await session.add(insert_stmt)
-                await session.flush()
+                    await session.execute(insert_stmt)
 
     @classmethod
     async def delete(cls, tenant: Tenant, role_ids: list[int]):
@@ -83,10 +82,10 @@ class AwsIdentityRole(Base):
             role_ids = [role_ids]
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
-                session.execute(
+                await session.execute(
                     delete(AwsIdentityRole).where(
                         and_(
-                            AwsIdentityRole.id in role_ids,
+                            AwsIdentityRole.id.in_(role_ids),
                             AwsIdentityRole.tenant == tenant,
                         )
                     )

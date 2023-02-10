@@ -2,6 +2,7 @@ import asyncio
 from typing import Dict, List
 
 from iambic.aws.iam.role.models import RoleTemplate
+from iambic.config.models import Config
 from iambic.config.utils import load_template as load_config_template
 from iambic.core.models import BaseTemplate
 from iambic.core.parser import load_templates
@@ -93,14 +94,7 @@ async def explode_role_templates_for_accounts(
     return arn_mappings
 
 
-async def sync_aws_accounts(tenant_name: str):
-    tenant = await Tenant.get_by_name(tenant_name)
-    config_template = await get_config_data_for_repo(tenant.name)
-
-    if not config_template:
-        raise ValueError(
-            "Iambic config template could not be loaded; check your tenant configuration - you should have an iambic_repos key defined."
-        )
+async def sync_aws_accounts(tenant: Tenant, config_template: Config):
 
     aws_accounts = config_template.aws.accounts
     known_accounts = await AWSAccount.get_by_tenant(tenant)
@@ -119,10 +113,9 @@ async def sync_aws_accounts(tenant_name: str):
     )
 
 
-async def __help_get_role_mappings(tenant_name: str) -> Dict[str, RoleTemplate]:
+async def __help_get_role_mappings(tenant: Tenant) -> Dict[str, RoleTemplate]:
     template_type = "Role"
 
-    tenant = await Tenant.get_by_name(tenant_name)
     aws_accounts = await AWSAccount.get_by_tenant(tenant)
     iambic_template_rules = await get_data_for_template_type(tenant.name, template_type)
     return await explode_role_templates_for_accounts(
@@ -130,21 +123,18 @@ async def __help_get_role_mappings(tenant_name: str) -> Dict[str, RoleTemplate]:
     )
 
 
-async def __get_users(tenant_name: str) -> List[User]:
-    tenant = await Tenant.get_by_name(tenant_name)
+async def __get_users(tenant: Tenant) -> List[User]:
     users = await User.get_all(tenant)
-    return {x.user_email: x for x in users}
+    return {x.email: x for x in users}
 
 
-async def __get_groups(tenant_name: str) -> List[Group]:
-    tenant = await Tenant.get_by_name(tenant_name)
+async def __get_groups(tenant: Tenant) -> List[Group]:
     groups = await Group.get_all(tenant)
     return {x.name: x for x in groups}
 
 
-async def sync_identity_roles(tenant_name: str):
-    tenant = await Tenant.get_by_name(tenant_name)
-    role_mappings = await __help_get_role_mappings(tenant_name)
+async def sync_identity_roles(tenant: Tenant, config_template: Config):
+    role_mappings = await __help_get_role_mappings(tenant)
 
     known_roles = await AwsIdentityRole.get_all(tenant)
     remove_roles = [x for x in known_roles if x.role_arn not in role_mappings.keys()]
@@ -159,20 +149,19 @@ async def sync_identity_roles(tenant_name: str):
     )
 
 
-async def sync_role_access(tenant_name: str):
-    tenant = await Tenant.get_by_name(tenant_name)
-    arn_role_mappings: Dict[str, RoleTemplate] = await __help_get_role_mappings(
-        tenant_name
-    )
+async def sync_role_access(tenant: Tenant, config_template: Config):
+    arn_role_mappings: Dict[str, RoleTemplate] = await __help_get_role_mappings(tenant)
     aws_accounts = await AWSAccount.get_by_tenant(tenant)
-    users = await __get_users(tenant_name)
-    groups = await __get_groups(tenant_name)
+    users = await __get_users(tenant)
+    groups = await __get_groups(tenant)
 
     for role_arn, role_template in arn_role_mappings.items():
         if access_rules := role_template.access_rules:
             upserts = []
             for access_rule in access_rules:
-                effective_aws_accounts = effective_accounts(access_rule, aws_accounts)
+                effective_aws_accounts = effective_accounts(
+                    access_rule, aws_accounts, config_template
+                )
                 for effective_aws_account in effective_aws_accounts:
                     role_arn = get_role_arn(
                         effective_aws_account.account_id, role_template.identifier
@@ -217,21 +206,28 @@ async def sync_role_access(tenant_name: str):
 
 
 async def sync_all_iambic_data():
-    async def _sync_all_iambic_data(tenant_name: str):
+    async def _sync_all_iambic_data(tenant: Tenant):
+        config_template = await get_config_data_for_repo(tenant.name)
+        if not config_template:
+            log.error(
+                "Iambic config template could not be loaded; check your tenant configuration - you should have an iambic_repos key defined."
+            )
+            return
+
         try:
-            await sync_aws_accounts(tenant_name)
+            await sync_aws_accounts(tenant, config_template)
         except Exception as e:
-            log.exception(f"Error syncing aws accounts for tenant {tenant_name}: {e}")
+            log.exception(f"Error syncing aws accounts for tenant {tenant.name}: {e}")
         try:
-            await sync_identity_roles(tenant_name)
+            await sync_identity_roles(tenant, config_template)
         except Exception as e:
             log.exception(
-                f"Error synching identity roles for tenant {tenant_name}: {e}"
+                f"Error synching identity roles for tenant {tenant.name}: {e}"
             )
         try:
-            await sync_role_access(tenant_name)
+            await sync_role_access(tenant, config_template)
         except Exception as e:
-            log.exception(f"Error synching role access for tenant {tenant_name}: {e}")
+            log.exception(f"Error synching role access for tenant {tenant.name}: {e}")
 
     tenants = await Tenant.get_all()
-    await asyncio.gather(*[_sync_all_iambic_data(t.name) for t in tenants])
+    await asyncio.gather(*[_sync_all_iambic_data(t) for t in tenants])

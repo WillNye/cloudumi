@@ -42,7 +42,7 @@ ruamel.yaml
 sentry_sdk # Send errors and exceptions to Sentry
 setupmeta
 simplejson
-SQLAlchemy
+SQLAlchemy==1.4.46  # Sqlalchemy 2 breaks result sets in new ways; will need to fix
 tenacity
 tornado
 ujson

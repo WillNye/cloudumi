@@ -138,14 +138,14 @@ class RoleAccess(Base):
                     insert_stmt_data = {
                         "tenant_id": tenant.id,
                         "type": role_access["type"],
-                        "identity_role_id": role_access["identity_role_id"],
+                        "identity_role_id": role_access["identity_role"].id,
                         "cli_only": role_access["cli_only"],
                         "expiration": role_access["expiration"],
                     }
                     if "user" in role_access.keys():
-                        insert_stmt_data["user"] = role_access["user"]
+                        insert_stmt_data["user_id"] = role_access["user"].id
                     elif "group" in role_access.keys():
-                        insert_stmt_data["group"] = role_access["group"]
+                        insert_stmt_data["group_id"] = role_access["group"].id
                     upsert_stmt_data = insert_stmt_data.copy()
                     insert_stmt = insert(cls).values(insert_stmt_data)
                     if role_access.get("user"):
@@ -164,8 +164,7 @@ class RoleAccess(Base):
                         )
                     else:
                         raise ValueError("Must provide either user or group")
-                    await session.add(insert_stmt)
-                await session.flush()
+                    await session.execute(insert_stmt)
 
     @classmethod
     async def delete(cls, tenant, role_access_id):
