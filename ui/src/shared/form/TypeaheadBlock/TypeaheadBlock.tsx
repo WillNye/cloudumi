@@ -1,55 +1,60 @@
 import _, { debounce } from 'lodash';
-import { useCallback, useState, useMemo } from 'react';
-import { Input } from 'shared/form/Input';
-import { Search } from '../Search/Search';
-import { Block } from 'shared/layout/Block';
-// import { Form, Header, Icon, Label, Search } from 'semantic-ui-react'
+import { useCallback, useMemo, useState } from 'react';
+import { Search } from '../Search';
+import { Chip } from 'shared/elements/Chip';
+import { Icon } from 'shared/elements/Icon';
 
-export const TypeaheadBlock = props => {
+export const TypeaheadBlock = ({
+  handleInputUpdate,
+  defaultValue,
+  defaultValues,
+  typeahead,
+  noQuery,
+  resultsFormatter,
+  shouldTransformResults
+}) => {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState([]);
-  const [selectedValues, setSelectedValues] = useState(
-    props.defaultValues ?? []
-  );
-  const [value, setValue] = useState(props.defaultValue ?? '');
+  const [selectedValues, setSelectedValues] = useState(defaultValues ?? []);
+  const [value, setValue] = useState(defaultValue ?? '');
 
-  const { typeahead, noQuery, resultsFormatter, shouldTransformResults } =
-    props;
-
-  const handleKeyDown = e => {
-    if (e.key === 'Enter') {
-      if (!e.target.value) {
-        return;
+  const handleKeyDown = useCallback(
+    e => {
+      if (e.key === 'Enter') {
+        if (!e.target.value) {
+          return;
+        }
+        const values = [...selectedValues];
+        values.push(e.target.value);
+        setSelectedValues(values);
+        setResults([]);
+        setValue('');
+        handleInputUpdate(values);
       }
-      const values = [...selectedValues];
-      values.push(e.target.value);
-      setSelectedValues(values);
-      setResults([]);
-      setValue('');
-      props.handleInputUpdate(values);
-    }
-  };
+    },
+    [handleInputUpdate, selectedValues]
+  );
 
   const handleSelectedValueDelete = useCallback(
     value => {
       const values = selectedValues?.filter(item => item !== value);
       setSelectedValues(values);
-      props.handleInputUpdate(values);
+      handleInputUpdate(values);
     },
-    [selectedValues] // eslint-disable-line
+    [selectedValues, handleInputUpdate]
   );
 
-  //   const handleResultSelect = useCallback(
-  //     (e, { result }) => {
-  //       let values = [...selectedValues]
-  //       values.push(result.title)
+  const handleResultSelect = useCallback(
+    ({ result }) => {
+      const values = [...selectedValues];
+      values.push(result.title);
 
-  //       setSelectedValues(values)
+      setSelectedValues(values);
 
-  //       props.handleInputUpdate(values)
-  //     },
-  //     [selectedValues] // eslint-disable-line
-  //   )
+      handleInputUpdate(values);
+    },
+    [selectedValues, handleInputUpdate]
+  );
 
   const debouncedSearchFilter = useMemo(
     () =>
@@ -60,7 +65,7 @@ export const TypeaheadBlock = props => {
           setIsLoading(false);
           setResults([]);
           setValue('');
-          props.handleInputUpdate(selectedValues);
+          handleInputUpdate(selectedValues);
           return;
         }
 
@@ -70,64 +75,50 @@ export const TypeaheadBlock = props => {
         const TYPEAHEAD_API = noQuery
           ? typeahead
           : typeahead.replace('{query}', value);
-
-        props.sendRequestCommon(null, TYPEAHEAD_API, 'get').then(response => {
-          const source = shouldTransformResults
-            ? resultsFormatter(response)
-            : response;
-          const results = _.filter(source, isMatch);
-
-          setIsLoading(false);
-          setResults(results);
-        });
       }, 300),
-    [noQuery, shouldTransformResults, selectedValues] // eslint-disable-line
+    [noQuery, selectedValues, handleInputUpdate, typeahead]
   );
 
   const handleSearchChange = useCallback(
-    (e, { value }) => {
-      setValue(value);
+    e => {
+      e.preventDefault();
+      const newValue = e.target.value;
+      setValue(newValue);
 
-      props.handleInputUpdate(selectedValues);
-      debouncedSearchFilter(value);
+      handleInputUpdate(selectedValues);
+      debouncedSearchFilter(newValue);
     },
-    [selectedValues, debouncedSearchFilter] // eslint-disable-line
+    [selectedValues, debouncedSearchFilter, handleInputUpdate]
   );
 
-  //   const selectedValueLabels = selectedValues.map((selectedValue, index) => (
-  //     <Label basic color='blue' key={index}>
-  //       {selectedValue}
-  //       <Icon
-  //         name='delete'
-  //         onClick={() => handleSelectedValueDelete(selectedValue)}
-  //       />
-  //     </Label>
-  //   ))
+  const selectedValueLabels = useMemo(
+    () =>
+      selectedValues.map((selectedValue, index) => (
+        <Chip key={index}>
+          {selectedValue}
+          <Icon
+            name="close"
+            onClick={() => handleSelectedValueDelete(selectedValue)}
+          />
+        </Chip>
+      )),
+    [selectedValues]
+  );
 
   return (
-    <form>
-      <Block disableLabelPadding>{props.label || 'Enter Value'}</Block>
+    <div>
       <Search
-        // multiple
-        // loading={isLoading}
-        // onResultSelect={handleResultSelect}
-        onSearch={_.debounce(handleSearchChange, 500, {
+        isLoading={isLoading}
+        onResultSelect={handleResultSelect}
+        onChange={_.debounce(handleSearchChange, 500, {
           leading: true
         })}
-        // onKeyDown={handleKeyDown}
-        // results={results}
-        // value={value}
-        // showNoResults={false}
+        resultRenderer={resultsFormatter}
+        onKeyDown={handleKeyDown}
+        results={results}
+        value={value}
       />
-      <br />
-      {/* {selectedValues.length ? (
-        <div>
-          {props.defaultTitle && <Header as='h6'>{props.defaultTitle}</Header>}
-          <Label.Group size='tiny'>{selectedValueLabels}</Label.Group>
-        </div>
-      ) : (
-        <></>
-      )} */}
-    </form>
+      <div>{selectedValueLabels}</div>
+    </div>
   );
 };

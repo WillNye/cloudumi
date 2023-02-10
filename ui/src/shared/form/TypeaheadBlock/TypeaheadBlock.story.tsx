@@ -6,11 +6,5 @@ export default {
 };
 
 export const Basic = () => {
-  return (
-    <TypeaheadBlock
-    //   onSearch={() => {
-    //     //
-    //   }}
-    />
-  );
+  return <TypeaheadBlock />;
 };

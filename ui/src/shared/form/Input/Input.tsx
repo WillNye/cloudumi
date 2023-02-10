@@ -5,7 +5,7 @@ import css from './Input.module.css';
 export interface InputProps
   extends Omit<
     React.InputHTMLAttributes<HTMLInputElement>,
-    'suffix' | 'prefix' | 'size'
+    'suffix' | 'prefix' | 'size' | 'results'
   > {
   fullWidth?: boolean;
   selectOnFocus?: boolean;

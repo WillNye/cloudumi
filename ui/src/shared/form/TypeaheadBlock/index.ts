@@ -1,1 +1,1 @@
-export { TypeaheadBlock } from './TypeaheadBlock';
+export * from './TypeaheadBlock';
