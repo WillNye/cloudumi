@@ -162,7 +162,7 @@ def test_user_domain():
 
 
 @pytest.fixture(scope="session")
-async def valid_jwt_token():
+def valid_jwt_token():
     return await generate_jwt_token(
         TEST_USER_NAME,
         TEST_USER_GROUPS,
