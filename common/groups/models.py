@@ -143,7 +143,7 @@ class Group(SoftDeleteMixin, Base):
                 if get_users:
                     stmt = stmt.options(selectinload(Group.users))
                 groups = await session.execute(stmt)
-                return groups.scalars().all()
+                return groups.unique().scalars().all()
 
     async def serialize_for_scim(self):
         users = []

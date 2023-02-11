@@ -44,8 +44,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y insta
     # Install Python requirements
     python -m venv $VIRTUAL_ENV && \
     . env/bin/activate && \
-    python -m pip install -r requirements.lock && \
     python -m pip install git+https://${IAMBIC_REPO_USER}:${IAMBIC_REPO_TOKEN}@github.com/noqdev/iambic.git@main && \
+    python -m pip install -r requirements.lock && \
     # Install yarn and frontend dependencies
     npm install yarn -g && \
     yarn --cwd frontend --dev && \

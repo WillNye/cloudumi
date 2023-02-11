@@ -3,10 +3,13 @@ from typing import List
 import tornado.escape
 import tornado.web
 
+from common.config import config
 from common.handlers.base import BaseHandler
 from common.lib.filter import filter_data_with_sqlalchemy
 from common.models import WebResponse
 from common.role_access.models import RoleAccess
+
+log = config.get_logger()
 
 
 class ManageRoleAccessHandler(BaseHandler):
@@ -29,7 +32,22 @@ class ManageRoleAccessHandler(BaseHandler):
                     count=len(errors),
                 ).dict(exclude_unset=True, exclude_none=True)
             )
-            self.set_status(500, reason=str(exc))
+            log.error(f"Error while retrieving role access data: {exc}")
+            self.set_status(
+                500, reason="There was an error retrieving role access data"
+            )
+            raise tornado.web.Finish()
+
+        if len(objects) == 0:
+            self.write(
+                WebResponse(
+                    errors=["No role access data found"],
+                    status_code=404,
+                    count=len(objects),
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            log.warning("No role access data found")
+            self.set_status(404, reason="No role access data found")
             raise tornado.web.Finish()
 
         res = [x.dict() for x in objects]

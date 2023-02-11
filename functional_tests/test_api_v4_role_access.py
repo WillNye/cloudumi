@@ -1,16 +1,10 @@
-import aiohttp
 import pytest
 
 
-@pytest.fixture
-def app_listening_on_port():
-    return 8092
-
-
 @pytest.mark.asyncio
-async def test_retrieve_items(app_listening_on_port):
+async def test_retrieve_items(app_listening_on_port, authenticated_client_session):
     port = app_listening_on_port
-    async with aiohttp.ClientSession() as session:
+    async for session in authenticated_client_session:
         async with session.post(
             f"http://localhost:{port}/api/v4/roles/access", json={}
         ) as resp:
@@ -24,7 +18,9 @@ async def test_retrieve_items(app_listening_on_port):
 
 
 @pytest.mark.asyncio
-async def test_filter_retrieve_items(app_listening_on_port):
+async def test_filter_retrieve_items(
+    app_listening_on_port, authenticated_client_session
+):
     body = {
         "filter": {
             "pagination": {"currentPageIndex": 1, "pageSize": 30},
@@ -50,7 +46,7 @@ async def test_filter_retrieve_items(app_listening_on_port):
         }
     }
     port = app_listening_on_port
-    async with aiohttp.ClientSession() as session:
+    async for session in authenticated_client_session:
         async with session.post(
             f"http://localhost:{port}/api/v4/roles/access", json=body
         ) as resp:
@@ -64,7 +60,9 @@ async def test_filter_retrieve_items(app_listening_on_port):
 
 
 @pytest.mark.asyncio
-async def test_filter_not_found_returns_500(app_listening_on_port):
+async def test_filter_not_found_returns_500(
+    app_listening_on_port, authenticated_client_session
+):
     body = {
         "filter": {
             "pagination": {"currentPageIndex": 1, "pageSize": 30},
@@ -90,7 +88,7 @@ async def test_filter_not_found_returns_500(app_listening_on_port):
         }
     }
     port = app_listening_on_port
-    async with aiohttp.ClientSession() as session:
+    async for session in authenticated_client_session:
         async with session.post(
             f"http://localhost:{port}/api/v4/roles/access", json=body
         ) as resp:
