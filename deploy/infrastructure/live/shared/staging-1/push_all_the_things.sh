@@ -79,6 +79,8 @@ docker build --platform=linux/amd64 \
     --build-arg IAMBIC_REPO_USER="$IAMBIC_REPO_USER" \
     --build-arg IAMBIC_REPO_TOKEN="$IAMBIC_REPO_TOKEN" \
     --build-arg PUBLIC_URL="$PUBLIC_URL" \
+    --build-arg IAMBIC_REPO_USER="$IAMBIC_REPO_USER" \
+    --build-arg IAMBIC_REPO_TOKEN="$IAMBIC_REPO_TOKEN" \
     -t $DOCKER_IMAGE_NAME \
     --progress=plain \
     .
