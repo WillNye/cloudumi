@@ -7,6 +7,19 @@ then
   export AWS_PROFILE={{ aws_profile }}
 fi
 
+# Define the environment file path
+env_file=".env"
+
+# Check if the environment file exists
+if [ -f "$env_file" ]; then
+  # Source the environment file if it exists
+  source "$env_file"
+else
+  # If the environment file does not exist, print an error message
+  echo "ERROR: Environment file $env_file does not exist."
+  exit 1
+fi
+
 echo
 echo "Updating aws-cli"
 echo
@@ -63,6 +76,8 @@ echo "Building and tagging docker image"
 echo
 
 docker build --platform=linux/amd64 \
+    --build-arg IAMBIC_REPO_USER="$IAMBIC_REPO_USER" \
+    --build-arg IAMBIC_REPO_TOKEN="$IAMBIC_REPO_TOKEN" \
     --build-arg PUBLIC_URL="$PUBLIC_URL" \
     -t $DOCKER_IMAGE_NAME \
     --progress=plain \
