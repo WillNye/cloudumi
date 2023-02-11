@@ -1,8 +1,7 @@
 from common.config import config
+from common.config.globals import IAMBIC_REPOS_BASE_KEY
 from common.iambic_request.models import GitHubPullRequest, IambicTemplateChange
 from common.models import IambicRepoDetails
-
-IAMBIC_REPOS_BASE_KEY = "iambic_repos"
 
 
 async def get_allowed_approvers(

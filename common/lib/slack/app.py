@@ -185,7 +185,7 @@ oauth_settings = AsyncOAuthSettings(
     state_store=oauth_state_store,
     installation_store=installation_store,
     scopes=scopes,
-    user_scopes=scopes,
+    # user_scopes=scopes,
     install_path="/api/v3/slack/install",
     redirect_uri_path="/api/v3/slack/oauth_redirect",
 )
