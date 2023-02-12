@@ -16,6 +16,10 @@ async def setup_db():
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
             tenant = await Tenant.get_by_name(TEST_USER_DOMAIN_US)
+            if not tenant:
+                tenant = await Tenant.create(
+                    name=TEST_USER_DOMAIN_US, organization_id=TEST_USER_DOMAIN_US
+                )
             try:
                 await AwsIdentityRole.create(
                     tenant,
@@ -82,7 +86,7 @@ class TestAPIV4RoleAccess(FunctionalTest):
         asyncio.run(setup_db())
 
     @classmethod
-    async def tearDownClass(cls) -> None:
+    def tearDownClass(cls) -> None:
         super().tearDownClass()
         asyncio.run(teardown_db())
 

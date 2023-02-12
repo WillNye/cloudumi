@@ -20,6 +20,15 @@ class Tenant(SoftDeleteMixin, Base):
         )
 
     @classmethod
+    async def create(cls, **kwargs):
+        tenant = cls(**kwargs)
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                session.add(tenant)
+                await session.commit()
+        return tenant
+
+    @classmethod
     async def get_by_name(cls, tenant_name, session=None):
         async def _query(session):
             stmt = select(Tenant).where(
