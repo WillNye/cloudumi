@@ -23,7 +23,7 @@ class ManageRoleAccessHandler(BaseHandler):
                 _filter, self.ctx.db_tenant, RoleAccess
             )
         except Exception as exc:
-            errors = [str(exc)]
+            errors = ["Error while retrieving role access data"]
             self.write(
                 WebResponse(
                     errors=errors,

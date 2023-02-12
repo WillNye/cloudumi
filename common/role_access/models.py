@@ -82,7 +82,7 @@ class RoleAccess(Base):
             group=self.group.dict() if self.group else {},
             identity_role=self.identity_role.dict() if self.identity_role else {},
             cli_only=self.cli_only,
-            expiration=self.expiration,
+            expiration=str(self.expiration),
             request_id=self.request_id,
             cloud_provider=self.cloud_provider,
             signature=self.signature,

@@ -319,7 +319,7 @@ class User(SoftDeleteMixin, Base):
     async def create(cls, tenant, username, email, password, **kwargs):
         user = cls(
             id=str(uuid4()),
-            tenant=tenant,
+            tenant_id=tenant.id,
             username=username,
             email=email,
             password_reset_required=True,
