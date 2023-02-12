@@ -24,7 +24,7 @@ loc = args.loc
 if stage is None:
     stage = os.getenv("STAGE")
 if loc is None:
-    loc = pathlib.Path(__file__).parent.absolute() / "test_api_v4_role_access.py"
+    loc = pathlib.Path(__file__).parent.absolute()
 
 
 class MyPlugin:
