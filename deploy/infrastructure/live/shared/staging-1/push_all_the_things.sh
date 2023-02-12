@@ -16,8 +16,7 @@ if [ -f "$env_file" ]; then
   source "$env_file"
 else
   # If the environment file does not exist, print an error message
-  echo "ERROR: Environment file $env_file does not exist."
-  exit 1
+  echo "Environment file $env_file does not exist. Not sourcing .env"
 fi
 
 echo
