@@ -139,7 +139,9 @@ async def sync_identity_roles(tenant: Tenant, config_template: Config):
     known_roles = await AwsIdentityRole.get_all(tenant)
     remove_roles = [x for x in known_roles if x.role_arn not in role_mappings.keys()]
 
-    await AwsIdentityRole.delete(tenant, [x.id for x in remove_roles])
+    await AwsIdentityRole.delete_by_tenant_and_role_ids(
+        tenant, [x.id for x in remove_roles]
+    )
     await AwsIdentityRole.bulk_create(
         tenant,
         [

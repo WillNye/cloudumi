@@ -237,9 +237,12 @@ async def filter_data_with_sqlalchemy(filter_obj, tenant, Table):
             if filter and filter.tokens:
                 if filter.operation == FilterOperation._and:
                     for token in filter.tokens:
-                        token = await get_dynamic_objects_from_filter_tokens(
-                            Table, token
-                        )
+                        try:
+                            token = await get_dynamic_objects_from_filter_tokens(
+                                Table, token
+                            )
+                        except AttributeError:
+                            return []
                         conditions = await get_query_conditions(
                             Table, token, conditions
                         )
@@ -247,9 +250,12 @@ async def filter_data_with_sqlalchemy(filter_obj, tenant, Table):
                 elif filter.operation == FilterOperation._or:
                     conditions = []
                     for token in filter.tokens:
-                        token = await get_dynamic_objects_from_filter_tokens(
-                            Table, token
-                        )
+                        try:
+                            token = await get_dynamic_objects_from_filter_tokens(
+                                Table, token
+                            )
+                        except AttributeError:
+                            return []
                         conditions = await get_query_conditions(
                             Table, token, conditions
                         )

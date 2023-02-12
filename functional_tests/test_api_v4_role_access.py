@@ -162,4 +162,10 @@ class TestAPIV4RoleAccess(FunctionalTest):
         }
 
         res = self.make_request("/api/v4/roles/access", method="post", body=body)
-        self.assertEqual(res.code, 500)
+        self.assertEqual(res.code, 200)
+        res_j = json.loads(res.body)
+        self.assertIn("data", res_j.keys())
+        data = res_j.get("data")
+        self.assertIn("access_roles", data.keys())
+        access_roles = data.get("access_roles")
+        self.assertEqual(len(access_roles), 0)

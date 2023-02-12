@@ -15,7 +15,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID, insert
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import delete, select, update
+from sqlalchemy.sql import select, update
 from sqlalchemy.types import Enum
 
 from common.config.globals import ASYNC_PG_SESSION
@@ -166,17 +166,24 @@ class RoleAccess(Base):
                         raise ValueError("Must provide either user or group")
                     await session.execute(insert_stmt)
 
-    @classmethod
-    async def delete(cls, tenant, role_access_id):
+    async def delete(self):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
-                await session.execute(
-                    delete(RoleAccess).where(
-                        and_(
-                            RoleAccess.id == role_access_id, RoleAccess.tenant == tenant
-                        )
-                    )
-                )
+                await session.delete(self)
+                await session.commit()
+        return True
+
+    # @classmethod
+    # async def delete(cls, tenant, role_access_id):
+    #     async with ASYNC_PG_SESSION() as session:
+    #         async with session.begin():
+    #             await session.execute(
+    #                 delete(RoleAccess).where(
+    #                     and_(
+    #                         RoleAccess.id == role_access_id, RoleAccess.tenant == tenant
+    #                     )
+    #                 )
+    #             )
 
     @classmethod
     async def get_by_user_and_role_arn(cls, tenant: Tenant, user: User, role_arn: str):

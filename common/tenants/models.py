@@ -28,6 +28,13 @@ class Tenant(SoftDeleteMixin, Base):
                 await session.commit()
         return tenant
 
+    async def delete(self):
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                await session.delete(self)
+                await session.commit()
+        return True
+
     @classmethod
     async def get_by_name(cls, tenant_name, session=None):
         async def _query(session):

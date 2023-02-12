@@ -38,7 +38,7 @@ def run():
         conftest = __import__("functional_tests.conftest")
 
         if pytest.main(
-            # ["-s", "-k", "test_api_v4", loc], plugins=[conftest, MyPlugin()]
+            # ["-s", "-k", "test_api_v4", loc],
             ["-s", loc],
             plugins=[conftest, MyPlugin()],
         ) in [

@@ -76,8 +76,15 @@ class AwsIdentityRole(Base):
                     )
                     await session.execute(insert_stmt)
 
+    async def delete(self):
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                await session.delete(self)
+                await session.commit()
+        return True
+
     @classmethod
-    async def delete(cls, tenant: Tenant, role_ids: list[int]):
+    async def delete_by_tenant_and_role_ids(cls, tenant: Tenant, role_ids: list[int]):
         if isinstance(role_ids, int):
             role_ids = [role_ids]
         async with ASYNC_PG_SESSION() as session:

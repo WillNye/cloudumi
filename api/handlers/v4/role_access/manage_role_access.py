@@ -37,18 +37,6 @@ class ManageRoleAccessHandler(BaseHandler):
             )
             raise
 
-        if len(objects) == 0:
-            self.write(
-                WebResponse(
-                    errors=["No role access data found"],
-                    status_code=404,
-                    count=len(objects),
-                ).dict(exclude_unset=True, exclude_none=True)
-            )
-            log.warning("No role access data found")
-            self.set_status(404, reason="No role access data found")
-            raise tornado.web.Finish()
-
         res = [x.dict() for x in objects]
 
         self.write(
