@@ -15,13 +15,12 @@ log = config.get_logger()
 class ManageRoleAccessHandler(BaseHandler):
     async def post(self):
         data = tornado.escape.json_decode(self.request.body)
-        tenant_name = self.ctx.tenant
 
         _filter = data.get("filter", {})
 
         try:
             objects: List[objects] = await filter_data_with_sqlalchemy(
-                _filter, tenant_name, RoleAccess
+                _filter, self.ctx.db_tenant, RoleAccess
             )
         except Exception as exc:
             errors = [str(exc)]
@@ -32,11 +31,11 @@ class ManageRoleAccessHandler(BaseHandler):
                     count=len(errors),
                 ).dict(exclude_unset=True, exclude_none=True)
             )
-            log.error(f"Error while retrieving role access data: {exc}")
+            log.error(f"Error while retrieving role access data: {exc}", exc_info=True)
             self.set_status(
                 500, reason="There was an error retrieving role access data"
             )
-            raise tornado.web.Finish()
+            raise
 
         if len(objects) == 0:
             self.write(

@@ -37,7 +37,11 @@ def run():
         logger.info("Running functional tests")
         conftest = __import__("functional_tests.conftest")
 
-        if pytest.main([loc], plugins=[conftest, MyPlugin()]) in [
+        if pytest.main(
+            # ["-s", "-k", "test_api_v4", loc], plugins=[conftest, MyPlugin()]
+            ["-s", loc],
+            plugins=[conftest, MyPlugin()],
+        ) in [
             ExitCode.TESTS_FAILED,
             ExitCode.USAGE_ERROR,
         ]:

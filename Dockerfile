@@ -30,7 +30,7 @@ ADD frontend/yarn.lock frontend/yarn.lock
 # Install dependencies in as few layers as possible
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata && apt-get install -y software-properties-common gcc && \
     add-apt-repository -y ppa:deadsnakes/ppa && apt-get update && apt-get install -y python3.10 python3-distutils \
-    python3-pip python3-apt python3-dev python-is-python3 pkg-config awscli \
+    python3-pip python3-apt python3-dev python-is-python3 pkg-config awscli libpq-dev \
     git-all python3.10-venv curl telnet iputils-ping sudo vim systemctl apt-transport-https \
     build-essential libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev python3-dev && \
     mkdir -p /app && \

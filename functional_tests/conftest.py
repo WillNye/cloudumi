@@ -4,8 +4,6 @@ import urllib
 import urllib.parse
 from http.cookies import SimpleCookie
 
-import aiohttp
-import pytest
 import ujson as json
 from _pytest.config import Config
 from pytest_cov.plugin import CovPlugin
@@ -21,7 +19,7 @@ TEST_ROLE_ARN = f"arn:aws:iam::{TEST_ACCOUNT_ID}:role/{TEST_ROLE}"
 TEST_USER_NAME = "user@noq.dev"
 TEST_USER_GROUPS = ["engineering@noq.dev"]
 TEST_USER_DOMAIN = os.getenv("TEST_USER_DOMAIN")
-XSRF_TOKEN = None
+
 stage = os.getenv("STAGE", "staging")
 if not TEST_USER_DOMAIN:
     if stage == "staging":
@@ -59,6 +57,10 @@ def disable_coverage_on_deployment(config):
 
 
 class FunctionalTest(AsyncHTTPTestCase):
+    """
+    Class for functional tests that handles authentication and XSRF token management.
+    """
+
     maxDiff = None
     cookies = SimpleCookie()
 
@@ -72,6 +74,9 @@ class FunctionalTest(AsyncHTTPTestCase):
     )
 
     def get_app(self):
+        """
+        Returns the Tornado application instance.
+        """
         from common.config import config
 
         config.values["_global_"]["tornado"]["debug"] = True
@@ -83,11 +88,17 @@ class FunctionalTest(AsyncHTTPTestCase):
         return make_app(jwt_validator=lambda x: {})
 
     def _render_cookie_back(self):
+        """
+        Converts the cookies into a string format to be passed in HTTP headers.
+        """
         return "".join(
             ["%s=%s;" % (x, morsel.value) for (x, morsel) in self.cookies.items()]
         )
 
-    def _update_cookies(self, headers):
+    def _update_cookies_return_xsrf(self, headers):
+        """
+        Updates the cookies from the HTTP headers.
+        """
         try:
             sc = headers["Set-Cookie"]
             cookies = escape.native_str(sc)
@@ -97,8 +108,8 @@ class FunctionalTest(AsyncHTTPTestCase):
                 if "," not in cookies:
                     break
                 cookies = cookies[cookies.find(",") + 1 :]
-        except KeyError:
-            return
+        except KeyError as e:
+            print("No cookies found in headers", e)
 
     def make_request(
         self,
@@ -110,6 +121,9 @@ class FunctionalTest(AsyncHTTPTestCase):
         follow_redirects=True,
         request_timeout=120,
     ):
+        """
+        Makes an HTTP request with authentication and xsrf, and returns the response.
+        """
         if not headers:
             headers = {}
         if not headers.get("Content-Type"):
@@ -121,11 +135,14 @@ class FunctionalTest(AsyncHTTPTestCase):
         # Get XSRF token
         if method.lower() in ["post", "put", "delete"]:
             r = self.fetch("/", headers=headers)
-            self._update_cookies(r.headers)
+            self._update_cookies_return_xsrf(r.headers)
+            if self.cookies.get("_xsrf"):
+                xsrf_token = self.cookies.get("_xsrf").value
+                self.cookies["_xsrf"] = xsrf_token
+                headers["X-Xsrftoken"] = xsrf_token
 
         if self.cookies:
             headers["Cookie"] = self._render_cookie_back()
-
         if body is not None and body_type == "json":
             body = json.dumps(body)
         if body is not None and body_type == "urlencode":
@@ -144,48 +161,3 @@ class FunctionalTest(AsyncHTTPTestCase):
             r = self.fetch(path, body=body, headers=headers)
             return r
         raise Exception("Invalid method")
-
-
-@pytest.fixture(scope="session")
-def test_user_name():
-    return TEST_USER_NAME
-
-
-@pytest.fixture(scope="session")
-def test_user_groups():
-    return TEST_USER_GROUPS
-
-
-@pytest.fixture(scope="session")
-def test_user_domain():
-    return TEST_USER_DOMAIN
-
-
-@pytest.fixture(scope="session")
-def valid_jwt_token():
-    return await generate_jwt_token(
-        TEST_USER_NAME,
-        TEST_USER_GROUPS,
-        TEST_USER_DOMAIN_US,
-        eula_signed=True,
-    )
-
-
-@pytest.fixture(scope="session")
-async def authenticated_client_session(valid_jwt_token, test_user_domain):
-    async with aiohttp.ClientSession() as session:
-        session.cookie_jar.update_cookies({"jwt": valid_jwt_token})
-        headers = {"Content-Type": "application/json"}
-        headers["Host"] = test_user_domain
-        session.cookie_jar.update_cookies({"noq_auth": valid_jwt_token})
-        headers["X-Forwarded-For"] = "127.0.0.1"
-
-        # Get XSRF token
-        session.get("/", headers=headers)
-
-        yield session
-
-
-@pytest.fixture
-def app_listening_on_port():
-    return 8092

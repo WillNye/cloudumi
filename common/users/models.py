@@ -194,8 +194,8 @@ class User(SoftDeleteMixin, Base):
             return True
         return False
 
-    async def get_totp_uri(self):
-        label = urllib.parse.quote_plus(self.tenant.replace("_", "."))
+    async def get_totp_uri(self, tenant):
+        label = urllib.parse.quote_plus(tenant.replace("_", "."))
         mfa_secret_temp = self.mfa_secret_temp
         if not mfa_secret_temp:
             mfa_secret_temp = self.set_mfa_secret_temp()
@@ -241,6 +241,7 @@ class User(SoftDeleteMixin, Base):
                 stmt = select(User).where(
                     and_(
                         User.tenant == tenant,
+                        # User.c.tenant.name == tenant,
                         User.id == user_id,
                         User.deleted == False,  # noqa
                     )

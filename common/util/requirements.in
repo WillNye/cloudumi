@@ -31,7 +31,9 @@ password_strength # For checking password strength
 policy_sentry # For telling us all the possible AWS actions and resources
 pydantic # For models
 pdpyras # Pagerduty
-psycopg2-binary # For postgres
+psycopg
+psycopg-binary # For postgres
+psycopg_c
 PyGithub # For CRUD access to PRs in Github
 pyjwt
 pytz
@@ -42,7 +44,7 @@ ruamel.yaml
 sentry_sdk # Send errors and exceptions to Sentry
 setupmeta
 simplejson
-SQLAlchemy==1.4.46  # Sqlalchemy 2 breaks result sets in new ways; will need to fix
+SQLAlchemy
 tenacity
 tornado
 ujson

@@ -232,7 +232,6 @@ async def filter_data_with_sqlalchemy(filter_obj, tenant, Table):
 
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
-            tenant = await Tenant.get_by_name(tenant, session=session)
             query = select(Table)
             conditions = [getattr(Table, "tenant") == tenant]
             if filter and filter.tokens:

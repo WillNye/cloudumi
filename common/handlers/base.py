@@ -46,6 +46,7 @@ from common.lib.tracing import ConsoleMeTracer
 from common.lib.web import handle_generic_error_response
 from common.lib.workos import WorkOS
 from common.models import WebResponse
+from common.tenants.models import Tenant
 
 log = config.get_logger()
 
@@ -69,11 +70,18 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
             self.set_header("Access-Control-Allow-Credentials", "true")
             self.set_header("Content-Type", "application/json")
 
-    def prepare(self):
+    async def prepare(self):
         unprotected_routes = ["/healthcheck", "/api/v3/tenant_registration"]
         tenant = self.get_tenant_name()
         # Ensure request is for a valid tenant
         if config.is_tenant_configured(tenant):
+            self.ctx = RequestContext(
+                tenant=tenant,
+                request_uuid=str(uuid.uuid4()),
+                uri=self.request.uri,
+            )
+            if not config.get("_global_.environment") == "test":
+                self.ctx.db_tenant = await Tenant.get_by_name(tenant)
             return
 
         # Ignore unprotected routes, like /healthcheck
@@ -270,6 +278,7 @@ class BaseHandler(TornadoRequestHandler):
         super(BaseHandler, self).initialize()
 
     async def prepare(self) -> None:
+        await super(BaseHandler, self).prepare()
         tenant = self.get_tenant_name()
         if not config.is_tenant_configured(tenant):
             function: str = (
@@ -829,6 +838,7 @@ class BaseHandler(TornadoRequestHandler):
 
         self.ctx = RequestContext(
             tenant=tenant,
+            db_tenant=self.ctx.db_tenant,
             user=self.user,
             groups=self.groups,
             request_uuid=self.request_uuid,
@@ -1270,6 +1280,7 @@ class ScimAuthHandler(TornadoRequestHandler):
         super(ScimAuthHandler, self).initialize(**kwargs)
 
     async def prepare(self) -> None:
+        await super(ScimAuthHandler, self).prepare()
         self.request_uuid: str = str(uuid.uuid4())
         tenant: str = self.get_tenant_name()
         tenant_config: TenantConfig = TenantConfig(tenant)
@@ -1283,8 +1294,3 @@ class ScimAuthHandler(TornadoRequestHandler):
 
         if authorization_token != tenant_config.scim_bearer_token:
             raise tornado.web.HTTPError(403, "Invalid bearer token.")
-        self.ctx = RequestContext(
-            tenant=tenant,
-            request_uuid=self.request_uuid,
-            uri=self.request.uri,
-        )
