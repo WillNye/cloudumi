@@ -179,15 +179,10 @@ class RoleAccess(Base):
                 )
 
     @classmethod
-    async def get_by_user_and_role_arn(
-        cls, tenant_name: str, user: User, role_arn: str
-    ):
+    async def get_by_user_and_role_arn(cls, tenant: Tenant, user: User, role_arn: str):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
-                tenant = await Tenant.get_by_name(tenant_name)
-                identity_role = await AwsIdentityRole.get_by_role_arn(
-                    tenant_name, role_arn
-                )
+                identity_role = await AwsIdentityRole.get_by_role_arn(tenant, role_arn)
                 stmt = select(RoleAccess).where(
                     and_(
                         RoleAccess.tenant == tenant,
@@ -221,7 +216,7 @@ class RoleAccess(Base):
     async def get_by_arn(cls, tenant, role_arn):
         try:
             async with ASYNC_PG_SESSION() as session:
-                identity_role = await AwsIdentityRole.get_by_role_arn(role_arn)
+                identity_role = await AwsIdentityRole.get_by_role_arn(tenant, role_arn)
                 if role_arn:
                     stmt = (
                         select(RoleAccess)

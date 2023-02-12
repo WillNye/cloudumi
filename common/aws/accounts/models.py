@@ -14,7 +14,7 @@ class AWSAccount(Base):
     id = Column(Integer(), primary_key=True, autoincrement=True)
     name = Column(String)
     account_id = Column(String, index=True)
-    tenant_id = Column(ForeignKey("tenant.id"))
+    tenant_id = Column(Integer(), ForeignKey("tenant.id"))
 
     tenant = relationship(
         "Tenant", order_by=account_id, primaryjoin="Tenant.id == AWSAccount.tenant_id"
