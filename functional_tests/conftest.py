@@ -136,10 +136,12 @@ class FunctionalTest(AsyncHTTPTestCase):
         if method.lower() in ["post", "put", "delete"]:
             r = self.fetch("/", headers=headers)
             self._update_cookies_return_xsrf(r.headers)
-            if self.cookies.get("_xsrf"):
-                xsrf_token = self.cookies.get("_xsrf").value
-                self.cookies["_xsrf"] = xsrf_token
-                headers["X-Xsrftoken"] = xsrf_token
+            for s in ["XSRF-TOKEN", "_xsrf"]:
+                if self.cookies.get(s):
+                    xsrf_token = self.cookies.get(s).value
+                    self.cookies["_xsrf"] = xsrf_token
+                    headers["X-Xsrftoken"] = xsrf_token
+                    break
 
         if self.cookies:
             headers["Cookie"] = self._render_cookie_back()

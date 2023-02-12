@@ -50,6 +50,7 @@ jobs:
             software-properties-common \
             python3.10-dev \
             build-essential \
+            libpq-dev \
             libxml2-dev \
             libxmlsec1-dev \
             libxmlsec1-openssl \
