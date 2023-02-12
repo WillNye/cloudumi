@@ -4,13 +4,17 @@ load("@cloudumi_python_ext//:requirements.bzl", "requirement")
 
 DEPS = [
     "//common/lib",
+    "//common/iambic_request:lib",
+    "//common/pg_core:lib",
     requirement("asgiref"),
+    requirement("asyncpg"),
     requirement("boto3"),
     requirement("botocore"),
     requirement("logmatic-python"),
     requirement("pytz"),
     requirement("ruamel.yaml"),
     requirement("sentry_sdk"),
+    requirement("sqlalchemy"),
     requirement("ujson"),
 ]
 
@@ -19,6 +23,7 @@ filegroup(
     srcs = (
         "__init__.py",
         "config.py",
+        "globals.py",
         "ip_restrictions.py",
         "logger.py",
         "models.py",

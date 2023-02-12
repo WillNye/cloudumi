@@ -29,7 +29,11 @@ class ScimV2GroupsHandler(ScimAuthHandler):
                 filters[f"{search_key_name}__eq"] = search_value
 
         groups = await Group.get_all(
-            self.ctx.tenant, get_users=True, offset=offset, count=count, filters=filters
+            self.ctx.db_tenant,
+            get_users=True,
+            offset=offset,
+            count=count,
+            filters=filters,
         )
 
         for group in groups:
@@ -54,7 +58,7 @@ class ScimV2GroupsHandler(ScimAuthHandler):
         members = body.get("members", [])
         users = []
         for member in members:
-            user = await User.get_by_id(self.ctx.tenant, member["value"])
+            user = await User.get_by_id(self.ctx.db_tenant, member["value"])
             if not user:
                 self.set_status(404)
                 self.write(
@@ -69,10 +73,13 @@ class ScimV2GroupsHandler(ScimAuthHandler):
 
         try:
             group = Group(
-                name=displayName, tenant=self.ctx.tenant, users=users, managed_by="SCIM"
+                name=displayName,
+                tenant=self.ctx.db_tenant,
+                users=users,
+                managed_by="SCIM",
             )
             await group.write()
-            group = await Group.get_by_id(self.ctx.tenant, group.id, get_users=True)
+            group = await Group.get_by_id(self.ctx.db_tenant, group.id, get_users=True)
             serialized_group = await group.serialize_for_scim()
             self.set_header("Content-Type", "application/json")
             self.write(json.dumps(serialized_group))
@@ -85,7 +92,7 @@ class ScimV2GroupHandler(ScimAuthHandler):
 
     async def get(self, group_id):
         """Get a group by ID."""
-        group = await Group.get_by_id(self.ctx.tenant, group_id)
+        group = await Group.get_by_id(self.ctx.db_tenant, group_id)
         if group:
             serialized_group = await group.serialize_for_scim()
             self.set_header("Content-Type", "application/json")
@@ -102,7 +109,7 @@ class ScimV2GroupHandler(ScimAuthHandler):
 
     async def update(self, group_id):
         """Update a group by ID."""
-        group = await Group.get_by_id(self.ctx.tenant, group_id, get_users=True)
+        group = await Group.get_by_id(self.ctx.db_tenant, group_id, get_users=True)
         if not group:
             self.set_status(404)
             self.write(
@@ -126,7 +133,7 @@ class ScimV2GroupHandler(ScimAuthHandler):
 
         users = []
         for member in members:
-            user = await User.get_by_id(self.ctx.tenant, member["value"])
+            user = await User.get_by_id(self.ctx.db_tenant, member["value"])
             if not user:
                 self.set_status(404)
                 self.write(
@@ -154,7 +161,7 @@ class ScimV2GroupHandler(ScimAuthHandler):
 
     async def delete(self, group_id):
         """Delete a group by ID."""
-        group = await Group.get_by_id(self.ctx.tenant, group_id)
+        group = await Group.get_by_id(self.ctx.db_tenant, group_id)
         if not group:
             self.set_status(404)
             self.write(

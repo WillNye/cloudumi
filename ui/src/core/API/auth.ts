@@ -1,3 +1,4 @@
+import { Auth } from 'aws-amplify';
 import axios from '../Axios';
 import { V1_API_URL, V2_API_URL, V4_API_URL } from './constants';
 
@@ -65,5 +66,14 @@ export const resetPassword = (data: ForgotPasswordParams) => {
 
 export const signinWithSSO = () => {
   const url = `${V1_API_URL}/auth?sso_signin=true`;
+  return axios.get(url);
+};
+
+export const awsLogout = async () => {
+  return Auth.signOut();
+};
+
+export const awsSignIn = (role: string) => {
+  const url = `${V2_API_URL}/role_login/${role}`;
   return axios.get(url);
 };

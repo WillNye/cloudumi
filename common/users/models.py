@@ -13,6 +13,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     Enum,
+    ForeignKey,
     Integer,
     String,
     UniqueConstraint,
@@ -41,8 +42,8 @@ class User(SoftDeleteMixin, Base):
     __tablename__ = "users"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     active = Column(Boolean, default=True)
-    username = Column(String, nullable=False)
-    email: str = Column(String, nullable=False)
+    username = Column(String, nullable=False, index=True)
+    email: str = Column(String, nullable=False, index=True)
     email_type: str = Column(String, nullable=True)
     locale: str = Column(String, nullable=True)
     external_id: str = Column(String, nullable=True)
@@ -71,7 +72,9 @@ class User(SoftDeleteMixin, Base):
     mfa_primary_method = Column(String(64), nullable=True)
     mfa_phone_number = Column(String(128), nullable=True)
     last_successful_mfa_code = Column(String(64), nullable=True)
-    tenant = Column(String, nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenant.id"), nullable=False)
+
+    tenant = relationship("Tenant")
 
     # TODO: When we're soft-deleting, we need our own methods to get these groups
     # because `deleted=true`. Create async delete function to update the relationship
@@ -85,8 +88,8 @@ class User(SoftDeleteMixin, Base):
     )
 
     __table_args__ = (
-        UniqueConstraint("tenant", "username", name="uq_tenant_username"),
-        UniqueConstraint("tenant", "email", name="uq_tenant_email"),
+        UniqueConstraint("tenant_id", "username", name="uq_tenant_username"),
+        UniqueConstraint("tenant_id", "email", name="uq_tenant_email"),
     )
 
     def get_status(self):
@@ -103,10 +106,13 @@ class User(SoftDeleteMixin, Base):
             id=str(self.id),
             status=self.get_status(),
             active=self.active,
+            username=self.username,
             email_verified=self.email_verified,
             password_reset_required=self.password_reset_required,
             email=self.email,
             managed_by=self.managed_by,
+            display_name=self.display_name,
+            full_name=self.full_name,
         )
 
     async def delete(self):
@@ -203,8 +209,8 @@ class User(SoftDeleteMixin, Base):
             return True
         return False
 
-    async def get_totp_uri(self):
-        label = urllib.parse.quote_plus(self.tenant.replace("_", "."))
+    async def get_totp_uri(self, tenant):
+        label = urllib.parse.quote_plus(tenant.replace("_", "."))
         mfa_secret_temp = self.mfa_secret_temp
         if not mfa_secret_temp:
             mfa_secret_temp = self.set_mfa_secret_temp()
@@ -250,6 +256,7 @@ class User(SoftDeleteMixin, Base):
                 stmt = select(User).where(
                     and_(
                         User.tenant == tenant,
+                        # User.c.tenant.name == tenant,
                         User.id == user_id,
                         User.deleted == False,  # noqa
                     )
@@ -317,10 +324,17 @@ class User(SoftDeleteMixin, Base):
                 return users.scalars().all()
 
     @classmethod
+    async def get_by_attr(cls, attribute, value):
+        async with ASYNC_PG_SESSION() as session:
+            stmt = select(User).filter(getattr(User, attribute) == value)
+            items = await session.execute(stmt)
+            return items.scalars().first()
+
+    @classmethod
     async def create(cls, tenant, username, email, password, **kwargs):
         user = cls(
             id=str(uuid4()),
-            tenant=tenant,
+            tenant_id=tenant.id,
             username=username,
             email=email,
             password_reset_required=True,

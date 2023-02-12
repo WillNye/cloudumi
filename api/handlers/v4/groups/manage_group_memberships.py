@@ -17,7 +17,7 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
         user_names = data.get("users")
         messages = []
         for group_name in group_names:
-            group = await Group.get_by_name(self.ctx.tenant, group_name)
+            group = await Group.get_by_name(self.ctx.db_tenant, group_name)
             if not group:
                 messages.append(
                     {
@@ -27,7 +27,7 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
                 )
                 continue
             for user_name in user_names:
-                user = await User.get_by_username(self.ctx.tenant, user_name)
+                user = await User.get_by_username(self.ctx.db_tenant, user_name)
                 if not user:
                     messages.append(
                         {
@@ -68,7 +68,7 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
         user_names = data.get("users")
         messages = []
         for group_name in group_names:
-            group = await Group.get_by_name(self.ctx.tenant, group_name)
+            group = await Group.get_by_name(self.ctx.db_tenant, group_name)
             if not group:
                 messages.append(
                     {
@@ -78,7 +78,7 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
                 )
                 continue
             for user_name in user_names:
-                user = await User.get_by_username(self.ctx.tenant, user_name)
+                user = await User.get_by_username(self.ctx.db_tenant, user_name)
                 if not user:
                     messages.append(
                         {

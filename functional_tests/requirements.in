@@ -4,6 +4,7 @@ click
 flake8
 moto
 pytest
+pytest-asyncio
 pytest-cov
 pytest-mccabe
 pytest-mypy

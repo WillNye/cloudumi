@@ -1,6 +1,7 @@
 import asyncio
 import os
 import urllib
+import urllib.parse
 from http.cookies import SimpleCookie
 
 import ujson as json
@@ -18,7 +19,7 @@ TEST_ROLE_ARN = f"arn:aws:iam::{TEST_ACCOUNT_ID}:role/{TEST_ROLE}"
 TEST_USER_NAME = "user@noq.dev"
 TEST_USER_GROUPS = ["engineering@noq.dev"]
 TEST_USER_DOMAIN = os.getenv("TEST_USER_DOMAIN")
-XSRF_TOKEN = None
+
 stage = os.getenv("STAGE", "staging")
 if not TEST_USER_DOMAIN:
     if stage == "staging":
@@ -56,6 +57,10 @@ def disable_coverage_on_deployment(config):
 
 
 class FunctionalTest(AsyncHTTPTestCase):
+    """
+    Class for functional tests that handles authentication and XSRF token management.
+    """
+
     maxDiff = None
     cookies = SimpleCookie()
 
@@ -69,6 +74,9 @@ class FunctionalTest(AsyncHTTPTestCase):
     )
 
     def get_app(self):
+        """
+        Returns the Tornado application instance.
+        """
         from common.config import config
 
         config.values["_global_"]["tornado"]["debug"] = True
@@ -80,11 +88,17 @@ class FunctionalTest(AsyncHTTPTestCase):
         return make_app(jwt_validator=lambda x: {})
 
     def _render_cookie_back(self):
+        """
+        Converts the cookies into a string format to be passed in HTTP headers.
+        """
         return "".join(
             ["%s=%s;" % (x, morsel.value) for (x, morsel) in self.cookies.items()]
         )
 
-    def _update_cookies(self, headers):
+    def _update_cookies_return_xsrf(self, headers):
+        """
+        Updates the cookies from the HTTP headers.
+        """
         try:
             sc = headers["Set-Cookie"]
             cookies = escape.native_str(sc)
@@ -94,8 +108,8 @@ class FunctionalTest(AsyncHTTPTestCase):
                 if "," not in cookies:
                     break
                 cookies = cookies[cookies.find(",") + 1 :]
-        except KeyError:
-            return
+        except KeyError as e:
+            print("No cookies found in headers", e)
 
     def make_request(
         self,
@@ -107,6 +121,9 @@ class FunctionalTest(AsyncHTTPTestCase):
         follow_redirects=True,
         request_timeout=120,
     ):
+        """
+        Makes an HTTP request with authentication and xsrf, and returns the response.
+        """
         if not headers:
             headers = {}
         if not headers.get("Content-Type"):
@@ -118,14 +135,19 @@ class FunctionalTest(AsyncHTTPTestCase):
         # Get XSRF token
         if method.lower() in ["post", "put", "delete"]:
             r = self.fetch("/", headers=headers)
-            self._update_cookies(r.headers)
+            self._update_cookies_return_xsrf(r.headers)
+            for s in ["XSRF-TOKEN", "_xsrf"]:
+                if self.cookies.get(s):
+                    xsrf_token = self.cookies.get(s).value
+                    self.cookies["_xsrf"] = xsrf_token
+                    headers["X-Xsrftoken"] = xsrf_token
+                    break
 
         if self.cookies:
             headers["Cookie"] = self._render_cookie_back()
-
-        if body and body_type == "json":
+        if body is not None and body_type == "json":
             body = json.dumps(body)
-        if body and body_type == "urlencode":
+        if body is not None and body_type == "urlencode":
             body = urllib.parse.urlencode(body)
         if method == "post":
             r = self.fetch(

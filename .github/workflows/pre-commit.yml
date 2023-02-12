@@ -30,6 +30,9 @@ jobs:
       #        with:
       #          python-version: 3.10
       - name: Install dependencies
+        env:
+          IAMBIC_REPO_USER: ${{ secrets.IAMBIC_REPO_USER }}
+          IAMBIC_REPO_TOKEN: ${{ secrets.IAMBIC_REPO_TOKEN }}
         run: |
           set -x
           export AWS_ACCESS_KEY_ID=${{ secrets.NOQ_ECR_USER_ACCESS_KEY_ID }}
@@ -47,6 +50,7 @@ jobs:
             software-properties-common \
             python3.10-dev \
             build-essential \
+            libpq-dev \
             libxml2-dev \
             libxmlsec1-dev \
             libxmlsec1-openssl \
@@ -67,6 +71,7 @@ jobs:
           pip install pre-commit
           pip install \
             -r requirements.lock
+          pip install git+https://${IAMBIC_REPO_USER}:${IAMBIC_REPO_TOKEN}@github.com/noqdev/iambic.git@main
           pip install .
           yarn --cwd ui install
           yarn --cwd frontend install
