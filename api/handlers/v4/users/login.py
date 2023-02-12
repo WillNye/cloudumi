@@ -19,9 +19,13 @@ class LoginHandler(TornadoRequestHandler):
         request = UserLoginRequest(**tornado.escape.json_decode(self.request.body))
         username = request.email
         mfa_token = request.mfa_token
-        db_user = await User.get_by_username(tenant, username, get_groups=True)
+        db_user = await User.get_by_username(
+            self.ctx.db_tenant, username, get_groups=True
+        )
         if not db_user:
-            db_user = await User.get_by_email(tenant, username, get_groups=True)
+            db_user = await User.get_by_email(
+                self.ctx.db_tenant, username, get_groups=True
+            )
 
         if not db_user or not await db_user.check_password(request.password):
             self.set_status(400)
@@ -125,11 +129,11 @@ class MfaHandler(BaseHandler):
             **tornado.escape.json_decode(self.request.body)
         )
         db_user = await User.get_by_username(
-            self.ctx.tenant, self.user, get_groups=True
+            self.ctx.db_tenant, self.user, get_groups=True
         )
         if not db_user:
             db_user = await User.get_by_email(
-                self.ctx.tenant, self.user, get_groups=True
+                self.ctx.db_tenant, self.user, get_groups=True
             )
         if not db_user:
             self.set_status(401)

@@ -1,7 +1,7 @@
 import uuid
 from uuid import uuid4
 
-from sqlalchemy import Column, String, UniqueConstraint, and_
+from sqlalchemy import Column, ForeignKey, Integer, String, UniqueConstraint, and_
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, selectinload
 from sqlalchemy.sql import select
@@ -14,26 +14,37 @@ from common.pg_core.filters import (
     determine_page_from_offset,
 )
 from common.pg_core.models import Base, SoftDeleteMixin
+from common.tenants.models import Tenant  # noqa: F401
 
 
 class Group(SoftDeleteMixin, Base):
     __tablename__ = "groups"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String)
+    name = Column(String, index=True)
     description = Column(String)
-    tenant = Column(String, nullable=False)
+    tenant_id = Column(Integer(), ForeignKey("tenant.id"))
     email = Column(String)
+    tenant = relationship("Tenant", order_by=name)
     __table_args__ = (
-        UniqueConstraint("tenant", "name", name="uq_tenant_name"),
-        UniqueConstraint("tenant", "email", name="uq_group_tenant_email"),
+        UniqueConstraint("tenant_id", "name", name="uq_tenant_name"),
+        UniqueConstraint("tenant_id", "email", name="uq_group_tenant_email"),
     )
 
     users = relationship(
         "User",
         secondary=GroupMembership.__table__,
         back_populates="groups",
+        lazy="joined",
         foreign_keys=[GroupMembership.user_id, GroupMembership.group_id],
     )
+
+    def dict(self):
+        return dict(
+            id=str(self.id),
+            name=self.name,
+            description=self.description,
+            email=self.email,
+        )
 
     async def write(self):
         async with ASYNC_PG_SESSION() as session:
@@ -71,6 +82,13 @@ class Group(SoftDeleteMixin, Base):
                 )
                 group = await session.execute(stmt)
                 return group.scalars().first()
+
+    @classmethod
+    async def get_by_attr(cls, attribute, value):
+        async with ASYNC_PG_SESSION() as session:
+            stmt = select(Group).filter(getattr(Group, attribute) == value)
+            items = await session.execute(stmt)
+            return items.scalars().first()
 
     @classmethod
     async def create(cls, **kwargs):
@@ -125,7 +143,7 @@ class Group(SoftDeleteMixin, Base):
                 if get_users:
                     stmt = stmt.options(selectinload(Group.users))
                 groups = await session.execute(stmt)
-                return groups.scalars().all()
+                return groups.unique().scalars().all()
 
     async def serialize_for_scim(self):
         users = []

@@ -9,7 +9,6 @@ command: celery -A common.celery_tasks.celery_tasks worker --loglevel=info -l DE
 """
 from __future__ import absolute_import
 
-import asyncio
 import json  # We use a separate SetEncoder here so we cannot use ujson
 import ssl
 import sys
@@ -92,6 +91,7 @@ from common.lib.event_bridge.role_updates import detect_role_changes_and_update_
 from common.lib.generic import un_wrap_json_and_dump_values
 from common.lib.git import store_iam_resources_in_git
 from common.lib.iambic.git import IambicGit
+from common.lib.iambic.sync import sync_all_iambic_data
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import get_aws_config_history_url_for_resource
 from common.lib.pynamo import NoqModel
@@ -2828,6 +2828,18 @@ def sync_iambic_templates_all_tenants() -> Dict:
     tenants = get_all_tenants()
     for tenant in tenants:
         sync_iambic_templates_for_tenant.delay(tenant)
+
+
+# TODO: See if this is still necessary
+def cache_iambic_data_for_all_tenants() -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    log_data = {
+        "function": function,
+        "message": "Caching Iambic Data",
+    }
+    log.debug(log_data)
+    async_to_sync(sync_all_iambic_data)()
+
     return log_data
 
 
@@ -2986,7 +2998,12 @@ schedule = {
         "task": "common.celery_tasks.celery_tasks.sync_iambic_templates_all_tenants",
         "options": {"expires": 180},
         "schedule": get_schedule(60),
-    },
+    }
+    # "cache_iambic_data_for_all_tenants": {
+    #     "task": "common.celery_tasks.celery_tasks.cache_iambic_data_for_all_tenants",
+    #     "options": {"expires": 180},
+    #     "schedule": get_schedule(60 * 6),
+    # },
 }
 
 

@@ -1,6 +1,6 @@
 aiozipkin
 amqp
-asgiref==3.3.4 # Deadlock error during unit tests with 3.4.1
+asgiref  # unit tests now pass with 3.6.0, which resolves to iambic's asgiref requirement
 atlassian-python-api
 bcrypt
 billiard

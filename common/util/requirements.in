@@ -31,7 +31,9 @@ password_strength # For checking password strength
 policy_sentry # For telling us all the possible AWS actions and resources
 pydantic # For models
 pdpyras # Pagerduty
-psycopg2-binary # For postgres
+psycopg
+psycopg-binary # For postgres
+psycopg_c
 PyGithub # For CRUD access to PRs in Github
 pyjwt
 pytz

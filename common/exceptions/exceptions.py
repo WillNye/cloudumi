@@ -415,3 +415,13 @@ class WorkOSNoOrganizationId(BaseException):
     def __init__(self, msg=""):
         stats.count("WorkOSNoOrganizationId")
         super().__init__(msg)
+
+
+class NoMatchingTenant(BaseException):
+    """
+    A matching tenant was not found
+    """
+
+    def __init__(self, msg=""):
+        stats.count("NoMatchingTenant")
+        super().__init__(msg)

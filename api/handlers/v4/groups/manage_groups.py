@@ -10,7 +10,7 @@ from common.models import WebResponse
 
 class ManageGroupsHandler(BaseAdminHandler):
     async def get(self):
-        all_groups = await Group.get_all(self.ctx.tenant, get_users=True)
+        all_groups = await Group.get_all(self.ctx.db_tenant, get_users=True)
         groups = []
         for group in all_groups:
             users = [user.email for user in group.users]
@@ -45,7 +45,7 @@ class ManageGroupsHandler(BaseAdminHandler):
             )
             raise tornado.web.Finish()
 
-        existing_group = await Group.get_by_name(self.ctx.tenant, group_name)
+        existing_group = await Group.get_by_name(self.ctx.db_tenant, group_name)
         if existing_group:
             self.set_status(400)
             self.write(
@@ -58,7 +58,7 @@ class ManageGroupsHandler(BaseAdminHandler):
             return
 
         created_group = await Group.create(
-            tenant=self.ctx.tenant,
+            tenant=self.ctx.db_tenant,
             name=group_name,
             email=group_email,
             description=group_description,
@@ -85,7 +85,7 @@ class ManageGroupsHandler(BaseAdminHandler):
         group_description = data.get("description")
         group_email = data.get("email")
 
-        db_group = await Group.get_by_name(self.ctx.tenant, group_name)
+        db_group = await Group.get_by_name(self.ctx.db_tenant, group_name)
 
         if not db_group:
             self.set_status(400)
@@ -118,7 +118,7 @@ class ManageGroupsHandler(BaseAdminHandler):
         data = tornado.escape.json_decode(self.request.body)
         group_name = data.get("name")
 
-        db_group = await Group.get_by_name(self.ctx.tenant, group_name)
+        db_group = await Group.get_by_name(self.ctx.db_tenant, group_name)
         if not db_group:
             self.set_status(400)
             self.write(

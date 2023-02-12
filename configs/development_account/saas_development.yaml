@@ -127,7 +127,7 @@ _global_:
             port: 6379
   secrets:
     postgresql:
-      username: postgres
+      username: noq
       password: local_dev
   noq_db:
     endpoint: "localhost"

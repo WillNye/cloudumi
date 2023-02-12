@@ -38,8 +38,11 @@ jobs:
         run: |
           aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com
       - name: Build Image
+        env:
+          IAMBIC_REPO_USER: ${{ secrets.IAMBIC_REPO_USER }}
+          IAMBIC_REPO_TOKEN: ${{ secrets.IAMBIC_REPO_TOKEN }}
         run: |
-          docker build -t cloudumi .
+          docker build --build-arg IAMBIC_REPO_USER=${{ secrets.IAMBIC_REPO_USER }} --build-arg IAMBIC_REPO_TOKEN=${{ secrets.IAMBIC_REPO_TOKEN }} -t cloudumi .
       - name: Tag and push unstable image to Amazon ECR
         run: |
           docker tag cloudumi 259868150464.dkr.ecr.us-west-2.amazonaws.com/cloudumi:unstable

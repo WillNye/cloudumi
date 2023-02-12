@@ -31,8 +31,8 @@ async def rebuild_tables():
             organization_id="localhost",
         )
         tenant_cloudumidev = Tenant(
-            name="cloudumidev",
-            organization_id="cloudumidev",
+            name="cloudumidev_com",
+            organization_id="cloudumidev_com",
         )
         user = await User.create(
             tenant,

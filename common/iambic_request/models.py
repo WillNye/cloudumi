@@ -2,7 +2,6 @@ import asyncio
 import os
 import uuid
 from datetime import datetime
-from pathlib import Path
 from typing import Optional
 
 import aiofiles
@@ -25,6 +24,7 @@ from common.lib.iambic.git import get_iambic_repo_path
 from common.lib.storage import TenantFileStorageHandler
 from common.models import IambicTemplateChange
 from common.pg_core.models import Base, SoftDeleteMixin
+from common.tenants.models import Tenant  # noqa: F401
 
 log = config.get_logger(__name__)
 
@@ -565,12 +565,14 @@ class Request(SoftDeleteMixin, Base):
     repo_name = Column(String)
     pull_request_id = Column(Integer)
     pull_request_url = Column(String)
-    tenant = Column(String)
+    tenant_id = Column(Integer, ForeignKey("tenant.id"))
     status = Column(RequestStatus, default="Pending")
 
     allowed_approvers = Column(ARRAY(String), default=dict)
     approved_by = Column(ARRAY(String), default=dict)
     rejected_by = Column(String, nullable=True)
+
+    tenant = relationship("Tenant")
 
     comments = relationship(
         "RequestComment",
@@ -581,24 +583,24 @@ class Request(SoftDeleteMixin, Base):
     )
 
     __table_args__ = (
-        Index("request_tenant_created_at_idx", "tenant", "deleted", "created_at"),
+        Index("request_tenant_created_at_idx", "tenant_id", "deleted", "created_at"),
         Index(
             "request_tenant_with_status_created_at_idx",
-            "tenant",
+            "tenant_id",
             "status",
             "deleted",
             "created_at",
         ),
         Index(
             "request_created_by_created_at_idx",
-            "tenant",
+            "tenant_id",
             "deleted",
             "created_by",
             "created_at",
         ),
         Index(
             "request_created_by_with_status_created_at_idx",
-            "tenant",
+            "tenant_id",
             "status",
             "deleted",
             "created_by",

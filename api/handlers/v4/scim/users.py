@@ -32,7 +32,7 @@ class ScimV2UsersHandler(ScimAuthHandler):
                 filters[f"{search_key_name}__eq"] = search_value
 
         users = await User.get_all(
-            self.ctx.tenant,
+            self.ctx.db_tenant,
             get_groups=True,
             offset=offset,
             count=count,
@@ -71,7 +71,7 @@ class ScimV2UsersHandler(ScimAuthHandler):
         if not password:
             password = await generate_random_password()
 
-        existing_user = await User.get_by_username(self.ctx.tenant, username)
+        existing_user = await User.get_by_username(self.ctx.db_tenant, username)
 
         if existing_user:
             self.set_status(409)
@@ -83,10 +83,9 @@ class ScimV2UsersHandler(ScimAuthHandler):
                 }
             )
             raise tornado.web.Finish()
-
         user = User(
             active=active,
-            tenant=self.ctx.tenant,
+            tenant=self.ctx.db_tenant,
             display_name=display_name,
             email_primary=emails[0]["primary"],
             email=emails[0]["value"],
@@ -103,17 +102,19 @@ class ScimV2UsersHandler(ScimAuthHandler):
 
         if groups:
             for group in groups:
-                existing_group = await Group.get_by_id(self.ctx.tenant, group["value"])
+                existing_group = await Group.get_by_id(
+                    self.ctx.db_tenant, group["value"]
+                )
                 if existing_group:
                     await GroupMembership.create(user, existing_group)
                 else:
                     new_group = Group(
                         name=group["displayName"],
-                        tenant=self.ctx.tenant,
+                        tenant=self.ctx.db_tenant,
                     )
                     await new_group.write()
                     await GroupMembership.create(user, new_group)
-        user = await User.get_by_username(self.ctx.tenant, username, get_groups=True)
+        user = await User.get_by_username(self.ctx.db_tenant, username, get_groups=True)
         new_user = await user.serialize_for_scim()
         self.set_status(201)
         self.set_header("Content-Type", "application/json")
@@ -124,7 +125,7 @@ class ScimV2UserHandler(ScimAuthHandler):
     """Handler for SCIM v2 User API endpoints."""
 
     async def get(self, user_id):
-        user = await User.get_by_id(self.ctx.tenant, user_id, get_groups=True)
+        user = await User.get_by_id(self.ctx.db_tenant, user_id, get_groups=True)
         if not user:
             self.set_status(404)
             self.write(
@@ -140,7 +141,7 @@ class ScimV2UserHandler(ScimAuthHandler):
         self.write(json.dumps(scim_user))
 
     async def post(self, user_id):
-        user = await User.get_by_id(self.ctx.tenant, user_id)
+        user = await User.get_by_id(self.ctx.db_tenant, user_id)
         if not user:
             self.set_status(404)
             self.write(
@@ -170,19 +171,21 @@ class ScimV2UserHandler(ScimAuthHandler):
         groups = body.get("groups")
         if groups:
             for group in groups:
-                existing_group = await Group.get_by_id(self.ctx.tenant, group["value"])
+                existing_group = await Group.get_by_id(
+                    self.ctx.db_tenant, group["value"]
+                )
                 if existing_group:
                     await GroupMembership.create(user, existing_group)
                 else:
                     new_group = Group(
                         name=group["displayName"],
-                        tenant=self.ctx.tenant,
+                        tenant=self.ctx.db_tenant,
                     )
                     await new_group.write()
                     await GroupMembership.create(user, new_group)
         await user.write()
         user = await User.get_by_username(
-            self.ctx.tenant, user.username, get_groups=True
+            self.ctx.db_tenant, user.username, get_groups=True
         )
         new_user = await user.serialize_for_scim()
         self.set_header("Content-Type", "application/json")
@@ -204,7 +207,7 @@ class ScimV2UserHandler(ScimAuthHandler):
                 }
             )
             raise tornado.web.Finish()
-        user = await User.get_by_id(self.ctx.tenant, user_id)
+        user = await User.get_by_id(self.ctx.db_tenant, user_id)
         if not user:
             self.set_status(404)
             self.write(
@@ -220,7 +223,7 @@ class ScimV2UserHandler(ScimAuthHandler):
         await user.write()
 
     async def delete(self, user_id):
-        user = await User.get_by_id(self.ctx.tenant, user_id)
+        user = await User.get_by_id(self.ctx.db_tenant, user_id)
         if not user:
             self.set_status(404)
             self.write(
