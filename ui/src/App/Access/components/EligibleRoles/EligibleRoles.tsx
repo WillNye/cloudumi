@@ -6,12 +6,14 @@ import RoleCredentialSummary from '../common/RoleCredentialSummary';
 import MoreActions from '../common/MoreActions';
 import { Table } from 'shared/elements/Table';
 import { eligibleRolesColumns } from './constants';
-import { Button } from 'shared/elements/Button';
 
-import css from './EligibleRoles.module.css';
 import { ROLE_PROPERTY_SEARCH_FILTER } from 'App/Access/constants';
+import AWSSignIn from '../common/AWSSignIn';
+import { Notification, NotificationType } from 'shared/elements/Notification';
+import css from './EligibleRoles.module.css';
 
 const EligibleRoles = ({ data, getData, isLoading }) => {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [filter, setFilter] = useState<PropertyFilterProps.Query>({
     tokens: [],
     operation: 'and'
@@ -36,7 +38,12 @@ const EligibleRoles = ({ data, getData, isLoading }) => {
 
   useEffect(
     function onQueryUpdate() {
+      setErrorMessage(null);
       getData(query);
+
+      return () => {
+        setErrorMessage(null);
+      };
     },
     [query, getData]
   );
@@ -60,17 +67,7 @@ const EligibleRoles = ({ data, getData, isLoading }) => {
             <div className={css.tableSecondaryText}>{item.account_id}</div>
           </div>
         ),
-        arn: (
-          <Button
-            fullWidth
-            color={item.inactive_tra ? 'secondary' : 'primary'}
-            size="small"
-            href={item.redirect_uri}
-            asAnchor
-          >
-            {item.inactive_tra ? 'Request Temporary Access' : 'Signin'}
-          </Button>
-        ),
+        arn: <AWSSignIn role={item} setErrorMessage={setErrorMessage} />,
         viewDetails: (
           <RoleCredentialSummary
             arn={item.arn}
@@ -145,6 +142,17 @@ const EligibleRoles = ({ data, getData, isLoading }) => {
             ]}
           />
         </div>
+        {errorMessage && (
+          <>
+            <Notification
+              type={NotificationType.ERROR}
+              header={errorMessage}
+              fullWidth
+              onClose={() => setErrorMessage(null)}
+            />
+            <br />
+          </>
+        )}
         <div className={css.table}>
           <Table
             data={tableRows}
