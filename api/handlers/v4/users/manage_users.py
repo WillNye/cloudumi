@@ -21,7 +21,7 @@ from common.users.models import User
 class ManageUsersHandler(BaseAdminHandler):
     async def get(self):
         users = User()
-        all_users = await users.get_all(self.ctx.tenant, get_groups=True)
+        all_users = await users.get_all(self.ctx.db_tenant, get_groups=True)
         users = []
         for user in all_users:
             users.append(
@@ -69,9 +69,8 @@ class ManageUsersHandler(BaseAdminHandler):
                 ).dict(exclude_unset=True, exclude_none=True)
             )
             raise tornado.web.Finish()
-
         # Check if a user with the same username already exists
-        existing_user = await User.get_by_email(self.ctx.tenant, username)
+        existing_user = await User.get_by_email(self.ctx.db_tenant, username)
         if existing_user:
             self.set_status(400)
             self.write(
@@ -97,8 +96,7 @@ class ManageUsersHandler(BaseAdminHandler):
                 log_data,
             )
             raise tornado.web.Finish()
-
-        created_user = await User.create(self.ctx.tenant, username, email, password)
+        created_user = await User.create(self.ctx.db_tenant, username, email, password)
 
         if not password_supplied:
             await created_user.send_password_via_email(tenant_url, password)
@@ -134,7 +132,8 @@ class ManageUsersHandler(BaseAdminHandler):
     async def delete(self):
         data = tornado.escape.json_decode(self.request.body)
         email = data.get("email")
-        user = await User.get_by_email(self.ctx.tenant, email)
+
+        user = await User.get_by_email(self.ctx.db_tenant, email)
         if not user:
             self.set_status(400)
             self.write(
@@ -179,10 +178,9 @@ class PasswordResetSelfServiceHandler(BaseHandler):
         new_password = data.get("new_password")
         tenant = self.get_tenant_name()
         tenant_config = TenantConfig(tenant)
-
-        db_user = await User.get_by_username(tenant, self.user)
+        db_user = await User.get_by_username(self.ctx.db_tenant, self.user)
         if not db_user:
-            db_user = await User.get_by_email(tenant, self.user)
+            db_user = await User.get_by_email(self.ctx.db_tenant, self.user)
 
         if not db_user:
             await handle_generic_error_response(
@@ -233,9 +231,11 @@ class PasswordResetSelfServiceHandler(BaseHandler):
 
         await db_user.user_initiated_password_reset(new_password)
         # Refresh DB User and set cookie
-        db_user = await User.get_by_username(tenant, self.user, get_groups=True)
+        db_user = await User.get_by_username(
+            self.ctx.db_tenant, self.user, get_groups=True
+        )
         if not db_user:
-            db_user = await User.get_by_email(tenant, get_groups=True)
+            db_user = await User.get_by_email(self.ctx.db_tenant, get_groups=True)
         groups = [group.name for group in db_user.groups]
         tenant_details = await TenantDetails.get(tenant)
         eula_signed = bool(tenant_details.eula_info)
@@ -331,7 +331,7 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
             )
             raise tornado.web.Finish()
 
-        user = await User.get_by_email(tenant, email)
+        user = await User.get_by_email(self.ctx.db_tenant, email)
 
         if not user:
             self.set_status(400)
@@ -398,7 +398,7 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
         if command == "request":
             # Send the reset email
             email = data.get("email")
-            user = await User.get_by_email(tenant, email)
+            user = await User.get_by_email(self.ctx.db_tenant, email)
             if not user:
                 self.set_status(200)
                 # We give an identical response to the user if the email is not found to prevent
@@ -453,7 +453,18 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
                 )
                 raise tornado.web.Finish()
 
-            user = await User.get_by_email(tenant, email)
+            user = await User.get_by_email(self.ctx.db_tenant, email)
+
+            if not user:
+                self.set_status(400)
+                self.write(
+                    WebResponse(
+                        success="error",
+                        status_code=400,
+                        data={"message": "Invalid user"},
+                    ).dict(exclude_unset=True, exclude_none=True)
+                )
+                raise tornado.web.Finish()
 
             password_reset_token = password_reset_blob.get("password_reset_token")
             if not password_reset_token:
@@ -528,7 +539,7 @@ class UserMFASelfServiceHandler(BaseHandler):
                 ).dict(exclude_unset=True, exclude_none=True)
             )
             raise tornado.web.Finish()
-        user = await User.get_by_email(self.ctx.tenant, self.user)
+        user = await User.get_by_email(self.ctx.db_tenant, self.user)
         if not user:
             self.set_status(400)
             self.write(
@@ -542,7 +553,7 @@ class UserMFASelfServiceHandler(BaseHandler):
         if command == "setup":
             # Set up MFA
             await user.set_mfa_secret_temp()
-            totp_uri = await user.get_totp_uri()
+            totp_uri = await user.get_totp_uri(self.ctx.tenant)
             mfa_secret = user.mfa_secret_temp
             self.write(
                 WebResponse(
@@ -580,7 +591,7 @@ class UserMFASelfServiceHandler(BaseHandler):
                 )
                 raise tornado.web.Finish()
             else:
-                user = await User.get_by_email(self.ctx.tenant, self.user)
+                user = await User.get_by_email(self.ctx.db_tenant, self.user)
                 tenant_config = TenantConfig(self.ctx.tenant)
                 encoded_cookie = await generate_jwt_token(
                     self.user,

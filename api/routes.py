@@ -152,6 +152,7 @@ from api.handlers.v3.tenant_registration.tenant_registration import (
 )
 from api.handlers.v4.groups.manage_groups import ManageGroupsHandler
 from api.handlers.v4.requests import IambicRequestCommentHandler, IambicRequestHandler
+from api.handlers.v4.role_access.manage_role_access import ManageRoleAccessHandler
 from common.config import config
 from common.lib.sentry import before_send_event
 
@@ -413,6 +414,7 @@ def make_app(jwt_validator=None):
         (r"/api/v4/scim/v2/Users/(.*)", ScimV2UserHandler),
         (r"/api/v4/scim/v2/Groups/?", ScimV2GroupsHandler),
         (r"/api/v4/scim/v2/Group/(.*)", ScimV2GroupHandler),
+        (r"/api/v4/roles/access/?", ManageRoleAccessHandler),
         (r"/api/v4/roles", RolesHandlerV4),
     ]
 

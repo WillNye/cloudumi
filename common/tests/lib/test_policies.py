@@ -6,11 +6,10 @@ from cachetools import TTLCache
 from mock import MagicMock
 
 import common.lib.noq_json as json
-from util.tests.fixtures.fixtures import create_future
 from util.tests.fixtures.globals import tenant
 
 mock_aws_config_resources_redis = MagicMock(
-    return_value=create_future(json.dumps({"accountId": "123456789012"}))
+    return_value=json.dumps({"accountId": "123456789012"})
 )
 
 

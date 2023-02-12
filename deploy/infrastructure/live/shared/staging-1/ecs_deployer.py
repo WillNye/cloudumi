@@ -1,5 +1,6 @@
 import os
 import pathlib
+import sys
 import time
 
 import boto3
@@ -154,6 +155,7 @@ for service in service_task_definition_map:
 
 service_rollout_completed = 0
 rollout_finalized = False
+failed = False
 
 while True:
     if service_rollout_completed == len(service_task_definition_map):
@@ -195,6 +197,7 @@ while True:
                             f"Rollout failed. Number of failed tasks is greater than 0: {deployment}"
                         )
                         rollout_finalized = True
+                        failed = True
                         break
         time.sleep(5)
 
@@ -216,3 +219,6 @@ for task in task_details["tasks"]:
     print(
         f"AWS_PROFILE={os.environ.get('AWS_PROFILE', identity)} ecs-cli logs --region {region} --task-id {task_id} -c {cluster_name} --follow\n"
     )
+
+if failed:
+    sys.exit(1)

@@ -1,10 +1,11 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from common.lib.pydantic import BaseModel
 
 
 class RequestContext(BaseModel):
     tenant: str
+    db_tenant: Any
     user: Optional[str]
     groups: Optional[List[str]]
     request_uuid: str
