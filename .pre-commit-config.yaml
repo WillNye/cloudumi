@@ -16,7 +16,7 @@ repos:
       - id: flake8
         args: ["--exclude", "common/models.py,identity/lib/groups/models.py"]
   - repo: https://github.com/timothycrosley/isort
-    rev: "5.10.1" # Use the revision sha / tag you want to point at
+    rev: "5.12.0" # Use the revision sha / tag you want to point at
     hooks:
       - id: isort # Run `isort -rc <filepath>` to autofix
         pass_filenames: true
