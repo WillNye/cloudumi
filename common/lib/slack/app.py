@@ -7,7 +7,6 @@ from typing import Optional
 from uuid import uuid4
 
 import jq
-from databases import Database
 from slack_bolt.async_app import AsyncApp
 from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
 from slack_sdk.oauth.installation_store import Bot, Installation
@@ -16,8 +15,10 @@ from slack_sdk.oauth.installation_store.async_installation_store import (
 )
 from slack_sdk.oauth.state_store.async_state_store import AsyncOAuthStateStore
 from sqlalchemy import MetaData, Table, and_, desc
+from sqlalchemy.sql import insert, select
 
 from common.config import config, globals
+from common.config.globals import ASYNC_PG_SESSION
 from common.iambic_request.models import GitHubPullRequest
 from common.iambic_request.utils import get_iambic_repo
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
@@ -37,6 +38,8 @@ from common.models import IambicTemplateChange
 scopes = """app_mentions:read,channels:history,channels:join,channels:read,chat:write,chat:write.public,emoji:read,groups:history,groups:read,groups:write,im:history,im:read,im:write,mpim:history,mpim:read,mpim:write,pins:read,pins:write,reactions:read,reactions:write,users:read,users:read.email,channels:manage,chat:write.customize,dnd:read,files:read,files:write,links:read,links:write,metadata.message:read,usergroups:read,usergroups:write,users.profile:read,users:write""".split(
     ","
 )
+
+GLOBAL_SLACK_APP = None
 
 logger = logging.getLogger(__name__)
 
@@ -66,14 +69,16 @@ class AsyncSQLAlchemyInstallationStore(AsyncInstallationStore):
         return self._logger
 
     async def async_save(self, installation: Installation):
-        async with Database(self.database_url) as database:
-            async with database.transaction():
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
                 i = installation.to_dict()
                 i["client_id"] = self.client_id
-                await database.execute(self.installations.insert(), i)
+                stmt = insert(self.installations).values(**i)
+                await session.execute(stmt)
                 b = installation.to_bot().to_dict()
                 b["client_id"] = self.client_id
-                await database.execute(self.bots.insert(), b)
+                stmt = insert(self.bots).values(**b)
+                await session.execute(stmt)
 
     async def async_find_bot(
         self,
@@ -83,33 +88,81 @@ class AsyncSQLAlchemyInstallationStore(AsyncInstallationStore):
         is_enterprise_install: Optional[bool],
     ) -> Optional[Bot]:
         c = self.bots.c
-        query = (
-            self.bots.select()
-            .where(
-                and_(
-                    c.enterprise_id == enterprise_id,
-                    c.team_id == team_id,
-                    c.is_enterprise_install == is_enterprise_install,
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                query = (
+                    select(self.bots)
+                    .where(
+                        and_(
+                            c.enterprise_id == enterprise_id,
+                            c.team_id == team_id,
+                            c.is_enterprise_install == is_enterprise_install,
+                        )
+                    )
+                    .order_by(desc(c.installed_at))
+                    .limit(1)
                 )
-            )
-            .order_by(desc(c.installed_at))
-            .limit(1)
-        )
-        async with Database(self.database_url) as database:
-            result = await database.fetch_one(query)
-            if result:
-                return Bot(
-                    app_id=result["app_id"],
-                    enterprise_id=result["enterprise_id"],
-                    team_id=result["team_id"],
-                    bot_token=result["bot_token"],
-                    bot_id=result["bot_id"],
-                    bot_user_id=result["bot_user_id"],
-                    bot_scopes=result["bot_scopes"],
-                    installed_at=result["installed_at"],
-                )
-            else:
-                return None
+                exec = await session.execute(query)
+                result = exec.first()
+                if result:
+                    return Bot(
+                        app_id=result.app_id,
+                        enterprise_id=result.enterprise_id,
+                        team_id=result.team_id,
+                        bot_token=result.bot_token,
+                        bot_id=result.bot_id,
+                        bot_user_id=result.bot_user_id,
+                        bot_scopes=result.bot_scopes,
+                        installed_at=result.installed_at,
+                    )
+                else:
+                    return None
+
+    # async def async_save(self, installation: Installation):
+    #     async with Database(self.database_url) as database:
+    #         async with database.transaction():
+    #             i = installation.to_dict()
+    #             i["client_id"] = self.client_id
+    #             await database.execute(self.installations.insert(), i)
+    #             b = installation.to_bot().to_dict()
+    #             b["client_id"] = self.client_id
+    #             await database.execute(self.bots.insert(), b)
+
+    # async def async_find_bot(
+    #     self,
+    #     *,
+    #     enterprise_id: Optional[str],
+    #     team_id: Optional[str],
+    #     is_enterprise_install: Optional[bool],
+    # ) -> Optional[Bot]:
+    #     c = self.bots.c
+    #     query = (
+    #         self.bots.select()
+    #         .where(
+    #             and_(
+    #                 c.enterprise_id == enterprise_id,
+    #                 c.team_id == team_id,
+    #                 c.is_enterprise_install == is_enterprise_install,
+    #             )
+    #         )
+    #         .order_by(desc(c.installed_at))
+    #         .limit(1)
+    #     )
+    #     async with Database(self.database_url) as database:
+    #         result = await database.fetch_one(query)
+    #         if result:
+    #             return Bot(
+    #                 app_id=result["app_id"],
+    #                 enterprise_id=result["enterprise_id"],
+    #                 team_id=result["team_id"],
+    #                 bot_token=result["bot_token"],
+    #                 bot_id=result["bot_id"],
+    #                 bot_user_id=result["bot_user_id"],
+    #                 bot_scopes=result["bot_scopes"],
+    #                 installed_at=result["installed_at"],
+    #             )
+    #         else:
+    #             return None
 
 
 class AsyncSQLAlchemyOAuthStateStore(AsyncOAuthStateStore):
@@ -138,66 +191,158 @@ class AsyncSQLAlchemyOAuthStateStore(AsyncOAuthStateStore):
     async def async_issue(self) -> str:
         state: str = str(uuid4())
         now = datetime.datetime.utcfromtimestamp(time.time() + self.expiration_seconds)
-        async with Database(self.database_url) as database:
-            await database.execute(
-                self.oauth_states.insert(), {"state": state, "expire_at": now}
-            )
-            return state
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = self.oauth_states.insert().values(state=state, expire_at=now)
+                await session.execute(stmt)
+        return state
 
     async def async_consume(self, state: str) -> bool:
-        try:
-            async with Database(self.database_url) as database:
-                async with database.transaction():
-                    c = self.oauth_states.c
-                    query = self.oauth_states.select().where(
-                        and_(c.state == state, c.expire_at > datetime.datetime.utcnow())
-                    )
-                    row = await database.fetch_one(query)
-                    self.logger.debug(f"consume's query result: {row}")
-                    await database.execute(
-                        self.oauth_states.delete().where(c.id == row["id"])
-                    )
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                c = self.oauth_states.c
+                query = select(self.oauth_states.c.id).where(
+                    and_(c.state == state, c.expire_at > datetime.datetime.utcnow())
+                )
+                exec = await session.execute(query)
+                row = exec.first()
+                self.logger.debug(f"consume's query result: {row}")
+                if row:
+                    stmt = self.oauth_states.delete().where(c.id == row.id)
+                    await session.execute(stmt)
                     return True
-            return False
-        except Exception as e:
-            message = f"Failed to find any persistent data for state: {state} - {e}"
-            self.logger.warning(message)
-            return False
+                return False
+        return False
+
+    # async def async_issue(self) -> str:
+    #     state: str = str(uuid4())
+    #     now = datetime.datetime.utcfromtimestamp(time.time() + self.expiration_seconds)
+    #     async with Database(self.database_url) as database:
+    #         await database.execute(
+    #             self.oauth_states.insert(), {"state": state, "expire_at": now}
+    #         )
+    #         return state
+
+    # async def async_consume(self, state: str) -> bool:
+    #     try:
+    #         async with Database(self.database_url) as database:
+    #             async with database.transaction():
+    #                 c = self.oauth_states.c
+    #                 query = self.oauth_states.select().where(
+    #                     and_(c.state == state, c.expire_at > datetime.datetime.utcnow())
+    #                 )
+    #                 row = await database.fetch_one(query)
+    #                 self.logger.debug(f"consume's query result: {row}")
+    #                 await database.execute(
+    #                     self.oauth_states.delete().where(c.id == row["id"])
+    #                 )
+    #                 return True
+    #         return False
+    #     except Exception as e:
+    #         message = f"Failed to find any persistent data for state: {state} - {e}"
+    #         self.logger.warning(message)
+    #         return False
 
 
-database_url = globals.ASYNC_PG_CONN_STR
+def get_installation_store():
+    return AsyncSQLAlchemyInstallationStore(
+        client_id=config.get("_global_.secrets.slack.client_id"),
+        database_url=globals.ASYNC_PG_CONN_STR,
+        logger=logger,
+    )
 
-installation_store = AsyncSQLAlchemyInstallationStore(
-    client_id=config.get("_global_.secrets.slack.client_id"),
-    database_url=database_url,
-    logger=logger,
-)
 
-oauth_state_store = AsyncSQLAlchemyOAuthStateStore(
-    expiration_seconds=120,
-    database_url=database_url,
-    logger=logger,
-)
+def get_slack_app():
+    database_url = globals.ASYNC_PG_CONN_STR
 
-oauth_settings = AsyncOAuthSettings(
-    client_id=config.get("_global_.secrets.slack.client_id"),
-    client_secret=config.get("_global_.secrets.slack.client_secret"),
-    state_store=oauth_state_store,
-    installation_store=installation_store,
-    scopes=scopes,
-    # user_scopes=scopes,
-    install_path="/api/v3/slack/install",
-    redirect_uri_path="/api/v3/slack/oauth_redirect",
-)
+    oauth_state_store = AsyncSQLAlchemyOAuthStateStore(
+        expiration_seconds=120,
+        database_url=database_url,
+        logger=logger,
+    )
+    oauth_settings = AsyncOAuthSettings(
+        client_id=config.get("_global_.secrets.slack.client_id"),
+        client_secret=config.get("_global_.secrets.slack.client_secret"),
+        state_store=oauth_state_store,
+        installation_store=get_installation_store(),
+        scopes=scopes,
+        # user_scopes=scopes,
+        install_path="/api/v3/slack/install",
+        redirect_uri_path="/api/v3/slack/oauth_redirect",
+    )
 
-slack_app = AsyncApp(
-    logger=logger,
-    installation_store=installation_store,
-    # token=config.get("_global_.secrets.slack.bot_token"),
-    signing_secret=config.get("_global_.secrets.slack.signing_secret"),
-    oauth_settings=oauth_settings,
-    process_before_response=True,
-)
+    slack_app = AsyncApp(
+        logger=logger,
+        installation_store=get_installation_store(),
+        # token=config.get("_global_.secrets.slack.bot_token"),
+        signing_secret=config.get("_global_.secrets.slack.signing_secret"),
+        oauth_settings=oauth_settings,
+        process_before_response=True,
+    )
+
+    @slack_app.command("/hello-noq")
+    async def hello(body, ack):
+        await ack(f"Hi <@{body['user_id']}>!")
+
+    @slack_app.options("external_action")
+    async def show_options(ack, respond, payload):
+        await ack()
+        keyword = payload.get("value")
+        options = [
+            {
+                "text": {"type": "plain_text", "text": "Option 1"},
+                "value": "1-1",
+            },
+            {
+                "text": {"type": "plain_text", "text": "Option 2"},
+                "value": "1-2",
+            },
+        ]
+        if keyword is not None and len(keyword) > 0:
+            options = [o for o in options if keyword in o["text"]["text"]]
+        if len(options) == 0:
+            options = [
+                {
+                    "text": {"type": "plain_text", "text": "No Options"},
+                    "value": "no-options",
+                }
+            ]
+        await ack(options=options)
+
+    @slack_app.shortcut("request_access")
+    async def request_access(ack, body, client):
+        # Acknowledge the command request
+        await ack()
+        # Call views_open with the built-in client
+        await client.views_open(
+            # Pass a valid trigger_id within 3 seconds of receiving it
+            trigger_id=body["trigger_id"],
+            # View payload
+            view=request_access_to_resource_block,
+        )
+
+    @slack_app.shortcut("request_permissions")
+    async def request_permissions(ack, body, client):
+        # Acknowledge the command request
+        await ack()
+        # Call views_open with the built-in client
+        await client.views_open(
+            # Pass a valid trigger_id within 3 seconds of receiving it
+            trigger_id=body["trigger_id"],
+            # View payload
+            view=request_permissions_to_resource_block,
+        )
+
+    @slack_app.middleware  # or app.use(log_request)
+    async def log_request(logger, body, next):
+        # logger.debug(body)
+        return await next()
+
+    return slack_app
+
+
+async def handle_select_resources_tenant(ack, body, client, logger, tenant):
+    await ack()
 
 
 async def handle_select_resources_options_tenant(ack, body, tenant):
@@ -233,7 +378,7 @@ async def handle_select_resources_options_tenant(ack, body, tenant):
     if slack_app_type:
         res = (
             jq.compile(
-                f".[] | select(.template_type == \"{slack_app_type}\") | select((.properties.name | test(\"{body['value']}\"; \"i\")) or (.identifier | test(\"{body['value']}\"; \"i\")))?"
+                f".[] | select(.template_type == \"{slack_app_type}\") | select(.identifier | test(\"{body['value']}\"; \"i\"))?"
             )
             .input(template_dicts)
             .all()
@@ -241,9 +386,7 @@ async def handle_select_resources_options_tenant(ack, body, tenant):
 
     else:
         res = (
-            jq.compile(
-                f".[] | select((.properties.name | test(\"{body['value']}\"; \"i\")) or (.identifier | test(\"{body['value']}\"; \"i\")))?"
-            )
+            jq.compile(f".[] | select(.identifier | test(\"{body['value']}\"; \"i\"))?")
             .input(template_dicts)
             .all()
         )
@@ -252,7 +395,7 @@ async def handle_select_resources_options_tenant(ack, body, tenant):
         "NOQ::AWS::IAM::Group": "AWS IAM Groups",
         "NOQ::AWS::IAM::ManagedPolicy": "AWS IAM Managed Policies",
         "NOQ::AWS::IAM::Role": "AWS IAM Roles",
-        "NOQ::AWS::IAM::Users": "AWS IAM Users",
+        "NOQ::AWS::IAM::User": "AWS IAM Users",
         "NOQ::AWS::IdentityCenter::PermissionSet": "AWS Permission Sets",
         "NOQ::Google::Group": "Google Groups",
         "NOQ::Okta::App": "Okta Apps",
@@ -275,7 +418,7 @@ async def handle_select_resources_options_tenant(ack, body, tenant):
             {
                 "text": {
                     "type": "plain_text",
-                    "text": typeahead_entry["properties"]["name"],
+                    "text": typeahead_entry["identifier"],
                 },
                 # Warning: Slack docs specify the max length of options value is 75 characters
                 # but it is actually larger. Slack will not give you an error if this is exceeded,
@@ -288,79 +431,6 @@ async def handle_select_resources_options_tenant(ack, body, tenant):
         "option_groups": option_groups,
     }
     res = await ack(option_groups_formatted)
-
-
-@slack_app.event("message")
-async def handle_message_events(body, logger):
-    pass
-    # logger.info(body)
-
-
-@slack_app.command("/hello-noq")
-async def hello(body, ack):
-    await ack(f"Hi <@{body['user_id']}>!")
-
-
-@slack_app.options("external_action")
-async def show_options(ack, respond, payload):
-    await ack()
-    keyword = payload.get("value")
-    options = [
-        {
-            "text": {"type": "plain_text", "text": "Option 1"},
-            "value": "1-1",
-        },
-        {
-            "text": {"type": "plain_text", "text": "Option 2"},
-            "value": "1-2",
-        },
-    ]
-    if keyword is not None and len(keyword) > 0:
-        options = [o for o in options if keyword in o["text"]["text"]]
-    if len(options) == 0:
-        options = [
-            {
-                "text": {"type": "plain_text", "text": "No Options"},
-                "value": "no-options",
-            }
-        ]
-    await ack(options=options)
-
-
-@slack_app.shortcut("request_access")
-async def request_access(ack, body, client):
-    # Acknowledge the command request
-    await ack()
-    # Call views_open with the built-in client
-    await client.views_open(
-        # Pass a valid trigger_id within 3 seconds of receiving it
-        trigger_id=body["trigger_id"],
-        # View payload
-        view=request_access_to_resource_block,
-    )
-
-
-@slack_app.shortcut("request_permissions")
-async def request_permissions(ack, body, client):
-    # Acknowledge the command request
-    await ack()
-    # Call views_open with the built-in client
-    await client.views_open(
-        # Pass a valid trigger_id within 3 seconds of receiving it
-        trigger_id=body["trigger_id"],
-        # View payload
-        view=request_permissions_to_resource_block,
-    )
-
-
-async def handle_select_resources_tenant(ack, body, client, logger, tenant):
-    await ack()
-
-
-@slack_app.middleware  # or app.use(log_request)
-async def log_request(logger, body, next):
-    # logger.debug(body)
-    return await next()
 
 
 def create_log_request_handler(tenant):
@@ -381,7 +451,9 @@ async def handle_request_access_to_resource_tenant(
 ):
     # TODO: Use IambicGit to make a request
     # TODO: Convert Slack username to e-mail
-    justification = "justification"  # TODO: Get from body
+    justification = body["view"]["state"]["values"]["justification"]["justification"][
+        "value"
+    ]
     iambic = IambicGit(tenant)
     iambic_repo = await get_iambic_repo(tenant)
     # TODO: Figure out how to get user info
@@ -421,6 +493,9 @@ async def handle_request_access_to_resource_tenant(
                 template_type, repo_name, path, user_email, duration
             )
             resources[template_type].append(template.properties.name)
+
+        # else:
+        #     raise Exception("Unsupported tempalte type")
 
         template_changes.append(
             IambicTemplateChange(path=path, body=template.get_body(exclude_unset=False))
@@ -479,24 +554,6 @@ async def handle_request_access_to_resource_tenant(
             "{{pull_request_url}}", pr_url
         ),  # TODO change
     )
-    print("here")  # TODO REMOVE
-
-
-@slack_app.event("user_change")
-async def handle_user_change_events(body, logger):
-    pass
-    # logger.info(body)
-
-
-@slack_app.event("user_status_changed")
-async def handle_user_status_changed_events(body, logger):
-    pass
-    # logger.info(body)
-
-
-# slack_app.view("request_access_to_resource")(
-#     ack=handle_request_access_to_resource_ack, lazy=[handle_request_access_to_resource]
-# )
 
 
 async def handle_ack(ack):
@@ -604,7 +661,7 @@ async def get_slack_app_for_tenant(tenant, enterprise_id, team_id, app_id):
     tenant_slack_app = AsyncApp(
         name=tenant,
         logger=logger,
-        installation_store=installation_store,
+        installation_store=get_installation_store(),
         signing_secret=config.get("_global_.secrets.slack.signing_secret"),
         process_before_response=True,
     )

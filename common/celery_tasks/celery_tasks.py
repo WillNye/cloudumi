@@ -9,6 +9,7 @@ command: celery -A common.celery_tasks.celery_tasks worker --loglevel=info -l DE
 """
 from __future__ import absolute_import
 
+import asyncio
 import json  # We use a separate SetEncoder here so we cannot use ujson
 import ssl
 import sys
@@ -2814,6 +2815,7 @@ def sync_iambic_templates_for_tenant(tenant: str) -> Dict:
     log.debug(log_data)
     iambic = IambicGit(tenant)
     async_to_sync(iambic.clone_or_pull_git_repos)()
+    async_to_sync(iambic.gather_templates_for_tenant)()
     return log_data
 
 
@@ -2828,9 +2830,10 @@ def sync_iambic_templates_all_tenants() -> Dict:
     tenants = get_all_tenants()
     for tenant in tenants:
         sync_iambic_templates_for_tenant.delay(tenant)
+    return log_data
 
 
-# TODO: See if this is still necessary
+@app.task(soft_time_limit=600, **default_retry_kwargs)
 def cache_iambic_data_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
@@ -2838,6 +2841,8 @@ def cache_iambic_data_for_all_tenants() -> Dict:
         "message": "Caching Iambic Data",
     }
     log.debug(log_data)
+    # TODO: MUST be converted to a celery task per tenant, otherwise we lose
+    # scalability
     async_to_sync(sync_all_iambic_data)()
 
     return log_data
@@ -2998,12 +3003,12 @@ schedule = {
         "task": "common.celery_tasks.celery_tasks.sync_iambic_templates_all_tenants",
         "options": {"expires": 180},
         "schedule": get_schedule(60),
-    }
-    # "cache_iambic_data_for_all_tenants": {
-    #     "task": "common.celery_tasks.celery_tasks.cache_iambic_data_for_all_tenants",
-    #     "options": {"expires": 180},
-    #     "schedule": get_schedule(60 * 6),
-    # },
+    },
+    "cache_iambic_data_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_iambic_data_for_all_tenants",
+        "options": {"expires": 180},
+        "schedule": get_schedule(60 * 6),
+    },
 }
 
 
@@ -3025,17 +3030,17 @@ app.conf.timezone = "UTC"
 
 # TODO: Remove
 # TODO: Need a way to get signaled with files change in repo
-# tenants = get_all_tenants()
-# for tenant in tenants:
-#     if tenant != "localhost":
-#         continue
-#     sync_iambic_templates_for_tenant(tenant)
+tenants = get_all_tenants()
+for tenant in tenants:
+    if tenant != "localhost":
+        continue
+    sync_iambic_templates_for_tenant(tenant)
 #     iambic = IambicGit(tenant)
 #     templates = asyncio.run(iambic.gather_templates_for_tenant())
 # print("here")
 
 
-# sync_iambic_templates_all_tenants()
+# cache_iambic_data_for_all_tenants()
 
 # TODO: Message user with information about this being reviewed
 # TODO: Determine how to map IdP groups to Slack channels

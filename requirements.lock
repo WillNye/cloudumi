@@ -61,10 +61,6 @@ async-timeout==4.0.2
     #   redis
 asyncache==0.3.1
     # via iambic
-asyncpg==0.27.0
-    # via
-    #   -r ./common/util/requirements.in
-    #   databases
 asynctest==0.13.0
     # via
     #   -r ./api/util/requirements-test.in
@@ -257,8 +253,6 @@ cyclonedx-python-lib==3.1.5
     # via checkov
 cython==0.29.33
     # via -r ./requirements.in
-databases[asyncpg]==0.7.0
-    # via -r ./common/requirements.in
 dateparser==1.1.7
     # via iambic
 debugpy==1.6.6
@@ -951,11 +945,10 @@ sortedcontainers==2.4.0
     #   fakeredis
 soupsieve==2.3.2.post1
     # via beautifulsoup4
-sqlalchemy==1.4.46
+sqlalchemy==2.0.3
     # via
     #   -r ./common/util/requirements.in
     #   alembic
-    #   databases
 stevedore==5.0.0
     # via bandit
 structlog==22.3.0
@@ -1014,6 +1007,7 @@ typing-extensions==4.4.0
     #   pycep-parser
     #   pydantic
     #   pydantic-factories
+    #   sqlalchemy
 tzdata==2022.7
     # via pytz-deprecation-shim
 tzlocal==4.2

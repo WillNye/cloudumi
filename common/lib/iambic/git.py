@@ -6,6 +6,7 @@ import ujson as json
 from git import Repo
 from git.exc import GitCommandError
 from github import Github
+from iambic.config.utils import load_template as load_config_template
 from iambic.core.parser import load_templates
 
 # TODO: Still need to get Iambic installed in the SaaS. This is a localhost hack.
@@ -99,11 +100,32 @@ class IambicGit:
         await self.set_git_repositories()
         for repository in self.git_repositories:
             repo_name = repository.repo_name
-            repo_path = os.path.join(self.tenant_repo_base_path, repo_name)
+            repo_path = get_iambic_repo_path(self.tenant, repository.repo_name)
             template_paths = await gather_templates(repo_path)
             self.templates = load_templates(template_paths)
             group_typeahead = []
             template_dicts = []
+
+            aws_account_specific_template_types = [
+                "NOQ::AWS::IAM::Role",
+                "NOQ::AWS::IAM::Group",
+                "NOQ::AWS::IAM::ManagedPolicy",
+                "NOQ::AWS::IAM::User",
+            ]
+            config_template = await load_config_template(repo_path)
+            aws_accounts = config_template.aws.accounts
+            aws_account_dicts = []
+            for aws_account in aws_accounts:
+                d = json.loads(aws_account.json())
+                d["repo_name"] = repo_name
+                aws_account_dicts.append(d)
+
+            await store_json_results_in_redis_and_s3(
+                aws_account_dicts,
+                redis_key=f"{self.tenant}_IAMBIC_AWS_ACCOUNTS",
+                tenant=self.tenant,
+            )
+
             for template in self.templates:
                 d = json.loads(template.json())
                 d["repo_name"] = repo_name
@@ -112,15 +134,12 @@ class IambicGit:
                     "/" + repo_name, ""
                 )
                 template_dicts.append(d)
+
+            # iambic_template_rules = await get_data_for_template_types(self.tenant, aws_account_specific_template_types)
             # jmespath.search("[?template_type=='NOQ::Google::Group' && contains(properties.name, 'leg')]", template_dicts)
-            redis_key = config.get_tenant_specific_key(
-                "cache_organization_structure.redis.key.org_structure_key",
-                self.tenant,
-                f"{self.tenant}_IAMBIC_TEMPLATES",
-            )
             await store_json_results_in_redis_and_s3(
                 template_dicts,
-                redis_key=redis_key,
+                redis_key=f"{self.tenant}_IAMBIC_TEMPLATES",
                 tenant=self.tenant,
             )
             for template in self.templates:

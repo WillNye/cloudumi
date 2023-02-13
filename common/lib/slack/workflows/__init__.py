@@ -643,7 +643,7 @@ self_service_step_1_option_selection = json.loads(
 					{
 						"text": {
 							"type": "plain_text",
-							"text": "Request Access",
+							"text": "Request access to an application, group, or AWS permission set",
 							"emoji": true
 						},
 						"value": "request_access_to_identity"
@@ -651,7 +651,7 @@ self_service_step_1_option_selection = json.loads(
 					{
 						"text": {
 							"type": "plain_text",
-							"text": "Request AWS Cloud Permissions",
+							"text": "Request Permission or tag changes to a cloud identity",
 							"emoji": true
 						},
 						"value": "request_permissions_for_identity"

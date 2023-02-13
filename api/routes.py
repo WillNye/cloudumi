@@ -159,7 +159,7 @@ from api.handlers.v4.requests import IambicRequestCommentHandler, IambicRequestH
 from api.handlers.v4.role_access.manage_role_access import ManageRoleAccessHandler
 from common.config import config
 from common.lib.sentry import before_send_event
-from common.lib.slack.app import slack_app
+from common.lib.slack.app import get_slack_app
 
 UUID_REGEX = "[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}"
 
@@ -424,7 +424,11 @@ def make_app(jwt_validator=None):
     ]
     # TODO: fix:
 
-    if config.get("_global_.development"):
+    if (
+        config.get("_global_.development")
+        and config.get("_global_.environment") != "test"
+    ):
+        slack_app = get_slack_app()
         routes[:0] = [
             (r"/api/v3/slack/events", AsyncSlackEventsHandler, dict(app=slack_app)),
             (
