@@ -26,11 +26,11 @@ async def rebuild_tables():
     async with ASYNC_PG_ENGINE.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     async with ASYNC_PG_ENGINE.begin() as conn:
-        tenant = Tenant(
+        tenant = await Tenant.create(
             name="localhost",
             organization_id="localhost",
         )
-        tenant_cloudumidev = Tenant(
+        tenant_cloudumidev = await Tenant.create(
             name="cloudumidev_com",
             organization_id="cloudumidev_com",
         )
