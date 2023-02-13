@@ -5,7 +5,6 @@ from typing import IO
 
 import boto3
 import click
-import click_log
 
 from common.config import config
 from common.lib.aws.access_undenied.access_undenied_aws import (
@@ -34,7 +33,7 @@ pass_config = click.make_pass_decorator(common.Config, ensure=True)
 
 
 @click.group()
-#@click_log.simple_verbosity_option(logger.name)
+# @click_log.simple_verbosity_option(logger.name)
 @click.option(
     "--profile",
     help="the AWS profile to use (default is default profile)",

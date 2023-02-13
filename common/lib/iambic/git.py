@@ -12,11 +12,10 @@ from iambic.core.parser import load_templates
 # TODO: Still need to get Iambic installed in the SaaS. This is a localhost hack.
 from iambic.core.utils import gather_templates
 from iambic.google.group.models import GroupMember
-from iambic.okta.group.models import OktaGroupTemplate, UserSimple
+from iambic.okta.group.models import UserSimple
 from iambic.okta.models import Assignment
-from ruamel.yaml import YAML
 
-from common.config import config, models
+from common.config import models
 from common.config.globals import TENANT_STORAGE_BASE_PATH
 from common.lib.cache import store_json_results_in_redis_and_s3
 from common.lib.yaml import yaml
