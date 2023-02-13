@@ -26,11 +26,11 @@ async def rebuild_tables():
     async with ASYNC_PG_ENGINE.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     async with ASYNC_PG_ENGINE.begin() as conn:
-        tenant = Tenant(
+        tenant = await Tenant.create(
             name="localhost",
             organization_id="localhost",
         )
-        tenant_cloudumidev = Tenant(
+        tenant_cloudumidev = await Tenant.create(
             name="cloudumidev_com",
             organization_id="cloudumidev_com",
         )
@@ -62,23 +62,6 @@ async def rebuild_tables():
             name="noq_admins",
             email="noq_admins@noq.dev",
             description="test",
-        )
-        await GroupMembership.create(user2, group2)
-
-        user2 = await User.create(
-            "localhost",
-            "admin_user@noq.dev",
-            "admin_user@noq.dev",
-            "Password!1",
-            email_verified=True,
-            managed_by="MANUAL",
-        )
-        group2 = await Group.create(
-            tenant="localhost",
-            name="noq_admins",
-            email="noq_admins@noq.dev",
-            description="test",
-            managed_by="MANUAL",
         )
         await GroupMembership.create(user2, group2)
 
