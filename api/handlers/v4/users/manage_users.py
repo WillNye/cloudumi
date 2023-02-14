@@ -9,7 +9,7 @@ from email_validator import validate_email
 
 from common.config.tenant_config import TenantConfig
 from common.handlers.base import BaseAdminHandler, BaseHandler, TornadoRequestHandler
-from common.lib.filter import filter_data_with_sqlalchemy
+from common.lib.filter import PaginatedQueryResponse, filter_data_with_sqlalchemy
 from common.lib.jwt import generate_jwt_token
 from common.lib.password import check_password_strength, generate_random_password
 from common.lib.tenant.models import TenantDetails
@@ -26,7 +26,7 @@ class ManageListUsersHandler(BaseAdminHandler):
         _filter = data.get("filter", {})
 
         try:
-            objects: list[objects] = await filter_data_with_sqlalchemy(
+            query_response: PaginatedQueryResponse = await filter_data_with_sqlalchemy(
                 _filter, tenant, User
             )
         except Exception as exc:
@@ -41,13 +41,14 @@ class ManageListUsersHandler(BaseAdminHandler):
             self.set_status(500, reason=str(exc))
             raise tornado.web.Finish()
 
-        res = [x.dict() for x in objects]
+        res = [x.dict() for x in query_response.data]
+        query_response.data = res
 
         self.write(
             WebResponse(
                 success="success",
                 status_code=200,
-                data={"users": res},
+                data=query_response.dict(exclude_unset=True, exclude_none=True),
             ).dict(exclude_unset=True, exclude_none=True)
         )
 
