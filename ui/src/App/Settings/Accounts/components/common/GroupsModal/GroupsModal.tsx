@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Icon } from 'shared/elements/Icon';
 import { Dialog } from 'shared/layers/Dialog';
 import { Input } from 'shared/form/Input';
@@ -6,12 +6,16 @@ import { Block } from 'shared/layout/Block';
 import { Button } from 'shared/elements/Button';
 import styles from './GroupsModal.module.css';
 
-const GroupsModal = () => {
+const GroupsModal = ({ canEdit }) => {
   const [showDialog, setShowDialog] = useState(false);
 
+  if (!canEdit) {
+    return <Fragment />;
+  }
+
   return (
-    <>
-      <div onClick={() => setShowDialog(true)}>
+    <div className={styles.container}>
+      <div className={styles.btn} onClick={() => setShowDialog(true)}>
         <Icon name="edit" size="medium" />
       </div>
 
@@ -22,7 +26,7 @@ const GroupsModal = () => {
         header="Group Modal"
         size="medium"
       >
-        <div className={styles.container}>
+        <div className={styles.content}>
           <form>
             <Block disableLabelPadding label="Group"></Block>
             <Input fullWidth name="group" />
@@ -33,7 +37,7 @@ const GroupsModal = () => {
           </form>
         </div>
       </Dialog>
-    </>
+    </div>
   );
 };
 

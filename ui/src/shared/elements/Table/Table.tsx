@@ -7,11 +7,11 @@ import {
   usePagination,
   useSortBy
 } from 'react-table';
-import { IndeterminateCheckbox } from './Filters';
 import styles from './Table.module.css';
 import { Icon } from '../Icon';
 import { Loader } from '../Loader';
 import { EmptyState } from '../EmptyState';
+import { Checkbox } from 'shared/form/Checkbox';
 
 interface TableProps<T, D> {
   spacing?: 'expanded' | 'compact';
@@ -68,16 +68,14 @@ export const Table = <T, D>({
               // to render a checkbox
               Header: ({ getToggleAllPageRowsSelectedProps }) => (
                 <div>
-                  <IndeterminateCheckbox
-                    {...getToggleAllPageRowsSelectedProps()}
-                  />
+                  <Checkbox {...getToggleAllPageRowsSelectedProps()} />
                 </div>
               ),
               // The cell can use the individual row's getToggleRowSelectedProps method
               // to the render a checkbox
               Cell: ({ row }) => (
                 <div>
-                  <IndeterminateCheckbox {...row.getToggleRowSelectedProps()} />
+                  <Checkbox {...row.getToggleRowSelectedProps()} />
                 </div>
               ),
               width: '15px'

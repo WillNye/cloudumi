@@ -47,7 +47,7 @@ const GroupsManagement = () => {
     setErrorMsg(null);
     getAllGroups(query)
       .then(({ data }) => {
-        setAllGroupsData(data.data.groups);
+        setAllGroupsData(data.data.data);
       })
       .catch(error => {
         const errorMessage = extractErrorMessage(error);
@@ -74,14 +74,14 @@ const GroupsManagement = () => {
 
   const tableRows = useMemo(() => {
     return allGroupsData.map(item => {
+      const canEdit = item.managed_by === 'MANUAL';
+
       return {
         ...item,
         name: <div>{item.name}</div>,
-        delete: <Delete />,
-        edit: <GroupsModal />,
-        groups: item.groups.map((group, index) => (
-          <div key={index}>{group}</div>
-        ))
+        delete: <Delete canEdit={canEdit} />,
+        edit: <GroupsModal canEdit={canEdit} />,
+        users: item.users.map((group, index) => <div key={index}>{group}</div>)
       };
     });
   }, [allGroupsData]);

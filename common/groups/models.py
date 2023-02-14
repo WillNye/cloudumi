@@ -46,6 +46,7 @@ class Group(SoftDeleteMixin, Base):
             description=self.description,
             managed_by=self.managed_by,
             email=self.email,
+            users=[user.email for user in self.users],
         )
 
     async def write(self):

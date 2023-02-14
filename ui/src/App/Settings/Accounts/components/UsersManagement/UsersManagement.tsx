@@ -45,7 +45,7 @@ const UsersManagement = () => {
     setErrorMsg(null);
     getAllUsers(query)
       .then(({ data }) => {
-        setAllUsersData(data.data.users);
+        setAllUsersData(data.data.data);
       })
       .catch(error => {
         const errorMessage = extractErrorMessage(error);
@@ -72,11 +72,12 @@ const UsersManagement = () => {
 
   const tableRows = useMemo(() => {
     return allUsersData.map(item => {
+      const canEdit = item.managed_by === 'MANUAL';
       return {
         ...item,
         email: <div>{item.email}</div>,
-        delete: <Delete />,
-        edit: <UserModal />
+        delete: <Delete canEdit={canEdit} />,
+        edit: <UserModal canEdit={canEdit} />
       };
     });
   }, [allUsersData]);
@@ -85,7 +86,9 @@ const UsersManagement = () => {
     <div className={css.container}>
       <div className={css.header}>
         <div>Team Members ({allUsersData.length})</div>
-        <Button>Invite Member</Button>
+        <div>
+          <Button>Invite Member</Button>
+        </div>
       </div>
       <div className={css.table}>
         <Table

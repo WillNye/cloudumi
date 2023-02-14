@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Button } from 'shared/elements/Button';
 import { Icon } from 'shared/elements/Icon';
 import { Input } from 'shared/form/Input';
@@ -6,12 +6,16 @@ import { Dialog } from 'shared/layers/Dialog';
 import { Block } from 'shared/layout/Block';
 import styles from './UserModal.module.css';
 
-const UserModal = () => {
+const UserModal = ({ canEdit }) => {
   const [showDialog, setShowDialog] = useState(false);
 
+  if (!canEdit) {
+    return <Fragment />;
+  }
+
   return (
-    <>
-      <div onClick={() => setShowDialog(true)}>
+    <div className={styles.container}>
+      <div className={styles.btn} onClick={() => setShowDialog(true)}>
         <Icon name="edit" size="medium" />
       </div>
 
@@ -22,7 +26,7 @@ const UserModal = () => {
         header="user Modal"
         size="medium"
       >
-        <div className={styles.container}>
+        <div className={styles.content}>
           <form>
             <Block disableLabelPadding label="First Name"></Block>
             <Input fullWidth name="first_name" />
@@ -35,7 +39,7 @@ const UserModal = () => {
           </form>
         </div>
       </Dialog>
-    </>
+    </div>
   );
 };
 

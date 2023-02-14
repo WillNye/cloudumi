@@ -5,7 +5,7 @@ from email_validator import validate_email
 
 from common.groups.models import Group
 from common.handlers.base import BaseAdminHandler
-from common.lib.filter import filter_data_with_sqlalchemy
+from common.lib.filter import PaginatedQueryResponse, filter_data_with_sqlalchemy
 from common.models import WebResponse
 
 
@@ -17,7 +17,7 @@ class ManageListGroupsHandler(BaseAdminHandler):
         _filter = data.get("filter", {})
 
         try:
-            objects: list[objects] = await filter_data_with_sqlalchemy(
+            query_response: PaginatedQueryResponse = await filter_data_with_sqlalchemy(
                 _filter, tenant, Group
             )
         except Exception as exc:
@@ -32,13 +32,14 @@ class ManageListGroupsHandler(BaseAdminHandler):
             self.set_status(500, reason=str(exc))
             raise tornado.web.Finish()
 
-        res = [x.dict() for x in objects]
+        res = [x.dict() for x in query_response.data]
+        query_response.data = res
 
         self.write(
             WebResponse(
                 success="success",
                 status_code=200,
-                data={"groups": res},
+                data=query_response.dict(exclude_unset=True, exclude_none=True),
             ).dict(exclude_unset=True, exclude_none=True)
         )
 
