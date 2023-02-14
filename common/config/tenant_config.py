@@ -209,3 +209,19 @@ class TenantConfig:
     @property
     def require_mfa(self):
         return self.get_tenant_or_global_config_var("auth.require_mfa", False)
+
+    @property
+    def iambic_templates_redis_key(self):
+        return f"{self.tenant}_IAMBIC_TEMPLATES"
+
+    @property
+    def iambic_templates_reverse_hash_redis_key(self):
+        return f"{self.tenant}_IAMBIC_TEMPLATES_REVERSE_HASH"
+
+    @property
+    def iambic_arn_typeahead_redis_key(self):
+        return f"{self.tenant}_IAMBIC_ARN_TYPEAHEAD"
+
+    @property
+    def iambic_hash_arn_redis_key(self):
+        return f"{self.tenant}_IAMBIC_HASH_TO_ARN"

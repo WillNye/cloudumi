@@ -419,7 +419,7 @@ select_desired_permissions_modal = json.loads(
     """
 {
     "type": "modal",
-    "callback_id": "request_permissions_to_resource",
+    "callback_id": "request_cloud_permissions_to_resources",
     "title": {
         "type": "plain_text",
         "text": "Noq",
@@ -450,7 +450,24 @@ select_desired_permissions_modal = json.loads(
                     "type": "plain_text",
                     "text": "Select identities"
                 },
-                "min_query_length": 2
+                "min_query_length": 3
+            }
+        },
+        {
+            "type": "section",
+            "block_id": "select_services",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Services*"
+            },
+            "accessory": {
+                "action_id": "select_aws_services_action",
+                "type": "multi_external_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select AWS services"
+                },
+                "min_query_length": 1
             }
         },
         {
@@ -461,17 +478,18 @@ select_desired_permissions_modal = json.loads(
                 "text": "*Resources*"
             },
             "accessory": {
-                "action_id": "select_resources_action",
+                "action_id": "select_aws_resources_action",
                 "type": "multi_external_select",
                 "placeholder": {
                     "type": "plain_text",
                     "text": "Select resources"
                 },
-                "min_query_length": 2
+                "min_query_length": 1
             }
         },
         {
             "type": "input",
+            "block_id": "desired_permissions",
             "element": {
                 "type": "multi_static_select",
                 "placeholder": {
@@ -486,15 +504,15 @@ select_desired_permissions_modal = json.loads(
                             "text": "List",
                             "emoji": true
                         },
-                        "value": "list"
+                        "value": "List"
                     },
                     {
                         "text": {
                             "type": "plain_text",
-                            "text": "Read*",
+                            "text": "Read",
                             "emoji": true
                         },
-                        "value": "read"
+                        "value": "Read"
                     },
                     {
                         "text": {
@@ -502,7 +520,7 @@ select_desired_permissions_modal = json.loads(
                             "text": "Write",
                             "emoji": true
                         },
-                        "value": "write"
+                        "value": "Write"
                     },
                     {
                         "text": {
@@ -510,7 +528,7 @@ select_desired_permissions_modal = json.loads(
                             "text": "Permissions Management",
                             "emoji": true
                         },
-                        "value": "permissions_management"
+                        "value": "Permissions management"
                     },
                     {
                         "text": {
@@ -518,10 +536,10 @@ select_desired_permissions_modal = json.loads(
                             "text": "Tagging",
                             "emoji": true
                         },
-                        "value": "tagging"
+                        "value": "Tagging"
                     }
                 ],
-                "action_id": "desired_permissions"
+                "action_id": "desired_permissions_action"
             },
             "label": {
                 "type": "plain_text",
@@ -672,6 +690,7 @@ self_service_step_1_option_selection = json.loads(
 self_service_request_permissions_step_2_option_selection = json.loads(
     """{
     "type": "modal",
+    "callback_id": "self_service_request_permissions_step_2_option_selection",
     "title": {
         "type": "plain_text",
         "text": "Noq",
@@ -690,9 +709,18 @@ self_service_request_permissions_step_2_option_selection = json.loads(
     "blocks": [
         {
             "type": "input",
+            "block_id": "self_service_permissions_step_2_block",
             "element": {
                 "type": "radio_buttons",
                 "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Pre-defined Policy",
+                            "emoji": true
+                        },
+                        "value": "select_predefined_policy"
+                    },
                     {
                         "text": {
                             "type": "plain_text",
@@ -718,7 +746,7 @@ self_service_request_permissions_step_2_option_selection = json.loads(
                         "value": "update_tags"
                     }
                 ],
-                "action_id": "self-service-step-2-option-selection"
+                "action_id": "self_service_step_2_option_selection"
             },
             "label": {
                 "type": "plain_text",

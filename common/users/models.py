@@ -82,6 +82,7 @@ class User(SoftDeleteMixin, Base):
         "Group",
         secondary=GroupMembership.__table__,
         back_populates="users",
+        lazy="joined",
         foreign_keys=[GroupMembership.user_id, GroupMembership.group_id],
     )
 

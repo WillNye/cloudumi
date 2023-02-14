@@ -7,6 +7,8 @@ from typing import Optional
 from uuid import uuid4
 
 import jq
+import ujson as json
+from policyuniverse.expander_minimizer import _expand_wildcard_action
 from slack_bolt.async_app import AsyncApp
 from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
 from slack_sdk.oauth.installation_store import Bot, Installation
@@ -19,9 +21,13 @@ from sqlalchemy.sql import insert, select
 
 from common.config import config, globals
 from common.config.globals import ASYNC_PG_SESSION
+from common.config.tenant_config import TenantConfig
 from common.iambic_request.models import GitHubPullRequest
 from common.iambic_request.utils import get_iambic_repo
+from common.lib.asyncio import aio_wrapper
+from common.lib.aws.typeahead_cache import get_all_resource_arns
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
+from common.lib.change_request import _get_policy_sentry_access_level_actions
 from common.lib.iambic.git import IambicGit
 from common.lib.redis import RedisHandler
 from common.lib.slack.models import BOTS_TABLE, INSTALLATIONS_TABLE, OAUTH_STATES_TABLE
@@ -29,7 +35,9 @@ from common.lib.slack.workflows import (
     request_access_to_resource_block,
     request_access_to_resource_success,
     request_permissions_to_resource_block,
+    select_desired_permissions_modal,
     self_service_permissions_review_blocks,
+    self_service_request_permissions_step_2_option_selection,
     self_service_step_1_option_selection,
     self_service_submission_success,
 )
@@ -40,6 +48,18 @@ scopes = """app_mentions:read,channels:history,channels:join,channels:read,chat:
 )
 
 GLOBAL_SLACK_APP = None
+
+friendly_names = {
+    "NOQ::AWS::IAM::Group": "AWS IAM Groups",
+    "NOQ::AWS::IAM::ManagedPolicy": "AWS IAM Managed Policies",
+    "NOQ::AWS::IAM::Role": "AWS IAM Roles",
+    "NOQ::AWS::IAM::User": "AWS IAM Users",
+    "NOQ::AWS::IdentityCenter::PermissionSet": "AWS Permission Sets",
+    "NOQ::Google::Group": "Google Groups",
+    "NOQ::Okta::App": "Okta Apps",
+    "NOQ::Okta::Group": "Okta Groups",
+    "NOQ::Okta::User": "Okta Users",
+}
 
 logger = logging.getLogger(__name__)
 
@@ -374,34 +394,39 @@ async def handle_select_resources_options_tenant(ack, body, tenant):
         redis_key=redis_key,
         tenant=tenant,
     )
-
+    res = []
     if slack_app_type:
-        res = (
+        res.extend(
             jq.compile(
                 f".[] | select(.template_type == \"{slack_app_type}\") | select(.identifier | test(\"{body['value']}\"; \"i\"))?"
             )
             .input(template_dicts)
             .all()
         )
-
-    else:
-        res = (
-            jq.compile(f".[] | select(.identifier | test(\"{body['value']}\"; \"i\"))?")
+        res.extend(
+            jq.compile(
+                f".[] | select(.template_type == \"{slack_app_type}\") | select(.properties.name | test(\"{body['value']}\"; \"i\"))?"
+            )
             .input(template_dicts)
             .all()
         )
 
-    friendly_names = {
-        "NOQ::AWS::IAM::Group": "AWS IAM Groups",
-        "NOQ::AWS::IAM::ManagedPolicy": "AWS IAM Managed Policies",
-        "NOQ::AWS::IAM::Role": "AWS IAM Roles",
-        "NOQ::AWS::IAM::User": "AWS IAM Users",
-        "NOQ::AWS::IdentityCenter::PermissionSet": "AWS Permission Sets",
-        "NOQ::Google::Group": "Google Groups",
-        "NOQ::Okta::App": "Okta Apps",
-        "NOQ::Okta::Group": "Okta Groups",
-        "NOQ::Okta::User": "Okta Users",
-    }
+    else:
+        res.extend(
+            jq.compile(f".[] | select(.identifier | test(\"{body['value']}\"; \"i\"))?")
+            .input(template_dicts)
+            .all()
+        )
+        res.extend(
+            jq.compile(
+                f".[] | select(.properties.name | test(\"{body['value']}\"; \"i\"))?"
+            )
+            .input(template_dicts)
+            .all()
+        )
+    # Lambda to remove duplicates if repo_relative_file_path is the same
+    res = list({v["repo_relative_file_path"]: v for v in res}.values())
+
     option_groups = defaultdict(list)
     for typeahead_entry in res:
         template_type = typeahead_entry["template_type"]
@@ -412,18 +437,18 @@ async def handle_select_resources_options_tenant(ack, body, tenant):
                 "options": [],
             }
 
-        smaller_string = f'{typeahead_entry["template_type"]}|{typeahead_entry["repo_name"]}|{typeahead_entry["repo_relative_file_path"]}'
-
         option_groups[friendly_name]["options"].append(
             {
                 "text": {
                     "type": "plain_text",
-                    "text": typeahead_entry["identifier"],
+                    "text": typeahead_entry.get(
+                        "identifier", typeahead_entry.get("properties", {}).get("name")
+                    ),
                 },
                 # Warning: Slack docs specify the max length of options value is 75 characters
                 # but it is actually larger. Slack will not give you an error if this is exceeded,
                 # and you will be left wandering aimlessly in the abyss.
-                "value": smaller_string,
+                "value": typeahead_entry["hash"],
             }
         )
     option_groups = [v for _, v in option_groups.items()]
@@ -445,10 +470,26 @@ async def handle_request_access_to_resource_ack(ack):
     await ack(response_action="update", view=request_access_to_resource_success)
 
 
+async def handle_request_cloud_permissions_to_resource_ack(ack):
+    await ack(response_action="update", view=select_desired_permissions_modal)
+
+
+async def handle_select_cloud_identity_request_type(ack, body, client, logger, tenant):
+    await ack(
+        response_action="update",
+        view=self_service_request_permissions_step_2_option_selection,
+    )
+
+
 # @slack_app.view("request_access_to_resource")
 async def handle_request_access_to_resource_tenant(
-    body, client, logger, respond, tenant, tenant_slack_app
+    body, client, logger, respond, tenant
 ):
+    tenant_config = TenantConfig(tenant)
+    reverse_hash_for_templates = await retrieve_json_data_from_redis_or_s3(
+        redis_key=tenant_config.iambic_templates_reverse_hash_redis_key,
+        tenant=tenant,
+    )
     # TODO: Use IambicGit to make a request
     # TODO: Convert Slack username to e-mail
     justification = body["view"]["state"]["values"]["justification"]["justification"][
@@ -456,8 +497,6 @@ async def handle_request_access_to_resource_tenant(
     ]
     iambic = IambicGit(tenant)
     iambic_repo = await get_iambic_repo(tenant)
-    # TODO: Figure out how to get user info
-    # user_email = await tenant_slack_app.client.users_info(user=body["user"]["id"])
     user_info = await client.users_info(user=body["user"]["id"])
     user_email = user_info._initial_data["user"]["profile"]["email"]
     selected_options = body["view"]["state"]["values"]["request_access"][
@@ -470,13 +509,11 @@ async def handle_request_access_to_resource_tenant(
     resources = defaultdict(list)
     # TODO: We need git url of resources
     for option in selected_options:
-        value = option["value"].split("|")
-        if len(value) != 3:
-            raise Exception("Invalid selected options value")
-
-        template_type = value[0]
-        repo_name = value[1]
-        path = value[2][1:]
+        hash = option["value"]
+        iambic_template_details = reverse_hash_for_templates[hash]
+        template_type = iambic_template_details["template_type"]
+        repo_name = iambic_template_details["repo_name"]
+        path = iambic_template_details["repo_relative_file_path"]
         if template_type == "NOQ::Google::Group":
             template = await iambic.google_add_user_to_group(
                 template_type, repo_name, path, user_email, duration
@@ -495,7 +532,7 @@ async def handle_request_access_to_resource_tenant(
             resources[template_type].append(template.properties.name)
 
         # else:
-        #     raise Exception("Unsupported tempalte type")
+        #     raise Exception("Unsupported template type")
 
         template_changes.append(
             IambicTemplateChange(path=path, body=template.get_body(exclude_unset=False))
@@ -601,23 +638,6 @@ def render_step_2_request_access():
     }
 
 
-def render_step_2_request_new_cloud_permissions():
-    return {
-        "type": "modal",
-        "callback_id": "modal_step_2",
-        "title": {"type": "plain_text", "text": "Cloud Permissions"},
-        "blocks": [
-            {
-                "type": "section",
-                "text": {
-                    "type": "plain_text",
-                    "text": "Please fill out the form below to request new cloud permissions.",
-                },
-            }
-        ],
-    }
-
-
 async def handle_select_app_type(ack, logger, body, client, respond, tenant):
     # Acknowledge the action to confirm receipt
     await ack()
@@ -630,6 +650,66 @@ async def handle_select_app_type(ack, logger, body, client, respond, tenant):
     selected_option = body["actions"][0]["selected_option"]["value"]
     # Store in a temporary redis key (Really Slack?)
     red.setex(f"{tenant}_SLACK_APP_TYPE_{token}_{hash}", 300, selected_option)
+
+
+async def handle_select_cloud_identities_options_tenant(
+    ack, logger, body, client, respond, tenant
+):
+    tenant_config = TenantConfig(tenant)
+    res = await retrieve_json_data_from_redis_or_s3(
+        redis_key=tenant_config.iambic_arn_typeahead_redis_key, tenant=tenant
+    )
+
+    # reverse_hash_for_arn = await retrieve_json_data_from_redis_or_s3(
+    #             redis_key=tenant_config.iambic_hash_arn_redis_key,
+    #             tenant=tenant,
+    #         )
+    num_entries = 0
+    option_groups = defaultdict(list)
+    for typeahead_entry, template_details in res.items():
+
+        # Maximum length of option group options is 100:
+        if num_entries >= 100:
+            break
+        reverse_hash_for_arn = template_details["hash"]
+        account_id = typeahead_entry.split(":")[4]
+        account_name = template_details["account_name"]
+        partial_arn = typeahead_entry.replace(f"arn:aws:iam::{account_id}:", "")
+        account_name_arn = partial_arn.replace(
+            partial_arn, f"{account_name}:{partial_arn}"
+        )
+        if not (
+            body["value"].lower() in typeahead_entry.lower()
+            or body["value"].lower() in account_name_arn.lower()
+        ):
+            continue
+        template_type = template_details["template_type"]
+
+        friendly_name = friendly_names.get(template_type, template_type)
+        if not option_groups.get(friendly_name):
+            option_groups[friendly_name] = {
+                "label": {"type": "plain_text", "text": friendly_name[:75]},
+                "options": [],
+            }
+
+        option_groups[friendly_name]["options"].append(
+            {
+                "text": {
+                    "type": "plain_text",
+                    "text": account_name_arn[:75],
+                },
+                # Warning: Slack docs specify the max length of options value is 75 characters
+                # but it is actually larger. Slack will not give you an error if this is exceeded,
+                # and you will be left wandering aimlessly in the abyss.
+                "value": reverse_hash_for_arn[:75],
+            }
+        )
+        num_entries += 1
+    option_groups = [v for _, v in option_groups.items()]
+    option_groups_formatted = {
+        "option_groups": option_groups,
+    }
+    res = await ack(option_groups_formatted)
 
 
 async def handle_request_access_step_1_callback(
@@ -647,7 +727,7 @@ async def handle_request_access_step_1_callback(
     if selected_option == "request_access_to_identity":
         view = request_access_to_resource_block
     elif selected_option == "request_permissions_for_identity":
-        view = render_step_2_request_new_cloud_permissions()
+        view = self_service_request_permissions_step_2_option_selection
     else:
         raise Exception("Invalid option selected")
     await ack(response_action="update", view=view)
@@ -655,6 +735,226 @@ async def handle_request_access_step_1_callback(
 
 async def handle_user_change_events(body, logger, tenant):
     pass
+
+
+async def handle_select_aws_services_options(
+    ack, logger, body, client, respond, tenant
+):
+    # Acknowledge the action to confirm receipt
+    await ack()
+    # Get the value of the selected radio button
+    options = []
+    prefix = body["value"] + "*"
+    results = _expand_wildcard_action(prefix)
+    services = sorted(list({r.split(":")[0].replace("*", "") for r in results}))
+    for service in services:
+        options.append(
+            {
+                "text": {
+                    "type": "plain_text",
+                    "text": service,
+                },
+                "value": service,
+            }
+        )
+    await ack(options=options)
+
+
+async def handle_request_permissions_step_2_option_selection(ack, body, logger, tenant):
+    # Acknowledge the action to confirm receipt
+    await ack()
+
+    # Get the value of the selected radio button
+    selected_option = body["view"]["state"]["values"][
+        "self_service_permissions_step_2_block"
+    ]["self_service_step_2_option_selection"]["selected_option"]["value"]
+
+    # Render step 2 conditionally based on the selected option
+    if selected_option == "select_predefined_policy":
+        view = ""
+    elif selected_option == "update_inline_policies":
+        view = select_desired_permissions_modal
+    elif selected_option == "update_managed_policies":
+        view = ""
+    elif selected_option == "update_tags":
+        view = ""
+    else:
+        raise Exception("Invalid option selected")
+    await ack(response_action="update", view=view)
+
+
+async def handle_select_aws_resources_options(
+    ack, logger, body, client, respond, tenant
+):
+    # Acknowledge the action to confirm receipt
+    await ack()
+    # Get the value of the selected radio button
+    options = []
+    prefix = body["value"] + "*"
+    resource_redis_cache_key = config.get_tenant_specific_key(
+        "aws_config_cache.redis_key",
+        tenant,
+        f"{tenant}_AWSCONFIG_RESOURCE_CACHE",
+    )
+    red = await RedisHandler().redis(tenant)
+    all_resource_arns = await aio_wrapper(red.hkeys, resource_redis_cache_key)
+
+    for resource in all_resource_arns:
+        if len(options) >= 100:
+            break
+        if body["value"] not in resource:
+            continue
+        options.append(
+            {
+                "text": {
+                    "type": "plain_text",
+                    "text": resource[:75],
+                },
+                "value": resource[:75],
+            }
+        )
+    await ack(options=options)
+
+
+async def handle_request_cloud_permissions_to_resources(
+    body,
+    client,
+    logger,
+    respond,
+    tenant,
+):
+    tenant_config = TenantConfig(tenant)
+    # res = await retrieve_json_data_from_redis_or_s3(
+    #     redis_key=tenant_config.iambic_arn_typeahead_redis_key,
+    #     tenant=tenant
+    # )
+    reverse_hash_for_arn = await retrieve_json_data_from_redis_or_s3(
+        redis_key=tenant_config.iambic_hash_arn_redis_key,
+        tenant=tenant,
+    )
+    justification = body["view"]["state"]["values"]["justification"]["justification"][
+        "value"
+    ]
+    iambic = IambicGit(tenant)
+    iambic_repo = await get_iambic_repo(tenant)
+    user_info = await client.users_info(user=body["user"]["id"])
+    user_email = user_info._initial_data["user"]["profile"]["email"]
+    selected_identities = body["view"]["state"]["values"]["select_identities"][
+        "select_identities_action"
+    ]["selected_options"]
+    selected_services = [
+        b["value"]
+        for b in body["view"]["state"]["values"]["select_services"][
+            "select_aws_services_action"
+        ]["selected_options"]
+    ]
+    selected_resources = [
+        b["value"]
+        for b in body["view"]["state"]["values"]["select_resources"][
+            "select_aws_resources_action"
+        ]["selected_options"]
+    ]
+    selected_permissions = [
+        b["value"]
+        for b in body["view"]["state"]["values"]["desired_permissions"][
+            "desired_permissions_action"
+        ]["selected_options"]
+    ]
+
+    all_aws_actions = []
+    for service in selected_services:
+        aws_actions = await _get_policy_sentry_access_level_actions(
+            service, selected_permissions
+        )
+        all_aws_actions.extend(aws_actions)
+    duration = body["view"]["state"]["values"]["duration"]["duration"][
+        "selected_option"
+    ]["value"]
+    print("here")
+    template_changes = []
+    resources = defaultdict(list)
+    for identity in selected_identities:
+        identity_hash = identity["value"]
+        identity_info = reverse_hash_for_arn[identity_hash]
+        arn = identity_info["arn"]
+        account_id = arn.split(":")[4]
+        template_type = identity_info["template_type"]
+        repo_name = identity_info["repo_name"]
+        repo_relative_file_path = identity_info["repo_relative_file_path"]
+        file_path = identity_info["file_path"]
+        if template_type == "NOQ::AWS::IAM::Role":
+            template = await iambic.aws_iam_role_add_inline_policy(
+                template_type,
+                repo_name,
+                repo_relative_file_path,
+                user_email,
+                duration,
+                all_aws_actions,
+                selected_resources
+                # TODO: If I modify 2 roles on the same account, we need
+                # to recurse over the template to make sure both sets of changes
+                # are captured in a single template
+            )
+            resources[template_type].append(template.identifier)
+            print(template)
+        template_changes.append(
+            IambicTemplateChange(
+                path=repo_relative_file_path,
+                body=template.get_body(exclude_unset=False),
+            )
+        )
+    if not template_changes:
+        await respond(
+            response_action="errors",
+            errors={
+                "select_resources": "You must select at least one resource to request access to"
+            },
+        )
+        return
+
+    request_id = str(uuid4())
+    pull_request_id = None
+    request_pr = GitHubPullRequest(
+        access_token=iambic_repo.access_token,
+        repo_name=iambic_repo.repo_name,
+        tenant=tenant,
+        request_id=request_id,
+        requested_by=user_email,
+        merge_on_approval=iambic_repo.merge_on_approval,
+        pull_request_id=pull_request_id,
+    )
+
+    await request_pr.create_request(justification, template_changes)
+    request_details = await request_pr.get_request_details()
+    pr_url = request_details["pull_request_url"]
+    approvers = "engineering@noq.dev"
+    channel_id = "C045MFZ2A10"
+    slack_message_to_reviewers = self_service_permissions_review_blocks(
+        user_email, resources, duration, approvers, justification, pr_url
+    )
+    user_id = body["user"]["id"]
+
+    await client.chat_postMessage(
+        channel=user_id,
+        text=(
+            "Your request has been successfully submitted. "
+            f"Click the link below to view more details: {pr_url}"
+        ),
+    )
+    await client.chat_postMessage(
+        channel=channel_id,
+        blocks=slack_message_to_reviewers,
+        text="An access request is awaiting your review.",
+    )
+
+    view_id = body["view"]["id"]
+    # Update view
+    await client.views_update(
+        view_id=view_id,
+        view=self_service_submission_success.replace(
+            "{{pull_request_url}}", pr_url
+        ),  # TODO change
+    )
 
 
 async def get_slack_app_for_tenant(tenant, enterprise_id, team_id, app_id):
@@ -683,7 +983,6 @@ async def get_slack_app_for_tenant(tenant, enterprise_id, team_id, app_id):
             partial(
                 handle_request_access_to_resource_tenant,
                 tenant=tenant,
-                tenant_slack_app=tenant_slack_app,
             )
         ],
     )
@@ -709,4 +1008,27 @@ async def get_slack_app_for_tenant(tenant, enterprise_id, team_id, app_id):
         partial(handle_select_app_type, tenant=tenant)
     )
     tenant_slack_app.view("request_success")(handle_ack)
+
+    # tenant_slack_app.options("select_identities_action")(
+    #     partial(handle_select_cloud_identity_request_type, tenant=tenant)
+    # )
+    tenant_slack_app.view("self_service_request_permissions_step_2_option_selection")(
+        partial(handle_request_permissions_step_2_option_selection, tenant=tenant)
+    )
+    tenant_slack_app.options("select_identities_action")(
+        partial(handle_select_cloud_identities_options_tenant, tenant=tenant)
+    )
+
+    tenant_slack_app.options("select_aws_services_action")(
+        partial(handle_select_aws_services_options, tenant=tenant)
+    )
+
+    tenant_slack_app.options("select_aws_resources_action")(
+        partial(handle_select_aws_resources_options, tenant=tenant)
+    )
+
+    tenant_slack_app.view("request_cloud_permissions_to_resources")(
+        ack=handle_request_cloud_permissions_to_resource_ack,
+        lazy=[partial(handle_request_cloud_permissions_to_resources, tenant=tenant)],
+    )
     return tenant_slack_app

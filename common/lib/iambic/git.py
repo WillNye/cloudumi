@@ -1,11 +1,15 @@
 import datetime
+import hashlib
 import os
 import time
+from typing import Union
 
 import ujson as json
 from git import Repo
 from git.exc import GitCommandError
 from github import Github
+from iambic.aws.iam.policy.models import PolicyDocument, PolicyStatement
+from iambic.aws.utils import is_included_in_account
 from iambic.config.utils import load_template as load_config_template
 from iambic.core.parser import load_templates
 
@@ -14,10 +18,14 @@ from iambic.core.utils import gather_templates
 from iambic.google.group.models import GroupMember
 from iambic.okta.group.models import UserSimple
 from iambic.okta.models import Assignment
+from jinja2.environment import Environment
+from jinja2.loaders import BaseLoader
 
 from common.config import models
 from common.config.globals import TENANT_STORAGE_BASE_PATH
+from common.config.tenant_config import TenantConfig
 from common.lib.cache import store_json_results_in_redis_and_s3
+from common.lib.iambic.util import effective_accounts
 from common.lib.yaml import yaml
 from common.models import IambicRepoDetails
 
@@ -35,7 +43,7 @@ class IambicGit:
         self.tenant: str = tenant
         self.git_repositories = []
         self.tenant_repo_base_path: str = os.path.expanduser(
-            os.path.join(TENANT_STORAGE_BASE_PATH, tenant)
+            os.path.join(TENANT_STORAGE_BASE_PATH, tenant, "iambic_template_repos")
         )
         os.makedirs(os.path.dirname(self.tenant_repo_base_path), exist_ok=True)
         self.repos = {}
@@ -96,6 +104,7 @@ class IambicGit:
         return
 
     async def gather_templates_for_tenant(self):
+        tenant_config = TenantConfig(self.tenant)
         await self.set_git_repositories()
         for repository in self.git_repositories:
             repo_name = repository.repo_name
@@ -105,52 +114,139 @@ class IambicGit:
             group_typeahead = []
             template_dicts = []
 
-            aws_account_specific_template_types = [
+            aws_account_specific_template_types = {
                 "NOQ::AWS::IAM::Role",
                 "NOQ::AWS::IAM::Group",
                 "NOQ::AWS::IAM::ManagedPolicy",
                 "NOQ::AWS::IAM::User",
-            ]
+            }
             config_template = await load_config_template(repo_path)
             aws_accounts = config_template.aws.accounts
             aws_account_dicts = []
+            account_ids_to_account_names = {}
             for aws_account in aws_accounts:
                 d = json.loads(aws_account.json())
                 d["repo_name"] = repo_name
                 aws_account_dicts.append(d)
+                account_ids_to_account_names[
+                    aws_account.account_id
+                ] = aws_account.account_name
 
             await store_json_results_in_redis_and_s3(
                 aws_account_dicts,
                 redis_key=f"{self.tenant}_IAMBIC_AWS_ACCOUNTS",
                 tenant=self.tenant,
             )
+            from iambic.core.utils import evaluate_on_provider
 
+            arn_typeahead = {}
+            reverse_hash = {}
+            reverse_hash_for_templates = {}
             for template in self.templates:
+                arns = []
+                if template.template_type in aws_account_specific_template_types:
+                    for account in aws_accounts:
+                        variables = {
+                            var.key: var.value for var in aws_account.variables
+                        }
+                        variables["account_id"] = aws_account.account_id
+                        variables["account_name"] = aws_account.account_name
+                        if hasattr(template, "owner") and (
+                            owner := getattr(template, "owner", None)
+                        ):
+                            variables["owner"] = owner
+                        # included = await is_included_in_account(account_id, account_name, included_accounts, excluded_accounts)
+                        included = evaluate_on_provider(template, account, None)
+                        if included:
+                            arn = None
+                            # calculate arn
+                            if template.template_type == "NOQ::AWS::IAM::Role":
+                                arn = f"arn:aws:iam::{account.account_id}:role{template.properties.path}{template.properties.role_name}"
+                            elif template.template_type == "NOQ::AWS::IAM::Group":
+                                arn = f"arn:aws:iam::{account.account_id}:group{template.properties.path}{template.properties.group_name}"
+                            elif (
+                                template.template_type == "NOQ::AWS::IAM::ManagedPolicy"
+                            ):
+                                arn = f"arn:aws:iam::{account.account_id}:policy{template.properties.path}{template.properties.policy_name}"
+                            elif template.template_type == "NOQ::AWS::IAM::User":
+                                arn = f"arn:aws:iam::{account.account_id}:user{template.properties.path}{template.properties.user_name}"
+                            else:
+                                raise Exception(
+                                    f"Unsupported template type: {template.template_type}"
+                                )
+                            if arn:
+                                rtemplate = Environment(
+                                    loader=BaseLoader()
+                                ).from_string(arn)
+                                arn = rtemplate.render(**variables)
+                                arns.append(arn)
+                    pass
                 d = json.loads(template.json())
+                if arns:
+                    d["arns"] = arns
                 d["repo_name"] = repo_name
                 d["file_path"] = d["file_path"].replace(self.tenant_repo_base_path, "")
                 d["repo_relative_file_path"] = d["file_path"].replace(
                     "/" + repo_name, ""
                 )
+                d["hash"] = hashlib.md5(d["file_path"].encode("utf-8")).hexdigest()
+                reverse_hash_for_templates[d["hash"]] = d
+                if d["repo_relative_file_path"].startswith("/"):
+                    d["repo_relative_file_path"] = d["repo_relative_file_path"][1:]
                 template_dicts.append(d)
+                for arn in arns:
+                    if (
+                        ":role/aws-service-role/" in arn
+                        or ":role/aws-reserved/sso.amazonaws.com/" in arn
+                        or ":role/stacksets-exec-" in arn
+                        or ":role/OrganizationAccountAccessRole" in arn
+                        or ":role/service-role/" in arn
+                        or ":role/cdk-" in arn
+                        or ":role/mciem-collection-role" in arn
+                    ):
+                        continue
+                    # Short hack to quickly identify the value
+                    reverse_hash_for_arn = hashlib.md5(arn.encode("utf-8")).hexdigest()
+                    account_id = arn.split(":")[4]
+                    arn_typeahead[arn] = {
+                        "account_name": account_ids_to_account_names.get(account_id),
+                        "template_type": d["template_type"],
+                        "repo_name": d["repo_name"],
+                        "file_path": d["file_path"],
+                        "repo_relative_file_path": d["repo_relative_file_path"],
+                        "hash": reverse_hash_for_arn,
+                    }
+                    reverse_hash[reverse_hash_for_arn] = {
+                        "arn": arn,
+                        "template_type": d["template_type"],
+                        "repo_name": d["repo_name"],
+                        "file_path": d["file_path"],
+                        "repo_relative_file_path": d["repo_relative_file_path"],
+                    }
 
             # iambic_template_rules = await get_data_for_template_types(self.tenant, aws_account_specific_template_types)
             # jmespath.search("[?template_type=='NOQ::Google::Group' && contains(properties.name, 'leg')]", template_dicts)
             await store_json_results_in_redis_and_s3(
                 template_dicts,
-                redis_key=f"{self.tenant}_IAMBIC_TEMPLATES",
+                redis_key=tenant_config.iambic_templates_redis_key,
                 tenant=self.tenant,
             )
-            for template in self.templates:
-                if template.template_type in ["NOQ::Google::Group"]:
-                    group_typeahead.append(
-                        {
-                            "name": "aws_org2_audit_account@noq.dev",
-                        }
-                    )
+            await store_json_results_in_redis_and_s3(
+                reverse_hash_for_templates,
+                redis_key=tenant_config.iambic_templates_reverse_hash_redis_key,
+                tenant=self.tenant,
+            )
 
-            # Cache Group typeahead
-            # Cache Role ARN Typeahead
+            await store_json_results_in_redis_and_s3(
+                arn_typeahead,
+                redis_key=tenant_config.iambic_arn_typeahead_redis_key,
+                tenant=self.tenant,
+            )
+            await store_json_results_in_redis_and_s3(
+                reverse_hash,
+                redis_key=tenant_config.iambic_hash_arn_redis_key,
+                tenant=self.tenant,
+            )
 
     async def cache_okta_groups_for_tenant(self, tenant, groups=None) -> list[str]:
         okta_groups = []
@@ -234,6 +330,42 @@ class IambicGit:
             group_member.expires_at = f"in {duration} seconds"
 
         template.properties.members.append(group_member)
+        return template
+
+    async def aws_iam_role_add_inline_policy(
+        self,
+        template_type: str,
+        repo_name: str,
+        file_path: str,
+        user_email: dict,
+        duration: str,
+        all_aws_actions: list[str],
+        selected_resources: list[str],
+    ):
+        await self.clone_or_pull_git_repos()
+        errors = []
+        if template_type != "NOQ::AWS::IAM::Role":
+            raise Exception("Template type is not an AWS IAM Role")
+        templates = await self.retrieve_iambic_template(repo_name, file_path)
+        if not templates:
+            raise Exception("Template not found")
+        template = templates[0]
+        if template.template_type != template_type:
+            raise Exception("Template type does not match")
+
+        current_time = str(int(time.time()))
+        statement = PolicyStatement(
+            effect="Allow",
+            action=all_aws_actions,
+            resource=selected_resources,
+        )
+        policy_document = PolicyDocument(
+            policy_name=f"noq_{current_time}", statement=[statement], expires_at=None
+        )
+        if duration and duration != "no_expire":
+            policy_document.expires_at = f"in {duration} seconds"
+
+        template.properties.inline_policies.append(policy_document)
         return template
 
     async def google_add_user_to_group(

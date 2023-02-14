@@ -11,11 +11,12 @@ def effective_accounts(
     resource: RoleAccess, aws_accounts: List[AWSAccount], config_template: Config
 ) -> List[AWSAccount]:
     """Evaluate a dict resource against a list of accounts and return a list of accounts that match."""
+    # TODO: This doesn't take effect wildcards
     iambic_accounts = [
         y
         for y in config_template.aws.accounts
         for x in aws_accounts
-        if y.account_name == x.name and y.account_id == x.account_id
+        if y.account_name == x.account_name and y.account_id == x.account_id
     ]
     effective_iambic_accounts = [
         account
@@ -26,5 +27,5 @@ def effective_accounts(
         x
         for x in aws_accounts
         if x.account_id in [y.account_id for y in effective_iambic_accounts]
-        and x.name in [y.account_name for y in effective_iambic_accounts]
+        and x.account_name in [y.account_name for y in effective_iambic_accounts]
     }
