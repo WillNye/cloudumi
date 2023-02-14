@@ -84,6 +84,7 @@ class User(SoftDeleteMixin, Base):
         "Group",
         secondary=GroupMembership.__table__,
         back_populates="users",
+        lazy="joined",
         foreign_keys=[GroupMembership.user_id, GroupMembership.group_id],
     )
 
@@ -113,6 +114,7 @@ class User(SoftDeleteMixin, Base):
             managed_by=self.managed_by,
             display_name=self.display_name,
             full_name=self.full_name,
+            groups=[group.name for group in self.groups],
         )
 
     async def delete(self):
