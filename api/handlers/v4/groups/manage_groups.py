@@ -12,13 +12,13 @@ from common.models import WebResponse
 class ManageListGroupsHandler(BaseAdminHandler):
     async def post(self):
         data = tornado.escape.json_decode(self.request.body)
-        tenant_name = self.ctx.tenant
+        tenant = self.ctx.db_tenant
 
         _filter = data.get("filter", {})
 
         try:
             objects: list[objects] = await filter_data_with_sqlalchemy(
-                _filter, tenant_name, Group
+                _filter, tenant, Group
             )
         except Exception as exc:
             errors = [str(exc)]

@@ -6,5 +6,6 @@ export default {
 };
 
 export const Basic = () => {
-  return <TypeaheadBlock />;
+  // return <TypeaheadBlock />;
+  return <></>;
 };
