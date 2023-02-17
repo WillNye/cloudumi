@@ -482,14 +482,14 @@ select_desired_permissions_modal = json.loads(
             "block_id": "select_services",
             "text": {
                 "type": "mrkdwn",
-                "text": "*Actions*"
+                "text": "*Services*"
             },
             "accessory": {
                 "action_id": "select_aws_services_action",
                 "type": "multi_external_select",
                 "placeholder": {
                     "type": "plain_text",
-                    "text": "Select AWS actions"
+                    "text": "Select AWS services"
                 },
                 "min_query_length": 1
             }

@@ -505,6 +505,7 @@ async def handle_request_access_to_resource_tenant(
     # TODO: We need git url of resources
     for option in selected_options:
         hash = option["value"]
+        template = None
         iambic_template_details = reverse_hash_for_templates[hash]
         template_type = iambic_template_details["template_type"]
         repo_name = iambic_template_details["repo_name"]

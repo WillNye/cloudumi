@@ -111,6 +111,8 @@ class IambicGit:
             repo_name = repository.repo_name
             repo_path = get_iambic_repo_path(self.tenant, repository.repo_name)
             config_template_path = await resolve_config_template_path(repo_path)
+            # TODO: Need to have assume role access and ability to read secret
+            # for Iambic config and templates to load
             config_template = await load_config_template(config_template_path)
             template_paths = await gather_templates(repo_path)
             self.templates = load_templates(template_paths)
@@ -268,13 +270,16 @@ class IambicGit:
     async def retrieve_iambic_template(self, repo_name: str, template_path: str):
         await self.set_git_repositories()
         for repository in self.git_repositories:
+            # TODO: Need to have assume role access and ability to read secret
+            # for Iambic config and templates to load
             if not repository.repo_name == repo_name:
                 continue
-            full_path = os.path.join(
-                self.tenant_repo_base_path, repo_name, template_path
-            )
+            repo_path = os.path.join(self.tenant_repo_base_path, repo_name)
+            full_path = os.path.join(repo_path, template_path)
             if not os.path.exists(full_path):
                 continue
+            config_template_path = await resolve_config_template_path(repo_path)
+            config_template = await load_config_template(config_template_path)
             return load_templates([full_path])
         raise Exception("Template not found")
 
