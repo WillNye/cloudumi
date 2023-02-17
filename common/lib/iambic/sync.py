@@ -1,12 +1,13 @@
 import asyncio
 from typing import Dict, List, Optional
 
-from iambic.aws.iam.role.models import RoleTemplate
-from iambic.config.models import Config
-from iambic.config.utils import load_template as load_config_template
+from iambic.config.dynamic_config import Config
+from iambic.config.dynamic_config import load_config as load_config_template
+from iambic.config.utils import resolve_config_template_path
 from iambic.core.models import BaseTemplate
 from iambic.core.parser import load_templates
 from iambic.core.utils import gather_templates
+from iambic.plugins.v0_1_0.aws.iam.role.models import RoleTemplate
 
 from common.aws.accounts.models import AWSAccount
 from common.config import config
@@ -57,7 +58,9 @@ async def get_config_data_for_repo(tenant: Tenant):
         repo_uri=f"https://oauth:{iambic_repo_config.access_token}@github.com/{iambic_repo_config.repo_name}",
     )
     # Todo: This fails the entire celery task, if it fails for just one tenant.
-    return await load_config_template(iambic_repo.file_path)
+
+    config_template_path = await resolve_config_template_path(iambic_repo.file_path)
+    return await load_config_template(config_template_path)
 
 
 def get_role_arn(account_id: str, role_name: str) -> str:

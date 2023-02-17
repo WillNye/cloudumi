@@ -11,6 +11,7 @@ import ujson as json
 from policyuniverse.expander_minimizer import _expand_wildcard_action
 from slack_bolt.async_app import AsyncApp
 from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
+from slack_sdk.errors import SlackApiError
 from slack_sdk.oauth.installation_store import Bot, Installation
 from slack_sdk.oauth.installation_store.async_installation_store import (
     AsyncInstallationStore,
@@ -40,6 +41,7 @@ from common.lib.slack.workflows import (
     self_service_request_permissions_step_2_option_selection,
     self_service_step_1_option_selection,
     self_service_submission_success,
+    update_or_remove_tags_modal,
 )
 from common.models import IambicTemplateChange
 
@@ -329,18 +331,6 @@ def get_slack_app():
             ]
         await ack(options=options)
 
-    @slack_app.shortcut("request_access")
-    async def request_access(ack, body, client):
-        # Acknowledge the command request
-        await ack()
-        # Call views_open with the built-in client
-        await client.views_open(
-            # Pass a valid trigger_id within 3 seconds of receiving it
-            trigger_id=body["trigger_id"],
-            # View payload
-            view=request_access_to_resource_block,
-        )
-
     @slack_app.shortcut("request_permissions")
     async def request_permissions(ack, body, client):
         # Acknowledge the command request
@@ -376,15 +366,15 @@ async def handle_select_resources_options_tenant(ack, body, tenant):
     Returns:
         None: This function returns nothing.
     """
-    # TODO: we must figure out the provider so we know what to Typahead against
-    # But the provider is empty
-    provider = body["view"]["state"]  # ['values'].get("provider_dropdown")
 
-    red = RedisHandler().redis_sync(tenant)
     token = body["token"]
     hash = body["view"]["hash"]
-    slack_app_type = red.get(f"{tenant}_SLACK_APP_TYPE_{token}_{hash}")
-    red.get(f"{tenant}_SLACK_APP_TYPE_{token}_{hash}")
+    try:
+        private_metadata = json.loads(body["view"]["private_metadata"])
+    except (KeyError, json.JSONDecodeError):
+        private_metadata = {}
+    slack_app_type = private_metadata.get("app_type")
+
     redis_key = config.get_tenant_specific_key(
         "cache_organization_structure.redis.key.org_structure_key",
         tenant,
@@ -474,6 +464,10 @@ async def handle_request_cloud_permissions_to_resource_ack(ack):
     await ack(response_action="update", view=select_desired_permissions_modal)
 
 
+async def handle_request_update_or_remove_tags_ack(ack):
+    await ack(response_action="update", view=update_or_remove_tags_modal)
+
+
 async def handle_select_cloud_identity_request_type(ack, body, client, logger, tenant):
     await ack(
         response_action="update",
@@ -507,6 +501,7 @@ async def handle_request_access_to_resource_tenant(
     ]["value"]
     template_changes = []
     resources = defaultdict(list)
+    owners = []
     # TODO: We need git url of resources
     for option in selected_options:
         hash = option["value"]
@@ -531,9 +526,17 @@ async def handle_request_access_to_resource_tenant(
             )
             resources[template_type].append(template.properties.name)
 
+        if template and template.owner and "@" in template.owner:
+            try:
+                # TODO: Message owners directly
+                user_details = await client.users_lookupByEmail(email=template.owner)
+                owners.append(user_details)
+            except SlackApiError:
+                # Most likely a group e-mail address and not a user
+                pass
+
         # else:
         #     raise Exception("Unsupported template type")
-
         template_changes.append(
             IambicTemplateChange(path=path, body=template.get_body(exclude_unset=False))
         )
@@ -641,15 +644,15 @@ def render_step_2_request_access():
 async def handle_select_app_type(ack, logger, body, client, respond, tenant):
     # Acknowledge the action to confirm receipt
     await ack()
-    red = RedisHandler().redis_sync(tenant)
-    # Token is unique to the user and workspace
-    token = body["token"]
-    # Hash is
-    hash = body["view"]["hash"]
-    # Get the value of the selected radio button
-    selected_option = body["actions"][0]["selected_option"]["value"]
-    # Store in a temporary redis key (Really Slack?)
-    red.setex(f"{tenant}_SLACK_APP_TYPE_{token}_{hash}", 300, selected_option)
+    view_template = request_access_to_resource_block
+    view_template["private_metadata"] = json.dumps(
+        {"app_type": body["actions"][0]["selected_option"]["value"]}
+    )
+    await client.views_update(
+        view_id=body["view"]["id"],
+        hash=body["view"]["hash"],
+        view=view_template,
+    )
 
 
 async def handle_select_cloud_identities_options_tenant(
@@ -737,27 +740,45 @@ async def handle_user_change_events(body, logger, tenant):
     pass
 
 
-async def handle_select_aws_services_options(
-    ack, logger, body, client, respond, tenant
-):
+async def handle_select_aws_actions_options(ack, logger, body, client, respond, tenant):
     # Acknowledge the action to confirm receipt
     await ack()
     # Get the value of the selected radio button
     options = []
     prefix = body["value"] + "*"
-    results = _expand_wildcard_action(prefix)
+    results = sorted(_expand_wildcard_action(prefix))
     services = sorted(list({r.split(":")[0].replace("*", "") for r in results}))
+    if body["value"].endswith("*"):
+        options.append(
+            {
+                "text": {
+                    "type": "plain_text",
+                    "text": body["value"][:75],
+                },
+                "value": body["value"][:75],
+            }
+        )
     for service in services:
         options.append(
             {
                 "text": {
                     "type": "plain_text",
-                    "text": service,
+                    "text": f"{service[:75]}",
                 },
-                "value": service,
+                "value": f"{service[:75]}",
             }
         )
-    await ack(options=options)
+    # for result in results:
+    #     options.append(
+    #         {
+    #             "text": {
+    #                 "type": "plain_text",
+    #                 "text": result[:75],
+    #             },
+    #             "value": result[:75],
+    #         }
+    #     )
+    await ack(options=options[:100])
 
 
 async def handle_request_permissions_step_2_option_selection(ack, body, logger, tenant):
@@ -777,10 +798,31 @@ async def handle_request_permissions_step_2_option_selection(ack, body, logger, 
     elif selected_option == "update_managed_policies":
         view = ""
     elif selected_option == "update_tags":
-        view = ""
+        view = update_or_remove_tags_modal
     else:
         raise Exception("Invalid option selected")
     await ack(response_action="update", view=view)
+
+
+async def select_aws_services_action(ack, body, logger, client, tenant):
+    await ack()
+    view_template = select_desired_permissions_modal
+    view_template["private_metadata"] = json.dumps(
+        {
+            "actions": [
+                b["value"]
+                for b in body["view"]["state"]["values"]["select_services"][
+                    "select_aws_services_action"
+                ]["selected_options"]
+            ]
+        }
+    )
+    await client.views_update(
+        view_id=body["view"]["id"],
+        hash=body["view"]["hash"],
+        view=view_template,
+    )
+    logger.info(body)
 
 
 async def handle_select_aws_resources_options(
@@ -791,6 +833,10 @@ async def handle_select_aws_resources_options(
     # Get the value of the selected radio button
     options = []
     prefix = body["value"] + "*"
+    try:
+        private_metadata = json.loads(body["view"]["private_metadata"])
+    except (KeyError, json.JSONDecodeError):
+        private_metadata = {}
     resource_redis_cache_key = config.get_tenant_specific_key(
         "aws_config_cache.redis_key",
         tenant,
@@ -804,6 +850,23 @@ async def handle_select_aws_resources_options(
             break
         if body["value"] not in resource:
             continue
+        action_included = False
+        # If user selected AWS actions, make sure the resources we're looking up
+        # are compatible with the actions
+        if private_metadata.get("actions"):
+            for full_action in private_metadata["actions"]:
+                if full_action == "*":
+                    action_included = True
+                    break
+                expected_prefix = f"arn:aws:{full_action.split(':')[0]}"
+                if not resource.startswith(expected_prefix):
+                    continue
+                action_included = True
+                break
+        else:
+            action_included = True
+        if not action_included:
+            continue
         options.append(
             {
                 "text": {
@@ -814,6 +877,22 @@ async def handle_select_aws_resources_options(
             }
         )
     await ack(options=options)
+
+
+async def handle_request_update_or_remove_tags(logger, body, client, respond, tenant):
+    tenant_config = TenantConfig(tenant)
+    reverse_hash_for_arns = await retrieve_json_data_from_redis_or_s3(
+        redis_key=tenant_config.iambic_hash_arn_redis_key,
+        tenant=tenant,
+    )
+
+    justification = body["view"]["state"]["values"]["justification"]["justification"][
+        "value"
+    ]
+
+    selected_identities = body["view"]["state"]["values"]["select_identities"][
+        "select_identities_action"
+    ]["selected_options"]
 
 
 async def handle_request_cloud_permissions_to_resources(
@@ -828,7 +907,12 @@ async def handle_request_cloud_permissions_to_resources(
     #     redis_key=tenant_config.iambic_arn_typeahead_redis_key,
     #     tenant=tenant
     # )
-    reverse_hash_for_arn = await retrieve_json_data_from_redis_or_s3(
+    iambic_aws_accounts = await retrieve_json_data_from_redis_or_s3(
+        redis_key=tenant_config.iambic_aws_accounts,
+        tenant=tenant,
+    )
+    # TODO: Get account names affected by user change
+    reverse_hash_for_arns = await retrieve_json_data_from_redis_or_s3(
         redis_key=tenant_config.iambic_hash_arn_redis_key,
         tenant=tenant,
     )
@@ -842,7 +926,7 @@ async def handle_request_cloud_permissions_to_resources(
     selected_identities = body["view"]["state"]["values"]["select_identities"][
         "select_identities_action"
     ]["selected_options"]
-    selected_services = [
+    selected_actions = [
         b["value"]
         for b in body["view"]["state"]["values"]["select_services"][
             "select_aws_services_action"
@@ -862,22 +946,37 @@ async def handle_request_cloud_permissions_to_resources(
     ]
 
     all_aws_actions = []
-    for service in selected_services:
-        aws_actions = await _get_policy_sentry_access_level_actions(
-            service, selected_permissions
-        )
+    services = []
+    for action in selected_actions:
+        service = action.split(":")[0]
+        if service == "*":
+            aws_actions = ["*"]
+        else:
+            aws_actions = await _get_policy_sentry_access_level_actions(
+                service, selected_permissions
+            )
         all_aws_actions.extend(aws_actions)
     duration = body["view"]["state"]["values"]["duration"]["duration"][
         "selected_option"
     ]["value"]
-    print("here")
-    template_changes = []
+
+    template_changes = {}
+    owners = {}
+    identity_hashes = set()
     resources = defaultdict(list)
     for identity in selected_identities:
         identity_hash = identity["value"]
-        identity_info = reverse_hash_for_arn[identity_hash]
+        template = template_changes.get(identity_hash, None)
+        if template:
+            template = template.template
+        identity_info = reverse_hash_for_arns[identity_hash]
         arn = identity_info["arn"]
         account_id = arn.split(":")[4]
+        account_name = account_id
+        for account in iambic_aws_accounts:
+            if account["account_id"] == account_id:
+                account_name = account["account_name"]
+                break
         template_type = identity_info["template_type"]
         repo_name = identity_info["repo_name"]
         repo_relative_file_path = identity_info["repo_relative_file_path"]
@@ -890,18 +989,22 @@ async def handle_request_cloud_permissions_to_resources(
                 user_email,
                 duration,
                 all_aws_actions,
-                selected_resources
+                selected_resources,
+                account_name,
+                existing_template=template
                 # TODO: If I modify 2 roles on the same account, we need
                 # to recurse over the template to make sure both sets of changes
                 # are captured in a single template
             )
             resources[template_type].append(template.identifier)
             print(template)
-        template_changes.append(
-            IambicTemplateChange(
-                path=repo_relative_file_path,
-                body=template.get_body(exclude_unset=False),
-            )
+            # if template.owner:
+            #     user_info = await client.users_lookupByEmail(email=email)
+            #     owners[template.owner] = user_info
+        template_changes[identity_hash] = IambicTemplateChange(
+            path=repo_relative_file_path,
+            body=template.get_body(exclude_unset=False),
+            template=template,
         )
     if not template_changes:
         await respond(
@@ -924,7 +1027,7 @@ async def handle_request_cloud_permissions_to_resources(
         pull_request_id=pull_request_id,
     )
 
-    await request_pr.create_request(justification, template_changes)
+    await request_pr.create_request(justification, template_changes.values())
     request_details = await request_pr.get_request_details()
     pr_url = request_details["pull_request_url"]
     approvers = "engineering@noq.dev"
@@ -1020,7 +1123,7 @@ async def get_slack_app_for_tenant(tenant, enterprise_id, team_id, app_id):
     )
 
     tenant_slack_app.options("select_aws_services_action")(
-        partial(handle_select_aws_services_options, tenant=tenant)
+        partial(handle_select_aws_actions_options, tenant=tenant)
     )
 
     tenant_slack_app.options("select_aws_resources_action")(
@@ -1031,4 +1134,51 @@ async def get_slack_app_for_tenant(tenant, enterprise_id, team_id, app_id):
         ack=handle_request_cloud_permissions_to_resource_ack,
         lazy=[partial(handle_request_cloud_permissions_to_resources, tenant=tenant)],
     )
+    tenant_slack_app.action("select_aws_services_action")(
+        partial(select_aws_services_action, tenant=tenant)
+    )
+    tenant_slack_app.view("request_update_or_remove_tags")(
+        ack=handle_request_update_or_remove_tags_ack,
+        lazy=[partial(handle_request_update_or_remove_tags, tenant=tenant)],
+    )
     return tenant_slack_app
+
+
+# TODO: Select Policy Group
+# Policy group has substitutions that define if typeahead or string
+# {{}}
+#
+# template_type: NOQ::AWS::PolicyTemplate
+# identifier: s3_list_bucket
+# properties:
+#   action:
+#     - s3:ListBucket
+#   effect:
+#     - Allow
+#   resource:
+#    {{NOQ::AWS::S3::Bucket/Bucket_Name}}
+#   condition:
+#     stringlike:
+#       - {{NOQ::AWS::S3::Bucket/Bucket_Name}}/*
+
+# template_type: NOQ::AWS::PolicyTemplate
+# identifier: self_role_assumption
+# properties:
+#   action:
+#     - sts:AssumeRole
+#   effect: Allow
+#   resource:
+#     - {{NOQ::AWS::IAM::Role/RoleName}}
+
+# template_type: NOQ::AWS::PolicyTemplate
+# identifier: ReadSecret
+# properties:
+#  action:
+#   - secretsmanager:GetSecretValue
+#   - secretsmanager:DescribeSecret
+#   - secretsmanager:ListSecretVersionIds
+#   - secretsmanager:GetResourcePolicy
+# effect:
+#  - Allow
+# resource:
+# - {{NOQ::AWS::SecretsManager::Secret/Secret_Prefix}}/*

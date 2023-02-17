@@ -1214,7 +1214,7 @@ class IambicTemplateChange(BaseModel):
     path: str = Field(
         ..., description="The path of the template including the filename"
     )
-    body: Optional[str] = Field(None, description="The template's content")
+    body: Optional[str] = (Field(None, description="The template's content"),)
 
 
 class IambicRequest(BaseModel):

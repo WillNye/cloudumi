@@ -225,3 +225,7 @@ class TenantConfig:
     @property
     def iambic_hash_arn_redis_key(self):
         return f"{self.tenant}_IAMBIC_HASH_TO_ARN"
+
+    @property
+    def iambic_aws_accounts(self):
+        return f"{self.tenant}_IAMBIC_AWS_ACCOUNTS"

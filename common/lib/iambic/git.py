@@ -2,22 +2,23 @@ import datetime
 import hashlib
 import os
 import time
-from typing import Union
+from typing import Optional, Union
 
 import ujson as json
 from git import Repo
 from git.exc import GitCommandError
 from github import Github
-from iambic.aws.iam.policy.models import PolicyDocument, PolicyStatement
-from iambic.aws.utils import is_included_in_account
-from iambic.config.utils import load_template as load_config_template
+from iambic.config.dynamic_config import load_config as load_config_template
+from iambic.config.utils import resolve_config_template_path
+from iambic.core.models import BaseTemplate
 from iambic.core.parser import load_templates
 
 # TODO: Still need to get Iambic installed in the SaaS. This is a localhost hack.
 from iambic.core.utils import gather_templates
-from iambic.google.group.models import GroupMember
-from iambic.okta.group.models import UserSimple
-from iambic.okta.models import Assignment
+from iambic.plugins.v0_1_0.aws.iam.policy.models import PolicyDocument, PolicyStatement
+from iambic.plugins.v0_1_0.google.group.models import GroupMember
+from iambic.plugins.v0_1_0.okta.group.models import UserSimple
+from iambic.plugins.v0_1_0.okta.models import Assignment
 from jinja2.environment import Environment
 from jinja2.loaders import BaseLoader
 
@@ -109,6 +110,8 @@ class IambicGit:
         for repository in self.git_repositories:
             repo_name = repository.repo_name
             repo_path = get_iambic_repo_path(self.tenant, repository.repo_name)
+            config_template_path = await resolve_config_template_path(repo_path)
+            config_template = await load_config_template(config_template_path)
             template_paths = await gather_templates(repo_path)
             self.templates = load_templates(template_paths)
             group_typeahead = []
@@ -120,7 +123,6 @@ class IambicGit:
                 "NOQ::AWS::IAM::ManagedPolicy",
                 "NOQ::AWS::IAM::User",
             }
-            config_template = await load_config_template(repo_path)
             aws_accounts = config_template.aws.accounts
             aws_account_dicts = []
             account_ids_to_account_names = {}
@@ -134,7 +136,7 @@ class IambicGit:
 
             await store_json_results_in_redis_and_s3(
                 aws_account_dicts,
-                redis_key=f"{self.tenant}_IAMBIC_AWS_ACCOUNTS",
+                redis_key=tenant_config.iambic_aws_accounts,
                 tenant=self.tenant,
             )
             from iambic.core.utils import evaluate_on_provider
@@ -299,7 +301,7 @@ class IambicGit:
             expires_at=expires_at,
         )
         if duration and duration != "no_expire":
-            assignment.expires_at = f"in {duration} seconds"
+            assignment.expires_at = f"{duration}"
 
         template.properties.assignments.append(assignment)
         return template
@@ -327,7 +329,7 @@ class IambicGit:
             expires_at=expires_at,
         )
         if duration and duration != "no_expire":
-            group_member.expires_at = f"in {duration} seconds"
+            group_member.expires_at = f"{duration}"
 
         template.properties.members.append(group_member)
         return template
@@ -341,6 +343,8 @@ class IambicGit:
         duration: str,
         all_aws_actions: list[str],
         selected_resources: list[str],
+        account_name: str,
+        existing_template: Optional[BaseTemplate] = None,
     ):
         await self.clone_or_pull_git_repos()
         errors = []
@@ -349,21 +353,40 @@ class IambicGit:
         templates = await self.retrieve_iambic_template(repo_name, file_path)
         if not templates:
             raise Exception("Template not found")
-        template = templates[0]
+        if existing_template:
+            template = existing_template
+        else:
+            template = templates[0]
         if template.template_type != template_type:
             raise Exception("Template type does not match")
 
-        current_time = str(int(time.time()))
         statement = PolicyStatement(
             effect="Allow",
             action=all_aws_actions,
             resource=selected_resources,
         )
+
+        current_time = str(int(time.time()))
+
         policy_document = PolicyDocument(
-            policy_name=f"noq_{current_time}", statement=[statement], expires_at=None
+            policy_name=f"noq_{current_time}",
+            statement=[statement],
+            expires_at=None,
+            included_accounts=[account_name],
         )
         if duration and duration != "no_expire":
-            policy_document.expires_at = f"in {duration} seconds"
+            policy_document.expires_at = f"{duration}"
+
+        for policy in template.properties.inline_policies:
+            if (
+                not policy.statement == policy_document.statement
+                and policy.expires_at == policy_document.expires_at
+            ):
+                continue
+            policy_document.included_accounts.append(account_name)
+            policy_document.included_accounts = list(
+                set(policy_document.included_accounts)
+            )
 
         template.properties.inline_policies.append(policy_document)
         return template
@@ -392,7 +415,7 @@ class IambicGit:
             expires_at=expires_at,
         )
         if duration and duration != "no_expire":
-            group_member.expires_at = f"in {duration} seconds"
+            group_member.expires_at = f"{duration}"
 
         template.properties.members.append(group_member)
         return template

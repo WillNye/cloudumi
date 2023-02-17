@@ -113,7 +113,7 @@ request_access_to_resource_block = json.loads(
                             "text": "1 Hour",
                             "emoji": true
                         },
-                        "value": "3600"
+                        "value": "in 1 hour"
                     },
                     {
                         "text": {
@@ -121,7 +121,7 @@ request_access_to_resource_block = json.loads(
                             "text": "2 Hours",
                             "emoji": true
                         },
-                        "value": "7200"
+                        "value": "in 2 hours"
                     },
                     {
                         "text": {
@@ -129,7 +129,7 @@ request_access_to_resource_block = json.loads(
                             "text": "4 Hours",
                             "emoji": true
                         },
-                        "value": "14400"
+                        "value": "in 4 hours"
                     },
                     {
                         "text": {
@@ -137,7 +137,7 @@ request_access_to_resource_block = json.loads(
                             "text": "8 Hours",
                             "emoji": true
                         },
-                        "value": "28800"
+                        "value": "in 8 hours"
                     },
                     {
                         "text": {
@@ -145,7 +145,31 @@ request_access_to_resource_block = json.loads(
                             "text": "24 Hours",
                             "emoji": true
                         },
-                        "value": "86400"
+                        "value": "in 1 day"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "3 Days",
+                            "emoji": true
+                        },
+                        "value": "in 3 days"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "1 Week",
+                            "emoji": true
+                        },
+                        "value": "in 1 Week"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "1 Month",
+                            "emoji": true
+                        },
+                        "value": "in 1 Month"
                     },
                     {
                         "text": {
@@ -458,14 +482,14 @@ select_desired_permissions_modal = json.loads(
             "block_id": "select_services",
             "text": {
                 "type": "mrkdwn",
-                "text": "*Services*"
+                "text": "*Actions*"
             },
             "accessory": {
                 "action_id": "select_aws_services_action",
                 "type": "multi_external_select",
                 "placeholder": {
                     "type": "plain_text",
-                    "text": "Select AWS services"
+                    "text": "Select AWS actions"
                 },
                 "min_query_length": 1
             }
@@ -559,7 +583,7 @@ select_desired_permissions_modal = json.loads(
                             "text": "1 Hour",
                             "emoji": true
                         },
-                        "value": "3600"
+                        "value": "in 1 hour"
                     },
                     {
                         "text": {
@@ -567,7 +591,7 @@ select_desired_permissions_modal = json.loads(
                             "text": "2 Hours",
                             "emoji": true
                         },
-                        "value": "7200"
+                        "value": "in 2 hours"
                     },
                     {
                         "text": {
@@ -575,7 +599,7 @@ select_desired_permissions_modal = json.loads(
                             "text": "4 Hours",
                             "emoji": true
                         },
-                        "value": "14400"
+                        "value": "in 4 hours"
                     },
                     {
                         "text": {
@@ -583,7 +607,7 @@ select_desired_permissions_modal = json.loads(
                             "text": "8 Hours",
                             "emoji": true
                         },
-                        "value": "28800"
+                        "value": "in 8 hours"
                     },
                     {
                         "text": {
@@ -591,7 +615,31 @@ select_desired_permissions_modal = json.loads(
                             "text": "24 Hours",
                             "emoji": true
                         },
-                        "value": "86400"
+                        "value": "in 1 day"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "3 Days",
+                            "emoji": true
+                        },
+                        "value": "in 3 days"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "1 Week",
+                            "emoji": true
+                        },
+                        "value": "in 1 Week"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "1 Month",
+                            "emoji": true
+                        },
+                        "value": "in 1 Month"
                     },
                     {
                         "text": {
@@ -824,7 +872,7 @@ select_desired_managed_policies_modal = json.loads(
                             "text": "1 Hour",
                             "emoji": true
                         },
-                        "value": "3600"
+                        "value": "in 1 hour"
                     },
                     {
                         "text": {
@@ -832,7 +880,7 @@ select_desired_managed_policies_modal = json.loads(
                             "text": "2 Hours",
                             "emoji": true
                         },
-                        "value": "7200"
+                        "value": "in 2 hours"
                     },
                     {
                         "text": {
@@ -840,7 +888,7 @@ select_desired_managed_policies_modal = json.loads(
                             "text": "4 Hours",
                             "emoji": true
                         },
-                        "value": "14400"
+                        "value": "in 4 hours"
                     },
                     {
                         "text": {
@@ -848,7 +896,7 @@ select_desired_managed_policies_modal = json.loads(
                             "text": "8 Hours",
                             "emoji": true
                         },
-                        "value": "28800"
+                        "value": "in 8 hours"
                     },
                     {
                         "text": {
@@ -856,7 +904,31 @@ select_desired_managed_policies_modal = json.loads(
                             "text": "24 Hours",
                             "emoji": true
                         },
-                        "value": "86400"
+                        "value": "in 1 day"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "3 Days",
+                            "emoji": true
+                        },
+                        "value": "in 3 days"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "1 Week",
+                            "emoji": true
+                        },
+                        "value": "in 1 Week"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "1 Month",
+                            "emoji": true
+                        },
+                        "value": "in 1 Month"
                     },
                     {
                         "text": {
@@ -936,9 +1008,7 @@ def self_service_permissions_review_blocks(
 ):
 
     if duration == "no_expire":
-        duration_friendly = "Forever"
-    else:
-        duration_friendly = format_timespan(int(duration))
+        duration = "Never"
 
     resource_text = ""
     for resource_type, resource_names in resources.items():
@@ -968,7 +1038,7 @@ def self_service_permissions_review_blocks(
             "fields": [
                 {
                     "type": "mrkdwn",
-                    "text": f"*Length of Access:*\n {duration_friendly}",
+                    "text": f"*Expiration:*\n {duration}",
                 },
                 {"type": "mrkdwn", "text": f"*Approvers:*\n {approvers}"},
             ],
@@ -1007,3 +1077,102 @@ def self_service_permissions_review_blocks(
         #     ]
         # }
     ]
+
+
+update_or_remove_tags_modal = {
+    "type": "modal",
+    "callback_id": "request_update_or_remove_tags",
+    "title": {"type": "plain_text", "text": "Tag Management", "emoji": True},
+    "submit": {"type": "plain_text", "text": "Submit", "emoji": True},
+    "close": {"type": "plain_text", "text": "Cancel", "emoji": True},
+    "blocks": [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Select one or more cloud identities to update tags:",
+            },
+        },
+        {
+            "type": "section",
+            "block_id": "select_identities",
+            "text": {"type": "mrkdwn", "text": "*Identities*"},
+            "accessory": {
+                "action_id": "select_identities_action",
+                "type": "multi_external_select",
+                "placeholder": {"type": "plain_text", "text": "Select identities"},
+                "min_query_length": 3,
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Do you want to add/update or remove tags?",
+            },
+        },
+        {
+            "type": "input",
+            "block_id": "tag_action",
+            "element": {
+                "type": "radio_buttons",
+                "action_id": "tag_action",
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Add/Update",
+                            "emoji": True,
+                        },
+                        "value": "add_update",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "Remove", "emoji": True},
+                        "value": "remove",
+                    },
+                ],
+            },
+            "label": {"type": "plain_text", "text": "Tag Action", "emoji": True},
+        },
+        {
+            "type": "input",
+            "block_id": "tag_key_input",
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "tag_key_input",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Enter the Tag Key",
+                    "emoji": True,
+                },
+            },
+            "label": {"type": "plain_text", "text": "Tag Key", "emoji": True},
+        },
+        {
+            "type": "input",
+            "block_id": "tag_value_input",
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "tag_value_input",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Enter the Tag Value",
+                    "emoji": True,
+                },
+            },
+            "label": {"type": "plain_text", "text": "Tag Value", "emoji": True},
+            "optional": True,
+        },
+        {
+            "type": "input",
+            "block_id": "justification",
+            "element": {
+                "type": "plain_text_input",
+                "multiline": True,
+                "action_id": "justification",
+                "placeholder": {"type": "plain_text", "text": "I need access for..."},
+            },
+            "label": {"type": "plain_text", "text": "Justification", "emoji": True},
+        },
+    ],
+}
