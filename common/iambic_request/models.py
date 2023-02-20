@@ -17,7 +17,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, ENUM, UUID
 from sqlalchemy.orm import relationship
 
 from common.config import config
-from common.config.globals import TENANT_STORAGE_BASE_PATH
+from common.config.globals import ASYNC_PG_SESSION, TENANT_STORAGE_BASE_PATH
 from common.lib import noq_json as json
 from common.lib.asyncio import aio_wrapper
 from common.lib.iambic.git import get_iambic_repo_path
@@ -118,8 +118,14 @@ class IambicRepo:
             elif file_body:
                 await self._storage_handler.write_file(file_path, "w", file_body)
 
+        self.repo.git.pull()
         if reset_branch:
-            self.repo.git.reset("--hard", f"origin/{self.default_branch_name}")
+            changed_files = self.repo.git.diff(
+                "--name-only", self.default_branch_name
+            ).split("\n")
+            for file in changed_files:
+                self.repo.git.checkout(f"origin/{self.default_branch_name}", "--", file)
+            self.repo.index.add(changed_files)
 
         await asyncio.gather(
             *[
@@ -143,7 +149,7 @@ class IambicRepo:
             committer=requesting_actor,
             author=requesting_actor,
         )
-        note_ref = f"refs/notes/commit-notes/{commit.hexsha}"
+
         if request_notes:
             self.repo.git.notes("add", "-m", request_notes)
         await aio_wrapper(self.repo.git.config, "pull.rebase", "false")
@@ -692,6 +698,13 @@ class Request(SoftDeleteMixin, Base):
                 response[conditional_key] = val
 
         return response
+
+    async def write(self):
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                session.add(self)
+                await session.commit()
+            return True
 
 
 class RequestComment(SoftDeleteMixin, Base):

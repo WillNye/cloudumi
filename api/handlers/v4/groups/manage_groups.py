@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import tornado.escape
 import tornado.gen
 import tornado.web
@@ -81,11 +83,12 @@ class ManageGroupsHandler(BaseAdminHandler):
         data = tornado.escape.json_decode(self.request.body)
 
         # Get the user id and security action from the request
+        group_id = data.get("id")
         group_name = data.get("name")
         group_description = data.get("description")
         group_email = data.get("email")
 
-        db_group = await Group.get_by_name(self.ctx.db_tenant, group_name)
+        db_group = await Group.get_by_id(self.ctx.db_tenant, group_id)
 
         if not db_group:
             self.set_status(400)
@@ -99,7 +102,11 @@ class ManageGroupsHandler(BaseAdminHandler):
             raise tornado.web.Finish()
 
         new_db_group = await db_group.update(
-            name=group_name, description=group_description, email=group_email
+            name=group_name,
+            description=group_description,
+            email=group_email,
+            # updated_by=self.user,
+            # updated_at=datetime.utcnow()
         )
         self.write(
             WebResponse(

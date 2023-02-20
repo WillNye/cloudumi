@@ -1,3 +1,4 @@
+import datetime
 import uuid
 from typing import Optional, Union
 
@@ -135,12 +136,13 @@ async def create_request(
 
 
 async def update_request(
-    tenant: str,
+    tenant: Tenant,
     request_id: Union[str, uuid.UUID],
     updated_by: str,
     updater_groups: list[str],
     justification: str = None,
     changes: Union[list[IambicTemplateChange], None] = None,
+    request_notes: Optional[str] = None,
 ):
     request = await get_request(tenant, request_id)
     if (
@@ -157,17 +159,30 @@ async def update_request(
         raise Unauthorized("Unable to update this request")
 
     request_pr = await get_iambic_pr_instance(
-        tenant, request.id, request.created_by, request.pull_request_id
+        tenant.name, request.id, request.created_by, request.pull_request_id
     )
     await request_pr.update_request(
-        updated_by, description=justification, template_changes=changes
+        updated_by,
+        description=justification,
+        template_changes=changes,
+        reset_branch=True,
+        request_notes=request_notes,
     )
+
+    request.justification = justification
+    request.request_notes = request_notes
+    request.updated_by = updated_by
+    request.updated_at = datetime.datetime.now()
+    await request.write()
 
     await request_pr.load_pr()
 
     response = await get_request_response(request, request_pr)
     del request_pr
-    return response
+    return {
+        "request": request,
+        "friendly_request": response,
+    }
 
 
 async def approve_request(

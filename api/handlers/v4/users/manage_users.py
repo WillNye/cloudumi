@@ -108,6 +108,7 @@ class ManageUsersHandler(BaseAdminHandler):
         # Get the user id and security action from the request
         user_id = self.get_argument("user_id")
         action = self.get_argument("action")
+        data = tornado.escape.json_decode(self.request.body or "{}")
 
         # Update the user's security in the database
         try:
@@ -120,6 +121,23 @@ class ManageUsersHandler(BaseAdminHandler):
             elif action == "reset_mfa":
                 user.mfa_secret = None
                 self.write({"success": True})
+            elif action == "update_user":
+                if data.get("active"):
+                    user.active = data.get("active")
+                if data.get("username"):
+                    user.username = data.get("username")
+                if data.get("email"):
+                    user.email = data.get("email")
+                if data.get("display_name"):
+                    user.display_name = data.get("display_name")
+                if data.get("full_name"):
+                    user.full_name = data.get("full_name")
+                if data.get("given_name"):
+                    user.given_name = data.get("given_name")
+                if data.get("middle_name"):
+                    user.middle_name = data.get("middle_name")
+                if data.get("family_name"):
+                    user.family_name = data.get("family_name")
             else:
                 self.set_status(400)
                 self.write({"error": "Invalid action"})

@@ -452,77 +452,43 @@ request_access_to_resource_success = json.loads(
 }"""
 )
 
-select_desired_permissions_modal = json.loads(
-    """
-{
-    "type": "modal",
-    "callback_id": "request_cloud_permissions_to_resources",
-    "title": {
-        "type": "plain_text",
-        "text": "Noq",
-        "emoji": true
-    },
-    "submit": {
-        "type": "plain_text",
-        "text": "Submit Request",
-        "emoji": true
-    },
-    "close": {
-        "type": "plain_text",
-        "text": "Cancel",
-        "emoji": true
-    },
-    "blocks": [
+
+def select_desired_permissions_blocks(update=False):
+    submit_verbiage = "Create my request" if not update else "Update request"
+
+    elements = [
         {
             "type": "section",
             "block_id": "select_identities",
-            "text": {
-                "type": "mrkdwn",
-                "text": "*Identities*"
-            },
+            "text": {"type": "mrkdwn", "text": "*Identities*"},
             "accessory": {
                 "action_id": "select_identities_action",
                 "type": "multi_external_select",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Select identities"
-                },
-                "min_query_length": 3
-            }
+                "placeholder": {"type": "plain_text", "text": "Select identities"},
+                "min_query_length": 3,
+            },
         },
         {
             "type": "section",
             "block_id": "select_services",
-            "text": {
-                "type": "mrkdwn",
-                "text": "*Services*"
-            },
+            "text": {"type": "mrkdwn", "text": "*Services*"},
             "accessory": {
                 "action_id": "select_aws_services_action",
                 "type": "multi_external_select",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Select AWS services"
-                },
-                "min_query_length": 1
-            }
+                "placeholder": {"type": "plain_text", "text": "Select AWS services"},
+                "min_query_length": 1,
+            },
         },
         {
             "type": "section",
             "block_id": "select_resources",
-            "text": {
-                "type": "mrkdwn",
-                "text": "*Resources*"
-            },
+            "text": {"type": "mrkdwn", "text": "*Resources*"},
             "accessory": {
                 "action_id": "select_aws_resources_action",
                 "type": "multi_external_select",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Select resources"
-                },
-                "min_query_length": 1
-            }
+                "placeholder": {"type": "plain_text", "text": "Select resources"},
+                "min_query_length": 1,
+            },
         },
         {
             "type": "input",
@@ -532,57 +498,45 @@ select_desired_permissions_modal = json.loads(
                 "placeholder": {
                     "type": "plain_text",
                     "text": "Select Permissions",
-                    "emoji": true
+                    "emoji": True,
                 },
                 "options": [
                     {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "List",
-                            "emoji": true
-                        },
-                        "value": "List"
+                        "text": {"type": "plain_text", "text": "List", "emoji": True},
+                        "value": "List",
                     },
                     {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Read",
-                            "emoji": true
-                        },
-                        "value": "Read"
+                        "text": {"type": "plain_text", "text": "Read", "emoji": True},
+                        "value": "Read",
                     },
                     {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Write",
-                            "emoji": true
-                        },
-                        "value": "Write"
+                        "text": {"type": "plain_text", "text": "Write", "emoji": True},
+                        "value": "Write",
                     },
                     {
                         "text": {
                             "type": "plain_text",
                             "text": "Permissions Management",
-                            "emoji": true
+                            "emoji": True,
                         },
-                        "value": "Permissions management"
+                        "value": "Permissions management",
                     },
                     {
                         "text": {
                             "type": "plain_text",
                             "text": "Tagging",
-                            "emoji": true
+                            "emoji": True,
                         },
-                        "value": "Tagging"
-                    }
+                        "value": "Tagging",
+                    },
                 ],
-                "action_id": "desired_permissions_action"
+                "action_id": "desired_permissions_action",
             },
             "label": {
                 "type": "plain_text",
                 "text": "Desired Permissions",
-                "emoji": true
-            }
+                "emoji": True,
+            },
         },
         {
             "type": "input",
@@ -591,107 +545,281 @@ select_desired_permissions_modal = json.loads(
                 "type": "static_select",
                 "options": [
                     {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "1 Hour",
-                            "emoji": true
-                        },
-                        "value": "in 1 hour"
+                        "text": {"type": "plain_text", "text": "1 Hour", "emoji": True},
+                        "value": "in 1 hour",
                     },
                     {
                         "text": {
                             "type": "plain_text",
                             "text": "2 Hours",
-                            "emoji": true
+                            "emoji": True,
                         },
-                        "value": "in 2 hours"
+                        "value": "in 2 hours",
                     },
                     {
                         "text": {
                             "type": "plain_text",
                             "text": "4 Hours",
-                            "emoji": true
+                            "emoji": True,
                         },
-                        "value": "in 4 hours"
+                        "value": "in 4 hours",
                     },
                     {
                         "text": {
                             "type": "plain_text",
                             "text": "8 Hours",
-                            "emoji": true
+                            "emoji": True,
                         },
-                        "value": "in 8 hours"
+                        "value": "in 8 hours",
                     },
                     {
                         "text": {
                             "type": "plain_text",
                             "text": "24 Hours",
-                            "emoji": true
+                            "emoji": True,
                         },
-                        "value": "in 1 day"
+                        "value": "in 1 day",
                     },
                     {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "3 Days",
-                            "emoji": true
-                        },
-                        "value": "in 3 days"
+                        "text": {"type": "plain_text", "text": "3 Days", "emoji": True},
+                        "value": "in 3 days",
                     },
                     {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "1 Week",
-                            "emoji": true
-                        },
-                        "value": "in 1 Week"
+                        "text": {"type": "plain_text", "text": "1 Week", "emoji": True},
+                        "value": "in 1 Week",
                     },
                     {
                         "text": {
                             "type": "plain_text",
                             "text": "1 Month",
-                            "emoji": true
+                            "emoji": True,
                         },
-                        "value": "in 1 Month"
+                        "value": "in 1 Month",
                     },
                     {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Never",
-                            "emoji": true
-                        },
-                        "value": "no_expire"
-                    }
+                        "text": {"type": "plain_text", "text": "Never", "emoji": True},
+                        "value": "no_expire",
+                    },
                 ],
-                "action_id": "duration"
+                "action_id": "duration",
             },
-            "label": {
-                "type": "plain_text",
-                "text": "Expiration",
-                "emoji": true
-            }
+            "label": {"type": "plain_text", "text": "Expiration", "emoji": True},
         },
         {
             "type": "input",
             "block_id": "justification",
             "element": {
                 "type": "plain_text_input",
-                "multiline": true,
+                "multiline": True,
                 "action_id": "justification",
+                "placeholder": {"type": "plain_text", "text": "I need access for..."},
+            },
+            "label": {"type": "plain_text", "text": "Justification", "emoji": True},
+        },
+    ]
+
+    elements.append(
+        {
+            "type": "actions",
+            "block_id": "create_button_block",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": submit_verbiage,
+                        "emoji": True,
+                    },
+                    # TODO: Change to update?
+                    "value": "request_cloud_permissions_to_resources",
+                    "action_id": "request_cloud_permissions_to_resources",
+                }
+            ],
+        }
+    )
+
+    elements.append(
+        {
+            "type": "actions",
+            "block_id": "cancel_button_block",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "Cancel", "emoji": True},
+                    "value": "cancel_request",
+                    "style": "danger",
+                    "action_id": "cancel_request",
+                }
+            ],
+        }
+    )
+
+    return elements
+
+
+def select_desired_permissions_message():
+    return [
+        {
+            "type": "section",
+            "block_id": "select_identities",
+            "text": {"type": "mrkdwn", "text": "*Identities*"},
+            "accessory": {
+                "action_id": "select_identities_action",
+                "type": "multi_external_select",
+                "placeholder": {"type": "plain_text", "text": "Select identities"},
+                "min_query_length": 3,
+            },
+        },
+        {
+            "type": "section",
+            "block_id": "select_services",
+            "text": {"type": "mrkdwn", "text": "*Services*"},
+            "accessory": {
+                "action_id": "select_aws_services_action",
+                "type": "multi_external_select",
+                "placeholder": {"type": "plain_text", "text": "Select AWS services"},
+                "min_query_length": 1,
+            },
+        },
+        {
+            "type": "section",
+            "block_id": "select_resources",
+            "text": {"type": "mrkdwn", "text": "*Resources*"},
+            "accessory": {
+                "action_id": "select_aws_resources_action",
+                "type": "multi_external_select",
+                "placeholder": {"type": "plain_text", "text": "Select resources"},
+                "min_query_length": 1,
+            },
+        },
+        {
+            "type": "input",
+            "block_id": "desired_permissions",
+            "element": {
+                "type": "multi_static_select",
                 "placeholder": {
                     "type": "plain_text",
-                    "text": "I need access for..."
-                }
+                    "text": "Select Permissions",
+                    "emoji": True,
+                },
+                "options": [
+                    {
+                        "text": {"type": "plain_text", "text": "List", "emoji": True},
+                        "value": "List",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "Read", "emoji": True},
+                        "value": "Read",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "Write", "emoji": True},
+                        "value": "Write",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Permissions Management",
+                            "emoji": True,
+                        },
+                        "value": "Permissions management",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Tagging",
+                            "emoji": True,
+                        },
+                        "value": "Tagging",
+                    },
+                ],
+                "action_id": "desired_permissions_action",
             },
             "label": {
                 "type": "plain_text",
-                "text": "Justification",
-                "emoji": true
-            }
-        }
+                "text": "Desired Permissions",
+                "emoji": True,
+            },
+        },
+        {
+            "type": "input",
+            "block_id": "duration",
+            "element": {
+                "type": "static_select",
+                "options": [
+                    {
+                        "text": {"type": "plain_text", "text": "1 Hour", "emoji": True},
+                        "value": "in 1 hour",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "2 Hours",
+                            "emoji": True,
+                        },
+                        "value": "in 2 hours",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "4 Hours",
+                            "emoji": True,
+                        },
+                        "value": "in 4 hours",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "8 Hours",
+                            "emoji": True,
+                        },
+                        "value": "in 8 hours",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "24 Hours",
+                            "emoji": True,
+                        },
+                        "value": "in 1 day",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "3 Days", "emoji": True},
+                        "value": "in 3 days",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "1 Week", "emoji": True},
+                        "value": "in 1 Week",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "1 Month",
+                            "emoji": True,
+                        },
+                        "value": "in 1 Month",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "Never", "emoji": True},
+                        "value": "no_expire",
+                    },
+                ],
+                "action_id": "duration",
+            },
+            "label": {"type": "plain_text", "text": "Expiration", "emoji": True},
+        },
+        {
+            "type": "input",
+            "block_id": "justification",
+            "element": {
+                "type": "plain_text_input",
+                "multiline": True,
+                "action_id": "justification",
+                "placeholder": {"type": "plain_text", "text": "I need access for..."},
+            },
+            "label": {"type": "plain_text", "text": "Justification", "emoji": True},
+        },
     ]
-}"""
-)
+
 
 self_service_step_1_option_selection = json.loads(
     """{
@@ -748,76 +876,52 @@ self_service_step_1_option_selection = json.loads(
 }"""
 )
 
-self_service_request_permissions_step_2_option_selection = json.loads(
-    """{
-    "type": "modal",
-    "callback_id": "self_service_request_permissions_step_2_option_selection",
-    "title": {
-        "type": "plain_text",
-        "text": "Noq",
-        "emoji": true
-    },
-    "submit": {
-        "type": "plain_text",
-        "text": "Next",
-        "emoji": true
-    },
-    "close": {
-        "type": "plain_text",
-        "text": "Cancel",
-        "emoji": true
-    },
-    "blocks": [
-        {
-            "type": "input",
-            "block_id": "self_service_permissions_step_2_block",
-            "element": {
-                "type": "radio_buttons",
-                "options": [
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Pre-defined Policy",
-                            "emoji": true
-                        },
-                        "value": "select_predefined_policy"
+self_service_request_permissions_step_2_option_selection = [
+    {
+        "type": "input",
+        "block_id": "self_service_permissions_step_2_block",
+        "element": {
+            "type": "radio_buttons",
+            "options": [
+                {
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Pre-defined Policy",
+                        "emoji": True,
                     },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Inline Policy",
-                            "emoji": true
-                        },
-                        "value": "update_inline_policies"
+                    "value": "select_predefined_policy",
+                },
+                {
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Inline Policy",
+                        "emoji": True,
                     },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Managed Policy",
-                            "emoji": true
-                        },
-                        "value": "update_managed_policies"
+                    "value": "update_inline_policies",
+                },
+                {
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Managed Policy",
+                        "emoji": True,
                     },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Tags",
-                            "emoji": true
-                        },
-                        "value": "update_tags"
-                    }
-                ],
-                "action_id": "self_service_step_2_option_selection"
-            },
-            "label": {
-                "type": "plain_text",
-                "text": "What type of permissions change would you like?",
-                "emoji": true
-            }
-        }
-    ]
-}"""
-)
+                    "value": "update_managed_policies",
+                },
+                {
+                    "text": {"type": "plain_text", "text": "Tags", "emoji": True},
+                    "value": "update_tags",
+                },
+            ],
+            "action_id": "self_service_request_permissions_step_2_option_selection",
+        },
+        "label": {
+            "type": "plain_text",
+            "text": "What type of permissions change would you like?",
+            "emoji": True,
+        },
+    }
+]
+
 
 select_desired_managed_policies_modal = json.loads(
     """{
@@ -1016,19 +1120,15 @@ self_service_submission_success = """
 """
 
 
-def get_self_service_submission_success_blocks(pull_request_url: str):
+def get_self_service_submission_success_blocks(permalink: str, updated: bool = False):
+    submit_string = "submitted" if not updated else "updated"
     return [
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "Your request has been successfully submitted. Click the link below to view more details:",
+                "text": f"Your request has been successfully {submit_string}. Click <{permalink}|*here*> to see more details.",
             },
-        },
-        {
-            "type": "section",
-            "block_id": "view_details_section",
-            "text": {"type": "mrkdwn", "text": pull_request_url},
         },
     ]
 
@@ -1466,6 +1566,9 @@ def generate_self_service_step_2_app_group_access(
 
     elements.append(justification_block)
 
+    create_update_request_str = "create_access_request"
+    if update:
+        create_update_request_str = f"update_access_request/{request_id}"
     elements.append(
         {
             "type": "actions",
@@ -1478,9 +1581,8 @@ def generate_self_service_step_2_app_group_access(
                         "text": submit_verbiage,
                         "emoji": True,
                     },
-                    # TODO: Change to update?
-                    "value": "create_request",
-                    "action_id": "create_request",
+                    "value": create_update_request_str,
+                    "action_id": create_update_request_str,
                 }
             ],
         }
@@ -1502,72 +1604,72 @@ def generate_self_service_step_2_app_group_access(
         }
     )
 
-    elements.append(
-        {
-            "type": "section",
-            "text": {"type": "plain_text", "text": " ", "emoji": True},
-            "block_id": resource_type,
-        }
-    )
+    # elements.append(
+    #     {
+    #         "type": "section",
+    #         "text": {"type": "plain_text", "text": " ", "emoji": True},
+    #         "block_id": resource_type,
+    #     }
+    # )
 
-    elements.append(
-        {
-            "type": "section",
-            "text": {"type": "plain_text", "text": " ", "emoji": True},
-            "block_id": f"update/{update}",
-        }
-    )
+    # elements.append(
+    #     {
+    #         "type": "section",
+    #         "text": {"type": "plain_text", "text": " ", "emoji": True},
+    #         "block_id": f"update/{update}",
+    #     }
+    # )
 
-    if channel_id:
-        elements.append(
-            {
-                "type": "section",
-                "text": {"type": "plain_text", "text": " ", "emoji": True},
-                "block_id": f"channel_id/{channel_id}",
-            }
-        )
+    # if channel_id:
+    #     elements.append(
+    #         {
+    #             "type": "section",
+    #             "text": {"type": "plain_text", "text": " ", "emoji": True},
+    #             "block_id": f"channel_id/{channel_id}",
+    #         }
+    #     )
 
-    if message_ts:
-        elements.append(
-            {
-                "type": "section",
-                "text": {"type": "plain_text", "text": " ", "emoji": True},
-                "block_id": f"message_ts/{message_ts}",
-            }
-        )
+    # if message_ts:
+    #     elements.append(
+    #         {
+    #             "type": "section",
+    #             "text": {"type": "plain_text", "text": " ", "emoji": True},
+    #             "block_id": f"message_ts/{message_ts}",
+    #         }
+    #     )
 
-    if branch_name:
-        elements.append(
-            {
-                "type": "section",
-                "text": {"type": "plain_text", "text": " ", "emoji": True},
-                "block_id": f"branch_name/{branch_name}",
-            }
-        )
-    if pull_request_id:
-        elements.append(
-            {
-                "type": "section",
-                "text": {"type": "plain_text", "text": " ", "emoji": True},
-                "block_id": f"pull_request_id/{pull_request_id}",
-            }
-        )
-    if user_email:
-        elements.append(
-            {
-                "type": "section",
-                "text": {"type": "plain_text", "text": " ", "emoji": True},
-                "block_id": f"user_email/{user_email}",
-            }
-        )
-    if request_id:
-        elements.append(
-            {
-                "type": "section",
-                "text": {"type": "plain_text", "text": " ", "emoji": True},
-                "block_id": f"request_id/{request_id}",
-            }
-        )
+    # if branch_name:
+    #     elements.append(
+    #         {
+    #             "type": "section",
+    #             "text": {"type": "plain_text", "text": " ", "emoji": True},
+    #             "block_id": f"branch_name/{branch_name}",
+    #         }
+    #     )
+    # if pull_request_id:
+    #     elements.append(
+    #         {
+    #             "type": "section",
+    #             "text": {"type": "plain_text", "text": " ", "emoji": True},
+    #             "block_id": f"pull_request_id/{pull_request_id}",
+    #         }
+    #     )
+    # if user_email:
+    #     elements.append(
+    #         {
+    #             "type": "section",
+    #             "text": {"type": "plain_text", "text": " ", "emoji": True},
+    #             "block_id": f"user_email/{user_email}",
+    #         }
+    #     )
+    # if request_id:
+    #     elements.append(
+    #         {
+    #             "type": "section",
+    #             "text": {"type": "plain_text", "text": " ", "emoji": True},
+    #             "block_id": f"request_id/{request_id}",
+    #         }
+    #     )
 
     return elements
 
