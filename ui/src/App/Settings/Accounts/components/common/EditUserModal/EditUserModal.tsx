@@ -1,12 +1,12 @@
 import { Fragment, useState } from 'react';
-import { Icon } from 'shared/elements/Icon';
-import { Dialog } from 'shared/layers/Dialog';
-import { Input } from 'shared/form/Input';
-import { Block } from 'shared/layout/Block';
 import { Button } from 'shared/elements/Button';
-import styles from './GroupsModal.module.css';
+import { Icon } from 'shared/elements/Icon';
+import { Input } from 'shared/form/Input';
+import { Dialog } from 'shared/layers/Dialog';
+import { Block } from 'shared/layout/Block';
+import styles from './EditUserModal.module.css';
 
-const GroupsModal = ({ canEdit }) => {
+const UserModal = ({ canEdit }) => {
   const [showDialog, setShowDialog] = useState(false);
 
   if (!canEdit) {
@@ -23,15 +23,17 @@ const GroupsModal = ({ canEdit }) => {
         showDialog={showDialog}
         setShowDialog={setShowDialog}
         disablePadding
-        header="Group Modal"
+        header="Invite Modal"
         size="medium"
       >
         <div className={styles.content}>
           <form>
-            <Block disableLabelPadding label="Group"></Block>
-            <Input fullWidth name="group" />
-            <Block disableLabelPadding label="Description"></Block>
-            <Input fullWidth name="description" />
+            <Block disableLabelPadding label="First Name"></Block>
+            <Input fullWidth name="first_name" />
+            <Block disableLabelPadding label="Last Name"></Block>
+            <Input fullWidth name="last_name" />
+            <Block disableLabelPadding label="Email"></Block>
+            <Input fullWidth name="email" />
 
             <Button>Save</Button>
           </form>
@@ -41,4 +43,4 @@ const GroupsModal = ({ canEdit }) => {
   );
 };
 
-export default GroupsModal;
+export default UserModal;

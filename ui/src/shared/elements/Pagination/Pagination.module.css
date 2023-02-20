@@ -1,0 +1,18 @@
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+
+  .btn {
+    margin: 0 var(--spacing-xs);
+    padding: var(--spacing-xs);
+  }
+
+  .text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+  }
+}

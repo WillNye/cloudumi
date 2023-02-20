@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Table } from 'shared/elements/Table';
 import { userTableColumns } from '../../constants';
 import { Button } from 'shared/elements/Button';
-import UserModal from '../common/UserModal';
+import UserModal from '../common/EditUserModal';
 import Delete from '../common/Delete';
 
 import css from './UsersManagement.module.css';
 import { PropertyFilterProps } from '@noqdev/cloudscape';
 import { extractErrorMessage } from 'core/API/utils';
 import { getAllUsers } from 'core/API/settings';
+import InviteUserModal from '../common/InviteUserModal/InviteUserModal';
 
 const UsersManagement = () => {
   const [allUsersData, setAllUsersData] = useState([]);
@@ -87,7 +88,7 @@ const UsersManagement = () => {
       <div className={css.header}>
         <div>Team Members ({allUsersData.length})</div>
         <div>
-          <Button>Invite Member</Button>
+          <InviteUserModal />
         </div>
       </div>
       <div className={css.table}>
@@ -97,6 +98,7 @@ const UsersManagement = () => {
           border="row"
           selectable
           isLoading={isLoading}
+          showPagination
         />
       </div>
     </div>

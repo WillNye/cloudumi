@@ -6,11 +6,12 @@ import { groupsTableColumns } from '../../constants';
 
 import css from './GroupsManagement.module.css';
 import Delete from '../common/Delete';
-import GroupsModal from '../common/GroupsModal';
+import GroupsModal from '../common/EditGroupsModal';
 import { Button } from 'shared/elements/Button';
 import { extractErrorMessage } from 'core/API/utils';
 import { PropertyFilterProps } from '@noqdev/cloudscape/property-filter';
 import { getAllGroups } from 'core/API/settings';
+import AddGroupModal from '../common/AddGroupModal/AddGroupModal';
 
 const GroupsManagement = () => {
   const [allGroupsData, setAllGroupsData] = useState([]);
@@ -90,7 +91,7 @@ const GroupsManagement = () => {
     <div className={css.container}>
       <div className={css.header}>
         <div>Groups ({allGroupsData.length})</div>
-        <Button>Add New Group</Button>
+        <AddGroupModal />
       </div>
       <div className={css.table}>
         <Table
@@ -99,6 +100,7 @@ const GroupsManagement = () => {
           border="row"
           selectable
           isLoading={isLoading}
+          showPagination
         />
       </div>
     </div>

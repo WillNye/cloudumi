@@ -1,12 +1,12 @@
 import { Fragment, useState } from 'react';
-import { Button } from 'shared/elements/Button';
 import { Icon } from 'shared/elements/Icon';
-import { Input } from 'shared/form/Input';
 import { Dialog } from 'shared/layers/Dialog';
+import { Input } from 'shared/form/Input';
 import { Block } from 'shared/layout/Block';
-import styles from './UserModal.module.css';
+import { Button } from 'shared/elements/Button';
+import styles from './EditGroupsModal.module.css';
 
-const UserModal = ({ canEdit }) => {
+const GroupsModal = ({ canEdit }) => {
   const [showDialog, setShowDialog] = useState(false);
 
   if (!canEdit) {
@@ -23,18 +23,15 @@ const UserModal = ({ canEdit }) => {
         showDialog={showDialog}
         setShowDialog={setShowDialog}
         disablePadding
-        header="user Modal"
+        header="Group Modal"
         size="medium"
       >
         <div className={styles.content}>
           <form>
-            <Block disableLabelPadding label="First Name"></Block>
-            <Input fullWidth name="first_name" />
-            <Block disableLabelPadding label="Last Name"></Block>
-            <Input fullWidth name="last_name" />
-            <Block disableLabelPadding label="Email"></Block>
-            <Input fullWidth name="email" />
-
+            <Block disableLabelPadding label="Group"></Block>
+            <Input fullWidth name="group" />
+            <Block disableLabelPadding label="Description"></Block>
+            <Input fullWidth name="description" />
             <Button>Save</Button>
           </form>
         </div>
@@ -43,4 +40,4 @@ const UserModal = ({ canEdit }) => {
   );
 };
 
-export default UserModal;
+export default GroupsModal;
