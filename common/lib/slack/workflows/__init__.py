@@ -1,8 +1,21 @@
-import json
+from typing import Any, Dict
 
+import ujson as json
 from humanfriendly import format_timespan
 
 request_permissions_to_resource_block = None  # TODO
+
+friendly_resource_type_names = {
+    "NOQ::AWS::IAM::Group": "AWS IAM Groups",
+    "NOQ::AWS::IAM::ManagedPolicy": "AWS IAM Managed Policies",
+    "NOQ::AWS::IAM::Role": "AWS IAM Roles",
+    "NOQ::AWS::IAM::User": "AWS IAM Users",
+    "NOQ::AWS::IdentityCenter::PermissionSet": "AWS Permission Sets",
+    "NOQ::Google::Group": "Google Groups",
+    "NOQ::Okta::App": "Okta Apps",
+    "NOQ::Okta::Group": "Okta Groups",
+    "NOQ::Okta::User": "Okta Users",
+}
 
 request_access_to_resource_block = json.loads(
     """
@@ -1003,17 +1016,44 @@ self_service_submission_success = """
 """
 
 
-def self_service_permissions_review_blocks(
-    requester, resources, duration, approvers, justification, pull_request_url
-):
+def get_self_service_submission_success_blocks(pull_request_url: str):
+    return [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Your request has been successfully submitted. Click the link below to view more details:",
+            },
+        },
+        {
+            "type": "section",
+            "block_id": "view_details_section",
+            "text": {"type": "mrkdwn", "text": pull_request_url},
+        },
+    ]
 
-    if duration == "no_expire":
+
+def self_service_permissions_review_blocks(
+    requester,
+    resources,
+    raw_duration,
+    reviewers,
+    justification,
+    pull_request_url,
+    branch_name,
+    request_id,
+    user_email,
+):
+    duration = raw_duration
+    if raw_duration == "no_expire":
         duration = "Never"
 
     resource_text = ""
     for resource_type, resource_names in resources.items():
         resource_type = resource_type.replace("NOQ::", "").replace("::", " ")
         resource_text += f"{resource_type}: {', '.join(resource_names)}\n"
+
+    pull_request_id = pull_request_url.split("/")[-1]
 
     return [
         {
@@ -1022,14 +1062,14 @@ def self_service_permissions_review_blocks(
                 "type": "mrkdwn",
                 "text": (
                     "An access request is awaiting your review. "
-                    f"Please review it at {pull_request_url}"
+                    f"View the full request here: {pull_request_url}."
                 ),
             },
         },
         {
             "type": "section",
             "fields": [
-                {"type": "mrkdwn", "text": f"*Requester:*\n {requester}"},
+                {"type": "mrkdwn", "text": f"*Requester:*\n <@{requester}>"},
                 {"type": "mrkdwn", "text": f"*Requested Resources:*\n {resource_text}"},
             ],
         },
@@ -1040,13 +1080,69 @@ def self_service_permissions_review_blocks(
                     "type": "mrkdwn",
                     "text": f"*Expiration:*\n {duration}",
                 },
-                {"type": "mrkdwn", "text": f"*Approvers:*\n {approvers}"},
+                {"type": "mrkdwn", "text": f"*Reviewers:*\n {reviewers}"},
             ],
         },
         {
             "type": "section",
             "text": {"type": "mrkdwn", "text": f"*Justification:*\n {justification}"},
         },
+        {
+            "type": "actions",
+            "block_id": "review_actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "emoji": True, "text": "Approve"},
+                    "style": "primary",
+                    "value": "approve",
+                    "action_id": "approve_request",
+                },
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "emoji": True, "text": "Deny"},
+                    "style": "danger",
+                    "value": "deny",
+                    "action_id": "deny_request",
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "emoji": True,
+                        "text": ":gear: Edit",
+                    },
+                    "style": "primary",
+                    "value": "edit",
+                    "action_id": "edit_request",
+                },
+            ],
+        },
+        {
+            "type": "section",
+            "text": {"type": "plain_text", "text": " ", "emoji": True},
+            "block_id": f"branch_name/{branch_name}",
+        },
+        {
+            "type": "section",
+            "text": {"type": "plain_text", "text": " ", "emoji": True},
+            "block_id": f"duration/{raw_duration}",
+        },
+        {
+            "type": "section",
+            "text": {"type": "plain_text", "text": " ", "emoji": True},
+            "block_id": f"request_id/{request_id}",
+        },
+        {
+            "type": "section",
+            "text": {"type": "plain_text", "text": " ", "emoji": True},
+            "block_id": f"user_email/{user_email}",
+        },
+        {
+            "type": "section",
+            "text": {"type": "plain_text", "text": " ", "emoji": True},
+            "block_id": f"pull_request_id/{pull_request_id}",
+        }
         # TODO: Allow approvers to approve or deny the request within Slack
         # Caveat: Requests with changes to multiple files will require different
         # approval flows
@@ -1176,3 +1272,500 @@ update_or_remove_tags_modal = {
         },
     ],
 }
+
+self_service_step_1_blocks = """[
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": ":wave: Hello! What do you need help with?"
+			},
+            "block_id": "self-service-select",
+			"accessory": {
+				"type": "static_select",
+				"placeholder": {
+					"type": "plain_text",
+					"text": "Select an item",
+					"emoji": true
+				},
+				"options": [
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "Okta Application",
+							"emoji": true
+						},
+						"value": "NOQ::Okta::App"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "Okta Group Membership",
+							"emoji": true
+						},
+						"value": "NOQ::Okta::Group"
+					},
+                    {
+						"text": {
+							"type": "plain_text",
+							"text": "Google Group Membership",
+							"emoji": true
+						},
+						"value": "NOQ::Google::Group"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "AWS Console or Credentials",
+							"emoji": true
+						},
+						"value": "aws-console-credentials"
+					},
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "AWS Permissions or Tags",
+							"emoji": true
+						},
+						"value": "aws-permissions-or-tags"
+					}
+				],
+				"action_id": "self-service-select"
+			}
+		}
+	]"""
+
+
+def generate_self_service_step_2_app_group_access(
+    resource_type,
+    selected_options=None,
+    justification=None,
+    duration=None,
+    update=False,
+    message_ts=None,
+    channel_id=None,
+    branch_name=None,
+    pull_request_id=None,
+    user_email=None,
+    request_id=None,
+) -> list[dict]:
+    friendly_resource_type_name = friendly_resource_type_names.get(
+        resource_type, resource_type
+    )
+    elements = []
+    submit_verbiage = "Create my request" if not update else "Update request"
+
+    elements.append(
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"Which {friendly_resource_type_name} would you like access to?",
+            },
+        }
+    )
+
+    select_resources = {
+        "type": "input",
+        "block_id": "select_resources",
+        "element": {
+            "action_id": f"select_resources/{resource_type}",
+            "type": "multi_external_select",
+            "placeholder": {
+                "type": "plain_text",
+                "text": f"Select {friendly_resource_type_name}",
+            },
+            "min_query_length": 2,
+        },
+        "label": {"type": "plain_text", "text": " ", "emoji": True},
+    }
+    if selected_options is not None:
+        select_resources["element"]["initial_options"] = selected_options
+    elements.append(select_resources)
+
+    elements.append(
+        {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "How long do you need it for?"},
+        }
+    )
+
+    duration_block = {
+        "type": "input",
+        "block_id": "duration",
+        "element": {
+            "type": "static_select",
+            "options": [
+                {
+                    "text": {"type": "plain_text", "text": "1 Hour", "emoji": True},
+                    "value": "in 1 hour",
+                },
+                {
+                    "text": {"type": "plain_text", "text": "2 Hours", "emoji": True},
+                    "value": "in 2 hours",
+                },
+                {
+                    "text": {"type": "plain_text", "text": "4 Hours", "emoji": True},
+                    "value": "in 4 hours",
+                },
+                {
+                    "text": {"type": "plain_text", "text": "8 Hours", "emoji": True},
+                    "value": "in 8 hours",
+                },
+                {
+                    "text": {"type": "plain_text", "text": "24 Hours", "emoji": True},
+                    "value": "in 1 day",
+                },
+                {
+                    "text": {"type": "plain_text", "text": "3 Days", "emoji": True},
+                    "value": "in 3 days",
+                },
+                {
+                    "text": {"type": "plain_text", "text": "1 Week", "emoji": True},
+                    "value": "in 1 Week",
+                },
+                {
+                    "text": {"type": "plain_text", "text": "1 Month", "emoji": True},
+                    "value": "in 1 Month",
+                },
+                {
+                    "text": {"type": "plain_text", "text": "Forever", "emoji": True},
+                    "value": "no_expire",
+                },
+            ],
+            "action_id": "duration",
+        },
+        "label": {"type": "plain_text", "text": " ", "emoji": True},
+    }
+
+    if duration is not None:
+        selected_block = None
+        for block in duration_block["element"]["options"]:
+            if block["value"] == duration:
+                selected_block = block
+                break
+        duration_block["element"]["initial_option"] = selected_block
+    elements.append(duration_block)
+    elements.append(
+        {"type": "section", "text": {"type": "mrkdwn", "text": "Why do you need it?"}}
+    )
+
+    justification_block = {
+        "type": "input",
+        "block_id": "justification",
+        "element": {
+            "type": "plain_text_input",
+            "multiline": True,
+            "action_id": "justification",
+            "placeholder": {"type": "plain_text", "text": "I need access for..."},
+        },
+        "label": {"type": "plain_text", "text": " ", "emoji": True},
+    }
+    if justification is not None:
+        justification_block["element"]["initial_value"] = justification
+
+    elements.append(justification_block)
+
+    elements.append(
+        {
+            "type": "actions",
+            "block_id": "create_button_block",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": submit_verbiage,
+                        "emoji": True,
+                    },
+                    # TODO: Change to update?
+                    "value": "create_request",
+                    "action_id": "create_request",
+                }
+            ],
+        }
+    )
+
+    elements.append(
+        {
+            "type": "actions",
+            "block_id": "cancel_button_block",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "Cancel", "emoji": True},
+                    "value": "cancel_request",
+                    "style": "danger",
+                    "action_id": "cancel_request",
+                }
+            ],
+        }
+    )
+
+    elements.append(
+        {
+            "type": "section",
+            "text": {"type": "plain_text", "text": " ", "emoji": True},
+            "block_id": resource_type,
+        }
+    )
+
+    elements.append(
+        {
+            "type": "section",
+            "text": {"type": "plain_text", "text": " ", "emoji": True},
+            "block_id": f"update/{update}",
+        }
+    )
+
+    if channel_id:
+        elements.append(
+            {
+                "type": "section",
+                "text": {"type": "plain_text", "text": " ", "emoji": True},
+                "block_id": f"channel_id/{channel_id}",
+            }
+        )
+
+    if message_ts:
+        elements.append(
+            {
+                "type": "section",
+                "text": {"type": "plain_text", "text": " ", "emoji": True},
+                "block_id": f"message_ts/{message_ts}",
+            }
+        )
+
+    if branch_name:
+        elements.append(
+            {
+                "type": "section",
+                "text": {"type": "plain_text", "text": " ", "emoji": True},
+                "block_id": f"branch_name/{branch_name}",
+            }
+        )
+    if pull_request_id:
+        elements.append(
+            {
+                "type": "section",
+                "text": {"type": "plain_text", "text": " ", "emoji": True},
+                "block_id": f"pull_request_id/{pull_request_id}",
+            }
+        )
+    if user_email:
+        elements.append(
+            {
+                "type": "section",
+                "text": {"type": "plain_text", "text": " ", "emoji": True},
+                "block_id": f"user_email/{user_email}",
+            }
+        )
+    if request_id:
+        elements.append(
+            {
+                "type": "section",
+                "text": {"type": "plain_text", "text": " ", "emoji": True},
+                "block_id": f"request_id/{request_id}",
+            }
+        )
+
+    return elements
+
+
+#     return [
+# 		{
+# 			"type": "section",
+# 			"text": {
+# 				"type": "mrkdwn",
+# 				"text": f"Which {friendly_resource_type_name} would you like access to?"
+# 			}
+# 		},
+# 		{
+# 			"type": "input",
+#             "block_id": "select_resources",
+# 			"element": {
+# 				"action_id": f"select_resources/{resource_type}",
+# 				"type": "multi_external_select",
+# 				"placeholder": {
+# 					"type": "plain_text",
+# 					"text": f"Select {friendly_resource_type_name}"
+# 				},
+# 				"min_query_length": 2
+# 			},
+# 			"label": {
+# 				"type": "plain_text",
+# 				"text": " ",
+# 				"emoji": True
+# 			}
+# 		},
+# 		{
+# 			"type": "section",
+# 			"text": {
+# 				"type": "mrkdwn",
+# 				"text": "How long do you need it for?"
+# 			}
+# 		},
+# 		{
+# 			"type": "input",
+# 			"block_id": "duration",
+# 			"element": {
+# 				"type": "static_select",
+# 				"options": [
+# 					{
+# 						"text": {
+# 							"type": "plain_text",
+# 							"text": "1 Hour",
+# 							"emoji": True
+# 						},
+# 						"value": "in 1 hour"
+# 					},
+# 					{
+# 						"text": {
+# 							"type": "plain_text",
+# 							"text": "2 Hours",
+# 							"emoji": True
+# 						},
+# 						"value": "in 2 hours"
+# 					},
+# 					{
+# 						"text": {
+# 							"type": "plain_text",
+# 							"text": "4 Hours",
+# 							"emoji": True
+# 						},
+# 						"value": "in 4 hours"
+# 					},
+# 					{
+# 						"text": {
+# 							"type": "plain_text",
+# 							"text": "8 Hours",
+# 							"emoji": True
+# 						},
+# 						"value": "in 8 hours"
+# 					},
+# 					{
+# 						"text": {
+# 							"type": "plain_text",
+# 							"text": "24 Hours",
+# 							"emoji": True
+# 						},
+# 						"value": "in 1 day"
+# 					},
+# 					{
+# 						"text": {
+# 							"type": "plain_text",
+# 							"text": "3 Days",
+# 							"emoji": True
+# 						},
+# 						"value": "in 3 days"
+# 					},
+# 					{
+# 						"text": {
+# 							"type": "plain_text",
+# 							"text": "1 Week",
+# 							"emoji": True
+# 						},
+# 						"value": "in 1 Week"
+# 					},
+# 					{
+# 						"text": {
+# 							"type": "plain_text",
+# 							"text": "1 Month",
+# 							"emoji": True
+# 						},
+# 						"value": "in 1 Month"
+# 					},
+# 					{
+# 						"text": {
+# 							"type": "plain_text",
+# 							"text": "Forever",
+# 							"emoji": True
+# 						},
+# 						"value": "no_expire"
+# 					}
+# 				],
+# 				"action_id": "duration"
+# 			},
+# 			"label": {
+# 				"type": "plain_text",
+# 				"text": " ",
+# 				"emoji": True
+# 			}
+# 		},
+# 		{
+# 			"type": "section",
+# 			"text": {
+# 				"type": "mrkdwn",
+# 				"text": "Why do you need it?"
+# 			}
+# 		},
+# 		{
+# 			"type": "input",
+# 			"block_id": "justification",
+# 			"element": {
+# 				"type": "plain_text_input",
+# 				"multiline": True,
+# 				"action_id": "justification",
+# 				"placeholder": {
+# 					"type": "plain_text",
+# 					"text": "I need access for..."
+# 				}
+# 			},
+# 			"label": {
+# 				"type": "plain_text",
+# 				"text": " ",
+# 				"emoji": True
+# 			}
+# 		},
+# 		{
+# 			"type": "actions",
+#             "block_id": "create_button_block",
+# 			"elements": [
+# 				{
+# 					"type": "button",
+# 					"text": {
+# 						"type": "plain_text",
+# 						"text": "Create my request",
+# 						"emoji": True
+# 					},
+# 					"value": "create_request",
+# 					"action_id": "create_request"
+# 				}
+# 			]
+# 		},
+#   {
+# 			"type": "actions",
+#             "block_id": "cancel_button_block",
+# 			"elements": [
+# 				{
+# 					"type": "button",
+# 					"text": {
+# 						"type": "plain_text",
+# 						"text": "Cancel",
+# 						"emoji": True
+# 					},
+# 					"value": "cancel_request",
+#                     "style": "danger",
+# 					"action_id": "cancel_request"
+# 				}
+# 			]
+# 		},
+#         {
+# 			"type": "section",
+# 			"text": {
+# 				"type": "plain_text",
+# 				"text": " ",
+# 				"emoji": True
+# 			},
+# 			"block_id": resource_type
+# 		},
+#         {
+# 			"type": "section",
+# 			"text": {
+# 				"type": "plain_text",
+# 				"text": " ",
+# 				"emoji": True
+# 			},
+# 			"block_id": f"update/{update}"
+# 		},
+#     ]

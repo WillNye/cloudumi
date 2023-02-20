@@ -546,6 +546,9 @@ class Configuration(metaclass=Singleton):
             "elasticapm.conf": "WARNING",
             "elasticapm.transport": "WARNING",
             "elasticapm.transport.http": "WARNING",
+            "github.Requester": "WARNING",
+            "slack_sdk.web.async_base_client": "WARNING",
+            "root": "WARNING",
         }
         for logger, level in self.get(
             "_global_.logging_levels", default_logging_levels

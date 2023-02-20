@@ -12,7 +12,7 @@ from tornado.httputil import HTTPServerRequest
 
 from common.config import config
 from common.handlers.base import TornadoRequestHandler
-from common.lib.slack.app import get_slack_app_for_tenant
+from common.lib.slack.app import TenantSlackApp
 from common.lib.slack.models import (
     SlackTenantInstallRelationship,
     TenantOauthRelationship,
@@ -61,9 +61,12 @@ class AsyncSlackEventsHandler(TornadoRequestHandler):
             tenant = await get_tenant_from_team_id(self.slack_team_id)
             if tenant:
                 self.tenant = tenant.name
-                self.slack_app = await get_slack_app_for_tenant(
+                self.slack_app = await TenantSlackApp(
                     self.tenant, self.enterprise_id, self.slack_team_id, self.app_id
-                )
+                ).get_slack_app()
+                # self.slack_app = await get_slack_app_for_tenant(
+                #     self.tenant, self.enterprise_id, self.slack_team_id, self.app_id
+                # )
         if self.slack_app:
             bolt_resp: BoltResponse = await self.slack_app.async_dispatch(
                 to_async_bolt_request(self.request)

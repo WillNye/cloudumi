@@ -103,8 +103,12 @@ class IambicRepo:
             await self.set_request_branch()
 
     async def _commit_and_push_changes(
-        self, template_changes: list[IambicTemplateChange], changed_by: str
-    ):
+        self,
+        template_changes: list[IambicTemplateChange],
+        changed_by: str,
+        request_notes=Optional[None],
+        reset_branch: bool = False,
+    ) -> str:
         async def _apply_template_change(change: IambicTemplateChange):
             file_path = os.path.join(self.request_file_path, change.path)
             file_body = change.body
@@ -113,6 +117,9 @@ class IambicRepo:
                 await aiofiles.os.remove(file_path)
             elif file_body:
                 await self._storage_handler.write_file(file_path, "w", file_body)
+
+        if reset_branch:
+            self.repo.git.reset("--hard", f"origin/{self.default_branch_name}")
 
         await asyncio.gather(
             *[
@@ -131,34 +138,58 @@ class IambicRepo:
                 )
 
         requesting_actor = Actor("Iambic", changed_by)
-        self.repo.index.commit(
+        commit = self.repo.index.commit(
             f"Made as part of Noq Request: {self.request_id} by {self.requested_by}",
             committer=requesting_actor,
             author=requesting_actor,
         )
+        note_ref = f"refs/notes/commit-notes/{commit.hexsha}"
+        if request_notes:
+            self.repo.git.notes("add", "-m", request_notes)
+        await aio_wrapper(self.repo.git.config, "pull.rebase", "false")
         await aio_wrapper(
             self.repo.git.push,
+            "--force",
             "--set-upstream",
             self.remote_name,
             self.request_branch_name,
         )
+        if request_notes:
+            await aio_wrapper(
+                self.repo.git.push,
+                self.remote_name,
+                "refs/notes/commits",
+            )
         log.debug(
             "Pushed changes to remote branch",
             dict(tenant=self.tenant, request_id=self.request_id),
         )
+        return self.request_branch_name
 
     async def create_branch(
-        self, request_id: str, requested_by: str, files: list[IambicTemplateChange]
-    ):
+        self,
+        request_id: str,
+        requested_by: str,
+        files: list[IambicTemplateChange],
+        request_notes: Optional[str] = None,
+    ) -> str:
         self.request_id = request_id
         self.requested_by = requested_by
         await self.set_request_branch()
-        await self._commit_and_push_changes(files, self.requested_by)
+        return await self._commit_and_push_changes(
+            files, self.requested_by, request_notes
+        )
 
     async def update_branch(
-        self, template_changes: list[IambicTemplateChange], updated_by: str
-    ):
-        await self._commit_and_push_changes(template_changes, updated_by)
+        self,
+        template_changes: list[IambicTemplateChange],
+        updated_by: str,
+        request_notes: Optional[str] = None,
+        reset_branch: bool = False,
+    ) -> str:
+        return await self._commit_and_push_changes(
+            template_changes, updated_by, request_notes, reset_branch=reset_branch
+        )
 
     async def delete_branch(self):
         remote = self.repo.remote(name=self.remote_name)
@@ -336,19 +367,33 @@ class BasePullRequest(PydanticBaseModel):
         """
         raise NotImplementedError
 
+    async def get_request_notes(self, branch_name: str):
+        """
+        Get the notes from the latest commit on the specified branch
+        """
+        await self._set_repo(use_request_branch=True, force=True)
+        await aio_wrapper(
+            self.repo.repo.git.fetch, "origin", "refs/notes/commits:refs/notes/commits"
+        )
+        branch = self.repo.repo.heads[branch_name]
+        commit = branch.commit
+        return await aio_wrapper(self.repo.repo.git.notes, "show", commit.hexsha)
+
     async def create_request(
         self,
         description: str,
         template_changes: list[IambicTemplateChange],
+        request_notes: Optional[str] = None,
     ):
         await self._set_repo(use_request_branch=False)
 
         self.title = f"Noq Self Service Request: {self.request_id} on behalf of {self.requested_by}"
         self.description = description
-        await self.repo.create_branch(
-            self.request_id, self.requested_by, template_changes
+        branch_name = await self.repo.create_branch(
+            self.request_id, self.requested_by, template_changes, request_notes
         )
         await self._create_request()
+        return branch_name
 
     async def _update_request(self):
         """
@@ -362,6 +407,8 @@ class BasePullRequest(PydanticBaseModel):
         updated_by: str,
         description: str = None,
         template_changes: list[IambicTemplateChange] = None,
+        request_notes: Optional[str] = None,
+        reset_branch=False,
     ):
         await self._set_repo(use_request_branch=True, force=True)
         await self.load_pr()
@@ -371,7 +418,9 @@ class BasePullRequest(PydanticBaseModel):
             await self._update_request()
 
         if template_changes:
-            await self.repo.update_branch(template_changes, updated_by)
+            return await self.repo.update_branch(
+                template_changes, updated_by, request_notes, reset_branch=reset_branch
+            )
 
     async def _merge_request(self):
         """
@@ -485,6 +534,8 @@ class GitHubPullRequest(BasePullRequest):
         if not self.repo:
             await self._set_repo(False)
         self.pr_obj = await aio_wrapper(self.pr_provider.get_pull, self.pull_request_id)
+        self.pull_request_id = self.pr_obj.number
+        self.pull_request_url = self.pr_obj.html_url
         self.title = self.pr_obj.title
         self.description = self.pr_obj.body
         self.mergeable = self.pr_obj.mergeable
@@ -534,6 +585,9 @@ class GitHubPullRequest(BasePullRequest):
     async def delete_comment(self, comment_id: int):
         raise NotImplementedError
 
+    async def get_notes(self):
+        raise NotImplementedError
+
     async def _create_request(self):
         self.pr_obj = await aio_wrapper(
             self.pr_provider.create_pull,
@@ -550,6 +604,8 @@ class GitHubPullRequest(BasePullRequest):
             self.pr_obj.edit,
             body=self.description,
         )
+        self.pull_request_id = self.pr_obj.number
+        self.pull_request_url = self.pr_obj.html_url
 
     async def _merge_request(self):
         await aio_wrapper(self.pr_obj.merge)
@@ -567,6 +623,15 @@ class Request(SoftDeleteMixin, Base):
     pull_request_url = Column(String)
     tenant_id = Column(Integer, ForeignKey("tenant.id"))
     status = Column(RequestStatus, default="Pending")
+    request_method = Column(String, nullable=True)
+    slack_username = Column(String, nullable=True)
+    slack_email = Column(String, nullable=True)
+    duration = Column(String, nullable=True)
+    resource_type = Column(String, nullable=True)
+    request_notes = Column(String, nullable=True)
+    slack_channel_id = Column(String, nullable=True)
+    slack_message_id = Column(String, nullable=True)
+    branch_name = Column(String, nullable=True)
 
     allowed_approvers = Column(ARRAY(String), default=dict)
     approved_by = Column(ARRAY(String), default=dict)

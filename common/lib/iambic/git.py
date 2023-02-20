@@ -113,7 +113,9 @@ class IambicGit:
             config_template_path = await resolve_config_template_path(repo_path)
             # TODO: Need to have assume role access and ability to read secret
             # for Iambic config and templates to load
-            config_template = await load_config_template(config_template_path)
+            config_template = await load_config_template(
+                config_template_path, sparse=True
+            )
             template_paths = await gather_templates(repo_path)
             self.templates = load_templates(template_paths)
             group_typeahead = []
@@ -265,7 +267,7 @@ class IambicGit:
         self, groups: list[str], slack_user: str, duration: int, justification: str
     ) -> None:
         errors = []
-        await self.clone_or_pull_git_repos()
+        # await self.clone_or_pull_git_repos()
 
     async def retrieve_iambic_template(self, repo_name: str, template_path: str):
         await self.set_git_repositories()
@@ -279,7 +281,9 @@ class IambicGit:
             if not os.path.exists(full_path):
                 continue
             config_template_path = await resolve_config_template_path(repo_path)
-            config_template = await load_config_template(config_template_path)
+            config_template = await load_config_template(
+                config_template_path, sparse=True
+            )
             return load_templates([full_path])
         raise Exception("Template not found")
 
@@ -291,7 +295,7 @@ class IambicGit:
         user_email: str,
         duration: int,
     ):
-        await self.clone_or_pull_git_repos()
+        # await self.clone_or_pull_git_repos()
         if template_type != "NOQ::Okta::App":
             raise Exception("Template type is not a Okta App")
         templates = await self.retrieve_iambic_template(repo_name, file_path)
@@ -319,7 +323,7 @@ class IambicGit:
         user_email: str,
         duration: int,
     ) -> None:
-        await self.clone_or_pull_git_repos()
+        # await self.clone_or_pull_git_repos()
         if template_type != "NOQ::Okta::Group":
             raise Exception("Template type is not a Okta Group")
         templates = await self.retrieve_iambic_template(repo_name, file_path)
@@ -351,7 +355,7 @@ class IambicGit:
         account_name: str,
         existing_template: Optional[BaseTemplate] = None,
     ):
-        await self.clone_or_pull_git_repos()
+        # await self.clone_or_pull_git_repos()
         errors = []
         if template_type != "NOQ::AWS::IAM::Role":
             raise Exception("Template type is not an AWS IAM Role")
@@ -404,7 +408,7 @@ class IambicGit:
         user_email: str,
         duration: int,
     ) -> None:
-        await self.clone_or_pull_git_repos()
+        # await self.clone_or_pull_git_repos()
         errors = []
         if template_type != "NOQ::Google::Group":
             raise Exception("Template type is not a Google Group")
@@ -429,7 +433,7 @@ class IambicGit:
         self, role_arns: list[str], slack_user: str, duration: int, justification: str
     ) -> None:
         errors = []
-        await self.clone_or_pull_git_repos()
+        # await self.clone_or_pull_git_repos()
         # TODO: Need task to generate role_to_file_mapping
         role_to_file_mapping = {
             "arn:aws:iam::759357822767:role/demo_role_2": {
