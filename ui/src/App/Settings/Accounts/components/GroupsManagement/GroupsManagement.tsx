@@ -2,19 +2,20 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Table } from 'shared/elements/Table';
 
-import { groupsTableColumns } from '../../constants';
+import { DELETE_DATA_TYPE, groupsTableColumns } from '../../constants';
 
 import css from './GroupsManagement.module.css';
 import Delete from '../common/Delete';
 import GroupsModal from '../common/EditGroupsModal';
-import { Button } from 'shared/elements/Button';
 import { extractErrorMessage } from 'core/API/utils';
 import { PropertyFilterProps } from '@noqdev/cloudscape/property-filter';
 import { getAllGroups } from 'core/API/settings';
 import AddGroupModal from '../common/AddGroupModal/AddGroupModal';
+import { Badge } from '@noqdev/cloudscape';
+import { Group } from '../../types';
 
 const GroupsManagement = () => {
-  const [allGroupsData, setAllGroupsData] = useState([]);
+  const [allGroupsData, setAllGroupsData] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
@@ -80,9 +81,17 @@ const GroupsManagement = () => {
       return {
         ...item,
         name: <div>{item.name}</div>,
-        delete: <Delete canEdit={canEdit} />,
-        edit: <GroupsModal canEdit={canEdit} />,
-        users: item.users.map((group, index) => <div key={index}>{group}</div>)
+        delete: (
+          <Delete
+            canEdit={canEdit}
+            dataType={DELETE_DATA_TYPE.GROUP}
+            dataId={item.name}
+          />
+        ),
+        edit: <GroupsModal canEdit={canEdit} group={item} />,
+        users: item.users.map((group, index) => (
+          <Badge key={index}>{group}</Badge>
+        ))
       };
     });
   }, [allGroupsData]);

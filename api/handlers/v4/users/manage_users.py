@@ -147,26 +147,61 @@ class ManageUsersHandler(BaseAdminHandler):
         # Get the user id and security action from the request
         user_id = self.get_argument("user_id")
         action = self.get_argument("action")
+        data = tornado.escape.json_decode(self.request.body or "{}")
 
         # Update the user's security in the database
-        try:
-            user = self.db.query(User).filter(User.id == user_id).one()
-            if action == "reset_password":
-                # Generate a new random password for the user
-                new_password = await generate_random_password()
-                user.set_password(new_password)
-                self.write({"success": True, "new_password": new_password})
-            elif action == "reset_mfa":
-                user.mfa_secret = None
-                self.write({"success": True})
-            else:
-                self.set_status(400)
-                self.write({"error": "Invalid action"})
-            self.db.commit()
-        except Exception as e:
-            self.db.rollback()
-            self.set_status(500)
-            self.write({"error": str(e)})
+        user = await User.get_by_id(self.ctx.db_tenant, user_id)
+
+        if not user:
+            self.set_status(400)
+            self.write(
+                WebResponse(
+                    success="error",
+                    status_code=400,
+                    data={"message": "Invalid user"},
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            raise tornado.web.Finish()
+
+        if action == "reset_password":
+            # Generate a new random password for the user
+            new_password = await generate_random_password()
+            user.set_password(new_password)
+            self.write({"success": True, "new_password": new_password})
+        elif action == "reset_mfa":
+            user.mfa_secret = None
+            self.write({"success": True})
+        elif action == "update_user":
+            if data.get("active"):
+                user.active = data.get("active")
+            if data.get("username"):
+                user.username = data.get("username")
+            if data.get("email"):
+                user.email = data.get("email")
+            if data.get("display_name"):
+                user.display_name = data.get("display_name")
+            if data.get("full_name"):
+                user.full_name = data.get("full_name")
+            if data.get("given_name"):
+                user.given_name = data.get("given_name")
+            if data.get("middle_name"):
+                user.middle_name = data.get("middle_name")
+            if data.get("family_name"):
+                user.family_name = data.get("family_name")
+        else:
+            self.set_status(400)
+            self.write({"error": "Invalid action"})
+        new_user = await user.update(
+            user, id=user.id, username=user.username, email=user.email
+        )
+
+        self.write(
+            WebResponse(
+                success="success",
+                status_code=200,
+                data=new_user.dict(),
+            ).dict(exclude_unset=True, exclude_none=True)
+        )
 
     async def delete(self):
         data = tornado.escape.json_decode(self.request.body)

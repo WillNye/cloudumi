@@ -242,14 +242,14 @@ class User(SoftDeleteMixin, Base):
         totp = pyotp.TOTP(self.mfa_secret_temp)
         return totp.verify(token)
 
-    @classmethod
-    async def update(cls, id, username, **kwargs):
+    async def update(self, user, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
-                user = session.query(User).get(id)
-                user.username = username
                 session.add(user)
                 await session.commit()
+        return user
 
     @classmethod
     async def get_by_id(cls, tenant, user_id, get_groups=False):

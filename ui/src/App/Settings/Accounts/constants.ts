@@ -3,6 +3,11 @@ export enum ACCOUNT_SETTINGS_TABS {
   GROUPS = 'GROUPS'
 }
 
+export enum DELETE_DATA_TYPE {
+  USER = 'user',
+  GROUP = 'group'
+}
+
 export const userTableColumns = [
   {
     Header: 'Email',

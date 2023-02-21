@@ -8,7 +8,12 @@ export const createUser = data => {
 
 export const deleteUser = data => {
   const url = `${V4_API_URL}/users`;
-  return axios.delete(url, data);
+  return axios.delete(url, { data });
+};
+
+export const updateUser = (data, action) => {
+  const url = `${V4_API_URL}/users?user_id=${data.id}&action=${action}`;
+  return axios.put(url, data);
 };
 
 export const getAllUsers = query => {
@@ -26,9 +31,14 @@ export const createGroup = data => {
   return axios.post(url, data);
 };
 
+export const updateGroup = data => {
+  const url = `${V4_API_URL}/groups`;
+  return axios.put(url, data);
+};
+
 export const deleteGroup = data => {
   const url = `${V4_API_URL}/groups`;
-  return axios.delete(url, data);
+  return axios.delete(url, { data });
 };
 
 export const createGroupMemberships = data => {
@@ -38,5 +48,5 @@ export const createGroupMemberships = data => {
 
 export const deleteGroupMemberships = data => {
   const url = `${V4_API_URL}/group_memberships`;
-  return axios.delete(url, data);
+  return axios.delete(url, { data });
 };

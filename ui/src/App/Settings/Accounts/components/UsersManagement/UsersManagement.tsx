@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Table } from 'shared/elements/Table';
-import { userTableColumns } from '../../constants';
-import { Button } from 'shared/elements/Button';
+import { DELETE_DATA_TYPE, userTableColumns } from '../../constants';
 import UserModal from '../common/EditUserModal';
 import Delete from '../common/Delete';
 
@@ -10,9 +9,11 @@ import { PropertyFilterProps } from '@noqdev/cloudscape';
 import { extractErrorMessage } from 'core/API/utils';
 import { getAllUsers } from 'core/API/settings';
 import InviteUserModal from '../common/InviteUserModal/InviteUserModal';
+import { Chip } from 'reablocks';
+import { User } from '../../types';
 
 const UsersManagement = () => {
-  const [allUsersData, setAllUsersData] = useState([]);
+  const [allUsersData, setAllUsersData] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
@@ -77,8 +78,17 @@ const UsersManagement = () => {
       return {
         ...item,
         email: <div>{item.email}</div>,
-        delete: <Delete canEdit={canEdit} />,
-        edit: <UserModal canEdit={canEdit} />
+        delete: (
+          <Delete
+            canEdit={canEdit}
+            dataType={DELETE_DATA_TYPE.USER}
+            dataId={item.email}
+          />
+        ),
+        edit: <UserModal canEdit={canEdit} user={item} />,
+        groups: item.groups.map((user, index) => (
+          <Chip key={index}>{user}</Chip>
+        ))
       };
     });
   }, [allUsersData]);
