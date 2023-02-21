@@ -16,6 +16,9 @@ from iambic.core.parser import load_templates
 # TODO: Still need to get Iambic installed in the SaaS. This is a localhost hack.
 from iambic.core.utils import gather_templates
 from iambic.plugins.v0_1_0.aws.iam.policy.models import PolicyDocument, PolicyStatement
+from iambic.plugins.v0_1_0.aws.identity_center.permission_set.models import (
+    PermissionSetAccess,
+)
 from iambic.plugins.v0_1_0.google.group.models import GroupMember
 from iambic.plugins.v0_1_0.okta.group.models import UserSimple
 from iambic.plugins.v0_1_0.okta.models import Assignment
@@ -137,6 +140,12 @@ class IambicGit:
                 account_ids_to_account_names[
                     aws_account.account_id
                 ] = aws_account.account_name
+
+            await store_json_results_in_redis_and_s3(
+                account_ids_to_account_names,
+                redis_key=tenant_config.iambic_aws_account_ids_to_names,
+                tenant=self.tenant,
+            )
 
             await store_json_results_in_redis_and_s3(
                 aws_account_dicts,
@@ -341,6 +350,41 @@ class IambicGit:
             group_member.expires_at = f"{duration}"
 
         template.properties.members.append(group_member)
+        return template
+
+    async def aws_add_user_to_permission_set(
+        self,
+        template_type: str,
+        repo_name: str,
+        file_path: str,
+        user_email: dict,
+        duration: str,
+        selected_aws_accounts,
+        existing_template: Optional[BaseTemplate] = None,
+    ):
+        if template_type != "NOQ::AWS::IdentityCenter::PermissionSet":
+            raise Exception("Template type is not an AWS IAM Role")
+        templates = await self.retrieve_iambic_template(repo_name, file_path)
+        if not templates:
+            raise Exception("Template not found")
+        if existing_template:
+            template = existing_template
+        else:
+            template = templates[0]
+        if template.template_type != template_type:
+            raise Exception("Template type does not match")
+        included_accounts = []
+        for account in selected_aws_accounts:
+            included_accounts.append(account["value"])
+        new_access_rule = PermissionSetAccess(
+            users=[user_email],
+            included_accounts=included_accounts,
+        )
+
+        if duration and duration != "no_expire":
+            new_access_rule.expires_at = f"{duration}"
+
+        template.access_rules.append(new_access_rule)
         return template
 
     async def aws_iam_role_add_inline_policy(

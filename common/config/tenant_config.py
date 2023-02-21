@@ -229,3 +229,7 @@ class TenantConfig:
     @property
     def iambic_aws_accounts(self):
         return f"{self.tenant}_IAMBIC_AWS_ACCOUNTS"
+
+    @property
+    def iambic_aws_account_ids_to_names(self):
+        return f"{self.tenant}_IAMBIC_AWS_ACCOUNT_IDS_TO_NAMES"

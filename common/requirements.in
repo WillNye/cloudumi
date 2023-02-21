@@ -9,3 +9,4 @@ pynamodax
 slack_bolt
 workos
 types-ujson
+types-pytz
