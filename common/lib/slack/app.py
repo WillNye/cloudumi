@@ -356,6 +356,10 @@ class TenantSlackApp:
             self.handle_select_aws_accounts_options
         )
 
+        self.tenant_slack_app.action("approve_request")(
+            self.handle_approve_request_action
+        )
+
         return self.tenant_slack_app
 
     async def handle_generic_ack(self, ack):
@@ -369,6 +373,14 @@ class TenantSlackApp:
             blocks=self.workflows.get_self_service_step_1_blocks(),
             channel=body["channel_id"],
         )
+
+    async def handle_approve_request_action(self, ack, body, client):
+        await ack()
+        action_id = body["actions"][0]["action_id"]
+        request_id = action_id.split("/")[-1]
+        request = await self.workflows.get_request_by_id(request_id)
+        if request:
+            await self.workflows.approve_request(request, body["user"]["id"], client)
 
     async def handle_select_resources_options_tenant(self, ack, body):
         """Handle the action of selecting resource options in a slack app dialog.
@@ -1338,9 +1350,11 @@ class TenantSlackApp:
 # TODO: Select Policy Group
 # Policy group has substitutions that define if typeahead or string
 # {{}}
+# iampulse.com has good examples of sane policies
 #
 # template_type: NOQ::AWS::PolicyTemplate
 # identifier: s3_list_bucket
+# description: blah
 # properties:
 #   action:
 #     - s3:ListBucket
@@ -1372,4 +1386,4 @@ class TenantSlackApp:
 # effect:
 #  - Allow
 # resource:
-# - {{NOQ::AWS::SecretsManager::Secret/Secret_Prefix}}/*
+#  - {{NOQ::AWS::SecretsManager::Secret/Secret_Prefix}}/*

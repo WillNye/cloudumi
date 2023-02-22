@@ -5,6 +5,7 @@ from api.handlers.v3.automatic_policy_request_handler.aws import (
 )
 from api.handlers.v3.slack.install import (
     AsyncSlackEventsHandler,
+    AsyncSlackInstallHandler,
     AsyncSlackOAuthHandler,
 )
 from api.handlers.v3.typeahead import UserAndGroupTypeAheadHandler
@@ -433,12 +434,12 @@ def make_app(jwt_validator=None):
             (r"/api/v3/slack/events", AsyncSlackEventsHandler, dict(app=slack_app)),
             (
                 r"/api/v3/slack/install/?",
-                AsyncSlackOAuthHandler,
+                AsyncSlackInstallHandler,
                 dict(app=slack_app),
             ),
             (
                 r"/api/v3/slack/install/?(.*)",
-                AsyncSlackOAuthHandler,
+                AsyncSlackInstallHandler,
                 dict(app=slack_app),
             ),
             (
