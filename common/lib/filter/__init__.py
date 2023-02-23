@@ -238,11 +238,11 @@ async def filter_data_with_sqlalchemy(filter_obj, tenant, Table):
     filter = options.filtering
     sorting = options.sorting
     pagination = options.pagination
+    conditions = []
 
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
             query = select(Table).filter(getattr(Table, "tenant") == tenant)
-            conditions = []
             if filter and filter.tokens:
                 if filter.operation == FilterOperation._and:
                     for token in filter.tokens:

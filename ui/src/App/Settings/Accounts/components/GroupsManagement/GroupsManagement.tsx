@@ -89,9 +89,7 @@ const GroupsManagement = () => {
           />
         ),
         edit: <GroupsModal canEdit={canEdit} group={item} />,
-        users: item.users.map((group, index) => (
-          <Badge key={index}>{group}</Badge>
-        ))
+        users: item.users.length
       };
     });
   }, [allGroupsData]);

@@ -8,11 +8,18 @@ import { Notification, NotificationType } from 'shared/elements/Notification';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { updateGroup } from 'core/API/settings';
+import {
+  createGroupMemberships,
+  getAllUsers,
+  updateGroup
+} from 'core/API/settings';
 import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
 import { Group } from '../../../types';
 import styles from './EditGroupsModal.module.css';
+import { Search } from 'shared/form/Search';
+import { Divider } from 'shared/elements/Divider';
+import { Chip } from 'reablocks';
 
 type EditGroupsModalProps = {
   canEdit: boolean;
@@ -28,6 +35,12 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
   const [showDialog, setShowDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [groupUsers, setGroupUsers] = useState(group.users);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isUpdatingGroups, setIsUpdatingGroups] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchValue, setSearchValue] = useState('');
 
   const {
     register,
@@ -43,10 +56,20 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
     }
   });
 
+  const resultRenderer = result => <p>{result.email}</p>;
+  const onSelectResult = user => {
+    setSearchValue(user.email);
+    setGroupUsers(users => [...new Set([...users, user.email])]);
+  };
+
+  const reseActions = useCallback(() => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  }, []);
+
   const onSubmit = useCallback(
     async ({ name, description }) => {
-      setErrorMessage(null);
-      setSuccessMessage(null);
+      reseActions();
       try {
         await updateGroup({
           id: group.id,
@@ -64,8 +87,59 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
         );
       }
     },
-    [group.id]
+    [group.id, reseActions]
   );
+
+  const handleSearch = useCallback(async e => {
+    const value = e.target.value;
+    setSearchValue(value);
+    const filter = {
+      filter: {
+        pagination: { currentPageIndex: 1, pageSize: 10 },
+        filtering: {
+          tokens: [{ propertyKey: 'email', operator: ':', value }],
+          operation: 'and'
+        }
+      }
+    };
+
+    if (!value) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const res = await getAllUsers(filter);
+      const data = res.data.data;
+      setSearchResults(data.data);
+    } catch (error) {
+      // TODO: Properly handle error
+      console.error(error);
+    }
+    setIsSearching(false);
+  }, []);
+
+  const updateGroupMemberships = useCallback(async () => {
+    reseActions();
+    setIsUpdatingGroups(true);
+    try {
+      await createGroupMemberships({
+        users: groupUsers,
+        groups: [group.name]
+      });
+      // TODO: update user groups
+      setSuccessMessage('Successfully updated groups users');
+    } catch (error) {
+      const err = error as AxiosError;
+      const errorRes = err?.response;
+      const errorMsg = extractErrorMessage(errorRes?.data);
+      setErrorMessage(
+        errorMsg || 'An error occurred while updating group users'
+      );
+    }
+    setIsUpdatingGroups(false);
+  }, [group.name, groupUsers, reseActions]);
 
   if (!canEdit) {
     return <Fragment />;
@@ -85,6 +159,23 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
         size="medium"
       >
         <div className={styles.content}>
+          {errorMessage && (
+            <Notification
+              type={NotificationType.ERROR}
+              header={errorMessage}
+              showCloseIcon={false}
+              fullWidth
+            />
+          )}
+          {successMessage && (
+            <Notification
+              type={NotificationType.SUCCESS}
+              header={successMessage}
+              showCloseIcon={false}
+              fullWidth
+            />
+          )}
+          <br />
           <form onSubmit={handleSubmit(onSubmit)}>
             <Block disableLabelPadding label="Name" required></Block>
             <Input
@@ -108,27 +199,47 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
               <p>{errors.description.message}</p>
             )}
             <br />
-            {errorMessage && (
-              <Notification
-                type={NotificationType.ERROR}
-                header={errorMessage}
-                showCloseIcon={false}
-                fullWidth
-              />
-            )}
-            {successMessage && (
-              <Notification
-                type={NotificationType.SUCCESS}
-                header={successMessage}
-                showCloseIcon={false}
-                fullWidth
-              />
-            )}
-            <br />
-            <Button type="submit" disabled={isSubmitting || !isValid}>
+            <Button type="submit" disabled={isSubmitting || !isValid} fullWidth>
               {isSubmitting ? 'Updating Group...' : 'Update Group'}
             </Button>
           </form>
+
+          <div className={styles.groupUsers}>
+            <Block disableLabelPadding label="Add Users"></Block>
+            <Search
+              fullWidth
+              resultRenderer={resultRenderer}
+              results={searchResults}
+              onChange={handleSearch}
+              showResults
+              value={searchValue}
+              isLoading={isSearching}
+              onResultSelect={onSelectResult}
+            />
+            <div className={styles.users}>
+              <h5>Group Users</h5>
+              <Divider />
+              {groupUsers.length ? (
+                <div>
+                  {groupUsers.map((user, index) => (
+                    <Chip className={styles.user} key={index}>
+                      {user}
+                    </Chip>
+                  ))}
+                </div>
+              ) : (
+                <p>No Users Available in this Group</p>
+              )}
+            </div>
+            <Button
+              disabled={isUpdatingGroups}
+              size="small"
+              fullWidth
+              onClick={updateGroupMemberships}
+            >
+              Update Group Memberships
+            </Button>
+          </div>
         </div>
       </Dialog>
     </div>

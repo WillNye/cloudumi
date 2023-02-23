@@ -8,6 +8,12 @@ export enum DELETE_DATA_TYPE {
   GROUP = 'group'
 }
 
+export enum UPDATE_USER_ACTIONS {
+  RESET_PASSWORD = 'reset_password',
+  RESET_MFA = 'reset_mfa',
+  UPDATE_USER = 'update_user'
+}
+
 export const userTableColumns = [
   {
     Header: 'Email',

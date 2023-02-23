@@ -86,9 +86,7 @@ const UsersManagement = () => {
           />
         ),
         edit: <UserModal canEdit={canEdit} user={item} />,
-        groups: item.groups.map((user, index) => (
-          <Chip key={index}>{user}</Chip>
-        ))
+        groups: item.groups.length
       };
     });
   }, [allUsersData]);

@@ -3,6 +3,7 @@ import { Input, InputProps } from '../Input';
 import { Icon } from 'shared/elements/Icon';
 import styles from './Search.module.css';
 import { Spinner } from '@noqdev/cloudscape';
+import useClickOutside from 'shared/utils/hooks/useClickOutside';
 
 export interface SearchProps<T> extends InputProps {
   resultRenderer: (result: T) => ReactNode;
@@ -24,29 +25,37 @@ export const Search = <T,>({
   const onFocus = useCallback(() => setFocused(true), []);
   const onBlur = useCallback(() => setFocused(false), []);
 
+  const ref = useClickOutside(onBlur);
+
   const showResults = useMemo(() => {
     return Boolean(focused && value);
   }, [focused, value]);
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} ref={ref}>
       <Input
         type="search"
         placeholder="Search..."
-        prefix={isLoading ? <Spinner /> : <Icon name="search" size="medium" />}
+        prefix={<Icon name="search" size="medium" />}
         onFocus={onFocus}
-        onBlur={onBlur}
         value={value}
         {...rest}
       />
       {showResults && (
         <ul className={styles.results}>
-          {results.length ? (
+          {isLoading ? (
+            <li className={styles.result}>
+              <Spinner />
+            </li>
+          ) : results.length ? (
             results.map((result, index) => (
               <li
                 key={index}
                 className={styles.result}
-                onClick={() => onResultSelect(result)}
+                onClick={() => {
+                  onResultSelect?.(result);
+                  onBlur();
+                }}
               >
                 {resultRenderer(result)}
               </li>

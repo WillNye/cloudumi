@@ -16,4 +16,17 @@
   width: 100%;
   max-height: 80vh;
   padding: var(--spacing-lg);
+
+  .groupUsers {
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-xl) 0;
+  }
+
+  .users {
+    margin: var(--spacing-lg) 0;
+  }
+  .user {
+    margin: 0 var(--spacing-sm);
+  }
 }
