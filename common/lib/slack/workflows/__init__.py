@@ -1257,6 +1257,107 @@ class SlackWorkflows:
     def self_service_permissions_review_blocks(
         self,
         requester,
+        identities,
+        services,
+        resources,
+        permissions,
+        raw_duration,
+        reviewers,
+        justification,
+        pull_request_url,
+        branch_name,
+        request_id,
+        user_email,
+    ):
+        duration = raw_duration
+        if raw_duration == "no_expire":
+            duration = "Never"
+
+        identities_text = ""
+        for identity_type, identity_names in identities.items():
+            identity_type = identity_type.replace("NOQ::", "").replace("::", " ")
+            identities_text += f"{identity_type}: {', '.join(identity_names)}\n"
+
+        services_text = ""
+
+        return [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": (
+                        "A cloud permissions request is awaiting your review. "
+                        f"View the full request here: {pull_request_url}."
+                    ),
+                },
+            },
+            {
+                "type": "section",
+                "fields": [
+                    {"type": "mrkdwn", "text": f"*Requester:*\n <@{requester}>"},
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Requested Identities:*\n {identities_text}",
+                    },
+                ],
+            },
+            {
+                "type": "section",
+                "fields": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Expiration:*\n {duration}",
+                    },
+                    {"type": "mrkdwn", "text": f"*Reviewers:*\n {reviewers}"},
+                ],
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*Justification:*\n {justification}",
+                },
+            },
+            {
+                "type": "actions",
+                "block_id": "review_actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "emoji": True,
+                            "text": "Approve",
+                        },
+                        "style": "primary",
+                        "value": "approve",
+                        "action_id": "approve_request",
+                    },
+                    {
+                        "type": "button",
+                        "text": {"type": "plain_text", "emoji": True, "text": "Deny"},
+                        "style": "danger",
+                        "value": "deny",
+                        "action_id": "deny_request",
+                    },
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "emoji": True,
+                            "text": ":gear: Edit",
+                        },
+                        "style": "primary",
+                        "value": "edit",
+                        "action_id": f"update_permissions_request/{request_id}",
+                    },
+                ],
+            },
+        ]
+
+    def self_service_access_review_blocks(
+        self,
+        requester,
         resources,
         raw_duration,
         reviewers,

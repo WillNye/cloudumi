@@ -727,18 +727,16 @@ class TenantSlackApp:
             # branch_name  = await request_pr.create_request(justification, template_changes, request_notes=request_notes)
         pr_url = friendly_request["pull_request_url"]
 
-        slack_message_to_reviewers = (
-            self.workflows.self_service_permissions_review_blocks(
-                username,
-                resources,
-                duration,
-                approvers,
-                justification,
-                pr_url,
-                full_request.branch_name,
-                full_request.id,
-                user_email,
-            )
+        slack_message_to_reviewers = self.workflows.self_service_access_review_blocks(
+            username,
+            resources,
+            duration,
+            approvers,
+            justification,
+            pr_url,
+            full_request.branch_name,
+            full_request.id,
+            user_email,
         )
         user_id = body["user"]["id"]
         if update:
