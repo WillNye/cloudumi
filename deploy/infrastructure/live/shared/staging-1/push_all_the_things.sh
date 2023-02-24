@@ -78,8 +78,6 @@ docker build --platform=linux/amd64 \
     --build-arg IAMBIC_REPO_USER="$IAMBIC_REPO_USER" \
     --build-arg IAMBIC_REPO_TOKEN="$IAMBIC_REPO_TOKEN" \
     --build-arg PUBLIC_URL="$PUBLIC_URL" \
-    --build-arg IAMBIC_REPO_USER="$IAMBIC_REPO_USER" \
-    --build-arg IAMBIC_REPO_TOKEN="$IAMBIC_REPO_TOKEN" \
     -t $DOCKER_IMAGE_NAME \
     --progress=plain \
     .
@@ -99,15 +97,15 @@ echo
 echo "Copying Frontend from container to S3"
 echo
 
+# Upload frontend files that we just built in the container to S3
 if [ -z "$AWS_ACCESS_KEY_ID" ]
 then
   # Get production creds
   export PROD_ROLE_ARN=arn:aws:iam::940552945933:role/prod_admin
   noq file -p $PROD_ROLE_ARN $PROD_ROLE_ARN -f
-  # Upload frontend files that we just built in the container to S3
   docker run -v "$HOME/.aws:/root/.aws" \
-      -e "AWS_PROFILE=$PROD_ROLE_ARN" 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api:latest \
-      bash -c "aws s3 sync /app/frontend/dist/ $UPLOAD_DIRECTORY"
+    -e "AWS_PROFILE=$PROD_ROLE_ARN" 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api:latest \
+    bash -c "aws s3 sync /app/frontend/dist/ $UPLOAD_DIRECTORY"
 else
   docker run -v "$HOME/.aws:/root/.aws" \
     -e "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" -e "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" \
