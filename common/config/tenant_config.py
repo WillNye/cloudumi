@@ -233,3 +233,7 @@ class TenantConfig:
     @property
     def iambic_aws_account_ids_to_names(self):
         return f"{self.tenant}_IAMBIC_AWS_ACCOUNT_IDS_TO_NAMES"
+
+    @property
+    def aws_s3_buckets_redis_key(self):
+        return f"{self.tenant}_S3_BUCKETS"

@@ -118,7 +118,8 @@ class IambicRepo:
             elif file_body:
                 await self._storage_handler.write_file(file_path, "w", file_body)
 
-        self.repo.git.pull()
+        await aio_wrapper(self.repo.git.pull)
+        await aio_wrapper(self.repo.git.pull, "origin", self.default_branch_name)
         if reset_branch:
             changed_files = self.repo.git.diff(
                 "--name-only", self.default_branch_name

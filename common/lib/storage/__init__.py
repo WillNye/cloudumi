@@ -48,8 +48,11 @@ class TenantFileStorageHandler:
         full_file_path = Path(await self.get_tenant_file_path(file_path))
         if level in {"w", "wb"}:
             await aiofiles.os.makedirs(os.path.dirname(full_file_path), exist_ok=True)
-        async with aiofiles.open(full_file_path, level) as f:
-            await f.write(data)
+        with open(full_file_path, level) as f:
+            f.write(data)
+        # TODO: aiofiles for some reason sometimes appends extra characters at the end of the file
+        # async with aiofiles.open(full_file_path, level) as f:
+        #     await f.write(data)
 
     async def read_file(self, file_path: str, level: str):
         full_file_path = await self.get_tenant_file_path(file_path)

@@ -430,18 +430,18 @@ class IambicGit:
         if duration and duration != "no_expire":
             policy_document.expires_at = f"{duration}"
 
+        appended_to_existing_policy = False
         for policy in template.properties.inline_policies:
-            if (
-                not policy.statement == policy_document.statement
+            if not (
+                policy.statement == policy_document.statement
                 and policy.expires_at == policy_document.expires_at
             ):
                 continue
-            policy_document.included_accounts.append(account_name)
-            policy_document.included_accounts = list(
-                set(policy_document.included_accounts)
-            )
-
-        template.properties.inline_policies.append(policy_document)
+            policy.included_accounts.append(account_name)
+            policy.included_accounts = sorted(list(set(policy.included_accounts)))
+            appended_to_existing_policy = True
+        if not appended_to_existing_policy:
+            template.properties.inline_policies.append(policy_document)
         return template
 
     async def google_add_user_to_group(

@@ -1,7 +1,12 @@
-from typing import Any, Dict
+from __future__ import annotations
+
+from functools import partial
+from typing import Any, Callable, Dict, Optional
 
 import ujson as json
 from humanfriendly import format_timespan
+
+from common.lib.pydantic import BaseModel
 
 FRIENDLY_RESOURCE_TYPE_NAMES = {
     "NOQ::AWS::IAM::Group": "AWS IAM Groups",
@@ -13,6 +18,312 @@ FRIENDLY_RESOURCE_TYPE_NAMES = {
     "NOQ::Okta::App": "Okta Apps",
     "NOQ::Okta::Group": "Okta Groups",
     "NOQ::Okta::User": "Okta Users",
+}
+
+
+class SlackSupportedActionOption(BaseModel):
+    block_generator: Optional[Callable]
+    friendly_name: str
+    action_id: str
+    supported_actions: list[SlackSupportedActionOption] = []
+
+
+class SlackResourceTypes(BaseModel):
+    template_type: str
+    friendly_name: str
+    action_id: str
+    supported_actions: list[SlackSupportedActionOption]
+
+
+SlackSupportedActionOption.update_forward_refs()
+
+SUPPORTED_RESOURCE_TYPES = []
+
+
+def create_aws_groups():
+    pass
+
+
+def request_inline_policy():
+    # Returns slack blocks for creating an inline policy
+    pass
+
+
+def request_predefined_permissions():
+    # Returns slack blocks for requesting predefined permissions
+    pass
+
+
+def create_aws_resource_blocks(resource_type: str):
+    # Returns slack blocks for creating an AWS resource
+    pass
+
+
+def delete_aws_resource_blocks(resource_type: str):
+    # Returns slack blocks for deleting an AWS resource
+    pass
+
+
+resource_name = "aws_iam_group"
+template_type = "NOQ::AWS::IAM::Group"
+SUPPORTED_RESOURCE_TYPES.append(
+    SlackResourceTypes(
+        action_id=f"{resource_name}/menu",
+        template_type=template_type,
+        friendly_name=FRIENDLY_RESOURCE_TYPE_NAMES[template_type],
+        supported_actions=[
+            SlackSupportedActionOption(
+                action_id=f"{resource_name}/create_group",
+                friendly_name="Create Group",
+                block_generator=partial(create_aws_resource_blocks, template_type),
+            ),
+            SlackSupportedActionOption(
+                action_id=f"{resource_name}/delete_group",
+                friendly_name="Delete Group",
+                block_generator=partial(delete_aws_resource_blocks, template_type),
+            ),
+            SlackSupportedActionOption(
+                action_id=f"{resource_name}/add_user",
+                friendly_name="Add User to Group",
+            ),
+            SlackSupportedActionOption(
+                action_id=f"{resource_name}/remove_user",
+                friendly_name="Remove User from Group",
+            ),
+            SlackSupportedActionOption(
+                action_id=f"{resource_name}/add_permissions",
+                friendly_name="Add Permissions",
+                supported_actions=[
+                    SlackSupportedActionOption(
+                        friendly_name="Add Predefined Permissions",
+                        action_id=f"{resource_name}/add_permissions/predefined_permissions",
+                        block_generator=request_predefined_permissions,
+                    ),
+                    SlackSupportedActionOption(
+                        friendly_name="Request specific permissions (Inline Policy)",
+                        action_id=f"{resource_name}/add_permissions/inline_policy",
+                        block_generator=request_inline_policy,
+                    ),
+                    SlackSupportedActionOption(
+                        friendly_name="Attach a Managed Policy",
+                        action_id=f"{resource_name}/add_permissions/managed_policy",
+                    ),
+                ],
+            ),
+            SlackSupportedActionOption(
+                action_id=f"{resource_name}/remove_permissions",
+                friendly_name="Remove Permissions",
+            ),
+            SlackSupportedActionOption(
+                action_id=f"{resource_name}/remove_unused_permissions",
+                friendly_name="Remove Unused Permissions",
+            ),
+        ],
+    )
+)
+
+RESOURCE_TYPES = {
+    "NOQ::AWS::IAM::Group": {
+        "friendly_name": "AWS IAM Groups",
+        "supported_actions": {
+            "aws_iam_group/create": {
+                "friendly_name": "Create Group",
+            },
+            "aws_iam_group/delete": {
+                "friendly_name": "Delete Group",
+            },
+            "aws_iam_group/add_user": {
+                "friendly_name": "Add User to Group",
+            },
+            "aws_iam_group/remove_user": {
+                "friendly_name": "Remove User from Group",
+            },
+            "aws_iam_group/add_permissions": {
+                "friendly_name": "Add Permissions",
+            },
+            "aws_iam_group/remove_permissions": {
+                "friendly_name": "Remove Permissions",
+            },
+            "aws_iam_group/remove_unused_permissions": {
+                "friendly_name": "Remove Unused Permissions",
+            },
+            "aws_iam_group/perform_access_review": {
+                "friendly_name": "Perform Access Review",
+            },
+        },
+    },
+    "NOQ::AWS::IAM::ManagedPolicy": {
+        "friendly_name": "AWS IAM Managed Policies",
+        "supported_actions": {
+            "create_aws_managed_policy": {
+                "friendly_name": "Create Managed Policy",
+            },
+            "delete_managed_policy": {
+                "friendly_name": "Delete Managed Policy",
+            },
+            "add_aws_permissions": {
+                "friendly_name": "Add Permissions",
+            },
+            "add_update_tags": {
+                "friendly_name": "Add/Update Tags",
+            },
+            "remove_tags": {
+                "friendly_name": "Remove Tags",
+            },
+            "remove_unused_permissions": {
+                "friendly_name": "Remove Unused Permissions",
+            },
+            "perform_access_review": {
+                "friendly_name": "Perform Access Review",
+            },
+        },
+    },
+    "NOQ::AWS::IAM::Role": {
+        "friendly_name": "AWS IAM Roles",
+        "supported_actions": {
+            "create_role": {
+                "friendly_name": "Create Role",
+            },
+            "delete_role": {
+                "friendly_name": "Delete Role",
+            },
+            "add_aws_permissions": {
+                "friendly_name": "Add Permissions",
+            },
+            "remove_aws_permissions": {
+                "friendly_name": "Remove Permissions",
+            },
+            "add_update_tags": {
+                "friendly_name": "Add/Update Tags",
+            },
+            "remove_tags": {
+                "friendly_name": "Remove Tags",
+            },
+            "remove_unused_permissions": {
+                "friendly_name": "Remove Unused Permissions",
+            },
+            "perform_access_review": {
+                "friendly_name": "Perform Access Review",
+            },
+        },
+    },
+    "NOQ::AWS::IAM::User": {
+        "friendly_name": "AWS IAM Users",
+        "supported_actions": {
+            "create_role": {
+                "friendly_name": "Create User",
+            },
+            "delete_role": {
+                "friendly_name": "Delete User",
+            },
+            "add_aws_permissions": {
+                "friendly_name": "Add Permissions",
+            },
+            "remove_aws_permissions": {
+                "friendly_name": "Remove Permissions",
+            },
+            "add_update_tags": {
+                "friendly_name": "Add/Update Tags",
+            },
+            "remove_tags": {
+                "friendly_name": "Remove Tags",
+            },
+            "remove_unused_permissions": {
+                "friendly_name": "Remove Unused Permissions",
+            },
+        },
+    },
+    "NOQ::AWS::IdentityCenter::PermissionSet": {
+        "friendly_name": "AWS Permission Sets",
+        "supported_actions": {
+            "request_access": {
+                "friendly_name": "Request Access",
+            },
+            "create_permission_set": {
+                "friendly_name": "Create Permission Set",
+            },
+            "delete_permission_set": {
+                "friendly_name": "Delete Permission Set",
+            },
+            "add_aws_permissions": {
+                "friendly_name": "Add Permissions",
+            },
+            "remove_aws_permissions": {
+                "friendly_name": "Remove Permissions",
+            },
+            "add_update_tags": {
+                "friendly_name": "Add/Update Tags",
+            },
+            "remove_tags": {
+                "friendly_name": "Remove Tags",
+            },
+            "remove_unused_permissions": {
+                "friendly_name": "Remove Unused Permissions",
+            },
+        },
+    },
+    "NOQ::Google::Group": {
+        "friendly_name": "Google Groups",
+        "supported_actions": {
+            "request_access_google_group": {
+                "friendly_name": "Request Access to Group",
+            },
+            "create_google_group": {
+                "friendly_name": "Create Group",
+            },
+            "delete_google_group": {
+                "friendly_name": "Delete Group",
+            },
+            "perform_access_review": {
+                "friendly_name": "Perform Access Review",
+            },
+        },
+    },
+    "NOQ::Okta::App": {
+        "friendly_name": "Okta Apps",
+        "supported_actions": {
+            "request_access_okta_app": {
+                "friendly_name": "Request Access to Okta App",
+            },
+            "create_okta_app": {
+                "friendly_name": "Create Okta App",
+            },
+            "delete_okta_app": {
+                "friendly_name": "Delete Okta App",
+            },
+            "perform_access_review": {
+                "friendly_name": "Perform Access Review",
+            },
+        },
+    },
+    "NOQ::Okta::Group": {
+        "friendly_name": "Okta Groups",
+        "supported_actions": {
+            "request_access_okta_group": {
+                "friendly_name": "Request Access to Okta Group",
+            },
+            "create_okta_group": {
+                "friendly_name": "Create Okta Group",
+            },
+            "delete_okta_group": {
+                "friendly_name": "Delete Okta Group",
+            },
+            "perform_access_review": {
+                "friendly_name": "Perform Access Review",
+            },
+        },
+    },
+    "NOQ::Okta::User": {
+        "friendly_name": "Okta Users",
+        "supported_actions": {
+            "create_okta_user": {
+                "friendly_name": "Create Okta User",
+            },
+            "delete_okta_user": {
+                "friendly_name": "Delete Okta User",
+            },
+        },
+    },
 }
 
 
@@ -95,6 +406,85 @@ class SlackWorkflows:
                 ],
             },
         ]
+
+    def get_self_service_step_1_blocks_v2(self):
+        blocks = []
+        block_options = []
+        for resource_type in SUPPORTED_RESOURCE_TYPES:
+            block_options.append(
+                {
+                    "text": {
+                        "type": "plain_text",
+                        "text": resource_type.friendly_name,
+                        "emoji": True,
+                    },
+                    "value": resource_type.template_type,
+                },
+            )
+        blocks.append(
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": ":wave: Hello! What resource type do you need help with?",
+                },
+                "block_id": "self-service-select-action",
+                "accessory": {
+                    "type": "static_select",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Select an item",
+                        "emoji": True,
+                    },
+                    "options": block_options,
+                    "action_id": "self-service-select-1-action",
+                },
+            },
+        )
+
+        blocks.append(self.get_cancel_button_block())
+        return blocks
+
+    def get_self_service_step_2_blocks_v2(self, template_type):
+        blocks = []
+        block_options = []
+        for resource_type in SUPPORTED_RESOURCE_TYPES:
+            if resource_type.template_type == template_type:
+                for action in resource_type.supported_actions:
+                    block_options.append(
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": action.friendly_name,
+                                "emoji": True,
+                            },
+                            "value": action.action_id,
+                        },
+                    )
+        if not block_options:
+            return None
+        blocks.append(
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "What would you like to do?",
+                },
+                "block_id": "self-service-select-2-block",
+                "accessory": {
+                    "type": "static_select",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Select an item",
+                        "emoji": True,
+                    },
+                    "options": block_options,
+                    "action_id": "self-service-select-2-action",
+                },
+            },
+        )
+        blocks.append(self.get_cancel_button_block())
+        blocks.append(self.get_back_button_block())  # TODO: Need to pass action ID
 
     def get_select_aws_accounts_block(self, selected_accounts):
         select_accounts_block = {
@@ -237,7 +627,7 @@ class SlackWorkflows:
             justification_block["element"]["initial_value"] = justification
         return justification_block
 
-    def get_cancel_block(self):
+    def get_cancel_button_block(self):
         return {
             "type": "actions",
             "block_id": "cancel_button_block",
@@ -248,6 +638,20 @@ class SlackWorkflows:
                     "value": "cancel_request",
                     "style": "danger",
                     "action_id": "cancel_request",
+                }
+            ],
+        }
+
+    def get_back_button_block(self, action_id):
+        return {
+            "type": "actions",
+            "block_id": "cancel_button_block",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "Cancel", "emoji": True},
+                    "value": action_id,
+                    "action_id": action_id,
                 }
             ],
         }
@@ -318,7 +722,7 @@ class SlackWorkflows:
                 ],
             }
         )
-        elements.append(self.get_cancel_block())
+        elements.append(self.get_cancel_button_block())
         return elements
 
     def generate_self_service_step_2_app_group_access(
@@ -396,7 +800,7 @@ class SlackWorkflows:
                 ],
             }
         )
-        elements.append(self.get_cancel_block())
+        elements.append(self.get_cancel_button_block())
 
         return elements
 

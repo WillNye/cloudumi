@@ -974,7 +974,9 @@ class TenantSlackApp:
         options = []
         prefix = body["value"] + "*"
         results = sorted(_expand_wildcard_action(prefix))
-        services = sorted(list({r.split(":")[0].replace("*", "") for r in results}))
+        services = sorted(
+            list({r.split(":")[0].replace("*", "") for r in results if ":" in r})
+        )
         if body["value"].endswith("*"):
             options.append(
                 {
@@ -995,16 +997,6 @@ class TenantSlackApp:
                     "value": f"{service[:75]}",
                 }
             )
-        # for result in results:
-        #     options.append(
-        #         {
-        #             "text": {
-        #                 "type": "plain_text",
-        #                 "text": result[:75],
-        #             },
-        #             "value": result[:75],
-        #         }
-        #     )
         await ack(options=options[:100])
 
     async def handle_select_aws_accounts_options(
@@ -1054,8 +1046,24 @@ class TenantSlackApp:
             self.tenant,
             f"{self.tenant}_AWSCONFIG_RESOURCE_CACHE",
         )
+
+        s3_bucket_redis_key = self.tenant_config.aws_s3_buckets_redis_key
         red = await RedisHandler().redis(self.tenant)
+        account_ids_to_account_names = await retrieve_json_data_from_redis_or_s3(
+            redis_key=self.tenant_config.iambic_aws_account_ids_to_names,
+            tenant=self.tenant,
+        )
         all_resource_arns = await aio_wrapper(red.hkeys, resource_redis_cache_key)
+        all_buckets = red.hgetall(s3_bucket_redis_key)
+        options.append(
+            {
+                "text": {
+                    "type": "plain_text",
+                    "text": body["value"],
+                },
+                "value": body["value"],
+            }
+        )
 
         for resource in all_resource_arns:
             if len(options) >= 100:
@@ -1079,11 +1087,31 @@ class TenantSlackApp:
                 action_included = True
             if not action_included:
                 continue
+
+            bucket_account_id = None
+            bucket_account_name = None
+
+            if resource.startswith("arn:aws:s3:::"):
+                bucket_name = resource.split("arn:aws:s3:::")[1]
+                bucket_name = bucket_name.split("/")[0]
+
+                for account_id, buckets_j in all_buckets.items():
+                    buckets = json.loads(buckets_j)
+                    if bucket_name in buckets:
+                        bucket_account_id = account_id
+                        break
+            if bucket_account_id:
+                bucket_account_name = account_ids_to_account_names.get(
+                    bucket_account_id
+                )
+            resource_name = resource[:75]
+            if bucket_account_name:
+                resource_name = f"{resource_name} ({bucket_account_name})"[:75]
             options.append(
                 {
                     "text": {
                         "type": "plain_text",
-                        "text": resource[:75],
+                        "text": resource_name,
                     },
                     "value": resource[:75],
                 }
@@ -1163,10 +1191,12 @@ class TenantSlackApp:
         resources = defaultdict(list)
         for identity in selected_identities:
             identity_hash = identity["value"]
-            template = template_changes.get(identity_hash, None)
+
+            identity_info = reverse_hash_for_arns[identity_hash]
+            repo_relative_file_path = identity_info["repo_relative_file_path"]
+            template = template_changes.get(repo_relative_file_path, None)
             if template:
                 template = template.template
-            identity_info = reverse_hash_for_arns[identity_hash]
             arn = identity_info["arn"]
             account_id = arn.split(":")[4]
             account_name = account_id
@@ -1176,7 +1206,6 @@ class TenantSlackApp:
                     break
             template_type = identity_info["template_type"]
             repo_name = identity_info["repo_name"]
-            repo_relative_file_path = identity_info["repo_relative_file_path"]
             file_path = identity_info["file_path"]
             if template_type == "NOQ::AWS::IAM::Role":
                 template = await iambic.aws_iam_role_add_inline_policy(
@@ -1194,7 +1223,7 @@ class TenantSlackApp:
                     # are captured in a single template
                 )
                 resources[template_type].append(template.identifier)
-            template_changes[identity_hash] = IambicTemplateChange(
+            template_changes[repo_relative_file_path] = IambicTemplateChange(
                 path=repo_relative_file_path,
                 body=template.get_body(exclude_unset=False),
                 template=template,
