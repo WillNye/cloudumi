@@ -65,5 +65,7 @@ COPY . /app
 # Copy entrypoint.sh to use virtualenv and install API
 RUN python -m pip install -e . && pip cache purge && apt-get -y autoremove
 
+RUN alembic upgrade head
+
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
 CMD ["python", "api/__main__.py"]
