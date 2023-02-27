@@ -386,7 +386,7 @@ humanfriendly==10.0
     # via -r ./common/requirements.in
 humanize==4.6.0
     # via flower
-# iambic @ git+ssh://git@github.com/noqdev/iambic.git@main
+# iambic @ git+ssh://git@github.com/noqdev/iambic.git@v0.1.29
     # via -r ./common/lib/iambic/requirements.in
 identify==2.5.17
     # via pre-commit

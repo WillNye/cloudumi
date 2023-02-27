@@ -7,6 +7,18 @@ then
   export AWS_PROFILE=prod/prod_admin
 fi
 
+# Define the environment file path
+env_file=".env"
+
+# Check if the environment file exists
+if [ -f "$env_file" ]; then
+  # Source the environment file if it exists
+  source "$env_file"
+else
+  # If the environment file does not exist, print an error message
+  echo "Environment file $env_file does not exist. Not sourcing .env"
+fi
+
 echo
 echo "Updating aws-cli"
 echo
@@ -63,13 +75,15 @@ echo "Building and tagging docker image"
 echo
 
 docker build --platform=linux/amd64 \
+    --build-arg IAMBIC_REPO_USER="$IAMBIC_REPO_USER" \
+    --build-arg IAMBIC_REPO_TOKEN="$IAMBIC_REPO_TOKEN" \
     --build-arg PUBLIC_URL="$PUBLIC_URL" \
     -t $DOCKER_IMAGE_NAME \
     --progress=plain \
     .
 
 docker tag $DOCKER_IMAGE_TAG_LATEST \
-  $ECR_IMAGE_TAG_LATEST
+  940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-api:latest
 
 docker tag $DOCKER_IMAGE_TAG_LATEST \
   940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-api:$VERSION
@@ -90,12 +104,12 @@ then
   export PROD_ROLE_ARN=arn:aws:iam::940552945933:role/prod_admin
   noq file -p $PROD_ROLE_ARN $PROD_ROLE_ARN -f
   docker run -v "$HOME/.aws:/root/.aws" \
-    -e "AWS_PROFILE=$PROD_ROLE_ARN" $ECR_IMAGE_TAG_LATEST \
+    -e "AWS_PROFILE=$PROD_ROLE_ARN" 940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-api:latest \
     bash -c "aws s3 sync /app/frontend/dist/ $UPLOAD_DIRECTORY"
 else
   docker run -v "$HOME/.aws:/root/.aws" \
     -e "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" -e "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" \
-    $ECR_IMAGE_TAG_LATEST bash -c "aws s3 sync /app/frontend/dist/ $UPLOAD_DIRECTORY"
+    940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-api:latest bash -c "aws s3 sync /app/frontend/dist/ $UPLOAD_DIRECTORY"
 fi
 
 echo
