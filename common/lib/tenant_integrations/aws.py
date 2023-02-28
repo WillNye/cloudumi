@@ -249,7 +249,9 @@ async def handle_spoke_account_registration(body):
         }
 
     try:
-        for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_fixed(3)):
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(3), wait=wait_fixed(3)
+        ):
             with attempt:
                 customer_spoke_role_credentials = await aio_wrapper(
                     customer_central_role_sts_client.assume_role,
@@ -471,7 +473,9 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
     # Assume roe from noq_dev_central_role
     try:
         sts_client = boto3.client("sts")
-        for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_fixed(3)):
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(3), wait=wait_fixed(3)
+        ):
             with attempt:
                 customer_central_account_creds = await aio_wrapper(
                     sts_client.assume_role,
@@ -512,7 +516,9 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
                 "SessionToken"
             ],
         )
-        for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_fixed(3)):
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(3), wait=wait_fixed(3)
+        ):
             with attempt:
                 customer_spoke_role_credentials = await aio_wrapper(
                     central_account_sts_client.assume_role,
