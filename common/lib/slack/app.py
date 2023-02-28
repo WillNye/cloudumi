@@ -23,15 +23,12 @@ from sqlalchemy.sql import insert, select
 from common.config import config, globals
 from common.config.globals import ASYNC_PG_SESSION
 from common.config.tenant_config import TenantConfig
-from common.iambic_request.models import GitHubPullRequest
 from common.iambic_request.request_crud import (
     create_request,
     get_request,
     update_request,
 )
-from common.iambic_request.utils import get_iambic_pr_instance, get_iambic_repo
 from common.lib.asyncio import aio_wrapper
-from common.lib.aws.typeahead_cache import get_all_resource_arns
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.change_request import _get_policy_sentry_access_level_actions
 from common.lib.iambic.git import IambicGit
@@ -570,7 +567,7 @@ class TenantSlackApp:
             "value"
         ]
         iambic = IambicGit(self.tenant)
-        iambic_repo = await get_iambic_repo(self.tenant)
+        # await get_iambic_repo(self.tenant)
         username = body["user"]["username"]
 
         update = False
@@ -805,8 +802,8 @@ class TenantSlackApp:
         # git log --show-notes='*'
         user_info = await client.users_info(user=body["user"]["id"])
         user_email = user_info["user"]["profile"]["email"]
-        iambic = IambicGit(self.tenant)
-        iambic_repo = await get_iambic_repo(self.tenant)
+        # iambic = IambicGit(self.tenant)
+        # iambic_repo = await get_iambic_repo(self.tenant)
         request_id = None
         for action in body["actions"]:
             action_id = action.get("action_id", "")
@@ -1034,7 +1031,6 @@ class TenantSlackApp:
         await ack()
         # Get the value of the selected radio button
         options = []
-        prefix = body["value"] + "*"
         try:
             private_metadata = json.loads(body["view"]["private_metadata"])
         except (KeyError, json.JSONDecodeError):
@@ -1140,7 +1136,7 @@ class TenantSlackApp:
         )
         justification = state["values"]["justification"]["justification"]["value"]
         iambic = IambicGit(self.tenant)
-        iambic_repo = await get_iambic_repo(self.tenant)
+        # iambic_repo = await get_iambic_repo(self.tenant)
         username = body["user"]["username"]
 
         update = False
@@ -1170,7 +1166,7 @@ class TenantSlackApp:
         selected_permissions = [b["value"] for b in selected_permissions_options]
 
         all_aws_actions = []
-        services = []
+
         for action in selected_services:
             service = action.split(":")[0]
             if service == "*":
@@ -1204,7 +1200,7 @@ class TenantSlackApp:
                     break
             template_type = identity_info["template_type"]
             repo_name = identity_info["repo_name"]
-            file_path = identity_info["file_path"]
+
             if template_type == "NOQ::AWS::IAM::Role":
                 template = await iambic.aws_iam_role_add_inline_policy(
                     template_type,
@@ -1360,18 +1356,19 @@ class TenantSlackApp:
     #     logger.info(body)
 
     async def handle_request_update_or_remove_tags(self, logger, body, client, respond):
-        reverse_hash_for_arns = await retrieve_json_data_from_redis_or_s3(
-            redis_key=self.tenant_config.iambic_hash_arn_redis_key,
-            tenant=self.tenant,
-        )
+        pass
+        # reverse_hash_for_arns = await retrieve_json_data_from_redis_or_s3(
+        #     redis_key=self.tenant_config.iambic_hash_arn_redis_key,
+        #     tenant=self.tenant,
+        # )
 
-        justification = body["view"]["state"]["values"]["justification"][
-            "justification"
-        ]["value"]
+        # justification = body["view"]["state"]["values"]["justification"][
+        #     "justification"
+        # ]["value"]
 
-        selected_identities = body["view"]["state"]["values"]["select_identities"][
-            "select_identities_action"
-        ]["selected_options"]
+        # selected_identities = body["view"]["state"]["values"]["select_identities"][
+        #     "select_identities_action"
+        # ]["selected_options"]
 
 
 # TODO: Select Policy Group

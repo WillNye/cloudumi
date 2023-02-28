@@ -9,7 +9,6 @@ command: celery -A common.celery_tasks.celery_tasks worker --loglevel=info -l DE
 """
 from __future__ import absolute_import
 
-import asyncio
 import json  # We use a separate SetEncoder here so we cannot use ujson
 import ssl
 import sys
@@ -3031,6 +3030,7 @@ app.conf.timezone = "UTC"
 # TODO: Remove
 # TODO: Need a way to get signaled with files change in repo
 # tenants = get_all_tenants()
+# import asyncio
 # for tenant in tenants:
 #     if tenant != "localhost":
 #         continue

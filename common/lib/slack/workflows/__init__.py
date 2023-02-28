@@ -1,10 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import Any, Callable, Dict, Optional
-
-import ujson as json
-from humanfriendly import format_timespan
+from typing import Callable, Optional
 
 from common.lib.pydantic import BaseModel
 
@@ -495,7 +492,7 @@ class SlackWorkflows:
                 "type": "multi_external_select",
                 "placeholder": {
                     "type": "plain_text",
-                    "text": f"Select AWS Accounts",
+                    "text": "Select AWS Accounts",
                 },
                 "min_query_length": 0,
             },
@@ -1278,8 +1275,6 @@ class SlackWorkflows:
             identity_type = identity_type.replace("NOQ::", "").replace("::", " ")
             identities_text += f"{identity_type}: {', '.join(identity_names)}\n"
 
-        services_text = ""
-
         return [
             {
                 "type": "section",
@@ -1375,8 +1370,6 @@ class SlackWorkflows:
         for resource_type, resource_names in resources.items():
             resource_type = resource_type.replace("NOQ::", "").replace("::", " ")
             resource_text += f"{resource_type}: {', '.join(resource_names)}\n"
-
-        pull_request_id = pull_request_url.split("/")[-1]
 
         return [
             {

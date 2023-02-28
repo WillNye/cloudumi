@@ -2,7 +2,7 @@ import datetime
 import hashlib
 import os
 import time
-from typing import Optional, Union
+from typing import Optional
 
 import ujson as json
 from git import Repo
@@ -29,7 +29,6 @@ from common.config import models
 from common.config.globals import TENANT_STORAGE_BASE_PATH
 from common.config.tenant_config import TenantConfig
 from common.lib.cache import store_json_results_in_redis_and_s3
-from common.lib.iambic.util import effective_accounts
 from common.lib.yaml import yaml
 from common.models import IambicRepoDetails
 
@@ -121,7 +120,6 @@ class IambicGit:
             )
             template_paths = await gather_templates(repo_path)
             self.templates = load_templates(template_paths)
-            group_typeahead = []
             template_dicts = []
 
             aws_account_specific_template_types = {
@@ -272,12 +270,6 @@ class IambicGit:
             okta_groups.append(repo_name)
         return okta_groups
 
-    async def request_access_to_groups(
-        self, groups: list[str], slack_user: str, duration: int, justification: str
-    ) -> None:
-        errors = []
-        # await self.clone_or_pull_git_repos()
-
     async def retrieve_iambic_template(self, repo_name: str, template_path: str):
         await self.set_git_repositories()
         for repository in self.git_repositories:
@@ -290,9 +282,7 @@ class IambicGit:
             if not os.path.exists(full_path):
                 continue
             config_template_path = await resolve_config_template_path(repo_path)
-            config_template = await load_config_template(
-                config_template_path, sparse=True
-            )
+            await load_config_template(config_template_path, sparse=True)
             return load_templates([full_path])
         raise Exception("Template not found")
 
@@ -400,7 +390,6 @@ class IambicGit:
         existing_template: Optional[BaseTemplate] = None,
     ):
         # await self.clone_or_pull_git_repos()
-        errors = []
         if template_type != "NOQ::AWS::IAM::Role":
             raise Exception("Template type is not an AWS IAM Role")
         templates = await self.retrieve_iambic_template(repo_name, file_path)
@@ -453,7 +442,6 @@ class IambicGit:
         duration: int,
     ) -> None:
         # await self.clone_or_pull_git_repos()
-        errors = []
         if template_type != "NOQ::Google::Group":
             raise Exception("Template type is not a Google Group")
         templates = await self.retrieve_iambic_template(repo_name, file_path)
@@ -541,7 +529,8 @@ class IambicGit:
         gh = repo["gh"]
         # TODO hardcoded
         role_arns = ", ".join(role_arns)
-        gh_repo = gh.get_repo(f"noqdev/noq-templates")
+        # TODO: Hardcoded
+        gh_repo = gh.get_repo("noqdev/noq-templates")
         body = f"""
 Access Request Detail:
 

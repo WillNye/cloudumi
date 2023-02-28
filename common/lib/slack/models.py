@@ -75,7 +75,7 @@ async def get_slack_bot_authorization(enterprise_id, team_id, logger):
         if ((not slack_bot.enterprise_id) or (enterprise_id == slack_bot.enterprise_id))
         else False
     )
-    if (is_valid_enterprise == True) and (slack_bot.team_id == team_id):
+    if (is_valid_enterprise is True) and (slack_bot.team_id == team_id):
         # Return an instance of AuthorizeResult
         # If you don't store bot_id and bot_user_id, could also call `from_auth_test_response` with your bot_token to automatically fetch them
         return AuthorizeResult(

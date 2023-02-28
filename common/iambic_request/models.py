@@ -145,7 +145,7 @@ class IambicRepo:
                 )
 
         requesting_actor = Actor("Iambic", changed_by)
-        commit = self.repo.index.commit(
+        self.repo.index.commit(
             f"Made as part of Noq Request: {self.request_id} by {self.requested_by}",
             committer=requesting_actor,
             author=requesting_actor,

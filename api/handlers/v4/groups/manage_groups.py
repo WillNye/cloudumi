@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import tornado.escape
 import tornado.gen
 import tornado.web
