@@ -78,7 +78,7 @@ resource "aws_lambda_function" "iambic_github_app" {
   package_type  = "Image"
   function_name = "iambic_github_app_webhook"
   role          = data.aws_iam_role.iambic_github_app_lambda_execution.arn
-  memory_size   = 512
+  memory_size   = 2048
   timeout       = 900
 
   source_code_hash = trimprefix(data.aws_ecr_image.iambic_private_ecr.id, "sha256:")
