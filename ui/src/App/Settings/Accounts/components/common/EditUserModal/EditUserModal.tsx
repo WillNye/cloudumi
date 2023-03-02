@@ -183,7 +183,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
         showDialog={showDialog}
         setShowDialog={setShowDialog}
         disablePadding
-        header="Edit User Modal"
+        header="Edit User Details"
         size="medium"
       >
         <div className={styles.content}>
@@ -289,7 +289,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
                   ))}
                 </div>
               ) : (
-                <p>No Gorups Available for this User</p>
+                <p>No Groups Available for this User</p>
               )}
             </div>
             <Button

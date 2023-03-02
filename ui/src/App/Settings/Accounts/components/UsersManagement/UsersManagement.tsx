@@ -9,7 +9,6 @@ import { PropertyFilterProps } from '@noqdev/cloudscape';
 import { extractErrorMessage } from 'core/API/utils';
 import { getAllUsers } from 'core/API/settings';
 import InviteUserModal from '../common/InviteUserModal/InviteUserModal';
-import { Chip } from 'reablocks';
 import { User } from '../../types';
 
 const UsersManagement = () => {
@@ -17,15 +16,10 @@ const UsersManagement = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  const [filter, setFilter] = useState<PropertyFilterProps.Query>({
-    tokens: [],
-    operation: 'and'
-  });
-
   const [query, setQuery] = useState({
     pagination: {
       currentPageIndex: 1,
-      pageSize: 30
+      pageSize: 10
     },
     sorting: {
       sorting: {
@@ -39,13 +33,16 @@ const UsersManagement = () => {
       },
       sortingDescending: false
     },
-    filtering: filter
+    filtering: {
+      tokens: [],
+      operation: 'and'
+    }
   });
 
   const callGetAllUsers = useCallback((query = {}) => {
     setIsLoading(true);
     setErrorMsg(null);
-    getAllUsers(query)
+    getAllUsers({ filter: query })
       .then(({ data }) => {
         setAllUsersData(data.data.data);
       })
@@ -65,13 +62,6 @@ const UsersManagement = () => {
     [callGetAllUsers, query]
   );
 
-  useEffect(() => {
-    setQuery(exstingQuery => ({
-      ...exstingQuery,
-      filtering: filter
-    }));
-  }, [filter]);
-
   const tableRows = useMemo(() => {
     return allUsersData.map(item => {
       const canEdit = item.managed_by === 'MANUAL';
@@ -83,13 +73,15 @@ const UsersManagement = () => {
             canEdit={canEdit}
             dataType={DELETE_DATA_TYPE.USER}
             dataId={item.email}
+            title="Delete User"
+            refreshData={() => callGetAllUsers(query)}
           />
         ),
         edit: <UserModal canEdit={canEdit} user={item} />,
         groups: item.groups.length
       };
     });
-  }, [allUsersData]);
+  }, [allUsersData, callGetAllUsers, query]);
 
   return (
     <div className={css.container}>

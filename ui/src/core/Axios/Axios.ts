@@ -14,7 +14,6 @@ const client = axios.create({
 // Request Interceptor
 client.interceptors.request.use(
   config => {
-    // add cookie to request
     const newConfig = {
       ...config,
       Headers: {
@@ -25,7 +24,7 @@ client.interceptors.request.use(
         Accept: 'application/json'
       }
     };
-    return config;
+    return newConfig;
   },
 
   error => {

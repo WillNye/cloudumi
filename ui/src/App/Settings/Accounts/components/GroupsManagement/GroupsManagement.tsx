@@ -19,15 +19,10 @@ const GroupsManagement = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  const [filter, setFilter] = useState<PropertyFilterProps.Query>({
-    tokens: [],
-    operation: 'and'
-  });
-
   const [query, setQuery] = useState({
     pagination: {
       currentPageIndex: 1,
-      pageSize: 30
+      pageSize: 10
     },
     sorting: {
       sorting: {
@@ -41,13 +36,16 @@ const GroupsManagement = () => {
       },
       sortingDescending: false
     },
-    filtering: filter
+    filtering: {
+      tokens: [],
+      operation: 'and'
+    }
   });
 
-  const callGetAllUsers = useCallback((query = {}) => {
+  const callGetAllGroups = useCallback((query = {}) => {
     setIsLoading(true);
     setErrorMsg(null);
-    getAllGroups(query)
+    getAllGroups({ filter: query })
       .then(({ data }) => {
         setAllGroupsData(data.data.data);
       })
@@ -62,17 +60,10 @@ const GroupsManagement = () => {
 
   useEffect(
     function onQueryUpdate() {
-      callGetAllUsers(query);
+      callGetAllGroups(query);
     },
-    [callGetAllUsers, query]
+    [callGetAllGroups, query]
   );
-
-  useEffect(() => {
-    setQuery(exstingQuery => ({
-      ...exstingQuery,
-      filtering: filter
-    }));
-  }, [filter]);
 
   const tableRows = useMemo(() => {
     return allGroupsData.map(item => {
@@ -86,13 +77,15 @@ const GroupsManagement = () => {
             canEdit={canEdit}
             dataType={DELETE_DATA_TYPE.GROUP}
             dataId={item.name}
+            title="Delete Group"
+            refreshData={() => callGetAllGroups(query)}
           />
         ),
         edit: <GroupsModal canEdit={canEdit} group={item} />,
         users: item.users.length
       };
     });
-  }, [allGroupsData]);
+  }, [allGroupsData, callGetAllGroups, query]);
 
   return (
     <div className={css.container}>

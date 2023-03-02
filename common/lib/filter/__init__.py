@@ -233,7 +233,7 @@ async def get_query_conditions(Table, token, conditions):
     return conditions
 
 
-async def filter_data_with_sqlalchemy(filter_obj, tenant, Table):
+async def filter_data_with_sqlalchemy(filter_obj, tenant, Table, allow_deleted=False):
     options = FilterModel.parse_obj(filter_obj)
     filter = options.filtering
     sorting = options.sorting
@@ -243,6 +243,8 @@ async def filter_data_with_sqlalchemy(filter_obj, tenant, Table):
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
             query = select(Table).filter(getattr(Table, "tenant") == tenant)
+            if not allow_deleted:
+                query = query.filter(getattr(Table, "deleted") == allow_deleted)
             if filter and filter.tokens:
                 if filter.operation == FilterOperation._and:
                     for token in filter.tokens:

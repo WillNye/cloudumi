@@ -155,7 +155,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
         showDialog={showDialog}
         setShowDialog={setShowDialog}
         disablePadding
-        header="Group Modal"
+        header="Edit Group Details"
         size="medium"
       >
         <div className={styles.content}>

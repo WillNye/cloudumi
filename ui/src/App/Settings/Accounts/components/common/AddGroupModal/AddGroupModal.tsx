@@ -58,13 +58,13 @@ export const AddGroupModal = () => {
 
   return (
     <div className={styles.container}>
-      <Button onClick={() => setShowDialog(true)}>Add New Group</Button>
+      <Button onClick={() => setShowDialog(true)}>Create Group</Button>
 
       <Dialog
         showDialog={showDialog}
         setShowDialog={setShowDialog}
         disablePadding
-        header="Add New Group"
+        header="Create Group"
         size="medium"
       >
         <div className={styles.content}>

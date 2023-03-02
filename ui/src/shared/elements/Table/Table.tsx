@@ -1,4 +1,4 @@
-import { Fragment, useMemo } from 'react';
+import { Fragment, useEffect, useMemo } from 'react';
 import classNames from 'classnames';
 import {
   useTable,
@@ -23,6 +23,7 @@ interface TableProps<T, D> {
   selectable?: boolean;
   isLoading?: boolean;
   showPagination?: boolean;
+  handleSelectRows?: (data: D[]) => void;
 }
 
 export const Table = <T, D>({
@@ -33,7 +34,8 @@ export const Table = <T, D>({
   border,
   selectable = false,
   isLoading = false,
-  showPagination = false
+  showPagination = false,
+  handleSelectRows
 }: TableProps<T, D>) => {
   const classes = classNames(styles.table, {
     [styles[spacing]]: spacing,
@@ -61,6 +63,7 @@ export const Table = <T, D>({
     gotoPage,
     nextPage,
     previousPage,
+    selectedFlatRows,
     state: { pageIndex }
   } = useTable(
     {
@@ -104,6 +107,14 @@ export const Table = <T, D>({
     }
   );
 
+  useEffect(() => {
+    handleSelectRows?.(selectedFlatRows);
+  }, [selectedFlatRows, handleSelectRows]);
+
+  const shouldShowPagination = useMemo(() => {
+    return showPagination && !isLoading && rows.length;
+  }, [showPagination, isLoading, rows]);
+
   return (
     <>
       <table {...getTableProps()} className={classes}>
@@ -146,7 +157,7 @@ export const Table = <T, D>({
           ))}
         </thead>
         {isLoading ? (
-          <tbody>
+          <tbody className={styles.loader}>
             <tr>
               <td colSpan={columns.length}>
                 <div className={styles.tableLoader}>
@@ -180,7 +191,7 @@ export const Table = <T, D>({
             })}
           </tbody>
         ) : (
-          <tbody>
+          <tbody className={styles.loader}>
             <tr>
               <td colSpan={columns.length}>
                 <div className={styles.tableEmpty}>
@@ -191,7 +202,8 @@ export const Table = <T, D>({
           </tbody>
         )}
       </table>
-      {showPagination && (
+      <br />
+      {shouldShowPagination && (
         <Pagination
           gotoPage={gotoPage}
           nextPage={nextPage}

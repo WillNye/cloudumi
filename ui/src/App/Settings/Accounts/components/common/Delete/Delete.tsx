@@ -13,10 +13,19 @@ interface DeleteProps {
   canEdit: boolean;
   dataType: DELETE_DATA_TYPE;
   dataId: string;
+  title: string;
+  refreshData: () => void;
 }
 
-const Delete: FC<DeleteProps> = ({ canEdit, dataType, dataId }) => {
+const Delete: FC<DeleteProps> = ({
+  canEdit,
+  dataType,
+  dataId,
+  title,
+  refreshData
+}) => {
   const [showDialog, setShowDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -25,6 +34,7 @@ const Delete: FC<DeleteProps> = ({ canEdit, dataType, dataId }) => {
   const handleOnSubmit = useCallback(async () => {
     setErrorMessage(null);
     setSuccessMessage(null);
+    setIsLoading(true);
     try {
       const deleteAction = isUser ? deleteUser : deleteGroup;
       const deleteKey = isUser ? 'email' : 'name';
@@ -32,6 +42,9 @@ const Delete: FC<DeleteProps> = ({ canEdit, dataType, dataId }) => {
         [deleteKey]: dataId
       });
       setSuccessMessage(`Successfully deleted ${dataType}: ${dataId}`);
+      setIsLoading(false);
+      setShowDialog(false);
+      refreshData();
     } catch (error) {
       const err = error as AxiosError;
       const errorRes = err?.response;
@@ -39,8 +52,9 @@ const Delete: FC<DeleteProps> = ({ canEdit, dataType, dataId }) => {
       setErrorMessage(
         errorMsg || `An error occurred while deleting ${dataType}: ${dataId}`
       );
+      setIsLoading(false);
     }
-  }, [dataId, isUser, dataType]);
+  }, [dataId, isUser, dataType, refreshData]);
 
   if (!canEdit) {
     return <Fragment />;
@@ -54,12 +68,15 @@ const Delete: FC<DeleteProps> = ({ canEdit, dataType, dataId }) => {
       <Dialog
         showDialog={showDialog}
         setShowDialog={setShowDialog}
-        header="Delete Modal"
+        header={title}
         disablePadding
         size="small"
       >
         <div className={styles.content}>
-          <div>{`Are you sure you want to delete this ${dataType}: ${dataId}?`}</div>
+          <div>
+            {`Are you sure you want to delete this ${dataType}: `}{' '}
+            <strong>{dataId}?</strong>
+          </div>
           <br />
           {errorMessage && (
             <Notification
@@ -79,14 +96,21 @@ const Delete: FC<DeleteProps> = ({ canEdit, dataType, dataId }) => {
           )}
           <br />
           <div className={styles.deleteActions}>
-            <Button color="error" onClick={handleOnSubmit} fullWidth>
-              Delete
+            <Button
+              className={styles.btn}
+              color="error"
+              onClick={handleOnSubmit}
+              fullWidth
+              disabled={isLoading}
+            >
+              {isLoading ? 'Deleting...' : 'Delete'}
             </Button>
             <Button
               color="secondary"
               variant="outline"
               onClick={() => setShowDialog(false)}
               fullWidth
+              disabled
             >
               Cancel
             </Button>
