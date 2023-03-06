@@ -22,14 +22,11 @@ const UsersManagement = () => {
       pageSize: 10
     },
     sorting: {
-      sorting: {
-        sortingColumn: {
-          id: 'id',
-          sortingField: 'id',
-          header: 'id',
-          minWidth: 180
-        },
-        sortingDescending: false
+      sortingColumn: {
+        id: 'id',
+        sortingField: 'id',
+        header: 'id',
+        minWidth: 180
       },
       sortingDescending: false
     },
