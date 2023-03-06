@@ -357,7 +357,36 @@ class TenantSlackApp:
             self.handle_approve_request_action
         )
 
+        self.tenant_slack_app.options("select_aws_predefined_policies")(
+            self.handle_select_aws_predefined_policy_options
+        )
+
+        self.tenant_slack_app.action("select_aws_predefined_policies")(
+            self.handle_select_aws_predefined_policies_action
+        )
+
         return self.tenant_slack_app
+
+    async def handle_select_aws_predefined_policies_action(self, ack, body):
+        # TODO: Get slack message and update it?
+        await ack()
+
+    async def handle_select_aws_predefined_policy_options(self, ack, body):
+        options = []
+        options.append(
+            {
+                "text": {
+                    "type": "plain_text",
+                    "text": "s3_list_access",
+                },
+                # Warning: Slack docs specify the max length of options value is 75 characters
+                # but it is actually larger. Slack will not give you an error if this is exceeded,
+                # and you will be left wandering aimlessly in the abyss.
+                "value": "s3_list_access",
+            }
+        )
+        res = await ack({"options": options})
+        # return await self.workflows.get_aws_predefined_policy_options(body)
 
     async def handle_generic_ack(self, ack):
         await ack()
@@ -883,7 +912,7 @@ class TenantSlackApp:
 
         # Render step 2 conditionally based on the selected option
         if selected_option == "select_predefined_policy":
-            blocks = ""
+            blocks = self.workflows.select_predefined_policy_blocks()
         elif selected_option == "update_inline_policies":
             blocks = self.workflows.select_desired_permissions_blocks()
         elif selected_option == "update_managed_policies":
@@ -1385,10 +1414,11 @@ class TenantSlackApp:
 #   effect:
 #     - Allow
 #   resource:
-#    {{NOQ::AWS::S3::Bucket/Bucket_Name}}
+#    {{NOQ::AWS::S3::Bucket/bucket_name}}
 #   condition:
 #     stringlike:
-#       - {{NOQ::AWS::S3::Bucket/Bucket_Name}}/*
+#       - {{NOQ::AWS::S3::Bucket/bucket_name}}/*
+#       - # alternatively {{?}}
 
 # template_type: NOQ::AWS::PolicyTemplate
 # identifier: self_role_assumption

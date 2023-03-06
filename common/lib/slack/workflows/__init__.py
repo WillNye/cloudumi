@@ -801,6 +801,95 @@ class SlackWorkflows:
 
         return elements
 
+    def select_predefined_policy_blocks(
+        self,
+        selected_identities=None,
+        selected_predefined_policy=None,
+        selected_resources=None,
+        selected_permissions=None,
+        selected_duration=None,
+        justification=None,
+        request_id=None,
+        update=False,
+    ):
+        submit_verbiage = "Create my request" if not update else "Update request"
+
+        elements = []
+
+        select_identities_block = {
+            "type": "section",
+            "block_id": "select_identities",
+            "text": {"type": "mrkdwn", "text": "*Identities*"},
+            "accessory": {
+                "action_id": "select_identities_action",
+                "type": "multi_external_select",
+                "placeholder": {"type": "plain_text", "text": "Select identities"},
+                "min_query_length": 3,
+            },
+        }
+
+        if selected_identities:
+            select_identities_block["accessory"][
+                "initial_options"
+            ] = selected_identities
+        elements.append(select_identities_block)
+
+        selected_predefined_policy_block = {
+            "type": "section",
+            "block_id": "select_aws_predefined_policies",
+            "text": {"type": "mrkdwn", "text": "*Services*"},
+            "accessory": {
+                "action_id": "select_aws_predefined_policies",
+                "type": "multi_external_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select Pre-defined Policies",
+                },
+                "min_query_length": 1,
+            },
+        }
+        if selected_predefined_policy:
+            selected_predefined_policy_block["accessory"][
+                "initial_options"
+            ] = selected_predefined_policy
+        elements.append(selected_predefined_policy_block)
+
+        duration_block = self.get_duration_block(selected_duration)
+
+        elements.append(duration_block)
+
+        justification_block = self.get_justification_block(justification)
+        elements.append(justification_block)
+
+        create_update_request_str = "create_cloud_predefined_policy_request"
+        if update:
+            create_update_request_str = (
+                f"update_cloud_predefined_policy_request/{request_id}"
+            )
+
+        elements.append(
+            {
+                "type": "actions",
+                "block_id": "create_button_block",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": submit_verbiage,
+                            "emoji": True,
+                        },
+                        "value": create_update_request_str,  # "request_cloud_permissions_to_resources",
+                        "action_id": create_update_request_str,  # "request_cloud_permissions_to_resources",
+                    }
+                ],
+            }
+        )
+
+        elements.append(self.get_cancel_button_block())
+
+        return elements
+
     def select_desired_permissions_blocks(
         self,
         selected_identities=None,
