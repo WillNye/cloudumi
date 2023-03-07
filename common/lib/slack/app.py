@@ -365,6 +365,14 @@ class TenantSlackApp:
             self.handle_select_aws_predefined_policies_action
         )
 
+        self.tenant_slack_app.action("create_update_tag_request")(
+            self.handle_create_update_tag_request_action
+        )
+
+        self.tenant_slack_app.action(re.compile(r"^create_update_tag_request/.*"))(
+            self.handle_create_update_tag_request_action
+        )
+
         return self.tenant_slack_app
 
     async def handle_select_aws_predefined_policies_action(self, ack, body):
@@ -918,7 +926,7 @@ class TenantSlackApp:
         elif selected_option == "update_managed_policies":
             blocks = ""
         elif selected_option == "update_tags":
-            blocks = self.workflows.generate_update_or_remove_tags_message()
+            blocks = self.workflows.generate_update_or_remove_tags_blocks()
         else:
             raise Exception("Invalid option selected")
         await ack(response_action="update", blocks=blocks)
@@ -1141,6 +1149,203 @@ class TenantSlackApp:
             )
         await ack(options=options)
 
+    async def handle_create_update_tag_request_action(
+        self,
+        body,
+        client,
+        logger,
+        respond,
+    ):
+
+        state = body["state"]
+        iambic_aws_accounts = await retrieve_json_data_from_redis_or_s3(
+            redis_key=self.tenant_config.iambic_aws_accounts,
+            tenant=self.tenant,
+        )
+        reverse_hash_for_arns = await retrieve_json_data_from_redis_or_s3(
+            redis_key=self.tenant_config.iambic_hash_arn_redis_key,
+            tenant=self.tenant,
+        )
+        justification = state["values"]["justification"]["justification"]["value"]
+        iambic = IambicGit(self.tenant)
+        username = body["user"]["username"]
+        update = False
+        request_id = None
+        duration = None
+        actions = body["actions"][0]["value"]
+        if actions.startswith("create_update_tag_request/"):
+            update = True
+            request_id = actions.split("create_update_tag_request/")[1]
+        user_info = await client.users_info(user=body["user"]["id"])
+        user_email = user_info["user"]["profile"]["email"]
+        selected_identities = state["values"]["select_identities"][
+            "select_identities_action"
+        ]["selected_options"]
+
+        tag_action: str = state["values"]["tag_action"]["tag_action"][
+            "selected_option"
+        ]["value"]
+
+        if tag_action not in ["create_update", "remove"]:
+            raise Exception("Invalid tag action")
+
+        tag_key: str = state["values"]["tag_key_input"]["tag_key_input"]["value"]
+        tag_value: str = (
+            state["values"]
+            .get("tag_value_input", {})
+            .get("tag_value_input", {})
+            .get("value")
+        )
+
+        justification: str = state["values"]["justification"]["justification"]["value"]
+        template_type = None
+        template_changes = {}
+        resources = defaultdict(list)
+        for identity in selected_identities:
+            identity_hash = identity["value"]
+
+            identity_info = reverse_hash_for_arns[identity_hash]
+            repo_relative_file_path = identity_info["repo_relative_file_path"]
+            template = template_changes.get(repo_relative_file_path, None)
+            if template:
+                template = template.template
+            arn = identity_info["arn"]
+            account_id = arn.split(":")[4]
+            account_name = account_id
+            for account in iambic_aws_accounts:
+                if account["account_id"] == account_id:
+                    account_name = account["account_name"]
+                    break
+            template_type = identity_info["template_type"]
+            repo_name = identity_info["repo_name"]
+            if template_type == "NOQ::AWS::IAM::Role":
+                template = await iambic.aws_iam_role_add_update_remove_tag(
+                    template_type,
+                    repo_name,
+                    repo_relative_file_path,
+                    user_email,
+                    tag_action,
+                    tag_key,
+                    tag_value,
+                    [account_name],
+                    existing_template=template,
+                )
+                resources[template_type].append(template.identifier)
+            template_changes[repo_relative_file_path] = IambicTemplateChange(
+                path=repo_relative_file_path,
+                body=template.get_body(exclude_unset=False),
+                template=template,
+            )
+        if not template_changes:
+            await respond(
+                response_action="errors",
+                errors={
+                    "select_resources": "You must select at least one resource to request access to"
+                },
+            )
+            return
+        request_notes = yaml.dump(
+            {
+                "justification": justification,
+                "slack_username": username,
+                "slack_email": user_email,
+                "selected_identities": selected_identities,
+                "tag_action": tag_action,
+                "tag_key": tag_key,
+                "tag_value": tag_value,
+                "template_type": template_type,
+            }
+        )
+        reviewers = "engineering@noq.dev"
+        channel_id = "C045MFZ2A10"
+
+        db_tenant = await Tenant.get_by_name(self.tenant)
+        if not db_tenant:
+            raise Exception("Tenant not found")
+        if update:
+            res = await update_request(
+                db_tenant,
+                request_id,
+                user_email,
+                [],
+                justification=justification,
+                changes=list(template_changes.values()),
+                request_notes=request_notes,
+            )
+
+            full_request = res["request"]
+            friendly_request = res["friendly_request"]
+        else:
+            res = await create_request(
+                db_tenant,
+                user_email,
+                justification,
+                list(template_changes.values()),
+                request_method="SLACK",
+                slack_username=username,
+                slack_email=user_email,
+                duration=duration,
+                resource_type=template_type,
+                request_notes=request_notes,
+            )
+            full_request = res["request"]
+            friendly_request = res["friendly_request"]
+
+        pr_url = friendly_request["pull_request_url"]
+
+        slack_message_to_reviewers = (
+            self.workflows.self_service_permissions_review_blocks(
+                username,
+                resources,
+                duration,
+                reviewers,
+                justification,
+                pr_url,
+                full_request.branch_name,
+                full_request.id,
+                user_email,
+            )
+        )
+
+        user_id = body["user"]["id"]
+        if update:
+            res = await client.chat_update(
+                channel=full_request.slack_channel_id,
+                ts=full_request.slack_message_id,
+                text="An access request is awaiting your review. (Updated)",
+                blocks=slack_message_to_reviewers,
+            )
+        else:
+            await client.chat_postMessage(
+                channel=user_id,
+                text=(
+                    "Your request has been successfully submitted. "
+                    f"Click the link below to view more details: {pr_url}"
+                ),
+            )
+
+            res = await client.chat_postMessage(
+                channel=channel_id,
+                blocks=slack_message_to_reviewers,
+                text="An access request is awaiting your review.",
+            )
+            full_request.slack_channel_id = res["channel"]
+            full_request.slack_message_id = res["ts"]
+            full_request.pull_requesturl = pr_url
+            await full_request.write()
+
+        permalink_res = await client.chat_getPermalink(
+            channel=full_request.slack_channel_id,
+            message_ts=full_request.slack_message_id,
+        )
+        permalink = permalink_res["permalink"]
+        await respond(
+            replace_original=True,
+            blocks=self.workflows.get_self_service_submission_success_blocks(
+                permalink, updated=update
+            ),
+        )
+
     async def handle_request_cloud_permissions_to_resources(
         self,
         body,
@@ -1307,7 +1512,6 @@ class TenantSlackApp:
             )
             full_request = res["request"]
             friendly_request = res["friendly_request"]
-            # branch_name  = await request_pr.create_request(justification, template_changes, request_notes=request_notes)
 
         pr_url = friendly_request["pull_request_url"]
 

@@ -510,6 +510,15 @@ class SlackWorkflows:
             "element": {
                 "type": "static_select",
                 "options": [
+                    # TODO: 5 minutes is for quick testing, remove
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "5 Minutes",
+                            "emoji": True,
+                        },
+                        "value": "in 5 minutes",
+                    },
                     {
                         "text": {"type": "plain_text", "text": "1 Hour", "emoji": True},
                         "value": "in 1 hour",
@@ -1010,81 +1019,7 @@ class SlackWorkflows:
 
         elements.append(desired_permissions_block)
 
-        duration_block = {
-            "type": "input",
-            "block_id": "duration",
-            "element": {
-                "type": "static_select",
-                "options": [
-                    {
-                        "text": {"type": "plain_text", "text": "1 Hour", "emoji": True},
-                        "value": "in 1 hour",
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "2 Hours",
-                            "emoji": True,
-                        },
-                        "value": "in 2 hours",
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "4 Hours",
-                            "emoji": True,
-                        },
-                        "value": "in 4 hours",
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "8 Hours",
-                            "emoji": True,
-                        },
-                        "value": "in 8 hours",
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "24 Hours",
-                            "emoji": True,
-                        },
-                        "value": "in 1 day",
-                    },
-                    {
-                        "text": {"type": "plain_text", "text": "3 Days", "emoji": True},
-                        "value": "in 3 days",
-                    },
-                    {
-                        "text": {"type": "plain_text", "text": "1 Week", "emoji": True},
-                        "value": "in 1 Week",
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "1 Month",
-                            "emoji": True,
-                        },
-                        "value": "in 1 Month",
-                    },
-                    {
-                        "text": {"type": "plain_text", "text": "Never", "emoji": True},
-                        "value": "no_expire",
-                    },
-                ],
-                "action_id": "duration",
-            },
-            "label": {"type": "plain_text", "text": "Expiration", "emoji": True},
-        }
-
-        if selected_duration:
-            selected_block = None
-            for block in duration_block["element"]["options"]:
-                if block["value"] == selected_duration:
-                    selected_block = block
-                    break
-            duration_block["element"]["initial_option"] = selected_block
+        duration_block = self.get_duration_block(selected_duration)
 
         elements.append(duration_block)
 
@@ -1145,122 +1080,143 @@ class SlackWorkflows:
 
         return elements
 
-    def generate_update_or_remove_tags_message(self):
-        return {
-            "type": "modal",
-            "callback_id": "request_update_or_remove_tags",
-            "title": {"type": "plain_text", "text": "Tag Management", "emoji": True},
-            "submit": {"type": "plain_text", "text": "Submit", "emoji": True},
-            "close": {"type": "plain_text", "text": "Cancel", "emoji": True},
-            "blocks": [
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "Select one or more cloud identities to update tags:",
-                    },
+    def generate_update_or_remove_tags_blocks(
+        self,
+        update: bool = False,
+        request_id: Optional[str] = None,
+    ):
+        blocks = [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Select one or more cloud identities to update tags:",
                 },
-                {
-                    "type": "section",
-                    "block_id": "select_identities",
-                    "text": {"type": "mrkdwn", "text": "*Identities*"},
-                    "accessory": {
-                        "action_id": "select_identities_action",
-                        "type": "multi_external_select",
-                        "placeholder": {
-                            "type": "plain_text",
-                            "text": "Select identities",
-                        },
-                        "min_query_length": 3,
-                    },
-                },
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "Do you want to add/update or remove tags?",
-                    },
-                },
-                {
-                    "type": "input",
-                    "block_id": "tag_action",
-                    "element": {
-                        "type": "radio_buttons",
-                        "action_id": "tag_action",
-                        "options": [
-                            {
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": "Add/Update",
-                                    "emoji": True,
-                                },
-                                "value": "add_update",
-                            },
-                            {
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": "Remove",
-                                    "emoji": True,
-                                },
-                                "value": "remove",
-                            },
-                        ],
-                    },
-                    "label": {
+            },
+            {
+                "type": "section",
+                "block_id": "select_identities",
+                "text": {"type": "mrkdwn", "text": "*Identities*"},
+                "accessory": {
+                    "action_id": "select_identities_action",
+                    "type": "multi_external_select",
+                    "placeholder": {
                         "type": "plain_text",
-                        "text": "Tag Action",
+                        "text": "Select identities",
+                    },
+                    "min_query_length": 3,
+                },
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Do you want to add/update or remove tags?",
+                },
+            },
+            {
+                "type": "input",
+                "block_id": "tag_action",
+                "element": {
+                    "type": "radio_buttons",
+                    "action_id": "tag_action",
+                    "options": [
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Add/Update",
+                                "emoji": True,
+                            },
+                            "value": "create_update",
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Remove",
+                                "emoji": True,
+                            },
+                            "value": "remove",
+                        },
+                    ],
+                },
+                "label": {
+                    "type": "plain_text",
+                    "text": "Tag Action",
+                    "emoji": True,
+                },
+            },
+            {
+                "type": "input",
+                "block_id": "tag_key_input",
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "tag_key_input",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Enter the Tag Key",
                         "emoji": True,
                     },
                 },
-                {
-                    "type": "input",
-                    "block_id": "tag_key_input",
-                    "element": {
-                        "type": "plain_text_input",
-                        "action_id": "tag_key_input",
-                        "placeholder": {
-                            "type": "plain_text",
-                            "text": "Enter the Tag Key",
-                            "emoji": True,
-                        },
-                    },
-                    "label": {"type": "plain_text", "text": "Tag Key", "emoji": True},
-                },
-                {
-                    "type": "input",
-                    "block_id": "tag_value_input",
-                    "element": {
-                        "type": "plain_text_input",
-                        "action_id": "tag_value_input",
-                        "placeholder": {
-                            "type": "plain_text",
-                            "text": "Enter the Tag Value",
-                            "emoji": True,
-                        },
-                    },
-                    "label": {"type": "plain_text", "text": "Tag Value", "emoji": True},
-                    "optional": True,
-                },
-                {
-                    "type": "input",
-                    "block_id": "justification",
-                    "element": {
-                        "type": "plain_text_input",
-                        "multiline": True,
-                        "action_id": "justification",
-                        "placeholder": {
-                            "type": "plain_text",
-                            "text": "I need access for...",
-                        },
-                    },
-                    "label": {
+                "label": {"type": "plain_text", "text": "Tag Key", "emoji": True},
+            },
+            {
+                "type": "input",
+                "block_id": "tag_value_input",
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "tag_value_input",
+                    "placeholder": {
                         "type": "plain_text",
-                        "text": "Justification",
+                        "text": "Enter the Tag Value",
                         "emoji": True,
                     },
                 },
-            ],
-        }
+                "label": {"type": "plain_text", "text": "Tag Value", "emoji": True},
+                "optional": True,
+            },
+            {
+                "type": "input",
+                "block_id": "justification",
+                "element": {
+                    "type": "plain_text_input",
+                    "multiline": True,
+                    "action_id": "justification",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "I need access for...",
+                    },
+                },
+                "label": {
+                    "type": "plain_text",
+                    "text": "Justification",
+                    "emoji": True,
+                },
+            },
+        ]
+        create_update_request_str = "create_update_tag_request"
+        if update:
+            create_update_request_str = f"create_update_tag_request/{request_id}"
+
+        blocks.append(
+            {
+                "type": "actions",
+                "block_id": "create_button_block",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Create Request",
+                            "emoji": True,
+                        },
+                        "value": create_update_request_str,
+                        "action_id": create_update_request_str,
+                    }
+                ],
+            }
+        )
+        blocks.append(self.get_cancel_button_block())
+        return blocks
 
     def self_service_request_permissions_step_2_option_selection(self):
         return [

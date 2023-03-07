@@ -19,6 +19,7 @@ from iambic.plugins.v0_1_0.aws.iam.policy.models import PolicyDocument, PolicySt
 from iambic.plugins.v0_1_0.aws.identity_center.permission_set.models import (
     PermissionSetAccess,
 )
+from iambic.plugins.v0_1_0.aws.models import Tag
 from iambic.plugins.v0_1_0.google.group.models import GroupMember
 from iambic.plugins.v0_1_0.okta.group.models import UserSimple
 from iambic.plugins.v0_1_0.okta.models import Assignment
@@ -375,6 +376,64 @@ class IambicGit:
             new_access_rule.expires_at = f"{duration}"
 
         template.access_rules.append(new_access_rule)
+        return template
+
+    async def aws_iam_role_add_update_remove_tag(
+        self,
+        template_type: str,
+        repo_name: str,
+        file_path: str,
+        user_email: dict,
+        tag_action: str,
+        tag_key: str,
+        tag_value: str,
+        included_accounts: list[str],
+        excluded_accounts: list[str] = [],
+        duration: str = None,
+        existing_template: Optional[BaseTemplate] = None,
+    ):
+        if template_type != "NOQ::AWS::IAM::Role":
+            raise Exception("Template type is not an AWS IAM Role")
+        templates = await self.retrieve_iambic_template(repo_name, file_path)
+        if not templates:
+            raise Exception("Template not found")
+        if existing_template:
+            template = existing_template
+        else:
+            template = templates[0]
+        if template.template_type != template_type:
+            raise Exception("Template type does not match")
+        if duration and duration != "no_expire":
+            policy_document.expires_at = f"{duration}"
+        updated = False
+        to_remove = []
+        if template.properties.tags:
+            for tag in template.properties.tags:
+                if tag.key != tag_key:
+                    continue
+                if sorted(included_accounts) != sorted(tag.included_accounts):
+                    continue
+                if sorted(excluded_accounts) != sorted(tag.excluded_accounts):
+                    continue
+
+                if tag_action == "create_update":
+                    tag.value = tag_value
+                    updated = True
+                elif tag_action == "remove":
+                    to_remove.append(tag)
+        for tag in to_remove:
+            template.properties.tags.remove(tag)
+            updated = True
+        if tag_action == "create_update" and not updated:
+            new_tag = Tag(
+                key=tag_key,
+                value=tag_value,
+                included_accounts=included_accounts,
+                excluded_accounts=excluded_accounts,
+            )
+            if not template.properties.tags:
+                template.properties.tags = []
+            template.properties.tags.append(new_tag)
         return template
 
     async def aws_iam_role_add_inline_policy(
