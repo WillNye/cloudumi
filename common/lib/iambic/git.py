@@ -117,7 +117,9 @@ class IambicGit:
             # TODO: Need to have assume role access and ability to read secret
             # for Iambic config and templates to load
             config_template = await load_config_template(
-                config_template_path, sparse=True
+                config_template_path,
+                configure_plugins=False,
+                approved_plugins_only=True,
             )
             template_paths = await gather_templates(repo_path)
             self.templates = load_templates(template_paths)
@@ -407,8 +409,9 @@ class IambicGit:
             template = templates[0]
         if template.template_type != template_type:
             raise Exception("Template type does not match")
-        if duration and duration != "no_expire":
-            policy_document.expires_at = f"{duration}"
+        # TODO: Handle tag expiry
+        # if duration and duration != "no_expire":
+        #     policy_document.expires_at = f"{duration}"
         updated = False
         to_remove = []
         if template.properties.tags:

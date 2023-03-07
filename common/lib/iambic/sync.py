@@ -60,7 +60,11 @@ async def get_config_data_for_repo(tenant: Tenant):
     # Todo: This fails the entire celery task, if it fails for just one tenant.
 
     config_template_path = await resolve_config_template_path(iambic_repo.file_path)
-    return await load_config_template(config_template_path)
+    return await load_config_template(
+        config_template_path,
+        configure_plugins=False,
+        approved_plugins_only=True,
+    )
 
 
 def get_role_arn(account_id: str, role_name: str) -> str:
