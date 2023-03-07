@@ -15,7 +15,11 @@ from iambic.core.parser import load_templates
 
 # TODO: Still need to get Iambic installed in the SaaS. This is a localhost hack.
 from iambic.core.utils import gather_templates
-from iambic.plugins.v0_1_0.aws.iam.policy.models import PolicyDocument, PolicyStatement
+from iambic.plugins.v0_1_0.aws.iam.policy.models import (
+    ManagedPolicyDocument,
+    PolicyDocument,
+    PolicyStatement,
+)
 from iambic.plugins.v0_1_0.aws.identity_center.permission_set.models import (
     PermissionSetAccess,
 )
@@ -128,6 +132,7 @@ class IambicGit:
             aws_account_specific_template_types = {
                 "NOQ::AWS::IAM::Role",
                 "NOQ::AWS::IAM::Group",
+                "NOQ::AWS::IAM::ManagedPolicy",
                 "NOQ::AWS::IAM::ManagedPolicy",
                 "NOQ::AWS::IAM::User",
             }
@@ -441,6 +446,60 @@ class IambicGit:
             if not template.properties.tags:
                 template.properties.tags = []
             template.properties.tags.append(new_tag)
+        return template
+
+    async def aws_iam_managed_policy_add_policy_statement(
+        self,
+        template_type: str,
+        repo_name: str,
+        file_path: str,
+        user_email: dict,
+        duration: str,
+        all_aws_actions: list[str],
+        selected_resources: list[str],
+        account_name: str,
+        existing_template: Optional[BaseTemplate] = None,
+    ):
+        # await self.clone_or_pull_git_repos()
+        if template_type != "NOQ::AWS::IAM::ManagedPolicy":
+            raise Exception("Template type is not an AWS IAM Managed Policy")
+        templates = await self.retrieve_iambic_template(repo_name, file_path)
+        if not templates:
+            raise Exception("Template not found")
+        if existing_template:
+            template = existing_template
+        else:
+            template = templates[0]
+        if template.template_type != template_type:
+            raise Exception("Template type does not match")
+
+        statement = PolicyStatement(
+            effect="Allow",
+            action=all_aws_actions,
+            resource=selected_resources,
+        )
+
+        if duration and duration != "no_expire":
+            statement.expires_at = f"{duration}"
+
+        existing_policy_document = template.properties.policy_document
+        if not existing_policy_document:
+            existing_policy_document = ManagedPolicyDocument()
+        # if isinstance(existing_policy_document, ManagedPolicyDocument):
+        #     existing_policy_document = [existing_policy_document]
+        appended_to_existing_policy = False
+        for existing_statement in template.properties.policy_document.statement:
+            if not (
+                existing_statement == statement
+                and existing_statement.expires_at == statement.expires_at
+            ):
+                continue
+            statement.included_accounts.append(account_name)
+            statement.included_accounts = sorted(list(set(statement.included_accounts)))
+            appended_to_existing_policy = True
+        if not appended_to_existing_policy:
+            statement.included_accounts = [account_name]
+        template.properties.policy_document.statement.append(statement)
         return template
 
     async def aws_iam_role_add_inline_policy(

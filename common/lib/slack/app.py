@@ -393,7 +393,7 @@ class TenantSlackApp:
                 "value": "s3_list_access",
             }
         )
-        res = await ack({"options": options})
+        await ack({"options": options})
         # return await self.workflows.get_aws_predefined_policy_options(body)
 
     async def handle_generic_ack(self, ack):
@@ -924,7 +924,7 @@ class TenantSlackApp:
         elif selected_option == "update_inline_policies":
             blocks = self.workflows.select_desired_permissions_blocks()
         elif selected_option == "update_managed_policies":
-            blocks = ""
+            blocks = self.workflows.select_desired_permissions_blocks()
         elif selected_option == "update_tags":
             blocks = self.workflows.generate_update_or_remove_tags_blocks()
         else:
@@ -1451,6 +1451,18 @@ class TenantSlackApp:
                     # are captured in a single template
                 )
                 resources[template_type].append(template.identifier)
+            elif template_type == "NOQ::AWS::IAM::ManagedPolicy":
+                template = await iambic.aws_iam_managed_policy_add_policy_statement(
+                    template_type,
+                    repo_name,
+                    repo_relative_file_path,
+                    user_email,
+                    duration,
+                    all_aws_actions,
+                    selected_resources,
+                    account_name,
+                    existing_template=template,
+                )
             template_changes[repo_relative_file_path] = IambicTemplateChange(
                 path=repo_relative_file_path,
                 body=template.get_body(exclude_unset=False),
