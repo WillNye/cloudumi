@@ -504,6 +504,14 @@ class SlackWorkflows:
         return select_accounts_block
 
     def get_duration_block(self, duration=None):
+        blocks = []
+
+        blocks.append(
+            {
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": "How long do you need it for?"},
+            }
+        )
         duration_block = {
             "type": "input",
             "block_id": "duration",
@@ -592,7 +600,8 @@ class SlackWorkflows:
                     selected_block = block
                     break
             duration_block["element"]["initial_option"] = selected_block
-        return duration_block
+        blocks.append(duration_block)
+        return blocks
 
     def get_select_resources_block(self, resource_type, selected_resources=None):
         friendly_resource_type_name = FRIENDLY_RESOURCE_TYPE_NAMES.get(
@@ -695,15 +704,8 @@ class SlackWorkflows:
         select_accounts_block = self.get_select_aws_accounts_block(selected_accounts)
         elements.append(select_accounts_block)
 
-        elements.append(
-            {
-                "type": "section",
-                "text": {"type": "mrkdwn", "text": "How long do you need it for?"},
-            }
-        )
-
         duration_block = self.get_duration_block(duration)
-        elements.append(duration_block)
+        elements.extend(duration_block)
         justification_block = self.get_justification_block(justification)
         elements.append(justification_block)
 
@@ -766,15 +768,8 @@ class SlackWorkflows:
         )
         elements.append(select_resources_block)
 
-        elements.append(
-            {
-                "type": "section",
-                "text": {"type": "mrkdwn", "text": "How long do you need it for?"},
-            }
-        )
-
         duration_block = self.get_duration_block(duration)
-        elements.append(duration_block)
+        elements.extend(duration_block)
         elements.append(
             {
                 "type": "section",
@@ -865,7 +860,7 @@ class SlackWorkflows:
 
         duration_block = self.get_duration_block(selected_duration)
 
-        elements.append(duration_block)
+        elements.extend(duration_block)
 
         justification_block = self.get_justification_block(justification)
         elements.append(justification_block)
@@ -1021,7 +1016,7 @@ class SlackWorkflows:
 
         duration_block = self.get_duration_block(selected_duration)
 
-        elements.append(duration_block)
+        elements.extend(duration_block)
 
         justification_block = {
             "type": "input",

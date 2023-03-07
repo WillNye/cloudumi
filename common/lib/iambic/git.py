@@ -283,7 +283,11 @@ class IambicGit:
             if not os.path.exists(full_path):
                 continue
             config_template_path = await resolve_config_template_path(repo_path)
-            await load_config_template(config_template_path, sparse=True)
+            await load_config_template(
+                config_template_path,
+                configure_plugins=False,
+                approved_plugins_only=True,
+            )
             return load_templates([full_path])
         raise Exception("Template not found")
 
