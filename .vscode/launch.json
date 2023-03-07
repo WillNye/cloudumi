@@ -257,7 +257,8 @@
         "RUNTIME_PROFILE": "API",
         "HTTP_PROXY": "http://localhost:8080",
         "HTTPS_PROXY": "http://localhost:8080",
-        "AWS_CA_BUNDLE": "/usr/local/share/ca-certificates/burpsuite.crt"
+        "AWS_CA_BUNDLE": "/usr/local/share/ca-certificates/burpsuite.crt",
+        "REQUESTS_CA_BUNDLE": "/usr/local/share/ca-certificates/burpsuite.crt"
       }
     }
   ]
