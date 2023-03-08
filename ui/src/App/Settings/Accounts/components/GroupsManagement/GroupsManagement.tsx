@@ -8,15 +8,14 @@ import css from './GroupsManagement.module.css';
 import Delete from '../common/Delete';
 import GroupsModal from '../common/EditGroupsModal';
 import { extractErrorMessage } from 'core/API/utils';
-import { PropertyFilterProps } from '@noqdev/cloudscape/property-filter';
 import { getAllGroups } from 'core/API/settings';
 import AddGroupModal from '../common/AddGroupModal/AddGroupModal';
-import { Badge } from '@noqdev/cloudscape';
 import { Group } from '../../types';
 
 const GroupsManagement = () => {
   const [allGroupsData, setAllGroupsData] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [pageCount, setPageCount] = useState(1);
   const [errorMsg, setErrorMsg] = useState(null);
 
   const [query, setQuery] = useState({
@@ -55,11 +54,27 @@ const GroupsManagement = () => {
       });
   }, []);
 
+  const handleOnPageChange = useCallback(
+    (newPageIndex: number) => {
+      const newQuery = {
+        ...query,
+        pagination: {
+          ...query.pagination,
+          currentPageIndex: newPageIndex
+        }
+      };
+      callGetAllGroups(newQuery);
+      setQuery(newQuery);
+    },
+    [callGetAllGroups, query]
+  );
+
   useEffect(
     function onQueryUpdate() {
       callGetAllGroups(query);
     },
-    [callGetAllGroups, query]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   const tableRows = useMemo(() => {
@@ -95,8 +110,11 @@ const GroupsManagement = () => {
           data={tableRows}
           columns={groupsTableColumns}
           border="row"
-          selectable
           isLoading={isLoading}
+          totalCount={pageCount}
+          pageSize={query.pagination.pageSize}
+          pageIndex={query.pagination.currentPageIndex}
+          handleOnPageChange={handleOnPageChange}
           showPagination
         />
       </div>

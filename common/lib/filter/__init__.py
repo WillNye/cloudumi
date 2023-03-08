@@ -281,16 +281,17 @@ async def filter_data_with_sqlalchemy(filter_obj, tenant, Table, allow_deleted=F
                     else getattr(Table, sorting.sortingColumn.sortingField).asc()
                 )
 
+            filtered_count_query = query.with_only_columns(func.count()).order_by(None)
+            filtered_count = await session.execute(filtered_count_query)
+            filtered_count = filtered_count.scalar()
+            pages = math.ceil(filtered_count / pagination.pageSize)
+
             if pagination and pagination.pageSize and pagination.currentPageIndex:
                 query = query.offset(
                     (pagination.currentPageIndex - 1) * pagination.pageSize
                 ).limit(pagination.pageSize)
             res = await session.execute(query)
 
-            filtered_count_query = query.with_only_columns(func.count()).order_by(None)
-            filtered_count = await session.execute(filtered_count_query)
-            filtered_count = filtered_count.scalar()
-            pages = math.ceil(filtered_count / pagination.pageSize)
             return PaginatedQueryResponse(
                 filtered_count=filtered_count,
                 pages=pages,

@@ -1,51 +1,70 @@
-import { FC } from 'react';
+import { FC, useCallback, useMemo } from 'react';
 import { Input } from 'shared/form/Input';
 import { Button } from '../Button';
 import styles from './Pagination.module.css';
+
 export interface PaginationProps {
-  gotoPage: (page: number) => void;
-  previousPage: () => void;
-  nextPage: () => void;
-  canPreviousPage: boolean;
-  canNextPage: boolean;
-  pageCount: number;
-  pageIndex: number;
-  pageOptions: number[];
+  pageSize?: number;
+  pageIndex?: number;
+  totalCount?: number;
+  handleOnPageChange?: (page: number) => void;
 }
 
 export const Pagination: FC<PaginationProps> = ({
-  gotoPage,
-  previousPage,
-  nextPage,
-  canPreviousPage,
-  canNextPage,
-  pageCount,
-  pageIndex,
-  pageOptions
+  handleOnPageChange,
+  totalCount = 1,
+  pageIndex = 1,
+  pageSize = 30
 }) => {
+  const pageCount = useMemo(
+    () => Math.ceil(totalCount / pageSize),
+    [totalCount, pageSize]
+  );
+
+  const canNextPage = useMemo(
+    () => pageIndex >= pageCount,
+    [pageCount, pageIndex]
+  );
+  const canPreviousPage = useMemo(() => pageIndex <= 1, [pageIndex]);
+
+  const gotoPage = useCallback(
+    page => {
+      handleOnPageChange?.(page);
+    },
+    [handleOnPageChange]
+  );
+
+  const previousPage = useCallback(() => {
+    handleOnPageChange?.(pageIndex - 1);
+  }, [handleOnPageChange, pageIndex]);
+
+  const nextPage = useCallback(() => {
+    handleOnPageChange?.(pageIndex + 1);
+  }, [handleOnPageChange, pageIndex]);
+
   return (
     <div className={styles.pagination}>
       <Button
         className={styles.btn}
         size="small"
         onClick={() => gotoPage(1)}
-        disabled={!canPreviousPage}
+        disabled={canPreviousPage}
       >
         {'<<'}
       </Button>
       <Button
         className={styles.btn}
         size="small"
-        onClick={() => previousPage()}
-        disabled={!canPreviousPage}
+        onClick={previousPage}
+        disabled={canPreviousPage}
       >
         Previous
       </Button>
       <Button
         className={styles.btn}
         size="small"
-        onClick={() => nextPage()}
-        disabled={!canNextPage}
+        onClick={nextPage}
+        disabled={canNextPage}
       >
         Next
       </Button>
@@ -53,14 +72,14 @@ export const Pagination: FC<PaginationProps> = ({
         className={styles.btn}
         size="small"
         onClick={() => gotoPage(pageCount)}
-        disabled={!canNextPage}
+        disabled={canNextPage}
       >
         {'>>'}
       </Button>
       <span>
         Page
         <strong>
-          {pageIndex + 1} of {pageOptions.length}
+          {pageIndex} of {pageCount}
         </strong>
       </span>
       <span className={styles.text}>
@@ -70,16 +89,16 @@ export const Pagination: FC<PaginationProps> = ({
           type="number"
           onChange={e => {
             const page = e.target.value ? Number(e.target.value) : pageIndex;
-            gotoPage(page + 1);
+            gotoPage(page);
           }}
           style={{ width: '100px' }}
           max={pageCount}
           min={1}
-          value={pageIndex + 1}
+          value={pageIndex}
           size="small"
         />
       </span>
-      {/* <select
+      {/* <Select
         value={pageSize}
         onChange={e => {
           setPageSize(Number(e.target.value));
@@ -90,7 +109,7 @@ export const Pagination: FC<PaginationProps> = ({
             Show {pageSize}
           </option>
         ))}
-      </select> */}
+      </Select> */}
     </div>
   );
 };

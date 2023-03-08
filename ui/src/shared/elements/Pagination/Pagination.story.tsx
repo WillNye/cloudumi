@@ -7,19 +7,14 @@ export default {
 };
 
 export const Basic = () => {
-  const [currentPage, setCurrentPage] = useState(3);
-  const totalPages = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const [currentPage, setCurrentPage] = useState(1);
 
   return (
     <Pagination
-      gotoPage={setCurrentPage}
-      previousPage={() => setCurrentPage(page => page - 1)}
-      nextPage={() => setCurrentPage(page => page + 1)}
-      canPreviousPage={currentPage !== 1}
-      canNextPage={currentPage !== totalPages.length}
-      pageCount={totalPages.length}
-      pageIndex={currentPage - 1}
-      pageOptions={totalPages}
+      totalCount={30}
+      pageIndex={currentPage}
+      pageSize={3}
+      handleOnPageChange={setCurrentPage}
     />
   );
 };

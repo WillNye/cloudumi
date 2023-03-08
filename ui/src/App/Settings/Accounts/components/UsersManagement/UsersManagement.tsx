@@ -4,16 +4,16 @@ import { DELETE_DATA_TYPE, userTableColumns } from '../../constants';
 import UserModal from '../common/EditUserModal';
 import Delete from '../common/Delete';
 
-import css from './UsersManagement.module.css';
-import { PropertyFilterProps } from '@noqdev/cloudscape';
 import { extractErrorMessage } from 'core/API/utils';
 import { getAllUsers } from 'core/API/settings';
 import InviteUserModal from '../common/InviteUserModal/InviteUserModal';
 import { User } from '../../types';
+import css from './UsersManagement.module.css';
 
 const UsersManagement = () => {
   const [allUsersData, setAllUsersData] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [pageCount, setPageCount] = useState(1);
   const [errorMsg, setErrorMsg] = useState(null);
 
   const [query, setQuery] = useState({
@@ -42,6 +42,7 @@ const UsersManagement = () => {
     getAllUsers({ filter: query })
       .then(({ data }) => {
         setAllUsersData(data.data.data);
+        setPageCount(data.data.filtered_count);
       })
       .catch(error => {
         const errorMessage = extractErrorMessage(error);
@@ -52,11 +53,27 @@ const UsersManagement = () => {
       });
   }, []);
 
+  const handleOnPageChange = useCallback(
+    (newPageIndex: number) => {
+      const newQuery = {
+        ...query,
+        pagination: {
+          ...query.pagination,
+          currentPageIndex: newPageIndex
+        }
+      };
+      callGetAllUsers(newQuery);
+      setQuery(newQuery);
+    },
+    [callGetAllUsers, query]
+  );
+
   useEffect(
     function onQueryUpdate() {
       callGetAllUsers(query);
     },
-    [callGetAllUsers, query]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
 
   const tableRows = useMemo(() => {
@@ -93,9 +110,12 @@ const UsersManagement = () => {
           data={tableRows}
           columns={userTableColumns}
           border="row"
-          selectable
           isLoading={isLoading}
           showPagination
+          totalCount={pageCount}
+          pageSize={query.pagination.pageSize}
+          pageIndex={query.pagination.currentPageIndex}
+          handleOnPageChange={handleOnPageChange}
         />
       </div>
     </div>

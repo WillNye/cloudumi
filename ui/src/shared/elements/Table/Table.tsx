@@ -23,7 +23,11 @@ interface TableProps<T, D> {
   selectable?: boolean;
   isLoading?: boolean;
   showPagination?: boolean;
+  totalCount?: number;
+  pageSize?: number;
+  pageIndex?: number;
   handleSelectRows?: (data: D[]) => void;
+  handleOnPageChange?: (pageIndex: number) => void;
 }
 
 export const Table = <T, D>({
@@ -35,7 +39,11 @@ export const Table = <T, D>({
   selectable = false,
   isLoading = false,
   showPagination = false,
-  handleSelectRows
+  totalCount,
+  pageSize,
+  pageIndex,
+  handleSelectRows,
+  handleOnPageChange
 }: TableProps<T, D>) => {
   const classes = classNames(styles.table, {
     [styles[spacing]]: spacing,
@@ -56,22 +64,14 @@ export const Table = <T, D>({
     headerGroups,
     rows,
     prepareRow,
-    canPreviousPage,
-    canNextPage,
-    pageOptions,
-    pageCount,
-    gotoPage,
-    nextPage,
-    previousPage,
-    selectedFlatRows,
-    state: { pageIndex }
+    selectedFlatRows
   } = useTable(
     {
       columns,
       data,
-      defaultColumn,
-      initialState: { pageSize: data.length || 30 },
-      manualPagination: true
+      defaultColumn
+      // initialState: { pageSize: propspageSize, totalCount, pageIndex: 1 }
+      // manualPagination: true
     },
     useFilters,
     useSortBy,
@@ -205,14 +205,10 @@ export const Table = <T, D>({
       <br />
       {shouldShowPagination && (
         <Pagination
-          gotoPage={gotoPage}
-          nextPage={nextPage}
-          previousPage={previousPage}
-          canNextPage={canNextPage}
-          canPreviousPage={canPreviousPage}
-          pageCount={pageCount}
+          pageSize={pageSize}
           pageIndex={pageIndex}
-          pageOptions={pageOptions}
+          totalCount={totalCount}
+          handleOnPageChange={handleOnPageChange}
         />
       )}
     </>
