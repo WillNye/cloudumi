@@ -89,4 +89,8 @@
     cursor: not-allowed;
     background: var(--gray-600);
   }
+
+  &.showBorder {
+    border: solid 2px var(--gray-400);
+  }
 }

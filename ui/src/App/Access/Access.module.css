@@ -14,7 +14,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-lg);
+    padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-md)
+      var(--spacing-lg);
     background-color: var(--gray-700);
     margin: var(--spacing-sm) 0px;
     border-radius: var(--border-radius-lg);
@@ -33,7 +34,7 @@
     color: var(--gray-100);
 
     .text {
-      margin-bottom: 5px;
+      margin-bottom: var(--spacing-md);
     }
 
     &:hover {

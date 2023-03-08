@@ -49,7 +49,7 @@ export const CompleteNewPassword: FC = () => {
   const onSubmit = useCallback(
     async ({ newPassword, currentPassword }) => {
       try {
-        const res = await completePassword({
+        await completePassword({
           new_password: newPassword,
           current_password: currentPassword
         });

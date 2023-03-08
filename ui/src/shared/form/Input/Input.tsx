@@ -5,7 +5,7 @@ import css from './Input.module.css';
 export interface InputProps
   extends Omit<
     React.InputHTMLAttributes<HTMLInputElement>,
-    'suffix' | 'prefix' | 'size'
+    'suffix' | 'prefix' | 'size' | 'results'
   > {
   fullWidth?: boolean;
   selectOnFocus?: boolean;
@@ -14,6 +14,7 @@ export interface InputProps
   size?: 'small' | 'medium' | 'large';
   prefix?: React.ReactNode | string;
   suffix?: React.ReactNode | string;
+  showBorder?: boolean;
   onClear?: () => void;
 }
 
@@ -31,6 +32,7 @@ export const Input: FC<InputProps> = forwardRef(
       disabled,
       value,
       size = 'small',
+      showBorder,
       onFocus,
       ...rest
     },
@@ -42,7 +44,8 @@ export const Input: FC<InputProps> = forwardRef(
           [css.fullWidth]: fullWidth,
           [css.error]: error,
           [css[size]]: size,
-          [css.disabled]: disabled
+          [css.disabled]: disabled,
+          [css.showBorder]: showBorder
         })}
       >
         {prefix && <div className={css.prefix}>{prefix}</div>}

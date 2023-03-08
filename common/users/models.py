@@ -12,6 +12,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    Enum,
     ForeignKey,
     Integer,
     String,
@@ -52,6 +53,7 @@ class User(SoftDeleteMixin, Base):
     email_verify_token_expiration: datetime = Column(DateTime, nullable=True)
     # TODO: Force password reset flow after temp password created (Or just send them a
     # password reset)
+    managed_by = Column(Enum("MANUAL", "SCIM", name="managed_by_enum"), nullable=True)
     password_reset_required: bool = Column(Boolean, default=False)
     password_hash = Column(String, nullable=False)
     password_reset_token = Column(String, nullable=True)
@@ -82,6 +84,7 @@ class User(SoftDeleteMixin, Base):
         "Group",
         secondary=GroupMembership.__table__,
         back_populates="users",
+        lazy="joined",
         foreign_keys=[GroupMembership.user_id, GroupMembership.group_id],
     )
 
@@ -90,14 +93,28 @@ class User(SoftDeleteMixin, Base):
         UniqueConstraint("tenant_id", "email", name="uq_tenant_email"),
     )
 
+    def get_status(self):
+        if not self.active:
+            return "inactive"
+        if not self.email_verified:
+            return "email_unverified"
+        if self.password_reset_required:
+            return "password_reset_required"
+        return "active"
+
     def dict(self):
         return dict(
             id=str(self.id),
+            status=self.get_status(),
             active=self.active,
             username=self.username,
+            email_verified=self.email_verified,
+            password_reset_required=self.password_reset_required,
             email=self.email,
+            managed_by=self.managed_by,
             display_name=self.display_name,
             full_name=self.full_name,
+            groups=[group.name for group in self.groups],
         )
 
     async def delete(self):
@@ -225,14 +242,14 @@ class User(SoftDeleteMixin, Base):
         totp = pyotp.TOTP(self.mfa_secret_temp)
         return totp.verify(token)
 
-    @classmethod
-    async def update(cls, id, username, **kwargs):
+    async def update(self, user, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
-                user = session.query(User).get(id)
-                user.username = username
                 session.add(user)
                 await session.commit()
+        return user
 
     @classmethod
     async def get_by_id(cls, tenant, user_id, get_groups=False):

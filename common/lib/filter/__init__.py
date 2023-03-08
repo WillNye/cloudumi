@@ -1,7 +1,8 @@
+import math
 from enum import Enum
 from typing import Any, Optional
 
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, func, or_
 from sqlalchemy.sql import select
 
 from common.config.globals import ASYNC_PG_SESSION
@@ -12,6 +13,14 @@ from common.models import DataTableResponse
 from common.pg_core.models import Base  # noqa: F401,E402
 from common.tenants.models import Tenant  # noqa: F401, E402
 from common.users.models import User  # noqa: F401, E402
+
+
+class PaginatedQueryResponse(BaseModel):
+    filtered_count: int
+    pages: int
+    page_size: int
+    current_page_index: int
+    data: list[Any]
 
 
 class FilterPagination(BaseModel):
@@ -224,16 +233,18 @@ async def get_query_conditions(Table, token, conditions):
     return conditions
 
 
-async def filter_data_with_sqlalchemy(filter_obj, tenant, Table):
+async def filter_data_with_sqlalchemy(filter_obj, tenant, Table, allow_deleted=False):
     options = FilterModel.parse_obj(filter_obj)
     filter = options.filtering
     sorting = options.sorting
     pagination = options.pagination
+    conditions = []
 
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
-            query = select(Table)
-            conditions = [getattr(Table, "tenant") == tenant]
+            query = select(Table).filter(getattr(Table, "tenant") == tenant)
+            if not allow_deleted:
+                query = query.filter(getattr(Table, "deleted") == allow_deleted)
             if filter and filter.tokens:
                 if filter.operation == FilterOperation._and:
                     for token in filter.tokens:
@@ -270,9 +281,21 @@ async def filter_data_with_sqlalchemy(filter_obj, tenant, Table):
                     else getattr(Table, sorting.sortingColumn.sortingField).asc()
                 )
 
+            filtered_count_query = query.with_only_columns(func.count()).order_by(None)
+            filtered_count = await session.execute(filtered_count_query)
+            filtered_count = filtered_count.scalar()
+            pages = math.ceil(filtered_count / pagination.pageSize)
+
             if pagination and pagination.pageSize and pagination.currentPageIndex:
                 query = query.offset(
                     (pagination.currentPageIndex - 1) * pagination.pageSize
                 ).limit(pagination.pageSize)
             res = await session.execute(query)
-            return res.unique().scalars().all()
+
+            return PaginatedQueryResponse(
+                filtered_count=filtered_count,
+                pages=pages,
+                page_size=pagination.pageSize,
+                current_page_index=pagination.currentPageIndex,
+                data=res.unique().scalars().all(),
+            )

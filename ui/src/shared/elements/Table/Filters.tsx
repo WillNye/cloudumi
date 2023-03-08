@@ -174,23 +174,3 @@ interface IndeterminateCheckboxProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
   indeterminate: boolean;
 }
-
-export const IndeterminateCheckbox = React.forwardRef(
-  (
-    { indeterminate, ...rest }: IndeterminateCheckboxProps,
-    ref: React.Ref<HTMLInputElement>
-  ) => {
-    const defaultRef = React.useRef<HTMLInputElement>();
-    const resolvedRef = useMemo(() => ref ?? defaultRef, [ref, defaultRef]);
-
-    React.useEffect(() => {
-      // @ts-ignore
-      resolvedRef.current.indeterminate = indeterminate;
-    }, [resolvedRef, indeterminate]);
-
-    return (
-      // @ts-ignore
-      <Checkbox {...rest} ref={resolvedRef} />
-    );
-  }
-);

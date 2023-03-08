@@ -14,26 +14,7 @@ import classNames from 'classnames';
 import { createPortal } from 'react-dom';
 import { Icon } from 'shared/elements/Icon';
 import { Loader } from 'shared/elements/Loader';
-
-const useClickOutside = callback => {
-  const ref = useRef(null);
-
-  const handleClick = useCallback(
-    event => {
-      if (ref.current && !ref.current.contains(event.target)) {
-        callback();
-      }
-    },
-    [ref, callback]
-  );
-
-  useEffect(() => {
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [handleClick]);
-
-  return ref;
-};
+import useClickOutside from 'shared/utils/hooks/useClickOutside';
 
 interface DialogProps {
   showDialog: boolean;

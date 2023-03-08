@@ -12,6 +12,7 @@ from api.handlers.v4.scim.groups import ScimV2GroupHandler, ScimV2GroupsHandler
 from api.handlers.v4.scim.users import ScimV2UserHandler, ScimV2UsersHandler
 from api.handlers.v4.users.login import LoginHandler, MfaHandler
 from api.handlers.v4.users.manage_users import (
+    ManageListUsersHandler,
     ManageUsersHandler,
     PasswordResetSelfServiceHandler,
     UnauthenticatedEmailVerificationHandler,
@@ -150,7 +151,10 @@ from api.handlers.v3.tenant_registration.tenant_registration import (
     TenantRegistrationAwsMarketplaceHandler,
     TenantRegistrationHandler,
 )
-from api.handlers.v4.groups.manage_groups import ManageGroupsHandler
+from api.handlers.v4.groups.manage_groups import (
+    ManageGroupsHandler,
+    ManageListGroupsHandler,
+)
 from api.handlers.v4.requests import IambicRequestCommentHandler, IambicRequestHandler
 from api.handlers.v4.role_access.manage_role_access import ManageRoleAccessHandler
 from common.config import config
@@ -395,8 +399,10 @@ def make_app(jwt_validator=None):
         ),
         (rf"/api/v4/requests/(?P<request_id>{UUID_REGEX})", IambicRequestHandler),
         (r"/api/v4/groups/?", ManageGroupsHandler),
+        (r"/api/v4/list_groups/?", ManageListGroupsHandler),
         (r"/api/v4/group_memberships/?", ManageGroupMembershipsHandler),
         (r"/api/v4/users/?", ManageUsersHandler),
+        (r"/api/v4/list_users/?", ManageListUsersHandler),
         (r"/api/v4/users/password/complexity/?", PasswordComplexityHandler),
         (r"/api/v4/users/login/?", LoginHandler),
         (r"/api/v4/users/login/mfa/?", MfaHandler),
