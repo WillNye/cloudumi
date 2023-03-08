@@ -5,7 +5,43 @@ from email_validator import validate_email
 
 from common.groups.models import Group
 from common.handlers.base import BaseAdminHandler
+from common.lib.filter import PaginatedQueryResponse, filter_data_with_sqlalchemy
 from common.models import WebResponse
+
+
+class ManageListGroupsHandler(BaseAdminHandler):
+    async def post(self):
+        data = tornado.escape.json_decode(self.request.body)
+        tenant = self.ctx.db_tenant
+
+        _filter = data.get("filter", {})
+
+        try:
+            query_response: PaginatedQueryResponse = await filter_data_with_sqlalchemy(
+                _filter, tenant, Group
+            )
+        except Exception as exc:
+            errors = [str(exc)]
+            self.write(
+                WebResponse(
+                    errors=errors,
+                    status_code=500,
+                    count=len(errors),
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            self.set_status(500, reason=str(exc))
+            raise tornado.web.Finish()
+
+        res = [x.dict() for x in query_response.data]
+        query_response.data = res
+
+        self.write(
+            WebResponse(
+                success="success",
+                status_code=200,
+                data=query_response.dict(exclude_unset=True, exclude_none=True),
+            ).dict(exclude_unset=True, exclude_none=True)
+        )
 
 
 class ManageGroupsHandler(BaseAdminHandler):
@@ -62,6 +98,7 @@ class ManageGroupsHandler(BaseAdminHandler):
             name=group_name,
             email=group_email,
             description=group_description,
+            managed_by="MANUAL",
         )
 
         self.write(
@@ -100,22 +137,14 @@ class ManageGroupsHandler(BaseAdminHandler):
             raise tornado.web.Finish()
 
         new_db_group = await db_group.update(
+            group=db_group,
             name=group_name,
             description=group_description,
             email=group_email,
-            # updated_by=self.user,
-            # updated_at=datetime.utcnow()
         )
         self.write(
             WebResponse(
-                success="success",
-                status_code=200,
-                data={
-                    "id": new_db_group.id,
-                    "name": new_db_group.name,
-                    "description": new_db_group.description,
-                    "email": new_db_group.email,
-                },
+                success="success", status_code=200, data=new_db_group.dict()
             ).dict(exclude_unset=True, exclude_none=True)
         )
 

@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useState } from 'react';
+import { FC, useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 
 import css from './Access.module.css';
@@ -17,15 +17,7 @@ export interface AccessRole {
   inactive_tra: boolean;
 }
 
-export interface AccessQueryResult {
-  totalCount: number;
-  filteredCount: number;
-  data: AccessRole[];
-}
-
-type AccessProps = AccessQueryResult;
-
-export const Access: FC<AccessProps> = ({ data }) => {
+export const Access: FC = () => {
   const [currentTab, setCurrentTab] = useState(ROLES_TABS.ELIGIBLE_ROLES);
   const [eligibleRolesData, setEligibleRolesData] = useState([]);
   const [allRolesData, setAllRolesData] = useState([]);
@@ -89,6 +81,7 @@ export const Access: FC<AccessProps> = ({ data }) => {
           </ul>
         </nav>
       </div>
+
       {currentTab === ROLES_TABS.ELIGIBLE_ROLES ? (
         <EligibleRoles
           data={eligibleRolesData}

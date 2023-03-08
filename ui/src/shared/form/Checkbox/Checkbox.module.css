@@ -1,0 +1,5 @@
+.container {
+  input[type='checkbox'] {
+    accent-color: var(--blue-600);
+  }
+}

@@ -1,7 +1,7 @@
 import uuid
 from uuid import uuid4
 
-from sqlalchemy import Column, ForeignKey, Integer, String, UniqueConstraint, and_
+from sqlalchemy import Column, Enum, ForeignKey, Integer, String, UniqueConstraint, and_
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, selectinload
 from sqlalchemy.sql import select
@@ -20,6 +20,7 @@ from common.tenants.models import Tenant  # noqa: F401
 class Group(SoftDeleteMixin, Base):
     __tablename__ = "groups"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    managed_by = Column(Enum("MANUAL", "SCIM", name="managed_by_enum"), nullable=True)
     name = Column(String, index=True)
     description = Column(String)
     tenant_id = Column(Integer(), ForeignKey("tenant.id"))
@@ -43,7 +44,9 @@ class Group(SoftDeleteMixin, Base):
             id=str(self.id),
             name=self.name,
             description=self.description,
+            managed_by=self.managed_by,
             email=self.email,
+            users=[user.email for user in self.users],
         )
 
     async def write(self):

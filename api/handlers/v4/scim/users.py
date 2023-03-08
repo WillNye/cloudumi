@@ -97,6 +97,7 @@ class ScimV2UsersHandler(ScimAuthHandler):
             family_name=family_name,
             password_hash=await User.generate_password_hash(password),
             username=username,
+            managed_by="SCIM",
         )
         await user.write()
 
@@ -111,6 +112,7 @@ class ScimV2UsersHandler(ScimAuthHandler):
                     new_group = Group(
                         name=group["displayName"],
                         tenant=self.ctx.db_tenant,
+                        managed_by="SCIM",
                     )
                     await new_group.write()
                     await GroupMembership.create(user, new_group)
@@ -164,6 +166,7 @@ class ScimV2UserHandler(ScimAuthHandler):
         user.family_name = body.get("name", {}).get("familyName")
         user.password = body.get("password")
         user.schemas = body.get("schemas")
+        user.managed_by = "SCIM"
         if emails and len(emails) > 0:
             user.email_primary = emails[0]["primary"]
             user.email = emails[0]["value"]
@@ -180,6 +183,7 @@ class ScimV2UserHandler(ScimAuthHandler):
                     new_group = Group(
                         name=group["displayName"],
                         tenant=self.ctx.db_tenant,
+                        managed_by="SCIM",
                     )
                     await new_group.write()
                     await GroupMembership.create(user, new_group)
@@ -220,6 +224,7 @@ class ScimV2UserHandler(ScimAuthHandler):
             raise tornado.web.Finish()
         is_user_active = body.get("Operations", [])[0].get("value", {}).get("active")
         user.active = is_user_active
+        user.managed_by = "SCIM"
         await user.write()
 
     async def delete(self, user_id):

@@ -1,1 +1,1 @@
-export { AccessContainer as default } from './AccessContainer';
+export { Access as default } from './Access';

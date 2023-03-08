@@ -5,7 +5,7 @@ import { Loader } from 'shared/elements/Loader';
 import './App.module.css';
 
 const Login = lazy(() => import('./Login'));
-const AccountSetup = lazy(() => import('./AccountSetup'));
+const Settings = lazy(() => import('./Settings'));
 const NotFound = lazy(() => import('./NotFound'));
 const Access = lazy(() => import('./Access'));
 const Dashboard = lazy(() => import('./Dashboard'));
@@ -17,7 +17,7 @@ export const App: FC = () => (
       <Route path="/" element={<AuthRoute />}>
         <Route path="/" element={<Dashboard />}>
           <Route path="/" element={<Access />} />
-          <Route path="/account/*" element={<AccountSetup />} />
+          <Route path="/settings/*" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Route>
