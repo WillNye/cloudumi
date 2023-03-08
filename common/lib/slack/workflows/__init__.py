@@ -329,7 +329,7 @@ class SlackWorkflows:
         self.tenant = tenant
 
     def get_self_service_step_1_blocks(self):
-        return [
+        blocks = [
             {
                 "type": "section",
                 "text": {
@@ -389,20 +389,9 @@ class SlackWorkflows:
                     "action_id": "self-service-select",
                 },
             },
-            {
-                "type": "actions",
-                "block_id": "cancel_button_block",
-                "elements": [
-                    {
-                        "type": "button",
-                        "text": {"type": "plain_text", "text": "Cancel", "emoji": True},
-                        "value": "cancel_request",
-                        "style": "danger",
-                        "action_id": "cancel_request",
-                    }
-                ],
-            },
         ]
+        blocks.append(self.get_cancel_button_block())
+        return blocks
 
     def get_self_service_step_1_blocks_v2(self):
         blocks = []
@@ -481,7 +470,7 @@ class SlackWorkflows:
             },
         )
         blocks.append(self.get_cancel_button_block())
-        blocks.append(self.get_back_button_block())  # TODO: Need to pass action ID
+        # blocks.append(self.get_back_button_block())  # TODO: Need to pass action ID
 
     def get_select_aws_accounts_block(self, selected_accounts):
         select_accounts_block = {
@@ -820,28 +809,28 @@ class SlackWorkflows:
 
         elements = []
 
-        select_identities_block = {
-            "type": "section",
-            "block_id": "select_identities",
-            "text": {"type": "mrkdwn", "text": "*Identities*"},
-            "accessory": {
-                "action_id": "select_identities_action",
-                "type": "multi_external_select",
-                "placeholder": {"type": "plain_text", "text": "Select identities"},
-                "min_query_length": 3,
-            },
-        }
+        # select_identities_block = {
+        #     "type": "section",
+        #     "block_id": "select_identities",
+        #     "text": {"type": "mrkdwn", "text": "*Identities*"},
+        #     "accessory": {
+        #         "action_id": "select_identities_action",
+        #         "type": "multi_external_select",
+        #         "placeholder": {"type": "plain_text", "text": "Select identities"},
+        #         "min_query_length": 3,
+        #     },
+        # }
 
-        if selected_identities:
-            select_identities_block["accessory"][
-                "initial_options"
-            ] = selected_identities
-        elements.append(select_identities_block)
+        # if selected_identities:
+        #     select_identities_block["accessory"][
+        #         "initial_options"
+        #     ] = selected_identities
+        # elements.append(select_identities_block)
 
         selected_predefined_policy_block = {
             "type": "section",
             "block_id": "select_aws_predefined_policies",
-            "text": {"type": "mrkdwn", "text": "*Services*"},
+            "text": {"type": "mrkdwn", "text": "*Pre-defined Policy*"},
             "accessory": {
                 "action_id": "select_aws_predefined_policies",
                 "type": "multi_external_select",
@@ -858,37 +847,37 @@ class SlackWorkflows:
             ] = selected_predefined_policy
         elements.append(selected_predefined_policy_block)
 
-        duration_block = self.get_duration_block(selected_duration)
+        # duration_block = self.get_duration_block(selected_duration)
 
-        elements.extend(duration_block)
+        # elements.extend(duration_block)
 
-        justification_block = self.get_justification_block(justification)
-        elements.append(justification_block)
+        # justification_block = self.get_justification_block(justification)
+        # elements.append(justification_block)
 
-        create_update_request_str = "create_cloud_predefined_policy_request"
-        if update:
-            create_update_request_str = (
-                f"update_cloud_predefined_policy_request/{request_id}"
-            )
+        # create_update_request_str = "create_cloud_predefined_policy_request"
+        # if update:
+        #     create_update_request_str = (
+        #         f"update_cloud_predefined_policy_request/{request_id}"
+        #     )
 
-        elements.append(
-            {
-                "type": "actions",
-                "block_id": "create_button_block",
-                "elements": [
-                    {
-                        "type": "button",
-                        "text": {
-                            "type": "plain_text",
-                            "text": submit_verbiage,
-                            "emoji": True,
-                        },
-                        "value": create_update_request_str,  # "request_cloud_permissions_to_resources",
-                        "action_id": create_update_request_str,  # "request_cloud_permissions_to_resources",
-                    }
-                ],
-            }
-        )
+        # elements.append(
+        #     {
+        #         "type": "actions",
+        #         "block_id": "create_button_block",
+        #         "elements": [
+        #             {
+        #                 "type": "button",
+        #                 "text": {
+        #                     "type": "plain_text",
+        #                     "text": submit_verbiage,
+        #                     "emoji": True,
+        #                 },
+        #                 "value": create_update_request_str,  # "request_cloud_permissions_to_resources",
+        #                 "action_id": create_update_request_str,  # "request_cloud_permissions_to_resources",
+        #             }
+        #         ],
+        #     }
+        # )
 
         elements.append(self.get_cancel_button_block())
 
@@ -1057,21 +1046,7 @@ class SlackWorkflows:
             }
         )
 
-        elements.append(
-            {
-                "type": "actions",
-                "block_id": "cancel_button_block",
-                "elements": [
-                    {
-                        "type": "button",
-                        "text": {"type": "plain_text", "text": "Cancel", "emoji": True},
-                        "value": "cancel_request",
-                        "style": "danger",
-                        "action_id": "cancel_request",
-                    }
-                ],
-            }
-        )
+        elements.append(self.get_cancel_button_block())
 
         return elements
 
@@ -1214,7 +1189,7 @@ class SlackWorkflows:
         return blocks
 
     def self_service_request_permissions_step_2_option_selection(self):
-        return [
+        blocks = [
             {
                 "type": "input",
                 "block_id": "self_service_permissions_step_2_block",
@@ -1262,20 +1237,9 @@ class SlackWorkflows:
                     "emoji": True,
                 },
             },
-            {
-                "type": "actions",
-                "block_id": "cancel_button_block",
-                "elements": [
-                    {
-                        "type": "button",
-                        "text": {"type": "plain_text", "text": "Cancel", "emoji": True},
-                        "value": "cancel_request",
-                        "style": "danger",
-                        "action_id": "cancel_request",
-                    }
-                ],
-            },
         ]
+        blocks.append(self.get_cancel_button_block())
+        return blocks
 
     def get_self_service_submission_success_blocks(
         self, permalink: str, updated: bool = False

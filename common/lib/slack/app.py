@@ -375,8 +375,30 @@ class TenantSlackApp:
 
         return self.tenant_slack_app
 
-    async def handle_select_aws_predefined_policies_action(self, ack, body):
-        # TODO: Get slack message and update it?
+    async def handle_select_aws_predefined_policies_action(self, ack, body, client):
+        # EXPERIMENTAL
+        policy_selection = body["state"]["values"]["select_aws_predefined_policies"][
+            "select_aws_predefined_policies"
+        ]["selected_options"][0]["value"]
+
+        policy_mapping = {
+            "s3_list_access": {
+                "template_type": "NOQ::AWS::PolicyTemplate",
+                "identifier": "s3_list_bucket",
+                "description": "Arbitrary description",
+                "properties": {
+                    "action": ["s3:ListBucket"],
+                    "resource": ["{{NOQ::AWS::S3::Bucket/bucket_name}}"],
+                    "effect": ["Allow"],
+                    "condition": {
+                        "stringlike": ["{{NOQ::AWS::S3::Bucket/bucket_name}}/*"]
+                    },
+                },
+            }
+        }
+
+        # This isn't working
+        # original_message = await client.conversations_history(channel=body['container']['channel_id'], limit=1, latest=body['container']['message_ts'], inclusive=True)
         await ack()
 
     async def handle_select_aws_predefined_policy_options(self, ack, body):
@@ -387,9 +409,6 @@ class TenantSlackApp:
                     "type": "plain_text",
                     "text": "s3_list_access",
                 },
-                # Warning: Slack docs specify the max length of options value is 75 characters
-                # but it is actually larger. Slack will not give you an error if this is exceeded,
-                # and you will be left wandering aimlessly in the abyss.
                 "value": "s3_list_access",
             }
         )
