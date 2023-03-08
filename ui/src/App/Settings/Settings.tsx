@@ -16,7 +16,7 @@ export const Settings: FC = () => (
       <Route path="/" element={<SettingsMenu />}>
         <Route path="/" element={<ProfileSettings />} />
         <Route path="/integrations" element={<Integrations />} />
-        <Route path="/accounts" element={<Accounts />} />
+        <Route path="/user_management" element={<Accounts />} />
       </Route>
       <Route path="*" element={<NotFound fullPage />} />
     </Routes>

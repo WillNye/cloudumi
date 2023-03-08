@@ -17,5 +17,9 @@ export const BREAD_CRUMBS_INTEGRATIONS_PATH = [
 ];
 
 export const BREAD_CRUMBS_ACCOUNTS_PATH = [
-  { id: 'accounts', name: 'Accounts', url: '/settings/accounts' }
+  {
+    id: 'user_management',
+    name: 'User Management',
+    url: '/settings/user_management'
+  }
 ];

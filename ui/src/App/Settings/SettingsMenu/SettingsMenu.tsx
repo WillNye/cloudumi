@@ -13,7 +13,7 @@ import { Breadcrumbs } from 'shared/elements/Breadcrumbs';
 const SettingsMenu: FC = () => {
   const isMyProfilePath = useMatch('/settings');
   const isIntegrationsPath = useMatch('/settings/integrations');
-  const isAccountsPath = useMatch('/settings/accounts');
+  const isAccountsPath = useMatch('/settings/user_management');
 
   const breadCrumbsPaths = useMemo(() => {
     if (isMyProfilePath) {
@@ -59,7 +59,7 @@ const SettingsMenu: FC = () => {
                   isAccountsPath && styles.isActive
                 }`}
               >
-                <Link to="/settings/accounts">Accounts Management</Link>
+                <Link to="/settings/user_management">User Management</Link>
               </li>
             </ul>
           </nav>

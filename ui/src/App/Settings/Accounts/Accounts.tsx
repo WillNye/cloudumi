@@ -20,10 +20,6 @@ export const AccountSettings: FC = () => {
 
   return (
     <div className={css.container}>
-      <p>
-        View Accounts Management Settings to manage users and groups. Add new
-        accounts, edit existing ones, and assign specific groups to each user.
-      </p>
       <br />
       <div>
         <nav className={css.nav}>
@@ -34,7 +30,7 @@ export const AccountSettings: FC = () => {
               }`}
               onClick={() => setCurrentTab(ACCOUNT_SETTINGS_TABS.USERS)}
             >
-              <div className={css.text}>Users Management</div>
+              <div className={css.text}>User Management</div>
             </li>
             <li
               className={`${css.navItem} ${
@@ -42,7 +38,7 @@ export const AccountSettings: FC = () => {
               }`}
               onClick={() => setCurrentTab(ACCOUNT_SETTINGS_TABS.GROUPS)}
             >
-              <div className={css.text}>Groups Management</div>
+              <div className={css.text}>Group Management</div>
             </li>
           </ul>
         </nav>
