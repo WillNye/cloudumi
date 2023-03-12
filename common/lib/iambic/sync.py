@@ -1,12 +1,12 @@
 import asyncio
 from typing import Dict, List
 
-from iambic.aws.iam.role.models import RoleTemplate
-from iambic.config.models import Config
-from iambic.config.utils import load_template as load_config_template
+from iambic.config.dynamic_config import Config
+from iambic.config.dynamic_config import load_config as load_config_template
 from iambic.core.models import BaseTemplate
 from iambic.core.parser import load_templates
 from iambic.core.utils import gather_templates
+from iambic.plugins.v0_1_0.aws.iam.role.models import RoleTemplate
 
 from common.aws.accounts.models import AWSAccount
 from common.config import config
