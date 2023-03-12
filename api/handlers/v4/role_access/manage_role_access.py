@@ -36,8 +36,9 @@ class ManageRoleAccessHandler(BaseHandler):
                 500, reason="There was an error retrieving role access data"
             )
             raise
-
-        res = [x.dict() for x in objects]
+        res = objects
+        if objects:
+            res = [x.dict() for x in objects.data]
 
         self.write(
             WebResponse(

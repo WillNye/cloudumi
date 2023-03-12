@@ -22,7 +22,7 @@ from common.config.globals import ASYNC_PG_SESSION
 from common.exceptions.exceptions import NoMatchingRequest
 from common.groups.models import Group
 from common.identity.models import AwsIdentityRole
-from common.pg_core.models import Base
+from common.pg_core.models import Base, SoftDeleteMixin
 from common.tenants.models import Tenant
 from common.users.models import User
 
@@ -33,7 +33,7 @@ class RoleAccessTypes(enum.Enum):
     tra_active_user = 3
 
 
-class RoleAccess(Base):
+class RoleAccess(SoftDeleteMixin, Base):
     __tablename__ = "role_access"
 
     id = Column(Integer(), primary_key=True, autoincrement=True)
