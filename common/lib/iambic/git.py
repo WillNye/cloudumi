@@ -24,7 +24,7 @@ from iambic.plugins.v0_1_0.aws.identity_center.permission_set.models import (
     PermissionSetAccess,
 )
 from iambic.plugins.v0_1_0.aws.models import Tag
-from iambic.plugins.v0_1_0.google.group.models import GroupMember
+from iambic.plugins.v0_1_0.google_workspace.group.models import GroupMember
 from iambic.plugins.v0_1_0.okta.group.models import UserSimple
 from iambic.plugins.v0_1_0.okta.models import Assignment
 from jinja2.environment import Environment
