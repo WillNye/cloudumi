@@ -1,8 +1,8 @@
 from typing import List
 
-from iambic.aws.iam.role.models import RoleAccess
-from iambic.config.models import Config
+from iambic.config.dynamic_config import Config
 from iambic.core.utils import evaluate_on_provider
+from iambic.plugins.v0_1_0.aws.iam.role.models import RoleAccess
 
 from common.aws.accounts.models import AWSAccount
 

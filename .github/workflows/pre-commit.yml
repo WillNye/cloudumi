@@ -71,7 +71,7 @@ jobs:
           pip install pre-commit
           pip install \
             -r requirements.lock
-          pip install git+https://${IAMBIC_REPO_USER}:${IAMBIC_REPO_TOKEN}@github.com/noqdev/iambic.git@v0.1.29
+          pip install git+https://${IAMBIC_REPO_USER}:${IAMBIC_REPO_TOKEN}@github.com/noqdev/iambic.git@v0.1.124
           pip install .
           yarn --cwd ui install
           yarn --cwd frontend install
