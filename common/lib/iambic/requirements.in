@@ -1,2 +1,1 @@
-#git+https://github.com/noqdev/iambic.git@main#egg=iambic
-git+ssh://git@github.com/noqdev/iambic.git@@v0.1.29#egg=iambic
+git+ssh://git@github.com/noqdev/iambic.git@@v0.1.124#egg=iambic
