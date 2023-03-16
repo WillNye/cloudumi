@@ -57,7 +57,7 @@ def maybe_set_security_headers(req):
     """
     if "https://" not in req.request.headers.get("Referer", ""):
         return
-    if not config.get("_global_.development"):
+    if config.get("_global_.development"):
         return
     # Require HTTPS for all requests to this domain in the user's browser
     # moving forward, until the expiration date.
