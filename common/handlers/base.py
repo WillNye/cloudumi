@@ -51,6 +51,25 @@ from common.tenants.models import Tenant
 log = config.get_logger()
 
 
+def maybe_set_security_headers(req):
+    """
+    Set security header if the request is coming from HTTPS and we're not in development
+    """
+    if "https://" not in req.request.headers.get("Referer", ""):
+        return
+    if config.get("_global_.development"):
+        return
+    # Require HTTPS for all requests to this domain in the user's browser
+    # moving forward, until the expiration date.
+    req.set_header("Strict-Transport-Security", "max-age=31536000; includeSubdomains")
+    # Prevent other websites from embedding this site in an iframe.
+    req.set_header("X-FRAME-OPTIONS", "Deny")
+    # Prevents the browser from trying to guess (“sniff”) the MIME type, which can have security implications.
+    req.set_header("X-XSS-Protection", "1; mode=block")
+    # Prevents the browser from MIME-sniffing a response away from the declared content-type.
+    req.set_header("X-Content-Type-Options", "nosniff")
+
+
 class TornadoRequestHandler(tornado.web.RequestHandler):
     allowed_methods = ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"]
 
@@ -69,6 +88,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
             )
             self.set_header("Access-Control-Allow-Credentials", "true")
             self.set_header("Content-Type", "application/json")
+        maybe_set_security_headers(self)
 
     async def prepare(self):
         unprotected_routes = ["/healthcheck", "/api/v3/tenant_registration"]
@@ -995,6 +1015,7 @@ class BaseAPIV1Handler(BaseHandler):
 
     def set_default_headers(self) -> None:
         self.set_header("Content-Type", "application/json")
+        super().set_default_headers()
 
 
 class BaseAPIV2Handler(BaseHandler):
@@ -1002,6 +1023,7 @@ class BaseAPIV2Handler(BaseHandler):
 
     def set_default_headers(self) -> None:
         self.set_header("Content-Type", "application/json")
+        super().set_default_headers()
 
     def write_error(self, status_code: int, **kwargs: Any) -> None:
         if self.settings.get("serve_traceback") and "exc_info" in kwargs:
@@ -1195,6 +1217,7 @@ class NoCacheStaticFileHandler(tornado.web.StaticFileHandler):
         self.set_header(
             "Cache-Control", "no-store, no-cache, must-revalidate, max-age=0"
         )
+        maybe_set_security_headers(self)
 
 
 class StaticFileHandler(tornado.web.StaticFileHandler):
@@ -1241,6 +1264,7 @@ class AuthenticatedStaticFileHandler(tornado.web.StaticFileHandler, BaseHandler)
 class BaseAdminHandler(BaseHandler):
     def set_default_headers(self) -> None:
         self.set_header("Content-Type", "application/json")
+        super(BaseAdminHandler, self).set_default_headers()
 
     async def authorization_flow(
         self,

@@ -67,6 +67,7 @@ _global_:
     xsrf: true
     xsrf_cookie_kwargs:
       samesite: strict
+      secure: true
   plugins:
     auth: cmsaas_auth
     aws: cmsaas_aws

@@ -86,9 +86,10 @@ _global_:
   tornado:
     debug: false
     port: 8092
-    xsrf: false # TODO: Change to true when not testing locally
+    xsrf: true
     xsrf_cookie_kwargs:
       samesite: strict
+      secure: true
   plugins:
     auth: cmsaas_auth
     aws: cmsaas_aws
