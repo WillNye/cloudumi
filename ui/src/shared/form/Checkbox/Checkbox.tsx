@@ -1,5 +1,6 @@
 import React, { FC, forwardRef, Ref } from 'react';
 import classNames from 'classnames';
+import { BaseInput } from '../Input';
 import css from './Checkbox.module.css';
 
 export interface CheckboxProps
@@ -35,7 +36,7 @@ export const Checkbox: FC<CheckboxProps> = forwardRef(
         })}
       >
         {/* //   {prefix && <div className={css.prefix}>{prefix}</div>} */}
-        <input
+        <BaseInput
           {...rest}
           type="checkbox"
           ref={ref}

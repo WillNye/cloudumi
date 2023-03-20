@@ -1,0 +1,26 @@
+.connectStack {
+  width: 100%;
+
+  .warningAlert {
+    border: 2px solid var(--orange-600);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+  }
+
+  .header {
+    background-color: var(--orange-600);
+    border-top-right-radius: 5px;
+    border-top-left-radius: 5px;
+    padding: 1rem;
+    margin-top: 1rem;
+  }
+
+  .awsActions {
+    button {
+      margin-right: var(--spacing-md);
+      margin-bottom: var(--spacing-lg);
+    }
+  }
+}
