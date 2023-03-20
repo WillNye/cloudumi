@@ -1,10 +1,11 @@
 import { FC, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import styles from './Loader.module.css';
 import classNames from 'classnames';
+import styles from './Loader.module.css';
 
 interface LoaderProps {
   fullPage?: boolean;
+  className?: string;
 }
 
 const transition = {
@@ -13,7 +14,7 @@ const transition = {
   ease: 'easeInOut'
 };
 
-export const Loader: FC<LoaderProps> = ({ fullPage = false }) => {
+export const Loader: FC<LoaderProps> = ({ className, fullPage = false }) => {
   const classes = useMemo(
     () =>
       classNames(styles.loader, {
@@ -23,7 +24,7 @@ export const Loader: FC<LoaderProps> = ({ fullPage = false }) => {
   );
 
   return (
-    <div className={classes}>
+    <div className={`${className} ${classes}`}>
       <svg
         width="32"
         height="32"

@@ -18,6 +18,35 @@ export interface InputProps
   onClear?: () => void;
 }
 
+export interface BaseInputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {
+  fullWidth?: boolean;
+  selectOnFocus?: boolean;
+  showBorder?: boolean;
+  onClear?: () => void;
+}
+
+export const BaseInput = forwardRef<HTMLInputElement, BaseInputProps>(
+  (
+    { className, selectOnFocus, disabled, value, onFocus, ...rest },
+    ref: Ref<HTMLInputElement>
+  ) => (
+    <input
+      {...rest}
+      ref={ref}
+      value={value}
+      disabled={disabled}
+      className={classNames(className, css.input)}
+      onFocus={event => {
+        if (selectOnFocus) {
+          event.target.select();
+        }
+        onFocus?.(event);
+      }}
+    />
+  )
+);
+
 export const Input: FC<InputProps> = forwardRef(
   (
     {
@@ -37,33 +66,31 @@ export const Input: FC<InputProps> = forwardRef(
       ...rest
     },
     ref: Ref<HTMLInputElement>
-  ) => {
-    return (
-      <span
-        className={classNames(css.container, containerClassname, {
-          [css.fullWidth]: fullWidth,
-          [css.error]: error,
-          [css[size]]: size,
-          [css.disabled]: disabled,
-          [css.showBorder]: showBorder
-        })}
-      >
-        {prefix && <div className={css.prefix}>{prefix}</div>}
-        <input
-          {...rest}
-          ref={ref}
-          value={value}
-          disabled={disabled}
-          className={classNames(className, css.input)}
-          onFocus={event => {
-            if (selectOnFocus) {
-              event.target.select();
-            }
-            onFocus?.(event);
-          }}
-        />
-        {suffix && <div className={css.suffix}>{suffix}</div>}
-      </span>
-    );
-  }
+  ) => (
+    <span
+      className={classNames(css.container, containerClassname, {
+        [css.fullWidth]: fullWidth,
+        [css.error]: error,
+        [css[size]]: size,
+        [css.disabled]: disabled,
+        [css.showBorder]: showBorder
+      })}
+    >
+      {prefix && <div className={css.prefix}>{prefix}</div>}
+      <BaseInput
+        {...rest}
+        ref={ref}
+        value={value}
+        disabled={disabled}
+        className={classNames(className, css.input)}
+        onFocus={event => {
+          if (selectOnFocus) {
+            event.target.select();
+          }
+          onFocus?.(event);
+        }}
+      />
+      {suffix && <div className={css.suffix}>{suffix}</div>}
+    </span>
+  )
 );

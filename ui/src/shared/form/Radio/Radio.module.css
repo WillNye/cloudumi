@@ -1,0 +1,5 @@
+.container {
+  input[type='radio'] {
+    accent-color: var(--blue-600);
+  }
+}

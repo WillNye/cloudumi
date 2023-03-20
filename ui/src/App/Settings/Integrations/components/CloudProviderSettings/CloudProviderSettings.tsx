@@ -1,3 +1,11 @@
-const CloudProviderSettings = () => <div>Cloud Provider Settings</div>;
+import AWSProvider from './AWSProvider';
+
+const CloudProviderSettings = () => (
+  <div>
+    <div>
+      <AWSProvider />
+    </div>
+  </div>
+);
 
 export default CloudProviderSettings;
