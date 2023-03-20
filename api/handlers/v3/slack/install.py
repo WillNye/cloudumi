@@ -24,6 +24,9 @@ from common.tenants.models import Tenant
 
 
 class AsyncSlackEventsHandler(TornadoRequestHandler):
+    def check_xsrf_cookie(self) -> None:
+        pass
+
     def initialize(self, app: AsyncApp):  # type: ignore
         self.app = app
         if self.request.body_arguments:
