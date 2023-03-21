@@ -16,7 +16,9 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 
 
 async def _send_slack_notification(tenant, log_data, payload):
-    if not config.get_tenant_specific_key("slack.notifications_enabled", tenant, False):
+    if not config.get_tenant_specific_key(
+        "slack.notifications_enabled", tenant, False
+    ) and not config.get_tenant_specific_key("slack.enabled", tenant, False):
         return
 
     slack_webhook_url = config.get_tenant_specific_key("slack.webhook_url", tenant)
