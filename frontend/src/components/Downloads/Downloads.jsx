@@ -65,7 +65,7 @@ const Downloads = () => {
           {noqInstallScript ? (
             <CopyBlock
               text={noqInstallScriptWindows}
-              language={'shell'}
+              language={'powershell'}
               showLineNumbers={false}
               theme={dracula}
             />
