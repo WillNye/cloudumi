@@ -1,1 +1,1 @@
-git+ssh://git@github.com/noqdev/iambic.git@v0.1.153#egg=iambic
+iambic-core==0.1.146
