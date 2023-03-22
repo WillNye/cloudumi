@@ -12,7 +12,7 @@ aiodns==3.0.0
     # via checkov
 aiofile==3.8.5
     # via aiopath
-aiofiles==22.1.0
+aiofiles==23.1.0
     # via
     #   -r ./common/requirements.in
     #   iambic-core
@@ -110,7 +110,7 @@ billiard==3.6.4.0
     #   -r ./api/requirements.in
     #   -r ./common/celery_tasks/requirements.in
     #   celery
-black==22.12.0
+black==23.1.0
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
@@ -253,6 +253,7 @@ cryptography==39.0.2
     #   -r ./common/util/requirements.in
     #   iambic-core
     #   moto
+    #   pyopenssl
 cssselect2==0.7.0
     # via weasyprint
 cyclonedx-python-lib==3.1.5
@@ -267,7 +268,7 @@ decorator==5.1.1
     # via bc-jsonpath-ng
 deep-merge==0.0.4
     # via checkov
-deepdiff==5.8.1
+deepdiff==6.3.0
     # via
     #   -r ./api/requirements.in
     #   -r ./common/lib/requirements.in
@@ -322,7 +323,7 @@ filelock==3.10.1
     #   virtualenv
 flagpole==1.1.1
     # via cloudaux
-flake8==5.0.4
+flake8==6.0.0
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
@@ -390,7 +391,7 @@ httplib2==0.22.0
     #   google-auth-httplib2
 humanize==4.6.0
     # via flower
-iambic-core==0.1.146
+iambic-core==0.1.155
     # via -r ./common/lib/iambic/requirements.in
 identify==2.5.21
     # via pre-commit
@@ -576,6 +577,7 @@ packageurl-python==0.10.4
 packaging==23.0
     # via
     #   -r ./requirements.in
+    #   black
     #   checkov
     #   docker
     #   marshmallow
@@ -621,7 +623,7 @@ policyuniverse==1.5.0.20220613
     # via
     #   -r ./api/util/requirements.in
     #   checkov
-pre-commit==2.21.0
+pre-commit==3.2.0
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
@@ -662,7 +664,7 @@ pycares==4.3.0
     # via aiodns
 pycep-parser==0.3.9
     # via checkov
-pycodestyle==2.9.1
+pycodestyle==2.10.0
     # via
     #   flake8
     #   flake8-import-order
@@ -687,7 +689,7 @@ pydocstyle==6.3.0
     # via flake8-docstrings
 pydyf==0.5.0
     # via weasyprint
-pyflakes==2.5.0
+pyflakes==3.0.1
     # via flake8
 pygithub==1.57
     # via
@@ -711,6 +713,8 @@ pynacl==1.5.0
     # via pygithub
 pynamodax==6.1.4
     # via -r ./common/requirements.in
+pyopenssl==23.0.0
+    # via iambic-core
 pyotp==2.8.0
     # via -r ./api/requirements.in
 pyparsing==3.0.9
@@ -745,7 +749,7 @@ pytest==7.2.2
     #   pytest-timeout
     #   pytest-tornado
     #   pytest-xdist
-pytest-asyncio==0.20.3
+pytest-asyncio==0.21.0
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
