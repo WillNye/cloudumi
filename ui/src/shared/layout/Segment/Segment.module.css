@@ -1,0 +1,22 @@
+.segment {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  padding: var(--spacing-lg);
+  width: 100%;
+
+  .loaderOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(28, 29, 34, 0.8);
+    z-index: 50;
+
+    &.disabled {
+      display: none;
+    }
+  }
+}

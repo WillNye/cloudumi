@@ -21,5 +21,9 @@ export const AuthRoute: FC<PropsWithChildren> = props => {
     return <Navigate to="/login/mfa" replace />;
   }
 
+  if (user.needs_to_sign_eula) {
+    return <Navigate to="/eula" replace />;
+  }
+
   return <Outlet />;
 };

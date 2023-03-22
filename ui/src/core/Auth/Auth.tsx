@@ -30,7 +30,7 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
     getUser();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const getUser = useCallback(() => {
+  const getUser = useCallback(async () => {
     setIsLoading(true);
     getUserDetails()
       .then(({ data }) => {

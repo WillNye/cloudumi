@@ -1,0 +1,45 @@
+.eula {
+  width: 100vw;
+  height: 100vh;
+
+  .container {
+    width: 90%;
+    margin: auto;
+    padding-top: 50px;
+    padding-bottom: 20px;
+    max-width: 1200px;
+  }
+
+  .document {
+    min-height: 70vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    font-size: 15px;
+    line-height: 1.6rem;
+    resize: none;
+    outline: none;
+    border: none;
+    display: block;
+    width: 100%;
+    background-color: var(--gray-700);
+    padding: var(--spacing-lg);
+  }
+
+  .actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .accept {
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    flex-direction: row;
+    padding-top: var(--spacing-lg);
+  }
+
+  .button {
+    max-width: 200px;
+  }
+}

@@ -37,7 +37,7 @@ class TenantEulaHandler(BaseAdminHandler):
         await tenant_details.submit_default_eula(self.user, self.ip)
         self.eula_signed = bool(tenant_details.eula_info)
 
-        await self.clear_jwt_cookie()
+        await self.set_jwt_cookie(self.ctx.tenant)
 
         self.write(
             WebResponse(
