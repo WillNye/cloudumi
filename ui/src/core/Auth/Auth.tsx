@@ -28,7 +28,7 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
 
   useEffect(function onMount() {
     getUser();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getUser = useCallback(() => {
     setIsLoading(true);

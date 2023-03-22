@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react'
-import { Grid, Table, Segment, Header } from 'semantic-ui-react'
+import { Grid, Table, Segment, Header, Tab } from 'semantic-ui-react'
 import { useAuth } from '../../auth/AuthProviderDefault'
 import { CopyBlock, dracula } from 'react-code-blocks'
 
 const Downloads = () => {
   const { sendRequestCommon } = useAuth()
   const [noqInstallScript, setNoqInstallScript] = React.useState('')
+  const [noqInstallScriptWindows, setNoqInstallScriptWindows] =
+    React.useState('')
   const [noqDownloadTable, setNoqDownloadTable] = React.useState([])
 
   useEffect(() => {
@@ -20,6 +22,7 @@ const Downloads = () => {
       }
 
       setNoqInstallScript(resJson.install_script)
+      setNoqInstallScriptWindows(resJson.install_script_windows)
       setNoqDownloadTable(
         resJson.download_links.map((item) => {
           return (
@@ -35,6 +38,43 @@ const Downloads = () => {
     fetchData()
   }, [sendRequestCommon])
 
+  const isWindows =
+    navigator.userAgentData.platform.toLowerCase().indexOf('win') > -1
+  const defaultActiveIndex = isWindows ? 1 : 0
+
+  const panes = [
+    {
+      menuItem: 'Linux/Mac',
+      render: () => (
+        <Tab.Pane attached={false}>
+          {noqInstallScript ? (
+            <CopyBlock
+              text={noqInstallScript}
+              language={'shell'}
+              showLineNumbers={false}
+              theme={dracula}
+            />
+          ) : null}
+        </Tab.Pane>
+      ),
+    },
+    {
+      menuItem: 'Windows',
+      render: () => (
+        <Tab.Pane attached={false}>
+          {noqInstallScript ? (
+            <CopyBlock
+              text={noqInstallScriptWindows}
+              language={'powershell'}
+              showLineNumbers={false}
+              theme={dracula}
+            />
+          ) : null}
+        </Tab.Pane>
+      ),
+    },
+  ]
+
   return (
     <Grid>
       <Grid.Column width={16}>
@@ -48,14 +88,11 @@ const Downloads = () => {
           configure it:
           <br />
           <br />
-          {noqInstallScript ? (
-            <CopyBlock
-              text={noqInstallScript}
-              language={'shell'}
-              showLineNumbers={false}
-              theme={dracula}
-            />
-          ) : null}
+          <Tab
+            menu={{ secondary: true, pointing: true }}
+            panes={panes}
+            defaultActiveIndex={defaultActiveIndex}
+          />
           <br />
           <br />
           {noqDownloadTable ? <Table>{noqDownloadTable}</Table> : null}
