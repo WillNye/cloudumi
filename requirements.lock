@@ -44,7 +44,7 @@ antlr4-python3-runtime==4.7.2
     # via noq-dax-client
 anyio==3.6.2
     # via aiopath
-argcomplete==3.0.3
+argcomplete==3.0.4
     # via checkov
 asgiref==3.6.0
     # via
@@ -84,13 +84,13 @@ aws-error-utils==2.7.0
     # via
     #   -r ./common/lib/aws/access_undenied/requirements.in
     #   iambic-core
-awscli==1.27.95
+awscli==1.27.96
     # via -r ./frontend/requirements.in
 bandit==1.7.5
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
-bc-detect-secrets==1.4.14
+bc-detect-secrets==1.4.15
     # via checkov
 bc-jsonpath-ng==1.5.9
     # via checkov
@@ -127,7 +127,7 @@ boto==2.49.0
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
     #   cloudaux
-boto3==1.26.95
+boto3==1.26.96
     # via
     #   -r ./api/requirements.in
     #   -r ./common/config/requirements.in
@@ -142,7 +142,7 @@ boto3==1.26.95
     #   iambic-core
     #   moto
     #   parliament
-botocore==1.29.95
+botocore==1.29.96
     # via
     #   -r ./api/requirements.in
     #   -r ./common/config/requirements.in
@@ -193,7 +193,7 @@ charset-normalizer==3.1.0
     #   aiohttp
     #   checkov
     #   requests
-checkov==2.3.108
+checkov==2.3.110
     # via -r ./common/util/requirements.in
 click==8.1.3
     # via
@@ -310,13 +310,13 @@ exceptiongroup==1.1.1
     # via pytest
 execnet==1.9.0
     # via pytest-xdist
-faker==18.2.0
+faker==18.3.0
     # via pydantic-factories
-fakeredis==2.10.1
+fakeredis==2.10.2
     # via
     #   -r ./api/util/requirements-test.in
     #   -r ./util/tests/requirements.in
-filelock==3.10.0
+filelock==3.10.1
     # via
     #   pytest-mypy
     #   virtualenv
@@ -384,7 +384,7 @@ greenlet==2.0.2
     #   sqlalchemy
 html5lib==1.1
     # via weasyprint
-httplib2==0.21.0
+httplib2==0.22.0
     # via
     #   google-api-python-client
     #   google-auth-httplib2
@@ -848,7 +848,7 @@ readme-renderer==37.3
     #   -r ./common/util/requirements-test.in
 recursive-diff==1.1.0
     # via iambic-core
-redis==4.5.2
+redis==4.5.3
     # via
     #   -r ./common/lib/requirements.in
     #   -r ./common/util/requirements.in
@@ -1097,7 +1097,7 @@ wrapt==1.15.0
     # via
     #   deprecated
     #   elastic-apm
-xarray==2023.2.0
+xarray==2023.3.0
     # via recursive-diff
 xmlsec==1.3.13
     # via python3-saml
