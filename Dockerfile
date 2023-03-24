@@ -47,9 +47,9 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y insta
     mkdir -p /home/appuser/.aws/ && \
     chown -R appuser /home/appuser && \
     # Install Python requirements
-    python -m venv $VIRTUAL_ENV && \
+    python3.11 -m venv $VIRTUAL_ENV && \
     . env/bin/activate && \
-    python -m pip install -r requirements.lock && \
+    python3.11 -m pip install -r requirements.lock && \
     # Install yarn and frontend dependencies
     npm install yarn -g && \
     yarn --cwd frontend --dev && \
@@ -68,4 +68,4 @@ RUN python3.11 -m pip install -e . && pip3 cache purge && apt-get -y autoremove
 RUN $CONFIG_LOCATION || alembic upgrade head
 
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
-CMD ["python", "api/__main__.py"]
+CMD ["python3.11", "api/__main__.py"]
