@@ -29,12 +29,13 @@ ADD frontend/yarn.lock frontend/yarn.lock
 
 # Install dependencies in as few layers as possible
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata && apt-get install -y software-properties-common gcc && \
-    add-apt-repository -y ppa:deadsnakes/ppa && apt-get update && apt-get install -y python3.10 python3-distutils \
-    python3-pip python3-apt python3-dev python-is-python3 pkg-config awscli libpq-dev \
-    git-all python3.10-venv curl telnet iputils-ping sudo vim systemctl apt-transport-https \
-    build-essential libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev python3-dev && \
+    add-apt-repository -y ppa:deadsnakes/ppa && apt-get update && apt-get install -y python3.11 python3.11-distutils \
+    python3-apt python3.11-dev python-is-python3 pkg-config awscli libpq-dev \
+    git-all python3.11-venv curl telnet iputils-ping sudo vim systemctl apt-transport-https \
+    build-essential libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev && \
     mkdir -p /app && \
     apt-get clean && apt-get update && \
+    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 && \
     # Install Node
     curl -sL https://deb.nodesource.com/setup_18.x | bash && \
     apt-get install -y nodejs && \
@@ -46,9 +47,9 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y insta
     mkdir -p /home/appuser/.aws/ && \
     chown -R appuser /home/appuser && \
     # Install Python requirements
-    python -m venv $VIRTUAL_ENV && \
+    python3.11 -m venv $VIRTUAL_ENV && \
     . env/bin/activate && \
-    python -m pip install -r requirements.lock && \
+    python3.11 -m pip install -r requirements.lock && \
     # Install yarn and frontend dependencies
     npm install yarn -g && \
     yarn --cwd frontend --dev && \
@@ -62,9 +63,9 @@ COPY frontend frontend
 RUN yarn --cwd frontend build --base=$PUBLIC_URL && yarn --cwd frontend cache clean --all && rm -rf frontend/node_modules
 COPY . /app
 # Copy entrypoint.sh to use virtualenv and install API
-RUN python -m pip install -e . && pip cache purge && apt-get -y autoremove
+RUN python3.11 -m pip install -e . && pip3 cache purge && apt-get -y autoremove
 
 RUN $CONFIG_LOCATION || alembic upgrade head
 
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
-CMD ["python", "api/__main__.py"]
+CMD ["python3.11", "api/__main__.py"]
