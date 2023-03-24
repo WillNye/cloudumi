@@ -34,8 +34,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y insta
     git-all python3.11-venv curl telnet iputils-ping sudo vim systemctl apt-transport-https \
     build-essential libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev && \
     mkdir -p /app && \
-    python -m ensurepip --upgrade && \
     apt-get clean && apt-get update && \
+    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 && \
     # Install Node
     curl -sL https://deb.nodesource.com/setup_18.x | bash && \
     apt-get install -y nodejs && \
