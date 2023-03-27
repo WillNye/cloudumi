@@ -14,7 +14,7 @@ export interface AuthResetPasswordInputs {
 export interface AuthContextProps {
   user: User | null;
   setUser: Dispatch<User | null>;
-  getUser: () => void;
+  getUser: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextProps>({

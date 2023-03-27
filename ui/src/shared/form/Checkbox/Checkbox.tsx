@@ -1,4 +1,4 @@
-import React, { FC, forwardRef, Ref } from 'react';
+import React, { FC, forwardRef, ReactNode, Ref } from 'react';
 import classNames from 'classnames';
 import { BaseInput } from '../Input';
 import css from './Checkbox.module.css';
@@ -10,6 +10,8 @@ export interface CheckboxProps
   > {
   error?: boolean;
   containerClassname?: string;
+  prefix?: ReactNode;
+  suffix?: ReactNode;
   size?: 'small' | 'medium' | 'large';
   onClear?: () => void;
 }
@@ -21,7 +23,9 @@ export const Checkbox: FC<CheckboxProps> = forwardRef(
       containerClassname,
       error,
       disabled,
-      value,
+      checked,
+      prefix,
+      suffix,
       size = 'small',
       ...rest
     },
@@ -35,16 +39,16 @@ export const Checkbox: FC<CheckboxProps> = forwardRef(
           [css.disabled]: disabled
         })}
       >
-        {/* //   {prefix && <div className={css.prefix}>{prefix}</div>} */}
+        {prefix && <div className={css.prefix}>{prefix}</div>}
         <BaseInput
           {...rest}
           type="checkbox"
           ref={ref}
-          value={value}
+          checked={checked}
           disabled={disabled}
           className={classNames(className, css.input)}
         />
-        {/* //   {/* {suffix && <div className={css.suffix}>{suffix}</div>} */}
+        {suffix && <div className={css.suffix}>{suffix}</div>}
       </span>
     );
   }

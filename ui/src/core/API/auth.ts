@@ -1,5 +1,5 @@
 import axios from '../Axios';
-import { V1_API_URL, V2_API_URL, V4_API_URL } from './constants';
+import { V1_API_URL, V2_API_URL, V3_API_URL, V4_API_URL } from './constants';
 
 type LoginParams = {
   email: string;
@@ -71,4 +71,14 @@ export const signinWithSSO = () => {
 export const awsSignIn = (role: string) => {
   const url = `${V2_API_URL}/role_login/${role}`;
   return axios.get(url);
+};
+
+export const getEndUserAgreement = () => {
+  const url = `${V3_API_URL}/legal/agreements/eula`;
+  return axios.get(url);
+};
+
+export const acceptEndUserAgreement = () => {
+  const url = `${V3_API_URL}/tenant/details/eula`;
+  return axios.post(url);
 };

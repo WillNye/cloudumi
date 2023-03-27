@@ -539,6 +539,7 @@ class BaseHandler(TornadoRequestHandler):
                     self.user = res.get("user")
                     self.groups = res.get("groups")
 
+        # Legacy auth stll needed while we have the old UI
         if not self.user:
             # Authenticate user by API Key
             if config.get_tenant_specific_key(
@@ -661,7 +662,7 @@ class BaseHandler(TornadoRequestHandler):
                         "tenant": tenant,
                     },
                 )
-                log_data["message"] = "No user detected. Check configuration."
+                log_data["message"] = "No user detected. Please login first."
                 log.error(log_data)
                 self.write(log_data["message"])
                 raise tornado.web.Finish()
@@ -826,14 +827,24 @@ class BaseHandler(TornadoRequestHandler):
             )
             raise tornado.web.Finish()
         elif not self.eula_signed:
-            # If the EULA hasn't been signed the user cannot access any AWS information.
-            self.groups = []
-            self.eligible_roles = []
-            self.eligible_accounts = []
+            self.ctx = RequestContext(
+                tenant=tenant,
+                db_tenant=self.ctx.db_tenant,
+                user=self.user,
+                groups=self.groups,
+                request_uuid=self.request_uuid,
+                uri=self.request.uri,
+                mfa_setup_required=self.mfa_setup_required,
+                password_reset_required=self.password_reset_required,
+                needs_to_sign_eula=not self.eula_signed,
+                mfa_verification_required=self.mfa_verification_required,
+                is_admin=self.is_admin,
+            )
 
             if self.__class__.__name__ not in [
                 "TenantEulaHandler",
                 "AuthenticatedStaticFileHandler",
+                "MfaHandler",
             ]:
                 # Force them to the eula page if they're an admin, return a 403 otherwise
                 if self.is_admin:

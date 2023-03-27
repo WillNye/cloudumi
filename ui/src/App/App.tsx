@@ -9,11 +9,13 @@ const Settings = lazy(() => import('./Settings'));
 const NotFound = lazy(() => import('./NotFound'));
 const Access = lazy(() => import('./Access'));
 const Dashboard = lazy(() => import('./Dashboard'));
+const EULA = lazy(() => import('./EULA'));
 
 export const App: FC = () => (
   <Suspense fallback={<Loader fullPage />}>
     <Routes>
       {/** Wrap all Route under ProtectedRoutes element */}
+      <Route path="/eula" element={<EULA />} />
       <Route path="/" element={<AuthRoute />}>
         <Route path="/" element={<Dashboard />}>
           <Route path="/" element={<Access />} />

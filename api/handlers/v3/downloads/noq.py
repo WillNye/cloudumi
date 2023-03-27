@@ -1,3 +1,5 @@
+import textwrap
+
 from common.config import config
 from common.handlers.base import BaseHandler
 from common.lib.yaml import yaml
@@ -23,6 +25,22 @@ class NoqDownloadHandler(BaseHandler):
             "mkdir -p ~/.noq ; cat <<EOF > ~/.noq/config.yaml\n"
             f"{yaml.dump(generated_config)}"
             "EOF\n"
+        )
+
+        install_script_windows = textwrap.dedent(
+            f"""# Create the .noq directory if it doesn't exist
+$noqDirectory = "$env:USERPROFILE\\.noq"
+if (!(Test-Path $noqDirectory)) {{
+    New-Item -ItemType Directory -Force -Path $noqDirectory
+}}
+
+# Write the config.yaml content
+$configContent = @"
+{yaml.dump(generated_config)}
+"@
+
+# Write the content to the config.yaml file
+Set-Content -Path "$noqDirectory\\config.yaml" -Value $configContent"""
         )
 
         download_links = [
@@ -66,6 +84,7 @@ class NoqDownloadHandler(BaseHandler):
         self.write(
             {
                 "install_script": install_script,
+                "install_script_windows": install_script_windows,
                 "download_links": download_links,
             }
         )
