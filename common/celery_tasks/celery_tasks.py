@@ -2971,7 +2971,7 @@ schedule = {
     "cache_access_advisor_across_accounts_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_access_advisor_across_accounts_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": get_schedule(60 * 6),
+        "schedule": get_schedule(60 * 24),
     },
     # "cache_identities_for_all_tenants": {
     #     "task": "common.celery_tasks.celery_tasks.cache_identities_for_all_tenants",
@@ -3042,7 +3042,7 @@ app.conf.timezone = "UTC"
 # print("here")
 
 
-# cache_iambic_data_for_all_tenants()
+cache_iambic_data_for_all_tenants()
 
 # TODO: Message user with information about this being reviewed
 # TODO: Determine how to map IdP groups to Slack channels

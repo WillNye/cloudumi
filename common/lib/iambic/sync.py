@@ -228,7 +228,11 @@ async def sync_role_access(tenant: Tenant, config_template: Config):
 
 async def sync_all_iambic_data():
     async def _sync_all_iambic_data(tenant: Tenant):
-        config_template = await get_config_data_for_repo(tenant)
+        try:
+            config_template = await get_config_data_for_repo(tenant)
+        except Exception:
+            config_template = None
+            # TODO: Log here?
         if not config_template:
             # TODO: Message should be renamed because tenant will not see it, we will, and
             # message provides no context as to what tenant, repo, etc.

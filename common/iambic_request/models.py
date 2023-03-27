@@ -164,6 +164,8 @@ class IambicRepo:
         if request_notes:
             await aio_wrapper(
                 self.repo.git.push,
+                "--force",
+                "--set-upstream",
                 self.remote_name,
                 "refs/notes/commits",
             )
