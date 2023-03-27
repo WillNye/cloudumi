@@ -1,0 +1,7 @@
+== Deployment ==
+
+`terraform apply`
+
+=== What profile is deployment using? ===
+
+`vars.tf` reference staging_admin to be used for deployment.
