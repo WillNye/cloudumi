@@ -38,7 +38,7 @@
     "survey-react": "^1.9.75",
     "use-state-if-mounted": "^1.0.4",
     "yaml": "^1.10.2",
-    "zustand": "^4.3.3"
+    "zustand": "^4.3.6"
   },
   "scripts": {
     "start": "react-scripts --openssl-legacy-provider start || react-scripts start",
