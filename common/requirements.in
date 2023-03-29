@@ -2,6 +2,7 @@ aiofiles
 aiopath
 cryptography
 humanfriendly
+jq
 noq-dax-client
 pydantic
 python3-saml
