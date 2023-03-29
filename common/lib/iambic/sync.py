@@ -7,7 +7,7 @@ from iambic.config.utils import resolve_config_template_path
 from iambic.core.models import BaseTemplate
 from iambic.core.parser import load_templates
 from iambic.core.utils import gather_templates
-from iambic.plugins.v0_1_0.aws.iam.role.models import RoleTemplate
+from iambic.plugins.v0_1_0.aws.iam.role.models import AwsIamRoleTemplate
 
 from common.aws.accounts.models import AWSAccount
 from common.config import config
@@ -85,8 +85,8 @@ def get_aws_account_from_template(
 
 
 async def get_arn_to_role_template_mapping(
-    aws_accounts: AWSAccount, role_template: RoleTemplate
-) -> Dict[str, RoleTemplate]:
+    aws_accounts: AWSAccount, role_template: AwsIamRoleTemplate
+) -> Dict[str, AwsIamRoleTemplate]:
     arn_mapping = {}
     for included_account in role_template.included_accounts:
         aws_account = get_aws_account_from_template(aws_accounts, included_account)
@@ -103,8 +103,8 @@ async def get_arn_to_role_template_mapping(
 
 
 async def explode_role_templates_for_accounts(
-    aws_accounts: AWSAccount, iambic_roles: List[RoleTemplate]
-) -> Dict[str, RoleTemplate]:
+    aws_accounts: AWSAccount, iambic_roles: List[AwsIamRoleTemplate]
+) -> Dict[str, AwsIamRoleTemplate]:
     arn_mappings = {}
     for role in iambic_roles:
         arn_mappings.update(await get_arn_to_role_template_mapping(aws_accounts, role))
@@ -130,7 +130,7 @@ async def sync_aws_accounts(tenant: Tenant, config_template: Config):
     )
 
 
-async def __help_get_role_mappings(tenant: Tenant) -> Dict[str, RoleTemplate]:
+async def __help_get_role_mappings(tenant: Tenant) -> Dict[str, AwsIamRoleTemplate]:
     template_type = "Role"
 
     aws_accounts = await AWSAccount.get_by_tenant(tenant)
@@ -171,7 +171,9 @@ async def sync_identity_roles(tenant: Tenant, config_template: Config):
 
 
 async def sync_role_access(tenant: Tenant, config_template: Config):
-    arn_role_mappings: Dict[str, RoleTemplate] = await __help_get_role_mappings(tenant)
+    arn_role_mappings: Dict[str, AwsIamRoleTemplate] = await __help_get_role_mappings(
+        tenant
+    )
     aws_accounts = await AWSAccount.get_by_tenant(tenant)
     users = await __get_users(tenant)
     groups = await __get_groups(tenant)
