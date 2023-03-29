@@ -1,16 +1,16 @@
 """migration
 
-Revision ID: 025a2aff4ef9
-Revises: 8aa283791be5
-Create Date: 2023-03-08 07:48:26.049173
+Revision ID: 839937239244
+Revises: 146467e92abd
+Create Date: 2023-03-29 17:28:04.974086
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "025a2aff4ef9"
-down_revision = "8aa283791be5"
+revision = "839937239244"
+down_revision = "146467e92abd"
 branch_labels = None
 depends_on = None
 
@@ -126,6 +126,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("tenant_id", name="uq_slack_tenant"),
     )
+    op.create_foreign_key(None, "aws_account", "tenant", ["tenant_id"], ["id"])
     op.add_column(
         "group_memberships", sa.Column("updated_by", sa.String(), nullable=True)
     )
@@ -134,6 +135,7 @@ def upgrade() -> None:
     )
     op.add_column("groups", sa.Column("updated_by", sa.String(), nullable=True))
     op.add_column("groups", sa.Column("updated_at", sa.DateTime(), nullable=True))
+    op.create_foreign_key(None, "identity_role", "tenant", ["tenant_id"], ["id"])
     op.add_column("request", sa.Column("pull_request_url", sa.String(), nullable=True))
     op.add_column("request", sa.Column("request_method", sa.String(), nullable=True))
     op.add_column("request", sa.Column("slack_username", sa.String(), nullable=True))
@@ -152,6 +154,15 @@ def upgrade() -> None:
     op.add_column(
         "request_comment", sa.Column("updated_at", sa.DateTime(), nullable=True)
     )
+    op.add_column("role_access", sa.Column("updated_by", sa.String(), nullable=True))
+    op.add_column("role_access", sa.Column("updated_at", sa.DateTime(), nullable=True))
+    op.create_foreign_key(
+        None, "role_access", "groups", ["group_id"], ["id"], ondelete="CASCADE"
+    )
+    op.create_foreign_key(
+        None, "role_access", "users", ["user_id"], ["id"], ondelete="CASCADE"
+    )
+    op.create_foreign_key(None, "role_access", "tenant", ["tenant_id"], ["id"])
     op.add_column("tenant", sa.Column("updated_by", sa.String(), nullable=True))
     op.add_column("tenant", sa.Column("updated_at", sa.DateTime(), nullable=True))
     op.add_column("users", sa.Column("updated_by", sa.String(), nullable=True))
@@ -165,6 +176,11 @@ def downgrade() -> None:
     op.drop_column("users", "updated_by")
     op.drop_column("tenant", "updated_at")
     op.drop_column("tenant", "updated_by")
+    op.drop_constraint(None, "role_access", type_="foreignkey")
+    op.drop_constraint(None, "role_access", type_="foreignkey")
+    op.drop_constraint(None, "role_access", type_="foreignkey")
+    op.drop_column("role_access", "updated_at")
+    op.drop_column("role_access", "updated_by")
     op.drop_column("request_comment", "updated_at")
     op.drop_column("request_comment", "updated_by")
     op.drop_column("request", "updated_at")
@@ -179,10 +195,12 @@ def downgrade() -> None:
     op.drop_column("request", "slack_username")
     op.drop_column("request", "request_method")
     op.drop_column("request", "pull_request_url")
+    op.drop_constraint(None, "identity_role", type_="foreignkey")
     op.drop_column("groups", "updated_at")
     op.drop_column("groups", "updated_by")
     op.drop_column("group_memberships", "updated_at")
     op.drop_column("group_memberships", "updated_by")
+    op.drop_constraint(None, "aws_account", type_="foreignkey")
     op.drop_table("slack_tenant_oauth_relationships")
     op.drop_table("slack_tenant_install_relationships")
     op.drop_table("slack_oauth_states")
