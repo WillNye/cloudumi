@@ -1,4 +1,5 @@
-import axios from 'axios';
+import axios, { AxiosHeaders, AxiosInstance } from 'axios';
+import { InternalAxiosRequestConfig } from 'axios';
 
 const client = axios.create({
   baseURL: window.location.origin,
@@ -10,15 +11,15 @@ const client = axios.create({
 
 // Request Interceptor
 client.interceptors.request.use(
-  config => {
-    const newConfig = {
+  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+    const headers = new AxiosHeaders(config.headers);
+    headers.set('Content-type', 'application/json;charset=UTF-8');
+    headers.set('X-Requested-With', 'XMLHttpRequest');
+    headers.set('Accept', 'application/json');
+
+    const newConfig: InternalAxiosRequestConfig = {
       ...config,
-      headers: {
-        ...config.headers,
-        'Content-type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-        Accept: 'application/json'
-      }
+      headers
     };
     return newConfig;
   },
