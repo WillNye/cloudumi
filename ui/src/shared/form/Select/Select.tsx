@@ -1,10 +1,11 @@
-import React, { FC, forwardRef, Ref } from 'react';
 import classNames from 'classnames';
-import css from './Input.module.css';
+import { ReactNode, Ref, forwardRef } from 'react';
 
-export interface InputProps
+import css from './Select.module.css';
+
+export interface SelectProps
   extends Omit<
-    React.InputHTMLAttributes<HTMLInputElement>,
+    React.SelectHTMLAttributes<HTMLSelectElement>,
     'suffix' | 'prefix' | 'size' | 'results'
   > {
   fullWidth?: boolean;
@@ -16,41 +17,14 @@ export interface InputProps
   suffix?: React.ReactNode | string;
   showBorder?: boolean;
   onClear?: () => void;
+  children?: ReactNode;
 }
 
-export interface BaseInputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
-  fullWidth?: boolean;
-  selectOnFocus?: boolean;
-  showBorder?: boolean;
-  onClear?: () => void;
-}
-
-export const BaseInput = forwardRef<HTMLInputElement, BaseInputProps>(
-  (
-    { className, selectOnFocus, disabled, value, onFocus, ...rest },
-    ref: Ref<HTMLInputElement>
-  ) => (
-    <input
-      {...rest}
-      ref={ref}
-      value={value}
-      disabled={disabled}
-      className={classNames(className, css.input)}
-      onFocus={event => {
-        if (selectOnFocus) {
-          event.target.select();
-        }
-        onFocus?.(event);
-      }}
-    />
-  )
-);
-
-export const Input: FC<InputProps> = forwardRef(
+export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   (
     {
       className,
+      children,
       containerClassname,
       error,
       fullWidth,
@@ -65,7 +39,7 @@ export const Input: FC<InputProps> = forwardRef(
       onFocus,
       ...rest
     },
-    ref: Ref<HTMLInputElement>
+    ref: Ref<HTMLSelectElement>
   ) => (
     <span
       className={classNames(css.container, containerClassname, {
@@ -77,19 +51,15 @@ export const Input: FC<InputProps> = forwardRef(
       })}
     >
       {prefix && <div className={css.prefix}>{prefix}</div>}
-      <BaseInput
+      <select
         {...rest}
         ref={ref}
         value={value}
         disabled={disabled}
-        className={className}
-        onFocus={event => {
-          if (selectOnFocus) {
-            event.target.select();
-          }
-          onFocus?.(event);
-        }}
-      />
+        className={classNames(className, css.select)}
+      >
+        {children}
+      </select>
       {suffix && <div className={css.suffix}>{suffix}</div>}
     </span>
   )

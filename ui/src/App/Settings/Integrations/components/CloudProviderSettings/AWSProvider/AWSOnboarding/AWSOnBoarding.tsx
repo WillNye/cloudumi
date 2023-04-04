@@ -11,7 +11,7 @@ import {
   ONBOARDING_SECTIONS,
   ONBOARDING_STEPS
 } from './constants';
-import { getHubAccount } from 'core/API/awsConfig';
+import { getHubAccounts } from 'core/API/awsConfig';
 import { Icon } from 'shared/elements/Icon';
 import { Button } from 'shared/elements/Button';
 import { Loader } from 'shared/elements/Loader';
@@ -47,7 +47,7 @@ const OnBoarding = () => {
 
   const getAccountDetails = async () => {
     setIsLoading(true);
-    const resJson = await getHubAccount();
+    const resJson = await getHubAccounts();
     const data = resJson.data;
     if (data && data.count) {
       setIsHubAccount(false);
