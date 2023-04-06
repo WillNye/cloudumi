@@ -1374,7 +1374,8 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
 
         iambic_repos = c_dict.get(IAMBIC_REPOS_BASE_KEY, [])
         if iambic_repos and filter_secrets:
-            iambic_repos["access_token"] = REDACTED_STR
+            for iambic_repo in iambic_repos:
+                iambic_repo["access_token"] = REDACTED_STR
 
         # TODO: Clean up secrets
         if return_format == "dict":

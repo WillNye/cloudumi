@@ -738,6 +738,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WebResponse"
+  /api/v4/integrations/slack:
+    get:
+      description: "Get status or details on slack"
+      parameters: []
+      responses:
+        "200":
+          description: OK
+    delete:
+      description: "Delete slack integration from tenant"
+      parameters: []
+      responses:
+        "200":
+          description: OK
+  /api/v4/integrations/slack/link:
+    get:
+      description: "Generate the slack integration link"
+      parameters: []
+      responses:
+        "200":
+          description: OK
+
 components:
   responses:
     DefaultErrorResponse:
