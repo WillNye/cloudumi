@@ -1,0 +1,44 @@
+.aws {
+  display: flex;
+  height: 100%;
+  overflow-y: auto;
+  flex-direction: column;
+  width: 100%;
+
+  .section {
+    margin: var(--spacing-lg);
+  }
+
+  .content {
+    border: 1px solid var(--gray-600);
+    border-radius: var(--border-radius-md);
+  }
+
+  .headerActions {
+    display: flex;
+    justify-content: flex-end;
+    align-content: center;
+    margin: var(--spacing-md);
+
+    button:last-child {
+      margin-left: var(--spacing-sm);
+    }
+  }
+
+  .header {
+    margin-bottom: var(--spacing-lg);
+  }
+}
+
+.tableActions {
+  button:first-child {
+    margin-right: var(--spacing-md);
+  }
+}
+
+.modals {
+  .customCheckbox {
+    display: flex;
+    flex-direction: row;
+  }
+}

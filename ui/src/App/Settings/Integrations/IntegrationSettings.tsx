@@ -78,7 +78,7 @@ const IntegrationSettings = () => {
           </ul>
         </nav>
       </div>
-      <div>{content}</div>
+      <div className={styles.content}>{content}</div>
     </div>
   );
 };

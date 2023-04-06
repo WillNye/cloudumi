@@ -3,12 +3,18 @@ import { FC, ReactNode, useMemo } from 'react';
 import { Loader } from 'shared/elements/Loader';
 import styles from './Segment.module.css';
 
-interface SegmentProps {
+interface SegmentProps extends React.HTMLAttributes<HTMLDivElement> {
   isLoading?: boolean;
-  children: ReactNode;
+  children?: ReactNode;
+  disablePadding?: boolean;
 }
 
-export const Segment: FC<SegmentProps> = ({ isLoading, children }) => {
+export const Segment: FC<SegmentProps> = ({
+  isLoading,
+  children,
+  className,
+  disablePadding
+}) => {
   const overLayClasses = useMemo(
     () =>
       classNames(styles.loaderOverlay, {
@@ -17,10 +23,18 @@ export const Segment: FC<SegmentProps> = ({ isLoading, children }) => {
     [isLoading]
   );
 
+  const segmentClasses = useMemo(
+    () =>
+      classNames(styles.segment, className, {
+        [styles.disablePadding]: disablePadding
+      }),
+    [disablePadding, className]
+  );
+
   return (
-    <div className={styles.segment}>
+    <div className={segmentClasses}>
       <Loader className={overLayClasses} />
-      {children}
+      <div className={styles.content}>{children}</div>
     </div>
   );
 };

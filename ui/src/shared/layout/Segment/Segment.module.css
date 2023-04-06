@@ -6,6 +6,10 @@
   padding: var(--spacing-lg);
   width: 100%;
 
+  &.disablePadding {
+    padding: 0px;
+  }
+
   .loaderOverlay {
     position: absolute;
     top: 0;
@@ -18,5 +22,9 @@
     &.disabled {
       display: none;
     }
+  }
+
+  .content {
+    width: 100%;
   }
 }
