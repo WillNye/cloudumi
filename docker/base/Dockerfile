@@ -4,7 +4,7 @@
 FROM python:3.10
 RUN mkdir -p /apps
 RUN apt-get update
-RUN apt-get install curl telnet iputils-ping sudo vim systemctl apt-transport-https -y
+RUN apt-get install curl telnet iputils-ping sudo systemctl apt-transport-https -y
 
 # logstash
 # test with: /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/00-cloudumi-s3-es.conf
