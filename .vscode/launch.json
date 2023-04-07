@@ -190,6 +190,33 @@
       }
     },
     {
+      // Note: You will need to start the local API server before running this.
+      "name": "Locust Load Testing",
+      "type": "python",
+      "request": "launch",
+      "module": "locust",
+      "args": [
+        "-f",
+        "load_tests/locustfile.py",
+        "--headless",
+        "-u",
+        "10",
+        "-r",
+        "5",
+        "-t",
+        "60"
+      ],
+      "justMyCode": false,
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "GEVENT_SUPPORT": "True",
+        "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
+        "TEST_USER_DOMAIN": "https://cloudumidev.com:3000",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev"
+      }
+    },
+    {
       "name": "Launch Chrome",
       "request": "launch",
       "type": "pwa-chrome",

@@ -1,6 +1,8 @@
+aiocache
 aiofiles
 aiopath
 cryptography
+locust
 noq-dax-client
 pydantic
 python3-saml
