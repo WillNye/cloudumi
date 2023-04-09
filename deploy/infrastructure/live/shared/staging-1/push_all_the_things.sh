@@ -116,3 +116,4 @@ echo
 echo "Deploying Service - $VERSION"
 echo
 python deploy/infrastructure/live/shared/staging-1/ecs_deployer.py
+python -m locust -f load_tests/locustfile.py --headless -u 10 -r 5 -t 60

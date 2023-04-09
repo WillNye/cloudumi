@@ -212,7 +212,7 @@
       "env": {
         "GEVENT_SUPPORT": "True",
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
-        "TEST_USER_DOMAIN": "https://cloudumidev.com:3000",
+        "TEST_USER_DOMAIN": "cloudumidev.com:3000",
         "AWS_PROFILE": "development/NoqSaasRoleLocalDev"
       }
     },
