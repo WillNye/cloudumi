@@ -67,7 +67,7 @@ class LoadTest(FastHttpUser):
 
     @task
     def user_profile_auth(self):
-        with self.rest(
+        resp = self.client.request(
             "GET",
             "/api/v2/user_profile",
             headers={
@@ -86,8 +86,13 @@ class LoadTest(FastHttpUser):
                 "sec-ch-ua-platform": '"macOS"',
                 "X-Forwarded-For": "127.0.0.1",
             },
-        ) as resp:
-            assert resp.status_code == 200
+        )
+
+        if resp.status_code != 200:
+            print(TEST_USER_DOMAIN)
+            print(self.host)
+            print(resp.text)
+            print(f"Error response: {resp.status_code}")
 
 
 if __name__ == "__main__":
