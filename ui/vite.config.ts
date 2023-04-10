@@ -58,7 +58,12 @@ export default defineConfig(({ mode, command }) => {
     },
     test: {
       globals: true,
-      environment: 'jsdom'
+      environment: 'happy-dom',
+      coverage: {
+        reporter: ['text', 'json', 'html'],
+        all: true,
+        include: ['src/**/*']
+      }
     }
   };
 

@@ -4,8 +4,8 @@ import { INTEGRATIONS_TABS } from './constants';
 import { useMemo, useState } from 'react';
 import NotificationSettings from './components/NotificationSettings';
 import AuthenticationSettings from './components/AuthenticationSettings';
-import CloudProviderSettings from './components/CloudProviderSettings';
 import IambicSettings from './components/IambicSettings';
+import SlackIntegrations from './components/SlackIntegration/SlackIntegration';
 
 const IntegrationSettings = () => {
   const [currentTab, setCurrentTab] = useState<INTEGRATIONS_TABS>(
@@ -17,12 +17,16 @@ const IntegrationSettings = () => {
       return <AuthenticationSettings />;
     }
 
-    if (currentTab === INTEGRATIONS_TABS.CLOUD_PROVIDER) {
-      return <CloudProviderSettings />;
-    }
+    // if (currentTab === INTEGRATIONS_TABS.CLOUD_PROVIDER) {
+    //   return <CloudProviderSettings />;
+    // }
 
     if (currentTab === INTEGRATIONS_TABS.IAMBIC) {
       return <IambicSettings />;
+    }
+
+    if (currentTab === INTEGRATIONS_TABS.SLACK) {
+      return <SlackIntegrations />;
     }
 
     return <NotificationSettings />;
@@ -74,6 +78,14 @@ const IntegrationSettings = () => {
               onClick={() => setCurrentTab(INTEGRATIONS_TABS.IAMBIC)}
             >
               <div className={styles.text}>Iambic</div>
+            </li>
+            <li
+              className={`${styles.navItem} ${
+                currentTab === INTEGRATIONS_TABS.SLACK && styles.isActive
+              }`}
+              onClick={() => setCurrentTab(INTEGRATIONS_TABS.SLACK)}
+            >
+              <div className={styles.text}>Slack</div>
             </li>
           </ul>
         </nav>

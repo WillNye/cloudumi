@@ -25,6 +25,7 @@ export const SelectAccount = ({
 
   useEffect(() => {
     getAllSpokeAccounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getAllSpokeAccounts = useCallback(async () => {
