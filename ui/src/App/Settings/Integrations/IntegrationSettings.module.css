@@ -47,4 +47,9 @@
       border-bottom: solid 2px var(--blue-600);
     }
   }
+
+  .content {
+    overflow-y: auto;
+    height: 100%;
+  }
 }

@@ -14,10 +14,11 @@ info:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.txt
 servers:
-  - url: "{server}/api/v2"
+  - url: "{server}"
     variables:
       server:
-        default: https://noq.example.com
+        default: http://localhost:8092
+
 tags:
   - name: roles
     description: IAM Role endpoints
@@ -33,7 +34,7 @@ tags:
     description: Corporate level information about the tenant such as membership tier.
 
 paths:
-  /request:
+  /api/v2/request:
     post:
       summary: submit a new request
       tags:
@@ -51,7 +52,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExtendedRequestModel"
-  /requests:
+  /api/v2/requests:
     get:
       summary: get a list of requests
       tags:
@@ -65,7 +66,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/RequestModel"
-  /requests/{request_id}:
+  /api/v2/requests/{request_id}:
     get:
       summary: get details about a request
       tags:
@@ -98,7 +99,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExtendedRequestModel"
-  /generate_changes:
+  /api/v2/generate_changes:
     post:
       summary: get templated changes
       requestBody:
@@ -127,7 +128,7 @@ paths:
                   propertyName: change_type
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
-  /resources:
+  /api/v2/resources:
     get:
       summary: get resources
       parameters:
@@ -142,7 +143,7 @@ paths:
                 type: array
                 items:
                   type: string
-  /typeahead/resources:
+  /api/v2/typeahead/resources:
     get:
       summary: typeahead for all known resource ARNs
       parameters:
@@ -156,7 +157,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ArnArray"
-  /clone/role:
+  /api/v2/clone/role:
     post:
       summary: clone a role
       tags:
@@ -176,7 +177,7 @@ paths:
                 $ref: "#/components/schemas/CreateCloneRequestResponse"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
-  /managed_policies_on_role/{account_id}/{role_name}:
+  /api/v2/managed_policies_on_role/{account_id}/{role_name}:
     get:
       summary: get details about managed policies attached to a role
       tags:
@@ -191,7 +192,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WebResponse"
-  /service_control_policies/{account_or_ou_id}:
+  /api/v2/service_control_policies/{account_or_ou_id}:
     get:
       summary: get details about service control policies targeting an account or organizational unit
       tags:
@@ -205,7 +206,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WebResponse"
-  /roles:
+  /api/v2/roles:
     get:
       summary: get a list of roles
       tags:
@@ -220,7 +221,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/AwsPrincipalModel"
 
-  /roles/{account_id}:
+  /api/v2/roles/{account_id}:
     get:
       summary: get a list of roles in an account
       tags:
@@ -549,7 +550,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/IambicDetailResponse"
-  /roles/{account_id}/{role_name}:
+  /api/v2/roles/{account_id}/{role_name}:
     get:
       summary: get details about a role
       tags:
@@ -598,7 +599,7 @@ paths:
           description: OK
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
-  /roles/{account_id}/{role_name}/elevated-access-config:
+  /api/v2/roles/{account_id}/{role_name}/elevated-access-config:
     put:
       summary: update a role
       tags:
@@ -620,7 +621,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExtendedAwsPrincipalModel"
-  /user:
+  /api/v2/user:
     get:
       summary: get details about current user
       responses:
@@ -630,7 +631,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserModel"
-  /mtls/roles/{account_id}/{role_name}:
+  /api/v2/mtls/roles/{account_id}/{role_name}:
     delete:
       summary: delete a role (mtls apps only)
       tags:
@@ -660,7 +661,7 @@ paths:
                 $ref: "#/components/schemas/ExtendedAwsPrincipalModel"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
-  /policies/check:
+  /api/v2/policies/check:
     post:
       summary: check a policy document
       tags:
@@ -678,7 +679,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PolicyCheckModel"
-  /get_resource_url:
+  /api/v2/get_resource_url:
     get:
       summary: get a resource URL from an ARN
       tags:
@@ -702,7 +703,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WebResponse"
-  /audit/roles:
+  /api/v2/audit/roles:
     get:
       summary: retrieve a list of IAM roles
       tags:
@@ -717,7 +718,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WebResponse"
-  /audit/roles/{account_id}/{role_name}/access:
+  /api/v2/audit/roles/{account_id}/{role_name}/access:
     get:
       summary: retrieve a list of groups with access to the specified role
       tags:
@@ -738,6 +739,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WebResponse"
+  /api/v4/integrations/slack:
+    get:
+      description: "Get status or details on slack"
+      parameters: []
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: NOT_FOUND
+    delete:
+      description: "Delete slack integration from tenant"
+      parameters: []
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: NOT_FOUND
+  /api/v4/integrations/slack/link:
+    get:
+      description: "Generate the slack integration link"
+      parameters: []
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: ERROR
 components:
   responses:
     DefaultErrorResponse:

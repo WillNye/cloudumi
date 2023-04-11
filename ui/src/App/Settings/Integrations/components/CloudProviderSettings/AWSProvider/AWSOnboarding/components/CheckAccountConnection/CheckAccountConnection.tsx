@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react';
-import { getHubAccount, getSpokeAccount } from 'core/API/awsConfig';
+import { getHubAccounts, getSpokeAccounts } from 'core/API/awsConfig';
 import { TIME_PER_INTERVAL } from '../../constants';
 import AWSMxNetImg from 'assets/vendor/mx-net.svg';
 import AWSCacheImg from 'assets/vendor/connect.svg';
@@ -11,7 +11,7 @@ const CheckAccountConnection = ({
   accountName
 }) => {
   const getAccountDetails = useCallback(async () => {
-    const getHubSpokeAccount = isHubAccount ? getHubAccount : getSpokeAccount;
+    const getHubSpokeAccount = isHubAccount ? getHubAccounts : getSpokeAccounts;
     const resJson = await getHubSpokeAccount();
     const data = resJson.data;
     if (data && data.count) {
