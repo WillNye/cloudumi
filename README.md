@@ -50,9 +50,9 @@ Each target has a name that uniquely identifies a build target. The path disambi
 - To run the API container within Docker, you can also use `docker run`: `docker run -p 8092:8092 --env CONFIG_LOCATION=/configs/development_account/saas_development.yaml --env AWS_PROFILE=NoqSaasRoleLocalDev --volume ~/.aws:/root/.aws --volume ~/.noq:/root/.noq bazel/api:container`
 - All dependencies are stored in `requirements.lock` in the root of the mono repo
 - These dependencies are used by bazel in establishing an hermetic build system - all requirements are cached in a central repository.
-- We use `pip-compile --allow-unsafe --strip-extras --output-file requirements.lock $( find . -type f \( -name "requirements.in" -o -name "requirements-test.in" \))` to generate the set of dependencies by parsing all `requirements.in` and `requirements-test.in` files contained in all the sub-projects of the mono repo.
+- We use `pip-compile --allow-unsafe --output-file requirements.lock $( find . -type f \( -name "requirements.in" -o -name "requirements-test.in" \))` to generate the set of dependencies by parsing all `requirements.in` and `requirements-test.in` files contained in all the sub-projects of the mono repo.
 - Because `pip-compile` optimistically caches all depdendencies, re-running the command will not update all python dependencies, but just look for newly added or freshly removed dependencies
-- To upgrade all dependencies, remove the `requirements.lock` file and re-run the `pip-compile --allow-unsafe --strip-extras --output-file requirements.lock $( find . -type f \( -name "requirements.in" -o -name "requirements-test.in" \))` command
+- To upgrade all dependencies, remove the `requirements.lock` file and re-run the `pip-compile --allow-unsafe --output-file requirements.lock $( find . -type f \( -name "requirements.in" -o -name "requirements-test.in" \))` command
 
 # Setup your dev environment
 
@@ -226,7 +226,7 @@ Celery Flower contains a web interface that details Celery task status.
 To connect to the web interface, install [ecs-tunnel](https://github.com/alastairmccormack/ecs-tunnel) and run the following command (Replace the cluster and task IDs as appropriate)
 
 ```bash
-AWS_PROFILE=staging/staging_admin ecs-tunnel -L 7101:7101 -c staging-noq-dev-shared-staging-1 -t b9affecc6ad64727b166d5fe89d89258 --region us-west-2
+AWS_PROFILE=staging/staging_admin ecs-tunnel -L 7101:7101 -c staging-noq-dev-shared-staging-1 -t 4ef8875d30b24f3db9e0d0f6cb8b5619 --region us-west-2
 ```
 
 ```bash

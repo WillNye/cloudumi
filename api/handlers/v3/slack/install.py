@@ -82,7 +82,66 @@ class AsyncSlackEventsHandler(TornadoRequestHandler):
         return
 
 
+# V2KayizziTest - Temporary work, Kayizzi to finish
 class AsyncSlackInstallHandler(BaseAdminHandler):
+    def initialize(self, app: AsyncApp):  # type: ignore
+        self.app = app
+
+    async def get(self, *args):
+        # TODO: Make sure they are admin before they click install link
+        tenant = self.get_tenant_name()
+        if self.app.oauth_flow is not None:  # type: ignore
+            oauth_flow: AsyncOAuthFlow = self.app.oauth_flow  # type: ignore
+            if not (url := config.get_tenant_specific_key("url", tenant)):
+                self.set_status(400)
+                self.write(
+                    WebResponse(
+                        success="error",
+                        status_code=403,
+                        data={"message": "Invalid tenant or OAuth state"},
+                    ).dict(exclude_unset=True, exclude_none=True)
+                )
+                raise tornado.web.Finish()
+            oauth_flow.redirect_uri = urljoin(url, oauth_flow.redirect_uri_path)
+            if self.request.path == oauth_flow.install_path:
+                db_tenant = await Tenant.get_by_name(tenant)
+                if not db_tenant:
+                    self.set_status(400)
+                    self.write(
+                        WebResponse(
+                            success="error",
+                            status_code=403,
+                            data={"message": "Invalid tenant or OAuth state"},
+                        ).dict(exclude_unset=True, exclude_none=True)
+                    )
+                    raise tornado.web.Finish()
+                bolt_req = to_async_bolt_request(self.request)
+                url = await oauth_flow.build_authorize_url("", bolt_req)
+                state = await oauth_flow.issue_new_state(bolt_req)
+                url = await oauth_flow.build_authorize_url(state, bolt_req)
+                set_cookie_value = (
+                    oauth_flow.settings.state_utils.build_set_cookie_for_new_state(
+                        state
+                    )
+                )
+                cookie_splitted = set_cookie_value.split(";")
+                state_var = cookie_splitted[0].split("=")[1]
+                # tenant_encoded = base64.b64encode(tenant.encode()).decode()
+                # bolt_resp.body = bolt_resp.body.replace(state_var, f"{state_var}-{tenant_encoded}")
+                # bolt_resp.headers['set-cookie'] has the value we need
+                tenant_oauth_rel = await TenantOauthRelationship.get_by_tenant(
+                    db_tenant
+                )
+                if tenant_oauth_rel:
+                    await tenant_oauth_rel.delete()
+                await TenantOauthRelationship.create(db_tenant, state_var)
+                # TODO: Write JSON version of install URL here
+                self.write(url)
+                return
+        self.set_status(404)
+
+
+class AsyncSlackInstallHandlerOld(BaseAdminHandler):
     def initialize(self, app: AsyncApp):  # type: ignore
         self.app = app
 
