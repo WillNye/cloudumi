@@ -26,15 +26,15 @@
 
   .connectButton {
     background-color: #4a154b;
-    color: #fff;
+    /* color: #fff; */
     padding: 8px 16px;
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.2s ease-in-out;
-    border-color: #4a154b;
+    /* border-color: #4a154b; */
   }
-
-  .connectButton:hover {
-    background-color: #6b1f6a;
-  }
+  /*
+    .connectButton:hover {
+      background-color: #6b1f6a;
+    } */
 }

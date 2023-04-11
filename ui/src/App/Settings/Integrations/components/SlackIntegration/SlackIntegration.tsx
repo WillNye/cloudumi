@@ -1,5 +1,5 @@
 import styles from './SlackIntegration.module.css';
-import slackIcon from './SlackIcon.svg';
+import slackIcon from './slackIcon.svg';
 import { Segment } from 'shared/layout/Segment';
 import { Button } from 'shared/elements/Button';
 

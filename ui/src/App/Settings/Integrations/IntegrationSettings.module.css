@@ -17,6 +17,12 @@
     border-radius: var(--border-radius-lg);
   }
 
+  .gridContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-gap: var(--spacing-sm);
+  }
+
   .navList {
     display: flex;
     list-style: none;
