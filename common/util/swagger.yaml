@@ -739,7 +739,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WebResponse"
-  /api/v4/integrations/slack:
+  /api/v3/slack:
     get:
       description: "Get status or details on slack"
       parameters: []
@@ -756,7 +756,7 @@ paths:
           description: OK
         "400":
           description: NOT_FOUND
-  /api/v4/integrations/slack/link:
+  /api/v3/slack/install:
     get:
       description: "Generate the slack integration link"
       parameters: []

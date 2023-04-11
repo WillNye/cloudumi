@@ -12,6 +12,7 @@ from tornado.httputil import HTTPServerRequest
 
 from common.config import config
 from common.handlers.base import BaseAdminHandler, TornadoRequestHandler
+from common.lib.auth import is_tenant_admin
 from common.lib.slack.app import TenantSlackApp
 from common.lib.slack.models import (
     SlackTenantInstallRelationship,
@@ -19,6 +20,7 @@ from common.lib.slack.models import (
     get_slack_bot,
     get_tenant_from_team_id,
 )
+from common.lib.web import handle_generic_error_response
 from common.models import WebResponse
 from common.tenants.models import Tenant
 
@@ -82,13 +84,32 @@ class AsyncSlackEventsHandler(TornadoRequestHandler):
         return
 
 
-# V2KayizziTest - Temporary work, Kayizzi to finish
 class AsyncSlackInstallHandler(BaseAdminHandler):
     def initialize(self, app: AsyncApp):  # type: ignore
         self.app = app
 
     async def get(self, *args):
-        # TODO: Make sure they are admin before they click install link
+        tenant = self.get_tenant()
+
+        log_data = {
+            "function": f"{type(self).__name__}.{__name__}",
+            "user": self.user,
+            "message": "Retrieving information",
+            "user-agent": self.request.headers.get("User-Agent"),
+            "request_id": self.request_uuid,
+            "model_class": self._model_class,
+            "config_key": self._config_key,
+            "tenant": tenant,
+        }
+
+        if not is_tenant_admin(self.user, self.groups, tenant):
+            errors = ["User is not authorized to access this endpoint."]
+            generic_error_message = "User is not authorized to access this endpoint."
+            await handle_generic_error_response(
+                self, generic_error_message, errors, 403, "unauthorized", log_data
+            )
+            return
+
         tenant = self.get_tenant_name()
         if self.app.oauth_flow is not None:  # type: ignore
             oauth_flow: AsyncOAuthFlow = self.app.oauth_flow  # type: ignore
@@ -135,10 +156,81 @@ class AsyncSlackInstallHandler(BaseAdminHandler):
                 if tenant_oauth_rel:
                     await tenant_oauth_rel.delete()
                 await TenantOauthRelationship.create(db_tenant, state_var)
-                # TODO: Write JSON version of install URL here
-                self.write(url)
+                self.write(
+                    WebResponse(success="success", data={"url": url}).dict(
+                        exclude_unset=True, exclude_none=True
+                    )
+                )
                 return
         self.set_status(404)
+
+
+class AsyncSlackHandler(BaseAdminHandler):
+    def initialize(self, app: AsyncApp):  # type: ignore
+        self.app = app
+
+    async def delete(self, *args):
+        tenant = self.get_tenant()
+        log_data = {
+            "function": f"{type(self).__name__}.{__name__}",
+            "user": self.user,
+            "message": "Retrieving information",
+            "user-agent": self.request.headers.get("User-Agent"),
+            "request_id": self.request_uuid,
+            "model_class": self._model_class,
+            "config_key": self._config_key,
+            "tenant": tenant,
+        }
+
+        if not is_tenant_admin(self.user, self.groups, tenant):
+            errors = ["User is not authorized to access this endpoint."]
+            generic_error_message = "User is not authorized to access this endpoint."
+            await handle_generic_error_response(
+                self, generic_error_message, errors, 403, "unauthorized", log_data
+            )
+            return
+
+        tenant = self.get_tenant_name()
+        tenant_oauth_rel = TenantOauthRelationship.get_by_tenant(tenant)
+        if tenant_oauth_rel:
+            await tenant_oauth_rel.delete()
+        self.write(WebResponse(success="success", status_code=200).dict())
+
+    async def get(self, *args):
+        tenant = self.get_tenant()
+        log_data = {
+            "function": f"{type(self).__name__}.{__name__}",
+            "user": self.user,
+            "message": "Retrieving information",
+            "user-agent": self.request.headers.get("User-Agent"),
+            "request_id": self.request_uuid,
+            "model_class": self._model_class,
+            "config_key": self._config_key,
+            "tenant": tenant,
+        }
+
+        if not is_tenant_admin(self.user, self.groups, tenant):
+            errors = ["User is not authorized to access this endpoint."]
+            generic_error_message = "User is not authorized to access this endpoint."
+            await handle_generic_error_response(
+                self, generic_error_message, errors, 403, "unauthorized", log_data
+            )
+            return
+
+        tenant = self.get_tenant_name()
+        tenant_oauth_rel = TenantOauthRelationship.get_by_tenant(tenant)
+        if tenant_oauth_rel:
+            self.write(
+                WebResponse(
+                    success="success", status_code=200, data={"installed": True}
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+        else:
+            self.write(
+                WebResponse(
+                    success="success", status_code=200, data={"installed": False}
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
 
 
 class AsyncSlackInstallHandlerOld(BaseAdminHandler):

@@ -5,6 +5,7 @@ from api.handlers.v3.automatic_policy_request_handler.aws import (
 )
 from api.handlers.v3.slack.install import (
     AsyncSlackEventsHandler,
+    AsyncSlackHandler,
     AsyncSlackInstallHandler,
     AsyncSlackOAuthHandler,
 )
@@ -448,7 +449,7 @@ def make_app(jwt_validator=None):
                 AsyncSlackInstallHandler,
                 dict(app=slack_app),
             ),
-            (
+            (r"/api/v3/slack/?", AsyncSlackHandler, dict(app=slack_app),)(
                 r"/api/v3/slack/oauth_redirect/?(.*)",
                 AsyncSlackOAuthHandler,
                 dict(app=slack_app),
