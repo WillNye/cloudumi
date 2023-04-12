@@ -154,3 +154,5 @@ cloudumi_tornado.log.*
 
 **/.tfsec/*
 /deploy/local/redis
+
+**/secrets.yaml
