@@ -23,6 +23,8 @@ jobs:
             python3.11-dev \
             python3-pip \
             python3.11-venv -y
+          curl -fsSL https://get.docker.com -o get-docker.sh
+          sudo sh get-docker.sh
           mkdir -p /tmp/env
           python3.11 -m venv /tmp/env
           source /tmp/env/bin/activate
