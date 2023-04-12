@@ -449,7 +449,8 @@ def make_app(jwt_validator=None):
                 AsyncSlackInstallHandler,
                 dict(app=slack_app),
             ),
-            (r"/api/v3/slack/?", AsyncSlackHandler, dict(app=slack_app),)(
+            (r"/api/v3/slack/?", AsyncSlackHandler, dict(app=slack_app)),
+            (
                 r"/api/v3/slack/oauth_redirect/?(.*)",
                 AsyncSlackOAuthHandler,
                 dict(app=slack_app),

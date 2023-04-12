@@ -765,7 +765,14 @@ paths:
           description: OK
         "500":
           description: ERROR
+security:
+  - cookieAuth: []
 components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
   responses:
     DefaultErrorResponse:
       description: An error occured, please refer to the message for details
