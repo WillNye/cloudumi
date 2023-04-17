@@ -7,13 +7,19 @@ interface IntegrationCardProps {
   handleConnect?: () => void;
   title: string;
   description: string;
+  link?: string;
+  buttonText: string;
+  disableBtn?: boolean;
 }
 
 const IntegrationCard = ({
   icon,
   handleConnect,
   title,
-  description
+  description,
+  link,
+  buttonText,
+  disableBtn
 }: IntegrationCardProps) => {
   return (
     <Segment>
@@ -23,11 +29,14 @@ const IntegrationCard = ({
         <p className={styles.description}>{description}</p>
         <Button
           onClick={handleConnect}
+          href={link}
+          asAnchor={Boolean(link)}
           className={styles.connectButton}
           color="secondary"
           fullWidth
+          disabled={disableBtn}
         >
-          Connect
+          {buttonText}
         </Button>
       </div>
     </Segment>

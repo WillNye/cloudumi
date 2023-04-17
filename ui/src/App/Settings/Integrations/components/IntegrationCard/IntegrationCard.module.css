@@ -8,12 +8,12 @@
   background-color: var(--gray-900);
 
   .icon {
-    width: 64px;
-    height: 64px;
+    width: 48px;
+    height: 48px;
   }
 
   .title {
-    font-size: 18px;
+    font-size: 16px;
     margin-top: 16px;
     margin-bottom: 8px;
   }
@@ -23,18 +23,4 @@
     text-align: center;
     margin-bottom: 16px;
   }
-
-  .connectButton {
-    background-color: #4a154b;
-    /* color: #fff; */
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s ease-in-out;
-    /* border-color: #4a154b; */
-  }
-  /*
-    .connectButton:hover {
-      background-color: #6b1f6a;
-    } */
 }

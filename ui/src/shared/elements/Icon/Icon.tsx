@@ -1,18 +1,20 @@
 import React, { Suspense, useMemo } from 'react';
 import styles from './Icon.module.css';
 
-const iconPaths = import.meta.glob('../../../assets/icons/*.svg');
+// const iconPaths = import.meta.glob('../../../assets/icons/*.svg');
 
-const iconMap = Object.keys(iconPaths).reduce((pathMap, iconPath) => {
-  const key = iconPath
-    .replace('.svg', '')
-    .replace('../../../assets/icons/', '');
-  pathMap[key] = React.lazy(async () => {
-    const lazy: any = await iconPaths[iconPath]();
-    return { default: lazy.ReactComponent };
-  });
-  return pathMap;
-}, {});
+// const iconMap = Object.keys(iconPaths).reduce((pathMap, iconPath) => {
+//   const key = iconPath
+//     .replace('.svg', '')
+//     .replace('../../../assets/icons/', '');
+//   pathMap[key] = React.lazy(async () => {
+//     const lazy: any = await iconPaths[iconPath]();
+//     return { default: lazy.ReactComponent };
+//   });
+//   return pathMap;
+// }, {});
+
+const iconMap = {};
 
 export interface IconProps extends React.SVGAttributes<HTMLOrSVGElement> {
   size?: 'small' | 'medium' | 'large';
