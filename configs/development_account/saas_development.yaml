@@ -131,6 +131,7 @@ _global_:
     postgresql:
       username: noq
       password: local_dev
+    jwt_secret: T3sts3cr3t
   noq_db:
     endpoint: "localhost"
     port: 5432

@@ -155,7 +155,7 @@ class FunctionalTest(AsyncHTTPTestCase):
             body = json.dumps(body)
         if body is not None and body_type == "urlencode":
             body = urllib.parse.urlencode(body)
-        if method == "post":
+        if method.lower() == "post":
             r = self.fetch(
                 path,
                 body=body,
@@ -165,7 +165,10 @@ class FunctionalTest(AsyncHTTPTestCase):
                 request_timeout=request_timeout,
             )
             return r
-        if method == "get":
+        if method.lower() == "get":
             r = self.fetch(path, body=body, headers=headers)
+            return r
+        if method.lower() == "delete":
+            r = self.fetch(path, body=body, headers=headers, method="DELETE")
             return r
         raise Exception("Invalid method")

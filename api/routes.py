@@ -147,7 +147,6 @@ from api.handlers.v3.services.aws.role_access import (
 from api.handlers.v3.services.effective_role_policy import (
     EffectiveUnusedRolePolicyHandler,
 )
-from api.handlers.v3.slack import SlackIntegrationConfigurationCrudHandler
 from api.handlers.v3.tenant_details.handler import (
     EulaHandler,
     TenantDetailsHandler,
@@ -180,6 +179,8 @@ def make_app(jwt_validator=None):
     docs_path = os.getenv("DOCS_PATH") or config.get(
         "_global_.docs.path", pkg_resources.resource_filename("api", "docs")
     )
+
+    slack_app = get_slack_app()
 
     routes = [
         (r"/auth/?", AuthHandler),  # /auth is still used by OIDC callback
@@ -331,10 +332,6 @@ def make_app(jwt_validator=None):
             IpRestrictionsRequesterIpOnlyToggleHandler,
         ),
         (
-            r"/api/v3/slack/?",
-            SlackIntegrationConfigurationCrudHandler,
-        ),
-        (
             r"/api/v3/auth/sso/google/?",
             GoogleOidcIdpConfigurationCrudHandler,
         ),
@@ -375,6 +372,23 @@ def make_app(jwt_validator=None):
             r"/docs/?(.*)",
             AuthenticatedStaticFileHandler,
             {"path": docs_path, "default_filename": "index.html"},
+        ),
+        (r"/api/v3/slack/events", AsyncSlackEventsHandler, dict(app=slack_app)),
+        (
+            r"/api/v3/slack/install/?",
+            AsyncSlackInstallHandler,
+            dict(app=slack_app),
+        ),
+        (
+            r"/api/v3/slack/install/?(.*)",
+            AsyncSlackInstallHandler,
+            dict(app=slack_app),
+        ),
+        (r"/api/v3/slack/?", AsyncSlackHandler, dict(app=slack_app)),
+        (
+            r"/api/v3/slack/oauth_redirect/?(.*)",
+            AsyncSlackOAuthHandler,
+            dict(app=slack_app),
         ),
         # (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
         # (r"/api/v3/identities/groups", IdentityGroupsTableHandler),
@@ -430,32 +444,6 @@ def make_app(jwt_validator=None):
         (r"/api/v4/roles/access/?", ManageRoleAccessHandler),
         (r"/api/v4/roles", RolesHandlerV4),
     ]
-    # TODO: fix:
-
-    if (
-        config.get("_global_.development")
-        and config.get("_global_.environment") != "test"
-    ):
-        slack_app = get_slack_app()
-        routes[:0] = [
-            (r"/api/v3/slack/events", AsyncSlackEventsHandler, dict(app=slack_app)),
-            (
-                r"/api/v3/slack/install/?",
-                AsyncSlackInstallHandler,
-                dict(app=slack_app),
-            ),
-            (
-                r"/api/v3/slack/install/?(.*)",
-                AsyncSlackInstallHandler,
-                dict(app=slack_app),
-            ),
-            (r"/api/v3/slack/?", AsyncSlackHandler, dict(app=slack_app)),
-            (
-                r"/api/v3/slack/oauth_redirect/?(.*)",
-                AsyncSlackOAuthHandler,
-                dict(app=slack_app),
-            ),
-        ]
 
     router = RuleRouter(routes)
 
