@@ -134,14 +134,15 @@ class SelfServiceStep3 extends Component {
   }
 
   editorDidMount(editor) {
-    editor._modifiedEditor.onDidChangeModelDecorations(() => {
+    const _modifiedEditor = editor.getModifiedEditor()
+    _modifiedEditor.onDidChangeModelDecorations(() => {
       const { modifiedEditor } = this.state
       const model = modifiedEditor.getModel()
-      if (model === null || model.getModeId() !== 'json') {
+      if (model === null || model.id !== 'json') {
         return
       }
 
-      const owner = model.getModeId()
+      const owner = model.id
       const uri = model.uri
       const markers = editor.getModelMarkers({ owner, resource: uri })
       this.onLintError(
@@ -152,7 +153,7 @@ class SelfServiceStep3 extends Component {
       )
     })
     this.setState({
-      modifiedEditor: editor._modifiedEditor,
+      modifiedEditor: _modifiedEditor,
     })
   }
 
