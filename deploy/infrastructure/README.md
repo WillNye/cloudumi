@@ -40,7 +40,7 @@ terraform apply --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-fi
 
 #### Prod
 
-export AWS_PROFILE=prod/prod_admin AWS_REGION=us-west-2
+export AWS_PROFILE=noq_prod AWS_REGION=us-west-2
 terraform workspace select shared-prod-1
 terraform refresh --var-file=live/shared/prod-1/noq.dev-prod.tfvars --var-file=live/shared/prod-1/secret.tfvars
 terraform plan --var-file=live/shared/prod-1/noq.dev-prod.tfvars --var-file=live/shared/prod-1/secret.tfvars
@@ -75,7 +75,7 @@ Terraform is only required when either establishing a new tenant / account or up
 
 To use terraform, follow the below steps:
 
-- Ensure `AWS_PROFILE` is set to respective environment (`staging/staging_admin` or `prod/prod_admin`)
+- Ensure `AWS_PROFILE` is set to respective environment (`staging/staging_admin` or `noq_prod`)
 - Ensure `AWS_REGION` is set correctly (`us-west-2` for most clusters)
 - Initialize Terraform if you haven't already: `terraform init`
 - Setup your workspaces: `./setup.sh`
@@ -118,7 +118,7 @@ Note: in order for this to work, there are two pre-requisites:
 
 ## AWS Credentials
 
-The AWS SDK must be able to find updated credentials for the `development/development_admin`, `staging/staging_admin`, and `prod/prod_admin` profiles.
+The AWS SDK must be able to find updated credentials for the `development/development_admin`, `staging/staging_admin`, and `noq_prod` profiles.
 The AWS SDK will attempt to find credentials from a number of locations. See the [AWS Default Credential Provider Chain](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html#credentials-default) for more details.
 
 Noq enables you to retrieve temporary 1 hour credentials from our Noq tenant (https://corp.noq.dev). Here
@@ -129,22 +129,22 @@ if you are running services in a container and the container doesn't have access
 update your `~/.aws/config` file with the following:
 
 ```
-[profile noq_dev]
+[profile development/development_admin]
 credential_process = noq credential_process arn:aws:iam::759357822767:role/development_admin
 
 [profile staging/staging_admin]
 credential_process = noq credential_process arn:aws:iam::259868150464:role/staging_admin
 
-[profile prod/prod_admin]
+[profile noq_prod]
 credential_process = noq credential_process arn:aws:iam::940552945933:role/prod_admin
 ```
 
 Option 2: To retrieve temporary 1 hour credentials from Noq for each profile, run the following commands:
 
 ```
-noq file development_admin --profile noq_dev
+noq file development_admin --profile development/development_admin
 noq file staging_admin --profile staging/staging_admin
-noq file prod_admin --profile prod/prod_admin
+noq file prod_admin --profile noq_prod
 ```
 
 Option 3: To export temporary 1 hour credentials as environment variables, run the following command (You can only
@@ -186,7 +186,7 @@ aws sts get-caller-identity
 - For convenience, run the `deploy/infrastructure/live/shared/prod-1/push_all_the_things.sh` script. If you are a
   masochist and desire to do this manually, run the below commands:
 
-- Set AWS_PROFILE: `export AWS_PROFILE=prod/prod_admin`
+- Set AWS_PROFILE: `export AWS_PROFILE=noq_prod`
 - Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 940552945933.dkr.ecr.us-west-2.amazonaws.com`
 - Optionally check all available build targets for `prod-1`: `bazelisk query //deploy/infrastructure/live/shared/...`
 - Optionally push containers (at least the first time and anytime they change): `bazelisk run //deploy/infrastructure/live/shared/prod-1:api-container-deploy-prod; bazelisk run //deploy/infrastructure/live/shared/prod-1:celery-container-deploy-prod`
@@ -198,7 +198,7 @@ aws sts get-caller-identity
   masochist and desire to do this manually, run the below commands:
 
 - Understand the environment: does the isolated cluster have staging and prod? Just prod? Select the AWS_PROFILE appropriately
-- Set AWS_PROFILE: `export AWS_PROFILE=prod/prod_admin` - this is assuming we are looking to update their prod-1 part in their cluster
+- Set AWS_PROFILE: `export AWS_PROFILE=noq_prod` - this is assuming we are looking to update their prod-1 part in their cluster
 - Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 940552945933.dkr.ecr.us-west-2.amazonaws.com`
 - Optionally check all available build targets for `prod-1`: `bazelisk query //deploy/infrastructure/live/cyberdyne/...` - note: using `cyberdyne` for this example, replace cyberdyne with <company name>
 - Optionally push containers (at least the first time and anytime they change): `bazelisk run //deploy/infrastructure/live/cyberdyne/prod-1:api-container-deploy-prod; bazelisk run //deploy/infrastructure/live/cyberdyne/prod-1:celery-container-deploy-prod`
@@ -214,9 +214,9 @@ aws sts get-caller-identity
 
 # Remove a cluster
 
-- Set AWS_PROFLE: `export AWS_PROFILE=staging/staging_admin` (or prod/prod_admin)
+- Set AWS_PROFLE: `export AWS_PROFILE=staging/staging_admin` (or noq_prod)
 - For staging: `bazelisk run //deploy/infrastructure/live/shared/staging-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=staging/staging_admin`
-- For production: `bazelisk run //deploy/infrastructure/live/shared/prod-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=prod/prod_admin`
+- For production: `bazelisk run //deploy/infrastructure/live/shared/prod-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_prod`
 - Reference the `Terraform` section for more information on how to destroy an environment, if needed (in most cases it won't be)
 
 # How to use ecs-cli to circumvent Bazel

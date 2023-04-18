@@ -471,6 +471,7 @@ class BaseHandler(TornadoRequestHandler):
 
         # Validate auth cookie and use it to retrieve group information
         if auth_cookie:
+            # Is this slow?
             res = await validate_and_return_jwt_token(auth_cookie, tenant)
             if isinstance(res, dict):
                 self.user = res.get("user")

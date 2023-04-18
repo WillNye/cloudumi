@@ -6,6 +6,22 @@ import 'semantic-ui-css/semantic.min.css'
 import './index.css'
 import App from './App'
 import * as serviceWorker from './serviceWorker'
+;(function () {
+  if (!process.env.NODE_EXTRA_CA_CERTS) return
+  try {
+    var extraca = require('fs').readFileSync(process.env.NODE_EXTRA_CA_CERTS)
+  } catch (e) {
+    return
+  }
+
+  var NativeSecureContext = process.binding('crypto').SecureContext
+  var oldaddRootCerts = NativeSecureContext.prototype.addRootCerts
+  NativeSecureContext.prototype.addRootCerts = function () {
+    var ret = oldaddRootCerts.apply(this, arguments)
+    this.addCACert(extraca)
+    return ret
+  }
+})()
 
 if (process.env.FRONTEND_SENTRY_DSN) {
   Sentry.init({

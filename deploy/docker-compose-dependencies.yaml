@@ -18,6 +18,7 @@ services:
       - REDIS_TLS_PORT=6379
     volumes:
       - ${PWD}/deploy/local/redis/tests/tls/:/tls
+      - cloudumi-redis:/bitnami/redis/data
 
   cloudumi-dynamodb:
     image: "amazon/dynamodb-local"
@@ -44,8 +45,6 @@ services:
       POSTGRES_DB: noq
       POSTGRES_USER: noq
       POSTGRES_PASSWORD: local_dev
-    volumes:
-      - cloudumi-pg:/var/lib/postgresql/data
     ports:
       - "5432:5432"
 
@@ -56,6 +55,7 @@ services:
 
 volumes:
   cloudumi-pg:
+  cloudumi-redis:
 
   # redis-cluster:
   #   image: noqdev/redis-cluster

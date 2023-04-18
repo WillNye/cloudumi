@@ -35,4 +35,5 @@ jobs:
           export IAMBIC_REPO_USER=${{ secrets.IAMBIC_REPO_USER }}
           export IAMBIC_REPO_TOKEN=${{ secrets.IAMBIC_REPO_TOKEN }}
           export PATH="$PATH:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+          export NODE_OPTIONS=--openssl-legacy-provider
           deploy/infrastructure/live/shared/prod-1/push_all_the_things.sh

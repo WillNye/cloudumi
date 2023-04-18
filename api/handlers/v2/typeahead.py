@@ -124,6 +124,72 @@ class ResourceTypeAheadHandlerV2(BaseAPIV2Handler):
             self.write(arn_array.json())
 
 
+async def get_matching_identity_typahead(
+    tenant, type_ahead, user, groups, limit=20, max_limit=10000
+):
+    if not type_ahead:
+        return []
+
+    typehead_data = await retrieve_json_data_from_redis_or_s3(
+        redis_key=config.get_tenant_specific_key(
+            "cache_self_service_typeahead.redis.key",
+            tenant,
+            f"{tenant}_cache_self_service_typeahead_v1",
+        ),
+        s3_bucket=config.get_tenant_specific_key(
+            "cache_self_service_typeahead.s3.bucket", tenant
+        ),
+        s3_key=config.get_tenant_specific_key(
+            "cache_self_service_typeahead.s3.file",
+            tenant,
+            "cache_self_service_typeahead/cache_self_service_typeahead_v1.json.gz",
+        ),
+        tenant=tenant,
+        default={},
+    )
+
+    allowed_accounts_for_viewing_resources = (
+        await get_accounts_user_can_view_resources_for(user, groups, tenant)
+    )
+
+    matching = []
+    for entry in typehead_data.get("typeahead_entries", []):
+        principal_arn = entry.get("principal", {}).get("principal_arn", "")
+        if (
+            principal_arn
+            and principal_arn.split(":")[4]
+            not in allowed_accounts_for_viewing_resources
+        ):
+            continue
+        if len(matching) >= limit:
+            break
+        if (
+            entry.get("display_text")
+            and type_ahead.lower() in entry["display_text"].lower()
+        ):
+            matching.append(entry)
+            continue
+        if (
+            entry.get("principal", {}).get("resource_identifier")
+            and type_ahead.lower() in entry["principal"]["resource_identifier"].lower()
+        ):
+            matching.append(entry)
+            continue
+        if (
+            entry.get("principal", {}).get("principal_arn")
+            and type_ahead.lower() in entry["principal"]["principal_arn"].lower()
+        ):
+            matching.append(entry)
+            continue
+        if (
+            entry.get("application_name")
+            and type_ahead.lower() in entry["application_name"].lower()
+        ):
+            matching.append(entry)
+            continue
+    return matching
+
+
 class SelfServiceStep1ResourceTypeahead(BaseAPIV2Handler):
     async def get(self):
         tenant = self.ctx.tenant
@@ -134,9 +200,6 @@ class SelfServiceStep1ResourceTypeahead(BaseAPIV2Handler):
             )
         except TypeError:
             type_ahead = None
-        if not type_ahead:
-            self.write(json.dumps([]))
-            return
         max_limit: int = config.get_tenant_specific_key(
             "self_service_step_1_resource_typeahead.max_limit",
             tenant,
@@ -152,65 +215,7 @@ class SelfServiceStep1ResourceTypeahead(BaseAPIV2Handler):
                 limit = max_limit
         except TypeError:
             pass
-
-        typehead_data = await retrieve_json_data_from_redis_or_s3(
-            redis_key=config.get_tenant_specific_key(
-                "cache_self_service_typeahead.redis.key",
-                tenant,
-                f"{tenant}_cache_self_service_typeahead_v1",
-            ),
-            s3_bucket=config.get_tenant_specific_key(
-                "cache_self_service_typeahead.s3.bucket", tenant
-            ),
-            s3_key=config.get_tenant_specific_key(
-                "cache_self_service_typeahead.s3.file",
-                tenant,
-                "cache_self_service_typeahead/cache_self_service_typeahead_v1.json.gz",
-            ),
-            tenant=tenant,
-            default={},
+        matching = await get_matching_identity_typahead(
+            tenant, type_ahead, self.user, self.groups, limit, max_limit
         )
-
-        allowed_accounts_for_viewing_resources = (
-            await get_accounts_user_can_view_resources_for(
-                self.user, self.groups, tenant
-            )
-        )
-
-        matching = []
-        for entry in typehead_data.get("typeahead_entries", []):
-            principal_arn = entry.get("principal", {}).get("principal_arn", "")
-            if (
-                principal_arn
-                and principal_arn.split(":")[4]
-                not in allowed_accounts_for_viewing_resources
-            ):
-                continue
-            if len(matching) >= limit:
-                break
-            if (
-                entry.get("display_text")
-                and type_ahead.lower() in entry["display_text"].lower()
-            ):
-                matching.append(entry)
-                continue
-            if (
-                entry.get("principal", {}).get("resource_identifier")
-                and type_ahead.lower()
-                in entry["principal"]["resource_identifier"].lower()
-            ):
-                matching.append(entry)
-                continue
-            if (
-                entry.get("principal", {}).get("principal_arn")
-                and type_ahead.lower() in entry["principal"]["principal_arn"].lower()
-            ):
-                matching.append(entry)
-                continue
-            if (
-                entry.get("application_name")
-                and type_ahead.lower() in entry["application_name"].lower()
-            ):
-                matching.append(entry)
-                continue
         self.write(json.dumps(matching))

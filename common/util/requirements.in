@@ -4,7 +4,6 @@ aioshutil
 aiozipkin
 alembic
 asgiref # For Asyncio->Sync and Sync->Asyncio in threadpool
-asyncpg
 atlassian-python-api # Supports creating PRs in BitBucket
 bcrypt # Sign stuff in DynamoDB
 bleach # For sanitizing json data
@@ -44,7 +43,7 @@ ruamel.yaml
 sentry_sdk # Send errors and exceptions to Sentry
 setupmeta
 simplejson
-SQLAlchemy
+SQLAlchemy>=2
 tenacity
 tornado
 ujson

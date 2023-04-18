@@ -1,7 +1,15 @@
 import os
 
+import slack_bolt
+
 from api.handlers.v3.automatic_policy_request_handler.aws import (
     AutomaticPolicyRequestHandler,
+)
+from api.handlers.v3.slack.install import (
+    AsyncSlackEventsHandler,
+    AsyncSlackHandler,
+    AsyncSlackInstallHandler,
+    AsyncSlackOAuthHandler,
 )
 from api.handlers.v3.typeahead import UserAndGroupTypeAheadHandler
 from api.handlers.v4.aws.roles import RolesHandlerV4
@@ -141,7 +149,6 @@ from api.handlers.v3.services.aws.role_access import (
 from api.handlers.v3.services.effective_role_policy import (
     EffectiveUnusedRolePolicyHandler,
 )
-from api.handlers.v3.slack import SlackIntegrationConfigurationCrudHandler
 from api.handlers.v3.tenant_details.handler import (
     EulaHandler,
     TenantDetailsHandler,
@@ -159,8 +166,11 @@ from api.handlers.v4.requests import IambicRequestCommentHandler, IambicRequestH
 from api.handlers.v4.role_access.manage_role_access import ManageRoleAccessHandler
 from common.config import config
 from common.lib.sentry import before_send_event
+from common.lib.slack.app import get_slack_app
 
 UUID_REGEX = "[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}"
+
+logger = config.get_logger()
 
 
 def make_app(jwt_validator=None):
@@ -173,6 +183,14 @@ def make_app(jwt_validator=None):
     docs_path = os.getenv("DOCS_PATH") or config.get(
         "_global_.docs.path", pkg_resources.resource_filename("api", "docs")
     )
+
+    try:
+        slack_app = get_slack_app()
+    except slack_bolt.error.BoltError:
+        slack_app = None
+        logger.warning("Slack app not configured")
+    except Exception as exc:
+        logger.exception(f"Error configuring Slack app: {exc}")
 
     routes = [
         (r"/auth/?", AuthHandler),  # /auth is still used by OIDC callback
@@ -324,10 +342,6 @@ def make_app(jwt_validator=None):
             IpRestrictionsRequesterIpOnlyToggleHandler,
         ),
         (
-            r"/api/v3/slack/?",
-            SlackIntegrationConfigurationCrudHandler,
-        ),
-        (
             r"/api/v3/auth/sso/google/?",
             GoogleOidcIdpConfigurationCrudHandler,
         ),
@@ -368,6 +382,23 @@ def make_app(jwt_validator=None):
             r"/docs/?(.*)",
             AuthenticatedStaticFileHandler,
             {"path": docs_path, "default_filename": "index.html"},
+        ),
+        (r"/api/v3/slack/events", AsyncSlackEventsHandler, dict(app=slack_app)),
+        (
+            r"/api/v3/slack/install/?",
+            AsyncSlackInstallHandler,
+            dict(app=slack_app),
+        ),
+        (
+            r"/api/v3/slack/install/?(.*)",
+            AsyncSlackInstallHandler,
+            dict(app=slack_app),
+        ),
+        (r"/api/v3/slack/?", AsyncSlackHandler, dict(app=slack_app)),
+        (
+            r"/api/v3/slack/oauth_redirect/?(.*)",
+            AsyncSlackOAuthHandler,
+            dict(app=slack_app),
         ),
         # (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
         # (r"/api/v3/identities/groups", IdentityGroupsTableHandler),
@@ -425,6 +456,7 @@ def make_app(jwt_validator=None):
     ]
 
     router = RuleRouter(routes)
+
     for domain in config.get("_global_.landing_page_domains", []):
         router.rules.append(
             Rule(

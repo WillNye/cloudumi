@@ -4,7 +4,8 @@
 
 # AWS_PROFILE=development/development_admin aws s3 cp saas_development.yaml s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml
 extends:
-  - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:759357822767:secret:dev/noq-Gjvjay
+  - secrets.yaml
+  # - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:759357822767:secret:dev/noq-Gjvjay
 
 _global_:
   data_location: ~/.config/noq/cache/
@@ -75,6 +76,7 @@ _global_:
   # sentry:
   #   dsn: http://c431e275be51424e98734f222cca6c47@sentry.noq.dev:9000/1
   s3_cache_bucket: noq-local-dev-cache
+  s3_slack_installation_store_bucket: noq-local-dev-slack-installation-store
   s3_cache_bucket_region: us-west-2
   environment: dev
   development: true
@@ -129,6 +131,7 @@ _global_:
     postgresql:
       username: noq
       password: local_dev
+    jwt_secret: T3sts3cr3t
   noq_db:
     endpoint: "localhost"
     port: 5432

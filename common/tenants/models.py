@@ -12,6 +12,19 @@ class Tenant(SoftDeleteMixin, Base):
     name = Column(String, index=True)
     organization_id = Column(String)
 
+    @classmethod
+    async def get_by_id(cls, tenant_id):
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = select(Tenant).where(
+                    and_(
+                        Tenant.id == tenant_id,
+                        Tenant.deleted == False,  # noqa
+                    )
+                )
+                tenant = await session.execute(stmt)
+                return tenant.scalars().first()
+
     def dict(self):
         return dict(
             id=self.id,

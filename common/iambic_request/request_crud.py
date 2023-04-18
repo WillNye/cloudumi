@@ -1,5 +1,6 @@
+import datetime
 import uuid
-from typing import Union
+from typing import Optional, Union
 
 from sqlalchemy import and_
 from sqlalchemy import func as sql_func
@@ -12,6 +13,7 @@ from common.iambic_request.models import IambicTemplateChange, Request, RequestC
 from common.iambic_request.utils import get_allowed_approvers, get_iambic_pr_instance
 from common.lib import noq_json as json
 from common.pg_core.filters import create_filter_from_url_params
+from common.tenants.models import Tenant
 
 
 async def list_requests(tenant: str, **filter_kwargs) -> list[Request]:
@@ -82,14 +84,24 @@ async def request_dict(tenant: str, request_id: Union[str, uuid.UUID]) -> dict:
 
 
 async def create_request(
-    tenant: str,
+    tenant: Tenant,
     created_by: str,
     justification: str,
     changes: list[IambicTemplateChange],
+    request_method: str,
+    slack_username: Optional[str] = None,
+    slack_email: Optional[str] = None,
+    duration: Optional[str] = None,
+    resource_type: Optional[str] = None,
+    request_notes: Optional[str] = None,
+    slack_channel_id: Optional[str] = None,
+    slack_message_id: Optional[str] = None,
 ):
-    request_id = uuid.uuid4()
-    request_pr = await get_iambic_pr_instance(tenant, request_id, created_by)
-    await request_pr.create_request(justification, changes)
+    request_id = str(uuid.uuid4())
+    request_pr = await get_iambic_pr_instance(tenant.name, request_id, created_by)
+    branch_name = await request_pr.create_request(
+        justification, changes, request_notes=request_notes
+    )
 
     request = Request(
         id=request_id,
@@ -97,7 +109,18 @@ async def create_request(
         pull_request_id=request_pr.pull_request_id,
         repo_name=request_pr.repo_name,
         created_by=created_by,
-        allowed_approvers=(await get_allowed_approvers(tenant, request_pr, changes)),
+        allowed_approvers=(
+            await get_allowed_approvers(tenant.name, request_pr, changes)
+        ),
+        request_method=request_method,
+        slack_username=slack_username,
+        slack_email=slack_email,
+        duration=duration,
+        resource_type=resource_type,
+        request_notes=request_notes,
+        slack_channel_id=slack_channel_id,
+        slack_message_id=slack_message_id,
+        branch_name=branch_name,
     )
 
     async with ASYNC_PG_SESSION() as session:
@@ -106,16 +129,20 @@ async def create_request(
 
     response = await get_request_response(request, request_pr, False)
     del request_pr
-    return response
+    return {
+        "request": request,
+        "friendly_request": response,
+    }
 
 
 async def update_request(
-    tenant: str,
+    tenant: Tenant,
     request_id: Union[str, uuid.UUID],
     updated_by: str,
     updater_groups: list[str],
     justification: str = None,
     changes: Union[list[IambicTemplateChange], None] = None,
+    request_notes: Optional[str] = None,
 ):
     request = await get_request(tenant, request_id)
     if (
@@ -132,17 +159,30 @@ async def update_request(
         raise Unauthorized("Unable to update this request")
 
     request_pr = await get_iambic_pr_instance(
-        tenant, request.id, request.created_by, request.pull_request_id
+        tenant.name, request.id, request.created_by, request.pull_request_id
     )
     await request_pr.update_request(
-        updated_by, description=justification, template_changes=changes
+        updated_by,
+        description=justification,
+        template_changes=changes,
+        reset_branch=True,
+        request_notes=request_notes,
     )
+
+    request.justification = justification
+    request.request_notes = request_notes
+    request.updated_by = updated_by
+    request.updated_at = datetime.datetime.now()
+    await request.write()
 
     await request_pr.load_pr()
 
     response = await get_request_response(request, request_pr)
     del request_pr
-    return response
+    return {
+        "request": request,
+        "friendly_request": response,
+    }
 
 
 async def approve_request(
