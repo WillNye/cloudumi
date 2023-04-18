@@ -1,5 +1,7 @@
 import os
 
+import slack_bolt
+
 from api.handlers.v3.automatic_policy_request_handler.aws import (
     AutomaticPolicyRequestHandler,
 )
@@ -168,6 +170,8 @@ from common.lib.slack.app import get_slack_app
 
 UUID_REGEX = "[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}"
 
+logger = config.get_logger()
+
 
 def make_app(jwt_validator=None):
     """make_app."""
@@ -180,7 +184,13 @@ def make_app(jwt_validator=None):
         "_global_.docs.path", pkg_resources.resource_filename("api", "docs")
     )
 
-    slack_app = get_slack_app()
+    try:
+        slack_app = get_slack_app()
+    except slack_bolt.error.BoltError:
+        slack_app = None
+        logger.warning("Slack app not configured")
+    except Exception as exc:
+        logger.exception(f"Error configuring Slack app: {exc}")
 
     routes = [
         (r"/auth/?", AuthHandler),  # /auth is still used by OIDC callback
