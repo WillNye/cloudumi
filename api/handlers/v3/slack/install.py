@@ -26,6 +26,14 @@ from common.tenants.models import Tenant
 
 
 class AsyncSlackEventsHandler(TornadoRequestHandler):
+    """Slack Events Callback Handler
+
+    Must stay unauthenticated in order for Slack to call back.
+    Localtunnel is a good tool to test this locally.
+
+    :param TornadoRequestHandler:
+    """
+
     def check_xsrf_cookie(self) -> None:
         pass
 
@@ -261,6 +269,14 @@ class AsyncSlackInstallHandlerOld(BaseAdminHandler):
 
 
 class AsyncSlackOAuthHandler(TornadoRequestHandler):
+    """Slack Callback Handler
+
+    Must stay unauthenticated in order for Slack to call back.
+    Localtunnel is a good tool to test this locally.
+
+    :param TornadoRequestHandler:
+    """
+
     def initialize(self, app: AsyncApp):  # type: ignore
         self.app = app
 
