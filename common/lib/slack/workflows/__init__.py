@@ -805,7 +805,7 @@ class SlackWorkflows:
         request_id=None,
         update=False,
     ):
-        submit_verbiage = "Create my request" if not update else "Update request"
+        # submit_verbiage = "Create my request" if not update else "Update request"
 
         elements = []
 

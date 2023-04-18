@@ -21,10 +21,10 @@ The only time the variable should be set to true is upon initial cluster creatio
 ## Quick Start
 
 Ensure that your AWS profile is setup correctly in the `~/.aws/credentials` file - the expectation is that there is a
-`noq_staging` entry with AWS keys configured; this is the profile that terraform will look for explicitly.
+`staging/staging_admin` entry with AWS keys configured; this is the profile that terraform will look for explicitly.
 
 - Ensure you have the pre-requisites installed
-- Export your AWS Profile (see the `AWS Credentials` section below): `export AWS_PROFILE=noq_staging`
+- Export your AWS Profile (see the `AWS Credentials` section below): `export AWS_PROFILE=staging/staging_admin`
 
 ## Terraform
 
@@ -32,7 +32,7 @@ Ensure that your AWS profile is setup correctly in the `~/.aws/credentials` file
 
 #### Staging
 
-export AWS_PROFILE=noq_staging AWS_REGION=us-west-2
+export AWS_PROFILE=staging/staging_admin AWS_REGION=us-west-2
 terraform workspace select shared-staging-1
 terraform refresh --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars
 terraform plan --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars
@@ -75,7 +75,7 @@ Terraform is only required when either establishing a new tenant / account or up
 
 To use terraform, follow the below steps:
 
-- Ensure `AWS_PROFILE` is set to respective environment (`noq_staging` or `noq_prod`)
+- Ensure `AWS_PROFILE` is set to respective environment (`staging/staging_admin` or `noq_prod`)
 - Ensure `AWS_REGION` is set correctly (`us-west-2` for most clusters)
 - Initialize Terraform if you haven't already: `terraform init`
 - Setup your workspaces: `./setup.sh`
@@ -118,7 +118,7 @@ Note: in order for this to work, there are two pre-requisites:
 
 ## AWS Credentials
 
-The AWS SDK must be able to find updated credentials for the `development/development_admin`, `noq_staging`, and `noq_prod` profiles.
+The AWS SDK must be able to find updated credentials for the `development/development_admin`, `staging/staging_admin`, and `noq_prod` profiles.
 The AWS SDK will attempt to find credentials from a number of locations. See the [AWS Default Credential Provider Chain](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html#credentials-default) for more details.
 
 Noq enables you to retrieve temporary 1 hour credentials from our Noq tenant (https://corp.noq.dev). Here
@@ -132,7 +132,7 @@ update your `~/.aws/config` file with the following:
 [profile development/development_admin]
 credential_process = noq credential_process arn:aws:iam::759357822767:role/development_admin
 
-[profile noq_staging]
+[profile staging/staging_admin]
 credential_process = noq credential_process arn:aws:iam::259868150464:role/staging_admin
 
 [profile noq_prod]
@@ -143,7 +143,7 @@ Option 2: To retrieve temporary 1 hour credentials from Noq for each profile, ru
 
 ```
 noq file development_admin --profile development/development_admin
-noq file staging_admin --profile noq_staging
+noq file staging_admin --profile staging/staging_admin
 noq file prod_admin --profile noq_prod
 ```
 
@@ -174,7 +174,7 @@ aws sts get-caller-identity
 - For convenience, run the `deploy/infrastructure/live/shared/staging-1/push_all_the_things.sh` script. If you are a
   masochist and desire to do this manually, run the below commands:
 
-- Set AWS_PROFILE: `export AWS_PROFILE=noq_staging`
+- Set AWS_PROFILE: `export AWS_PROFILE=staging/staging_admin`
 - Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com` (this authenticates your AWS PROFILE to ECR for registry upload purposes; hence the authentication via docker login)
 - Reference `Terraform` section above on how to deploy / update terraform infrastructure (should be seldom)
 - Optionally check all available build targets for `prod-1`: `bazelisk query //deploy/infrastructure/live/shared/...`
@@ -214,14 +214,14 @@ aws sts get-caller-identity
 
 # Remove a cluster
 
-- Set AWS_PROFLE: `export AWS_PROFILE=noq_staging` (or noq_prod)
-- For staging: `bazelisk run //deploy/infrastructure/live/shared/staging-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_staging`
+- Set AWS_PROFLE: `export AWS_PROFILE=staging/staging_admin` (or noq_prod)
+- For staging: `bazelisk run //deploy/infrastructure/live/shared/staging-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=staging/staging_admin`
 - For production: `bazelisk run //deploy/infrastructure/live/shared/prod-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_prod`
 - Reference the `Terraform` section for more information on how to destroy an environment, if needed (in most cases it won't be)
 
 # How to use ecs-cli to circumvent Bazel
 
-Sometimes it is necessary to experiment with the ECS compose jobs. In those scenarios, the best way to get around the Bazel build targets is to start in a `live` configuration folder (for instance: `deploy/infrastructure/live/shared/staging-1`). The compose.yaml file and the ecs.yaml file will be require to manipulate the cluster. Furthermore, you will need to set the requisite `AWS_PROFILE` environment variable (using something like `export AWS_PROFILE="noq_staging"` for instance).
+Sometimes it is necessary to experiment with the ECS compose jobs. In those scenarios, the best way to get around the Bazel build targets is to start in a `live` configuration folder (for instance: `deploy/infrastructure/live/shared/staging-1`). The compose.yaml file and the ecs.yaml file will be require to manipulate the cluster. Furthermore, you will need to set the requisite `AWS_PROFILE` environment variable (using something like `export AWS_PROFILE="staging/staging_admin"` for instance).
 
 - To create a service with containers (and to circumvent the load balancer configuration): `ecs-cli compose -f compose.yaml --cluster-config noq-dev-shared-staging-1 --ecs-params ecs.yaml -p noq-dev-shared-staging-1 --task-role-arn arn:aws:iam::259868150464:role/noq-dev-shared-staging-1-ecsTaskRole --region us-west-2 service up --create-log-groups --timeout 15`
   - This can be useful when making manual changes to the configuration file (either compose.yaml or ecs.yaml)

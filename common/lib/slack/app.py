@@ -377,8 +377,9 @@ class TenantSlackApp:
 
     async def handle_select_aws_predefined_policies_action(self, ack, body, client):
         # EXPERIMENTAL
+        """
         policy_selection = body["state"]["values"]["select_aws_predefined_policies"][
-            "select_aws_predefined_policies"
+        "select_aws_predefined_policies"
         ]["selected_options"][0]["value"]
 
         policy_mapping = {
@@ -396,6 +397,7 @@ class TenantSlackApp:
                 },
             }
         }
+        """
 
         # This isn't working
         # original_message = await client.conversations_history(channel=body['container']['channel_id'], limit=1, latest=body['container']['message_ts'], inclusive=True)

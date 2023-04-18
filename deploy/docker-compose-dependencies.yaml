@@ -45,8 +45,6 @@ services:
       POSTGRES_DB: noq
       POSTGRES_USER: noq
       POSTGRES_PASSWORD: local_dev
-    volumes:
-      - cloudumi-pg-slack2:/var/lib/postgresql/data
     ports:
       - "5432:5432"
 
@@ -57,7 +55,6 @@ services:
 
 volumes:
   cloudumi-pg:
-  cloudumi-pg-slack2:
   cloudumi-redis:
 
   # redis-cluster:
