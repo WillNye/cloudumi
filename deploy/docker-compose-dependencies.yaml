@@ -47,6 +47,8 @@ services:
       POSTGRES_PASSWORD: local_dev
     ports:
       - "5432:5432"
+    volumes:
+      - cloudumi-pg:/data:delegated
 
   cloudumi-pg-admin:
     image: adminer
