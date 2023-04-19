@@ -243,6 +243,7 @@ async def filter_data_with_sqlalchemy(filter_obj, tenant, Table, allow_deleted=F
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
             query = select(Table).filter(getattr(Table, "tenant") == tenant)
+            conditions = []
             if not allow_deleted:
                 query = query.filter(getattr(Table, "deleted") == allow_deleted)
             if filter and filter.tokens:
@@ -259,7 +260,6 @@ async def filter_data_with_sqlalchemy(filter_obj, tenant, Table, allow_deleted=F
                         )
                         query = query.filter(and_(*conditions))
                 elif filter.operation == FilterOperation._or:
-                    conditions = []
                     for token in filter.tokens:
                         try:
                             token = await get_dynamic_objects_from_filter_tokens(

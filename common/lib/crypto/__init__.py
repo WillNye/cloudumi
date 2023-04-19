@@ -1,9 +1,11 @@
 import os
+from typing import Union
 
 import ed25519
 from cryptography.fernet import Fernet
 
 from common.config import config
+from common.exceptions.exceptions import BaseException
 from common.lib.plugins import get_plugin_by_name
 
 log = config.get_logger("cloudumi")
@@ -60,12 +62,18 @@ class CryptoSign:
 
 
 class CryptoEncrypt:
-    def __init__(self):
-        key = os.environ["NOQ_TENANT_CONFIG_ENCRYPTION_KEY"]
-        self.cipher_suite = Fernet(key)
+    def __init__(self, tenant: str) -> None:
+        secret = config.get_tenant_specific_key("secrets.jwt_secret", tenant)
+        if not secret:
+            raise BaseException(f"jwt_secret is not defined for {tenant}")
+        self.key = Fernet(secret)
 
-    def encrypt(self, b: bytes):
-        return self.cipher_suite.encrypt(b)
+    def encrypt(self, b: Union[bytes, str]):
+        if isinstance(b, str):
+            b = b.encode()
+        return self.key.cipher_suite.encrypt(b)
 
-    def decrypt(self, c: bytes):
-        return self.cipher_suite.decrypt(c)
+    def decrypt(self, c: Union[bytes, str]):
+        if isinstance(c, str):
+            c = c.encode()
+        return self.key.cipher_suite.decrypt(c)

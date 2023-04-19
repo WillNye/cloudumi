@@ -64,14 +64,9 @@ class FunctionalTest(AsyncHTTPTestCase):
     maxDiff = None
     cookies = SimpleCookie()
 
-    token = asyncio.run(
-        generate_jwt_token(
-            TEST_USER_NAME,
-            TEST_USER_GROUPS,
-            TEST_USER_DOMAIN_US,
-            eula_signed=True,
-        )
-    )
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.token = None
 
     def get_app(self):
         """
@@ -129,6 +124,17 @@ class FunctionalTest(AsyncHTTPTestCase):
         if not headers.get("Content-Type"):
             headers["Content-Type"] = "application/json"
         headers["Host"] = TEST_USER_DOMAIN
+
+        if not self.token:
+            self.token = asyncio.run(
+                generate_jwt_token(
+                    TEST_USER_NAME,
+                    TEST_USER_GROUPS,
+                    TEST_USER_DOMAIN_US,
+                    eula_signed=True,
+                )
+            )
+
         self.cookies["noq_auth"] = self.token
         headers["X-Forwarded-For"] = "127.0.0.1"
 
@@ -149,7 +155,7 @@ class FunctionalTest(AsyncHTTPTestCase):
             body = json.dumps(body)
         if body is not None and body_type == "urlencode":
             body = urllib.parse.urlencode(body)
-        if method == "post":
+        if method.lower() == "post":
             r = self.fetch(
                 path,
                 body=body,
@@ -159,7 +165,10 @@ class FunctionalTest(AsyncHTTPTestCase):
                 request_timeout=request_timeout,
             )
             return r
-        if method == "get":
+        if method.lower() == "get":
             r = self.fetch(path, body=body, headers=headers)
+            return r
+        if method.lower() == "delete":
+            r = self.fetch(path, body=body, headers=headers, method="DELETE")
             return r
         raise Exception("Invalid method")

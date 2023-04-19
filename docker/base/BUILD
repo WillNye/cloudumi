@@ -15,7 +15,7 @@ container_run_and_commit(
     name = "base_docker_raw",
     commands = [
         "apt-get update -y",
-        "apt-get install -y clang build-essential openssh-server cron curl telnet iputils-ping sudo vim systemctl apt-transport-https pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev libssl-dev software-properties-common python3-dev nodejs",
+        "apt-get install -y clang build-essential openssh-server cron curl telnet iputils-ping sudo systemctl apt-transport-https pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev libssl-dev software-properties-common python3-dev nodejs",
         "curl https://raw.githubusercontent.com/fluent/fluent-bit/master/install.sh | sh",
         "pip install uvloop awscli",
         "mkdir -p /root/.ssh/",

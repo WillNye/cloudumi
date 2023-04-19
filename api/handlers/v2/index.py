@@ -311,6 +311,11 @@ class FrontendHandler(AuthenticatedStaticFileHandler):
         try:
             return super().validate_absolute_path(root, absolute_path)
         except tornado.web.HTTPError as exc:
+            log.error(
+                "You are trying to run Cloudumi via 8092, but the frontend has not been installed"
+            )
+            log.error("Use the following command to install the frontend:")
+            log.error("cd frontend && yarn && yarn build_template")
             if exc.status_code == 404 and self.default_filename is not None:
                 absolute_path = self.get_absolute_path(self.root, self.default_filename)
                 return super().validate_absolute_path(root, absolute_path)
@@ -323,6 +328,9 @@ class FrontendHandler(AuthenticatedStaticFileHandler):
 
 
 class UnauthenticatedFileHandler(StaticFileHandler):
+    def initialize(self, **kwargs) -> None:
+        super(StaticFileHandler, self).initialize(**kwargs)
+
     def validate_absolute_path(self, root, absolute_path):
         try:
             return super().validate_absolute_path(root, absolute_path)

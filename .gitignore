@@ -9,6 +9,8 @@ state.tf
 cdk.out/
 deploy/local/redis/tests
 
+**/secrets.yaml
+
 # Byte-compiled / optimized / DLL files
 **/__pycache__/*
 *.py[cod]
@@ -100,6 +102,8 @@ ENV/
 env.bak/
 venv.bak/
 **/env/
+env
+env*
 
 # Spyder project settings
 .spyderproject

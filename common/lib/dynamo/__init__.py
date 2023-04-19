@@ -19,14 +19,13 @@ from tenacity import Retrying, stop_after_attempt, wait_fixed
 
 from common.config import config
 from common.config.config import get_dynamo_table_name
-from common.config.globals import REDACTED_STR, ClusterConfig
+from common.config.globals import IAMBIC_REPOS_BASE_KEY, REDACTED_STR, ClusterConfig
 from common.exceptions.exceptions import (
     DataNotRetrievable,
     NoExistingRequest,
     NoMatchingRequest,
     PendingRequestAlreadyExists,
 )
-from common.iambic_request.utils import IAMBIC_REPOS_BASE_KEY
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
@@ -1374,7 +1373,8 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
 
         iambic_repos = c_dict.get(IAMBIC_REPOS_BASE_KEY, [])
         if iambic_repos and filter_secrets:
-            iambic_repos["access_token"] = REDACTED_STR
+            for iambic_repo in iambic_repos:
+                iambic_repo["access_token"] = REDACTED_STR
 
         # TODO: Clean up secrets
         if return_format == "dict":
