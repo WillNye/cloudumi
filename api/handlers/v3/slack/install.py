@@ -285,18 +285,19 @@ class AsyncSlackOAuthHandler(TornadoRequestHandler):
         tenant = self.get_tenant_name()
         if self.app.oauth_flow is not None:  # type: ignore
             oauth_flow: AsyncOAuthFlow = self.app.oauth_flow  # type: ignore
-            if not (url := config.get_tenant_specific_key("url", tenant)):
-                self.set_status(400)
-                self.write(
-                    WebResponse(
-                        success="error",
-                        status_code=403,
-                        data={"message": "Invalid tenant or OAuth state"},
-                    ).dict(exclude_unset=True, exclude_none=True)
-                )
-                raise tornado.web.Finish()
-            oauth_flow.redirect_uri = urljoin(url, oauth_flow.redirect_uri_path)
             if self.request.path == oauth_flow.install_path:
+                tenant = self.get_tenant_name()
+                if not (url := config.get_tenant_specific_key("url", tenant)):
+                    self.set_status(400)
+                    self.write(
+                        WebResponse(
+                            success="error",
+                            status_code=403,
+                            data={"message": "Invalid tenant or OAuth state"},
+                        ).dict(exclude_unset=True, exclude_none=True)
+                    )
+                    raise tornado.web.Finish()
+                oauth_flow.redirect_uri = urljoin(url, oauth_flow.redirect_uri_path)
                 db_tenant = await Tenant.get_by_name(tenant)
                 if not db_tenant:
                     self.set_status(400)
