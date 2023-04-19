@@ -39,7 +39,7 @@ const AWSProvider = () => {
 
   return (
     <div className={styles.aws}>
-      <Segment isLoading={isLoading}>
+      <Segment isLoading={isLoading} disablePadding>
         <HubAccounts aws={awsData} />
         <SpokeAccounts aws={awsData} />
         <AWSOrganizations />

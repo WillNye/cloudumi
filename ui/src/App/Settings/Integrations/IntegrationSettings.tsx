@@ -1,4 +1,3 @@
-import { Button } from 'shared/elements/Button';
 import styles from './IntegrationSettings.module.css';
 import { INTEGRATIONS_TABS } from './constants';
 import { useState } from 'react';
@@ -8,6 +7,8 @@ import awsIcon from 'assets/integrations/awsIcon.svg';
 import gcpIcon from 'assets/integrations/gcpIcon.svg';
 import azureIcon from 'assets/integrations/azureIcon.svg';
 import githubIcon from 'assets/integrations/githubIcon.svg';
+import oktaIcon from 'assets/integrations/oktaIcon.svg';
+import SectionHeader from 'shared/elements/SectionHeader/SectionHeader';
 
 const IntegrationSettings = () => {
   const [currentTab, setCurrentTab] = useState<INTEGRATIONS_TABS>(
@@ -16,48 +17,65 @@ const IntegrationSettings = () => {
 
   return (
     <div className={styles.container}>
-      <p>
-        Set up Single Sign-On (SSO) and System for Cross-domain Identity
-        Management (SCIM) integrations, receive notifications, and connect with
-        cloud providers for secure and streamlined operations.
-      </p>
-      <br />
       <div className={styles.content}>
+        <SectionHeader
+          title="Cloud Providers"
+          subtitle="Configure and connect with cloud service providers (CSPs) to take advantage of benefits such as improved manageability, greater transparency, and the implementation of robust security measures, including the principle of least privilege."
+        />
         <div className={styles.gridContainer}>
           <IntegrationCard
-            description="Configure AWS to access team messaging and notifications."
+            description="Amazon Web Services (AWS) is a cloud-based platform that provides a range of services, including compute, storage, and databases, to help businesses scale and grow."
             title="Configure AWS"
             icon={awsIcon}
             buttonText="Configure"
             link="/settings/integrations/aws"
           />
           <IntegrationCard
-            description="Configure GCP to access team messaging and notifications."
+            description="Google Cloud Platform (GCP) is a cloud-based platform that provides a range of services, including computing, storage, and networking, to help businesses build, deploy, and scale applications."
             title="Configure GCP"
             icon={gcpIcon}
             buttonText="Configure"
             disableBtn
           />
           <IntegrationCard
-            description="Configure Azure to access team messaging and notifications."
+            description="Microsoft Azure is a cloud computing platform that provides a range of services, including virtual machines, databases, and developer tools, to help businesses build and deploy applications."
             title="Configure Azure"
             icon={azureIcon}
             buttonText="Configure"
             disableBtn
           />
         </div>
+        <SectionHeader
+          title="General"
+          subtitle="Integrating Slack and GitHub can help streamline your workflow, improve team collaboration, and increase productivity. With a Slack and GitHub integration, you can receive notifications directly in Slack when new code is pushed, pull requests are created, or issues are opened or closed in GitHub."
+        />
         <div className={styles.gridContainer}>
           <IntegrationCard
-            description="Connect your Slack account to access team messaging and notifications."
+            description="Collaborate efficiently with Slack. Receive real-time notifications when new code is pushed, pull requests are created, or issues are opened or closed."
             title="Connect to Slack"
             icon={slackIcon}
             buttonText="Connect"
             disableBtn
           />
           <IntegrationCard
-            description="Connect your Slack account to access team messaging and notifications."
+            description="Streamline your workflow with GitHub. Automate tasks such as creating pull requests, and receive notifications when new code is pushed, pull requests are created, or issues are opened or closed."
             title="Connect to Github"
             icon={githubIcon}
+            buttonText="Connect"
+            disableBtn
+          />
+        </div>
+        <SectionHeader
+          title="SCIM/SSO"
+          subtitle="Set up Single Sign-On (SSO) and System for Cross-domain Identity
+        Management (SCIM) integrations, receive notifications, and connect with
+        cloud providers for secure and streamlined operations."
+        />
+        <div className={styles.gridContainer}>
+          <IntegrationCard
+            description="Okta provides cloud-based identity and access management to secure your applications, data, and infrastructure. Manage user access and authentication across multiple applications from a central location, reducing the risk of data breaches."
+            title="Connect to OKta"
+            icon={oktaIcon}
             buttonText="Connect"
             disableBtn
           />
