@@ -1083,7 +1083,7 @@ async def calculate_unused_policy_for_identities(
     access_advisor_data: Optional[Dict[str, Any]] = None,
     force_refresh: bool = False,
     account_id: Optional[str] = None,
-) -> Dict[str, Dict[str, Any]]:
+) -> Optional[Dict[str, Dict[str, Any]]]:
     """Generates effective and unused policies for a list of identities.
 
     :param tenant: Tenant ID
