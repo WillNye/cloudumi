@@ -24,6 +24,7 @@ from tornado.platform.asyncio import AsyncIOMainLoop
 from api.routes import make_app
 from common.config import config
 from common.lib.plugins import fluent_bit, get_plugin_by_name
+from common.scripts.initialize_postgres import run_alembic_migrations
 from functional_tests import run_tests as functional_tests
 
 log = config.get_logger()
@@ -102,6 +103,8 @@ def init():
             server.bind(port, address=config.get("_global_.tornado.address"))
 
         server.start()  # forks one process per cpu
+
+        run_alembic_migrations()
 
         log.debug({"message": "Server started", "port": port})
         signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
