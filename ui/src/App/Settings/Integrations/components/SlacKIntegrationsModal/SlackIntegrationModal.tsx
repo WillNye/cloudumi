@@ -4,7 +4,6 @@ import { Button } from 'shared/elements/Button';
 import { deleteNoqSlackApp, addNoqSlackApp } from 'core/API/integrations';
 import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
-import { Notification, NotificationType } from 'shared/elements/Notification';
 import { Segment } from 'shared/layout/Segment';
 import { toast } from 'react-toastify';
 
