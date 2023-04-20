@@ -1,6 +1,6 @@
 import styles from './IntegrationSettings.module.css';
 import { INTEGRATIONS_TABS } from './constants';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import IntegrationCard from './components/IntegrationCard/IntegrationCard';
 import slackIcon from 'assets/integrations/slackIcon.svg';
 import awsIcon from 'assets/integrations/awsIcon.svg';
@@ -9,11 +9,22 @@ import azureIcon from 'assets/integrations/azureIcon.svg';
 import githubIcon from 'assets/integrations/githubIcon.svg';
 import oktaIcon from 'assets/integrations/oktaIcon.svg';
 import SectionHeader from 'shared/elements/SectionHeader/SectionHeader';
+import SlackIntegrationModal from './components/SlacKIntegrationsModal/SlackIntegrationModal';
+import { getSlackInstallationStatus } from 'core/API/integrations';
 
 const IntegrationSettings = () => {
-  const [currentTab, setCurrentTab] = useState<INTEGRATIONS_TABS>(
-    INTEGRATIONS_TABS.AUTHENTICATION
-  );
+  const [showSlackModal, setShowSlackModal] = useState(false);
+  const [isSlackConnected, setIsSlackConnected] = useState(false);
+
+  useEffect(() => {
+    getSlackInstallationStatus()
+      .then(({ data }) => {
+        setIsSlackConnected(data.data.installed);
+      })
+      .catch(() => ({
+        // TODO handle error
+      }));
+  }, []);
 
   return (
     <div className={styles.container}>
@@ -54,8 +65,8 @@ const IntegrationSettings = () => {
             description="Collaborate efficiently with Slack. Receive real-time notifications when new code is pushed, pull requests are created, or issues are opened or closed."
             title="Connect to Slack"
             icon={slackIcon}
-            buttonText="Connect"
-            disableBtn
+            buttonText={isSlackConnected ? 'Connected' : 'Connect'}
+            handleConnect={() => setShowSlackModal(true)}
           />
           <IntegrationCard
             description="Streamline your workflow with GitHub. Automate tasks such as creating pull requests, and receive notifications when new code is pushed, pull requests are created, or issues are opened or closed."
@@ -81,6 +92,12 @@ const IntegrationSettings = () => {
           />
         </div>
       </div>
+      <SlackIntegrationModal
+        showDialog={showSlackModal}
+        setShowDialog={setShowSlackModal}
+        isSlackConnected={isSlackConnected}
+        setIsSlackConnected={setIsSlackConnected}
+      />
     </div>
   );
 };
