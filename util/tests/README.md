@@ -16,19 +16,9 @@ Magic? Yes.
 - Add unit tests close to their bazel module - so for instance, unit tests for the `common/config` bazel module should have tests in `common/config/tests`
 - Add any additional fixtures **only** in `/util/pytest/fixtures/` as a submodule (see #developing-new-fixtures--test-stuff)
 
-## Test with bazel
-
-- `bazel test //...` - runs all tests discovered
-- `bazel test //api/...` - runs all API tests
-- `bazel test //common/config:test_ip_restriction` - runs a specific test
-
 ## Test with VSCODE | command line
 
 - Make sure you run VSCODE as follows: `PYTHONPATH=$(pwd) code .` from your cloudumi repo
-- Build the cloudumi pytest utility: `bazel build //util/tests:wheel`
-- Note the path to the wheel file in the output (for instance: `bazel-bin/util/tests/cloudumi_fixtures-0.0.1-py3-none-any.whl`)
-- Make sure you are in your venv
-- `pip install <output - ie. bazel-bin/util/tests/cloudumi_fixtures-0.0.1-py3-none-any.whl>`
 - Ensure you have the following settings in your workspace settings (should be checked in under .vscode) // "functional_tests",:
 - The rest of all configuration is in the `pytest.ini` file in the project workspace root
 
@@ -65,6 +55,3 @@ For VSCODE, these are all one-time setup instructions. _This is important_ in VS
 ## Developing new fixtures / test stuff
 
 - In fixtures, update the fixtures.py file, or add any additional plugins
-- Any additional plugins must be referenced here:
-  - `fixtures/BUILD` (in exports_files)
-  - `BUILD` (py_library/srcs - follow the example of fixtures.py)

@@ -1,0 +1,116 @@
+extends:
+  - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:259868150464:secret:shared-staging-noq_secrets-yMK1qO
+_global_:
+  landing_page_domains: ["shared.staging.noq.dev"]
+  metrics:
+    cloudwatch:
+      namespace: staging-noq-dev-shared-staging-1
+    fluent-bit:
+      namespace: staging-noq-dev-shared-staging-1
+      max_threads: 10
+      enabled: true
+      log_file: "/var/log/saas_output.log"
+      max_log_file_size: 6291456 # 6 megabyte
+      config: /etc/fluent-bit/fluent-bit.conf
+      exe: /opt/fluent-bit/bin/fluent-bit
+  auth:
+    challenge_url:
+      request_ip_must_match_challenge_creation_ip: false
+    remote_ip:
+      # trusted_remote_ip_header should only be configured when behind an ALB, otherwise the header can be forged.
+      trusted_remote_ip_header: X-Forwarded-For
+  integrations:
+    aws:
+      account_id: "259868150464"
+      central_role_name: NoqCentralRole
+      spoke_role_name: NoqSpokeRole
+      node_role: arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskRole
+      stage: staging
+      region: us-west-2
+      attributes: 1
+      registration_topic_arn: arn:aws:sns:us-west-2:259868150464:staging-noq-dev-shared-staging-1-registration-topic
+      registration_queue_arn: arn:aws:sqs:us-west-2:259868150464:staging-noq-dev-shared-staging-1-registration-queue
+      registration_central_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_central_role.yaml"
+      registration_spoke_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml"
+  accounts:
+    tenant_data:
+      name: NoqServiceConnRole
+      account_id: "615395543222"
+      role_arn: arn:aws:iam::615395543222:role/NoqServiceConnRole
+      external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
+      region: us-west-2
+    zelkova:
+      name: ZelkovaAnalysisRole
+      account_id: "894599878328"
+      account_name: "zelkova"
+      role_arn: arn:aws:iam::894599878328:role/ZelkovaAnalysisRole
+  s3_buckets:
+    legal_docs: noq-global-staging-legal-docs
+  deployment:
+    domain_name: "*.staging.noq.dev"
+    namespace: shared
+    zone: staging.noq.dev
+    cluster_id: staging-noq-dev-shared-staging-1
+  logging:
+    file: ~/logs/cloudumi/cloudumi_tornado.log
+  web:
+    path: "/app/frontend/dist"
+  docs:
+    path: "/app/api/docs"
+  s3_cache_bucket: cloudumi-cache.staging-noq-dev-shared-staging-1
+  development: false
+  environment: staging
+  tornado:
+    debug: true
+
+    port: 8092
+    xsrf: true
+    xsrf_cookie_kwargs:
+      samesite: strict
+      secure: true
+  plugins:
+    auth: cmsaas_auth
+    aws: cmsaas_aws
+    group_mapping: cmsaas_group_mapping
+    internal_celery_tasks: cmsaas_celery_tasks
+    metrics: fluent_bit
+    internal_config: cmsaas_config
+    internal_routes: cmsaas_internal_routes
+    internal_policies: cmsaas_policies
+  celery:
+    clear_tasks_for_development: false
+    purge: false
+    broker:
+      us-east-1: rediss://:{password}@master.staging-noq-dev-shared-staging-1.eb1l6j.usw2.cache.amazonaws.com:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      us-west-2: rediss://:{password}@master.staging-noq-dev-shared-staging-1.eb1l6j.usw2.cache.amazonaws.com:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      global: rediss://:{password}@master.staging-noq-dev-shared-staging-1.eb1l6j.usw2.cache.amazonaws.com:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+    backend:
+      us-east-1: rediss://:{password}@master.staging-noq-dev-shared-staging-1.eb1l6j.usw2.cache.amazonaws.com:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      us-west-2: rediss://:{password}@master.staging-noq-dev-shared-staging-1.eb1l6j.usw2.cache.amazonaws.com:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+      global: rediss://:{password}@master.staging-noq-dev-shared-staging-1.eb1l6j.usw2.cache.amazonaws.com:6379/2?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required
+    debug: true
+  # Saas Configuration
+  ses_notifications_sender_identity: arn:aws:ses:us-west-2:259868150464:identity/notifications@noq.dev
+  dax_endpoints:
+    - staging-shared.eb1l6j.dax-clusters.us-west-2.amazonaws.com:8111
+  redis:
+    host:
+      global: master.staging-noq-dev-shared-staging-1.eb1l6j.usw2.cache.amazonaws.com
+    port: 6379
+    ssl: true
+    cluster_mode:
+      enabled: false
+      nodes:
+        global:
+          - host: master.staging-noq-dev-shared-staging-1.eb1l6j.usw2.cache.amazonaws.com
+            port: 6379
+  noq_db:
+    endpoint: staging-noq-dev-shared-staging-1.cluster-ctap3hmv8c67.us-west-2.rds.amazonaws.com
+    port: 5432
+    database: noq
+  sentry:
+    dsn: https://7113898274d641d3923e0b163a74e6fe@o1134078.ingest.sentry.io/6625267
+  google_analytics:
+    tracking_id: G-P5K1SQF3P6
+  tenant_storage:
+    base_path: /data/tenant_data/

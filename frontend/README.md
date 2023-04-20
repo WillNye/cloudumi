@@ -9,9 +9,9 @@
 
 ## Build
 
-- Just build locally: `bazel build //frontend:build`
-- Run locally using bazel: `bazel run //frontend:start`
-- Run in container: `bazel run //frontend:container-dev-local`
+- yarn
+- yarn build
+- (wanna serve?) yarn start
 
 ### API integration
 
