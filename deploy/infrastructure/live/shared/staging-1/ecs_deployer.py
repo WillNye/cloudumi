@@ -39,6 +39,13 @@ service_task_definition_map = [
     },
 ]
 
+run_task_definition_map = [
+    {
+        "task": "preheat",
+        "task_definition": f"{current_path}/task_definition_preheat.yaml",
+    }
+]
+
 cluster_name = "staging-noq-dev-shared-staging-1"
 subnets = ["subnet-0dd8e008f770bd447", "subnet-0ae657185cbb32ee3"]
 security_groups = ["sg-0344d82e7000960df"]
@@ -95,6 +102,35 @@ except ClientError as e:
             }
         },
     )
+
+for task in run_task_definition_map:
+    with open(task["task_definition"]) as fp:
+        task_definition = yaml.load(fp, Loader=yaml.FullLoader)
+
+        for container in task_definition.get("containerDefinitions", []):
+            container["image"] = container["image"].split(":")[0] + f":{version}"
+
+        registered_task_definition = ecs_client.register_task_definition(
+            **task_definition
+        )
+
+        task_definition_name = "{}:{}".format(
+            registered_task_definition["taskDefinition"]["family"],
+            registered_task_definition["taskDefinition"]["revision"],
+        )
+
+        ecs_client.run_task(
+            cluster=cluster_name,
+            taskDefinition=task_definition_name,
+            launchType="FARGATE",
+            networkConfiguration={
+                "awsvpcConfiguration": {
+                    "subnets": subnets,
+                    "assignPublicIp": "DISABLED",
+                    "securityGroups": security_groups,
+                }
+            },
+        )
 
 for service in service_task_definition_map:
     service_name = service["service"]
