@@ -25,14 +25,14 @@ def get_regex_resource_names(statement: dict) -> list:
     ]
 
 
-async def is_resource_match(regex_patterns, regex_strs) -> bool:
+async def is_resource_match(regex_patterns: list[str], regex_strs: list[str]) -> bool:
     """Check if all provided strings (regex_strs) match on AT LEAST ONE regex pattern
 
     :param regex_patterns: A list of regex patterns to search on
     :param regex_strs: A list of strings to check against
     """
 
-    async def _regex_check(regex_pattern) -> bool:
+    async def _regex_check(regex_pattern: str) -> bool:
         return any(re.match(regex_pattern, regex_str) for regex_str in regex_strs)
 
     results = await asyncio.gather(
@@ -42,11 +42,13 @@ async def is_resource_match(regex_patterns, regex_strs) -> bool:
 
 
 async def is_action_match(
-    action_map: dict[list], comparable_action_map: dict[list]
+    action_map: dict[str, list | set], comparable_action_map: dict[str, list | set]
 ) -> bool:
     for service, actions in action_map.items():
         comp_actions = comparable_action_map.get(service)
-        if not comp_actions or not all(action in comp_actions for action in actions):
+        if not comp_actions or set(actions) != set(actions).intersection(
+            set(comp_actions)
+        ):
             return False
 
     return True
@@ -185,30 +187,28 @@ async def condense_statements(
             continue
 
         for inner_elem, inner_statement in enumerate(statements):
-            if not (
+            if offset_elem == inner_elem:
+                continue
+            elif not (
                 inner_statement.get("ResourceAsRegex")
                 and statement.get("ResourceAsRegex")
             ):
                 continue
+            elif statement["Effect"] != inner_statement["Effect"]:
+                continue
+            elif any(inner_statement.get(se) for se in IGNORE_STATEMENTS_WITH):
+                continue
+            elif inner_statement.get("Condition"):
+                continue
+
             resource_match = await is_resource_match(
                 inner_statement["ResourceAsRegex"], statement["ResourceAsRegex"]
             )
             action_match = await is_action_match(
                 statement["ActionMap"], inner_statement["ActionMap"]
             )
-            identical_resource = bool(
-                statement["Resource"] == inner_statement["Resource"]
-            )
 
-            if offset_elem == inner_elem:
-                continue
-            elif statement["Effect"] != inner_statement["Effect"]:
-                continue
-            elif any(inner_statement.get(se) for se in IGNORE_STATEMENTS_WITH):
-                continue
-            elif not resource_match and not action_match:
-                continue
-            elif inner_statement.get("Condition"):
+            if not resource_match and not action_match:
                 continue
             elif (
                 len(inner_statement["Action"]) == 1
@@ -216,20 +216,25 @@ async def condense_statements(
             ):
                 continue
 
-            if identical_resource:
+            if identical_resource := bool(
+                statement["Resource"] == inner_statement["Resource"]
+            ):
                 # The statements are identical so combine the actions
                 statements[inner_elem]["Action"] = sorted(
                     list(set(statements[inner_elem]["Action"] + statement["Action"]))
                 )
                 for resource_type, perm_set in statement["ActionMap"].items():
-                    for perm in perm_set:
-                        statements[inner_elem]["ActionMap"][resource_type].add(perm)
+                    statements[inner_elem]["ActionMap"][resource_type].update(perm_set)
+
             if action_match:
                 # The statements are identical so combine the actions
                 statements[inner_elem]["Resource"] = sorted(
                     list(
                         set(statements[inner_elem]["Resource"] + statement["Resource"])
                     )
+                )
+                statements[inner_elem] = await normalize_statement(
+                    statements[inner_elem]
                 )
 
             if action_match or identical_resource:
