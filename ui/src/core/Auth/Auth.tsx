@@ -24,7 +24,7 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
 
   const navigate = useNavigate();
 
-  useAxiosInterceptors({ setUser, setInvalidTenant });
+  useAxiosInterceptors({ setUser, setInvalidTenant, setInternalServerError });
 
   useEffect(function onMount() {
     getUser();

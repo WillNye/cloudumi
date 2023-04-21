@@ -22,6 +22,7 @@ const AWSOrganizations = () => {
 
   useEffect(function onMount() {
     getAllAWSOrganizations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getAllAWSOrganizations = useCallback(async () => {
@@ -113,10 +114,7 @@ const AWSOrganizations = () => {
         setShowDialog={setShowDialog}
         showDialog={showDialog}
       >
-        <AWSOrganizationModal
-          onClose={() => setShowDialog(false)}
-          defaultValues={defaultData}
-        />
+        <AWSOrganizationModal defaultValues={defaultData} />
       </Dialog>
     </div>
   );

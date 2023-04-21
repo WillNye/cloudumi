@@ -35,7 +35,6 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
   const [showDialog, setShowDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [groupUsers, setGroupUsers] = useState(group.users);
   const [isSearching, setIsSearching] = useState(false);
   const [isUpdatingGroups, setIsUpdatingGroups] = useState(false);

@@ -49,7 +49,6 @@ const AllRoles = ({ data, getData, isLoading }) => {
   const tableRows = useMemo(() => {
     return data.map(item => {
       const arn = item.arn.match(/\[(.+?)\]\((.+?)\)/)[1];
-      const roleName = arn.split(':role').pop();
       return {
         ...item,
         roleName: <Link to={`/resources/edit/${arn}`}>{arn}</Link>,

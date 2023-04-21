@@ -1,5 +1,4 @@
-import { FC, Fragment, useCallback, useMemo, useState } from 'react';
-import { Icon } from 'shared/elements/Icon';
+import { FC, Fragment, useCallback, useState } from 'react';
 import { Dialog } from 'shared/layers/Dialog';
 import { Button } from 'shared/elements/Button';
 import styles from './DeleteModal.module.css';
