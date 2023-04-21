@@ -9,7 +9,7 @@ extends:
 
 _global_:
   data_location: ~/.config/noq/cache/
-  profiler: yappi
+  # profiler: yappi
   #  tracing:
   #    enabled: true
   #_development_run_celery_tasks_1_min: true
