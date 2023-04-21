@@ -10,8 +10,7 @@
 ## Build
 
 - yarn
-- yarn build
-- (wanna serve?) yarn start
+- yarn start
 
 ### API integration
 
