@@ -444,6 +444,8 @@ class Configuration(metaclass=Singleton):
                 last_updated = int(tenant_config.get("last_updated", 0))
 
             # Update the in-memory tenant config with the latest config
+            if not tenant_config.get("config"):
+                return default
             self.tenant_configs[tenant]["config"] = tenant_config["config"]
             self.tenant_configs[tenant]["last_updated"] = last_updated
 
