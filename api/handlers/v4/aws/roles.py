@@ -24,7 +24,7 @@ class RolesHandlerV4(BaseHandler):
 
     async def post(self):
         """
-        GET /api/v4/aws/roles
+        POST /api/v4/aws/roles
         """
         tenant = self.ctx.tenant
         body = tornado.escape.json_decode(self.request.body or "{}")

@@ -87,7 +87,7 @@ _global_:
   tornado:
     debug: false
     port: 8092
-    xsrf: true
+    xsrf: false # Needed for Postman
     xsrf_cookie_kwargs:
       samesite: strict
       secure: true
