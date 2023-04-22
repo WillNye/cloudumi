@@ -1,1 +1,1 @@
-export * from './SlackIntegrationModal';
+export { default } from './SlackIntegrationModal';

@@ -26,7 +26,7 @@ const SlackIntegrationModal: FC<SlackIntegrationModalProps> = ({
     setIsLoading(true);
     try {
       await deleteNoqSlackApp();
-      toast.success(`Successfully remove slack App`);
+      toast.success(`Successfully remove Slack App`);
       setIsLoading(false);
       setIsSlackConnected(false);
       setShowDialog(false);
@@ -34,7 +34,7 @@ const SlackIntegrationModal: FC<SlackIntegrationModalProps> = ({
       const err = error as AxiosError;
       const errorRes = err?.response;
       const errorMsg = extractErrorMessage(errorRes?.data);
-      toast.error(errorMsg || `Error when removing slack App`);
+      toast.error(errorMsg || `Error when removing Slack App`);
       setIsLoading(false);
     }
   }, [setIsSlackConnected, setShowDialog]);
@@ -67,10 +67,10 @@ const SlackIntegrationModal: FC<SlackIntegrationModalProps> = ({
     >
       <Segment>
         <div>
-          Our Slack app offers real-time notifications, seamless collaboration,
+          Our Slack App offers real-time notifications, seamless collaboration,
           and customizable settings to help you work more efficiently with your
           team. With the app, you&apos;ll stay informed and engaged, and be able
-          to work on projects and tasks directly from Slack. Install
+          to work on projects and tasks directly from Slack.
         </div>
         <br />
         <br />
