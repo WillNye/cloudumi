@@ -83,7 +83,7 @@ To use terraform, follow the below steps:
 - For the first time, initialize the environment: `terraform init --var-file=live/shared/staging-1/noq.dev-staging.tfvars`
 - Plan: `terraform plan --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars`
 - Apply: `terraform apply --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars`
-- Create the NOQ configuration files in the corresponding `live` configuration folder: `terraform output -json | bazel run //util/terraform_config_parser ~/dev/noq/cloudumi` -- see the `terraform_config_parser` section below
+- Create the NOQ configuration files in the corresponding `live` configuration folder: `terraform output -json | python ../../util/terraform_config_parser/terraform_config_parser.py ~/dev/noq/cloudumi` -- see the `terraform_config_parser` section below
 - Destroy: `terraform destroy --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars`
 - Get outputs: `terraform output`
 - Refresh: `terraform refresh`
@@ -91,8 +91,6 @@ To use terraform, follow the below steps:
 ### terraform_config_parser
 
 We provide a script that automatically generates (from templates) the product configuration files by parsing the Terraform output files. The script itself lives in the util/terrafom_config_parser directory in the mono repo and performs the following steps:
-
-The way to execute this script is by piping the terraform output in JSON format into the script's STDIN: `terraform output -json | bazel run //util/terraform_config_parser <root path of mono repo>`
 
 Note: in order for this to work, there are two pre-requisites:
 
@@ -171,26 +169,11 @@ aws sts get-caller-identity
 
 # Deploy to staging automation
 
-- For convenience, run the `deploy/infrastructure/live/shared/staging-1/push_all_the_things.sh` script. If you are a
-  masochist and desire to do this manually, run the below commands:
-
-- Set AWS_PROFILE: `export AWS_PROFILE=staging/staging_admin`
-- Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 259868150464.dkr.ecr.us-west-2.amazonaws.com` (this authenticates your AWS PROFILE to ECR for registry upload purposes; hence the authentication via docker login)
-- Reference `Terraform` section above on how to deploy / update terraform infrastructure (should be seldom)
-- Optionally check all available build targets for `prod-1`: `bazelisk query //deploy/infrastructure/live/shared/...`
-- Optionally push containers (at least the first time and anytime they change): `bazelisk run //deploy/infrastructure/live/shared/staging-1:api-container-deploy-staging; bazelisk run //deploy/infrastructure/live/shared/staging-1:celery-container-staging-prod`
-- Deploy: `bazelisk run //deploy/infrastructure/live/shared/staging-1:ecs_deployer`
+- Deploy using out Github Action Worker: https://github.com/noqdev/cloudumi/actions (Publish to staging using Docker)
 
 # Deploy to production automation
 
-- For convenience, run the `deploy/infrastructure/live/shared/prod-1/push_all_the_things.sh` script. If you are a
-  masochist and desire to do this manually, run the below commands:
-
-- Set AWS_PROFILE: `export AWS_PROFILE=noq_prod`
-- Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 940552945933.dkr.ecr.us-west-2.amazonaws.com`
-- Optionally check all available build targets for `prod-1`: `bazelisk query //deploy/infrastructure/live/shared/...`
-- Optionally push containers (at least the first time and anytime they change): `bazelisk run //deploy/infrastructure/live/shared/prod-1:api-container-deploy-prod; bazelisk run //deploy/infrastructure/live/shared/prod-1:celery-container-deploy-prod`
-- Deploy: `bazelisk run //deploy/infrastructure/live/shared/prod-1:ecs_deployer`
+- Deploy using out Github Action Worker: https://github.com/noqdev/cloudumi/actions (Publish to prod using Docker)
 
 # Deploy to isolated clusters
 
@@ -200,26 +183,10 @@ aws sts get-caller-identity
 - Understand the environment: does the isolated cluster have staging and prod? Just prod? Select the AWS_PROFILE appropriately
 - Set AWS_PROFILE: `export AWS_PROFILE=noq_prod` - this is assuming we are looking to update their prod-1 part in their cluster
 - Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 940552945933.dkr.ecr.us-west-2.amazonaws.com`
-- Optionally check all available build targets for `prod-1`: `bazelisk query //deploy/infrastructure/live/cyberdyne/...` - note: using `cyberdyne` for this example, replace cyberdyne with <company name>
-- Optionally push containers (at least the first time and anytime they change): `bazelisk run //deploy/infrastructure/live/cyberdyne/prod-1:api-container-deploy-prod; bazelisk run //deploy/infrastructure/live/cyberdyne/prod-1:celery-container-deploy-prod`
-- Deploy: `bazelisk run //deploy/infrastructure/live/cyberdyne/prod-1:ecs_deployer`
+- Create the infrastructure environment (see documentation on using `terraform workspace` and the terraform_config_parser)
+- Deploy using the `push_all_the_things.sh` script that is generated in the relevant deployment configuration (look in `live/`)
 
-## Technical Debt
-
-- Instead of using the genrule, build a bzl starlark rule
-- SAAS-93: Secure private net
-- SAAS-94: Convert the bazel build system to be entirely hermetic
-- SAAS-95: Fix xmlsec in Bazel directed API build
-- SAAS-96: Fix uvloop in Bazel directed API build
-
-# Remove a cluster
-
-- Set AWS_PROFLE: `export AWS_PROFILE=staging/staging_admin` (or noq_prod)
-- For staging: `bazelisk run //deploy/infrastructure/live/shared/staging-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=staging/staging_admin`
-- For production: `bazelisk run //deploy/infrastructure/live/shared/prod-1:destroy --action_env=HOME=$HOME --action_env=AWS_PROFILE=noq_prod`
-- Reference the `Terraform` section for more information on how to destroy an environment, if needed (in most cases it won't be)
-
-# How to use ecs-cli to circumvent Bazel
+# How to use ecs-cli
 
 Sometimes it is necessary to experiment with the ECS compose jobs. In those scenarios, the best way to get around the Bazel build targets is to start in a `live` configuration folder (for instance: `deploy/infrastructure/live/shared/staging-1`). The compose.yaml file and the ecs.yaml file will be require to manipulate the cluster. Furthermore, you will need to set the requisite `AWS_PROFILE` environment variable (using something like `export AWS_PROFILE="staging/staging_admin"` for instance).
 
@@ -228,11 +195,6 @@ Sometimes it is necessary to experiment with the ECS compose jobs. In those scen
   - See below for the accompanying `ecs-cli compose service rm` call to remove the service
 - To remove a service: `ecs-cli compose -p noq-dev-shared-staging-1 -f compose.yaml service rm`
 - Reference: [ECS-CLI reference](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_reference.html)
-
-# How to manually build and deploy the containers
-
-- Build/push API container: `bazelisk run //api:container; bazelisk run //api:container_deploy_staging`
-- Build/push Celery container: `bazelisk run //common/celery_tasks:container; bazelisk run //common/celery_tasks:container_deploy_staging`
 
 # Troubleshooting
 
