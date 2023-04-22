@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Search } from './Search';
-import filter from 'lodash/filter';
 import escapeRegExp from 'lodash/escapeRegExp';
 import { data } from './data';
 
@@ -14,7 +13,7 @@ export const Basic = () => {
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const timeoutRef = useRef();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const handleSearchChange = useCallback(e => {
     setIsLoading(true);
@@ -23,7 +22,6 @@ export const Basic = () => {
     setValue(newValue);
 
     clearTimeout(timeoutRef.current);
-    // @ts-ignore
     timeoutRef.current = setTimeout(() => {
       if (newValue.length === 0) {
         setResults([]);

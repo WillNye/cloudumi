@@ -22,7 +22,6 @@ export const Block: FC<BlockProps> = ({
   label,
   disableLabelPadding,
   children,
-  contentClassName,
   disableMargin,
   labelClassName,
   className,

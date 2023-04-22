@@ -11,6 +11,7 @@ import { Input } from 'shared/form/Input';
 import { resetPassword } from 'core/API/auth';
 
 const DEFAULT_SUCCESS_MSG =
+  // eslint-disable-next-line max-len
   'If your user exists, we have sent you an email with a password reset link that is valid for 15 minutes. Please check your email to reset your password.';
 
 const emailSchema = Yup.object().shape({

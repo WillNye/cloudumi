@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import HubAccounts from './HubAccounts';
 import SpokeAccounts from './SpokeAccounts';
 import AWSOrganizations from './AWSOrganizations';
@@ -16,6 +15,7 @@ const AWSProvider = () => {
 
   useEffect(function onMount() {
     getAWSIntegrations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getAWSIntegrations = useCallback(async () => {

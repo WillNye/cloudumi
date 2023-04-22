@@ -25,26 +25,6 @@ export const Simple = () => {
   );
 };
 
-const CustomHeaderElement = ({ children }: any) => <h4>Custom Header</h4>;
-
-export const CustomHeader = () => {
-  const [showDialog, setShowDialog] = useState(false);
-
-  return (
-    <div style={{ textAlign: 'center', margin: '50px' }}>
-      <Button onClick={() => setShowDialog(!showDialog)}>Open Dialog</Button>
-      <Dialog
-        showDialog={showDialog}
-        setShowDialog={setShowDialog}
-        header={<CustomHeaderElement />}
-        size="small"
-      >
-        Body Content
-      </Dialog>
-    </div>
-  );
-};
-
 export const Sizes = () => {
   const [showDialogSmall, setShowDialogSmall] = useState(false);
   const [showDialogMeduim, setShowDialogMedium] = useState(false);

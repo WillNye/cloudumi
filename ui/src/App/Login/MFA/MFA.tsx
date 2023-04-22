@@ -58,7 +58,6 @@ export const MFA: FC = () => {
             if (val?.length === 6) {
               // TODO (Kayizzi) - If invalid MFA is entered , often times the user cannot retry
               // because the session has already been used. We need to handle this and get a new session
-              // {"__type":"NotAuthorizedException","message":"Invalid session for the user, session can only be used once."}
               verifyTOTPCode(val);
             }
           }}

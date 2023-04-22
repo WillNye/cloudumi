@@ -20,6 +20,7 @@ const SpokeAccounts = ({ aws }) => {
 
   useEffect(function onMount() {
     getAllSpokeAccounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getAllSpokeAccounts = useCallback(async () => {
@@ -73,7 +74,8 @@ const SpokeAccounts = ({ aws }) => {
           </Button>
           <DeleteModal
             title="Delete Spoke Account"
-            warningMessage="Are you sure you want to delete this item? This action cannot be undone and all associated data will be permanently removed."
+            warningMessage="Are you sure you want to delete this item? This action cannot be undone and all
+             associated data will be permanently removed."
             refreshData={getAllSpokeAccounts}
             onDelete={handleDeleteSpokeAccount}
             data={item}

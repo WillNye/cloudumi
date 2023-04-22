@@ -1,5 +1,4 @@
 import { FC, useCallback, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
 
 import css from './Access.module.css';
 import { ROLES_TABS } from './constants';

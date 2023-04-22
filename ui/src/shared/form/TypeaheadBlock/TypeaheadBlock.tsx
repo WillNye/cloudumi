@@ -8,10 +8,7 @@ export const TypeaheadBlock = ({
   handleInputUpdate,
   defaultValue,
   defaultValues,
-  typeahead,
-  noQuery,
-  resultsFormatter,
-  shouldTransformResults
+  resultsFormatter
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState([]);
@@ -68,15 +65,8 @@ export const TypeaheadBlock = ({
           handleInputUpdate(selectedValues);
           return;
         }
-
-        const re = new RegExp(_.escapeRegExp(value), 'i');
-        const isMatch = result => re.test(result.title);
-
-        const TYPEAHEAD_API = noQuery
-          ? typeahead
-          : typeahead.replace('{query}', value);
       }, 300),
-    [noQuery, selectedValues, handleInputUpdate, typeahead]
+    [selectedValues, handleInputUpdate]
   );
 
   const handleSearchChange = useCallback(
@@ -102,7 +92,7 @@ export const TypeaheadBlock = ({
           />
         </Chip>
       )),
-    [selectedValues]
+    [selectedValues, handleSelectedValueDelete]
   );
 
   return (

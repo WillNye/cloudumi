@@ -1,4 +1,3 @@
-import { Button } from 'shared/elements/Button';
 import styles from './IntegrationSettings.module.css';
 import { INTEGRATIONS_TABS } from './constants';
 import { useMemo, useState } from 'react';
