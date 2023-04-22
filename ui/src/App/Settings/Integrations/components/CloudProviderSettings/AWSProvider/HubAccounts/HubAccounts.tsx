@@ -20,6 +20,7 @@ const HubAccounts = ({ aws }) => {
 
   useEffect(function onMount() {
     getAllHubAccounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getAllHubAccounts = useCallback(async () => {
@@ -56,7 +57,8 @@ const HubAccounts = ({ aws }) => {
         <div className={styles.tableActions}>
           <DeleteModal
             title="Delete Hub Account"
-            warningMessage="Are you sure you want to delete this item? This action cannot be undone and all associated data will be permanently removed."
+            warningMessage="Are you sure you want to delete this item? This action cannot be undone and all
+             associated data will be permanently removed."
             refreshData={getAllHubAccounts}
             onDelete={handleDeleteHubAccount}
             data={item}

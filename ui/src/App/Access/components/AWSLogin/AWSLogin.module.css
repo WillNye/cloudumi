@@ -1,9 +1,0 @@
-.container {
-  padding: var(--spacing-md);
-
-  .loader {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-}

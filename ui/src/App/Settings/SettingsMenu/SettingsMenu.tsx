@@ -1,6 +1,5 @@
-import { FC, useMemo, useState } from 'react';
+import { FC, useMemo } from 'react';
 import { Link, Outlet, useMatch } from 'react-router-dom';
-import appConfigImg from '../../../assets/vendor/app-config.svg';
 import styles from './SettingsMenu.module.css';
 import {
   BREAD_CRUMBS_ACCOUNTS_PATH,

@@ -83,7 +83,7 @@ export const SelectAccount = ({
   );
 };
 
-export const AWSOrganizationModal = ({ onClose, defaultValues }) => {
+export const AWSOrganizationModal = ({ defaultValues }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);

@@ -1,4 +1,4 @@
-import React, { forwardRef, Ref, FC, useState, useRef, Fragment } from 'react';
+import React, { forwardRef, Ref, FC } from 'react';
 import classNames from 'classnames';
 import css from './Card.module.css';
 
@@ -28,9 +28,6 @@ export const Card: FC<CardProps & { ref?: Ref<HTMLDivElement> }> = forwardRef(
     }: CardProps,
     ref: Ref<HTMLDivElement>
   ) => {
-    const [menuOpen, setMenuOpen] = useState<boolean>(false);
-    const menuRef = useRef<HTMLButtonElement | null>(null);
-
     return (
       <section
         {...rest}

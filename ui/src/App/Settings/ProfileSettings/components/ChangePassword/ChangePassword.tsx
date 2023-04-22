@@ -33,7 +33,7 @@ const ChangePassword = () => {
 
   const passwordValue = watch('newPassword');
 
-  const onSubmit = useCallback(async ({ oldPassword, newPassword }) => {
+  const onSubmit = useCallback(async () => {
     // TODO: Update password api route
   }, []);
 

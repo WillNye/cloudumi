@@ -100,6 +100,7 @@ def upload_configuration_to_s3(terraform_config: dict):
     terraform_config[
         "config_path_with_bucket"
     ] = f"s3://{bucket_name}/{__get_key_name_from_config(terraform_config)}"
+    my_path.joinpath("configuration.yaml").unlink(missing_ok=True)
     return terraform_config
 
 
@@ -321,7 +322,6 @@ if __name__ == "__main__":
         terraform_config,
         config_output_path,
     )
-    write_file("build_file.jinja2", "BUILD", terraform_config, config_output_path)
     write_file(
         "task_definition_api.yaml.jinja2",
         "task_definition_api.yaml",

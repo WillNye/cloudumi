@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import { FC, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import classNames from 'classnames';

@@ -11,8 +11,8 @@
     "build-storybook": "build-storybook",
     "test": "NODE_ENV=test jest",
     "coverage": "NODE_ENV=test jest --collectCoverage",
-    "lint": "npx eslint --ext js,ts,tsx",
-    "lint:fix": "npx eslint --ext js,ts,tsx --fix",
+    "lint": "./node_modules/eslint/bin/eslint.js . --ext .jsx --ext .jsx,.js,.ts,.tsx",
+    "lint-fix": "./node_modules/eslint/bin/eslint.js . --fix --ext .jsx,.js,.ts,.tsx",
     "prettier": "prettier --check 'src/**/*.{js,jsx,ts,tsx,json,md,graphql,gql}'",
     "prettier:fix": "prettier --loglevel warn --write 'src/**/*.{js,jsx,ts,tsx,json,md,graphql,gql}'",
     "format": "npm run prettier:fix && npm run lint:fix"
