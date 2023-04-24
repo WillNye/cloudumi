@@ -1,5 +1,5 @@
 import styles from './IntegrationSettings.module.css';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import IntegrationCard from './components/IntegrationCard/IntegrationCard';
 import slackIcon from 'assets/integrations/slackIcon.svg';
 import awsIcon from 'assets/integrations/awsIcon.svg';
@@ -22,17 +22,26 @@ import {
 
 const IntegrationSettings = () => {
   const [showSlackModal, setShowSlackModal] = useState(false);
+  const [isGettingIntegrations, setIsGettingIntegrations] = useState(false);
   const [isSlackConnected, setIsSlackConnected] = useState(false);
 
-  useEffect(() => {
+  const getIntegrationStatus = useCallback(() => {
+    setIsGettingIntegrations(true);
     getSlackInstallationStatus()
       .then(({ data }) => {
         setIsSlackConnected(data.data.installed);
       })
       .catch(() => ({
         // TODO handle error
-      }));
+      }))
+      .finally(() => {
+        setIsGettingIntegrations(false);
+      });
   }, []);
+
+  useEffect(() => {
+    getIntegrationStatus();
+  }, [getIntegrationStatus]);
 
   return (
     <div className={styles.container}>
@@ -102,6 +111,8 @@ const IntegrationSettings = () => {
         setShowDialog={setShowSlackModal}
         isSlackConnected={isSlackConnected}
         setIsSlackConnected={setIsSlackConnected}
+        checkStatus={getIntegrationStatus}
+        isGettingIntegrations={isGettingIntegrations}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import { Dispatch, FC, useCallback, useState } from 'react';
+import { Dispatch, FC, useCallback, useEffect, useState } from 'react';
 import { Dialog } from 'shared/layers/Dialog';
 import { Button } from 'shared/elements/Button';
 import { deleteNoqSlackApp, addNoqSlackApp } from 'core/API/integrations';
@@ -12,15 +12,28 @@ interface SlackIntegrationModalProps {
   setShowDialog: Dispatch<boolean>;
   isSlackConnected: boolean;
   setIsSlackConnected: Dispatch<boolean>;
+  checkStatus: () => void;
+  isGettingIntegrations: boolean;
 }
 
 const SlackIntegrationModal: FC<SlackIntegrationModalProps> = ({
   isSlackConnected,
   showDialog,
   setShowDialog,
-  setIsSlackConnected
+  setIsSlackConnected,
+  checkStatus,
+  isGettingIntegrations
 }) => {
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(
+    function onMount() {
+      if (showDialog) {
+        checkStatus();
+      }
+    },
+    [checkStatus, showDialog]
+  );
 
   const handleOnDelete = useCallback(async () => {
     setIsLoading(true);
@@ -65,7 +78,7 @@ const SlackIntegrationModal: FC<SlackIntegrationModalProps> = ({
       size="medium"
       showCloseIcon
     >
-      <Segment>
+      <Segment isLoading={isGettingIntegrations}>
         <div>
           Our Slack App offers real-time notifications, seamless collaboration,
           and customizable settings to help you work more efficiently with your
