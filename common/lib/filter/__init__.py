@@ -71,7 +71,9 @@ class FilterModel(BaseModel):
     filtering: Filter = None
 
 
-async def filter_data(data, filter_obj) -> DataTableResponse:
+async def filter_data(
+    data, filter_obj, model: Optional[BaseModel] = None
+) -> DataTableResponse:
     options = FilterModel.parse_obj(filter_obj)
     filter = options.filtering
     sorting = options.sorting
@@ -127,9 +129,18 @@ async def filter_data(data, filter_obj) -> DataTableResponse:
     if pagination and pagination.pageSize and pagination.currentPageIndex:
         start = (pagination.currentPageIndex - 1) * pagination.pageSize
         end = start + pagination.pageSize
-        paginated_data = filtered_data[start:end]
+        if model:
+            paginated_data = [
+                model.parse_obj(item).dict(by_alias=True)
+                for item in filtered_data[start:end]
+            ]
+        else:
+            paginated_data = filtered_data[start:end]
     else:
-        paginated_data = filtered_data
+        if model:
+            [model.parse_obj(item).dict(by_alias=True) for item in filtered_data]
+        else:
+            paginated_data = filtered_data
 
     return DataTableResponse(
         totalCount=total_count, filteredCount=filtered_count, data=paginated_data
