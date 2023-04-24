@@ -182,7 +182,6 @@ class CookieMatcher(PathMatches):
     def match(self, request):
         path_match = super().match(request)
         if path_match is not None and self.cookie_name in request.cookies:
-            # path_match["matched_cookie"] = request.cookies[self.cookie_name]
             return path_match
         return None
 
