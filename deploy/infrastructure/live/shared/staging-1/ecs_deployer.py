@@ -41,8 +41,8 @@ service_task_definition_map = [
 
 run_task_definition_map = [
     {
-        "task": "preheat",
-        "task_definition": f"{current_path}/task_definition_preheat.yaml",
+        "task": "preflight",
+        "task_definition": f"{current_path}/task_definition_preflight.yaml",
     }
 ]
 
@@ -198,6 +198,32 @@ while True:
         break
 
     if rollout_finalized:
+        break
+
+    if failed is True:
+        break
+
+    for task in run_task_definition_map:
+        if task.get("status") in ["STOPPED", "DEPROVISIONING", "STOPPING"]:
+            continue
+        tasks = ecs_client.list_tasks(cluster=cluster_name)
+        task_details = ecs_client.describe_tasks(cluster=cluster_name, tasks=[task])
+
+        task["status"] = task_details["tasks"][0]["lastStatus"]
+
+        if task_details.get("failures"):
+            print(f"Task: {task}, failed")
+            failed = True
+            break
+
+        for task in tasks:
+            print(f"Stopping task: {task}")
+            ecs_client.stop_task(cluster=cluster_name, task=task, reason="Rollout")
+
+    if failed is True:
+        print(
+            "Rollout failed - tasks as defined in the run_task_definition_map have failed"
+        )
         break
 
     for service in service_task_definition_map:

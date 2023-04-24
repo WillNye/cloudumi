@@ -160,3 +160,6 @@ cloudumi_tornado.log.*
 /deploy/local/redis
 
 **/secrets.yaml
+server.pem
+server.key.pem
+util/terraform_config_parser/configuration.yaml

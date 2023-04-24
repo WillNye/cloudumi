@@ -347,8 +347,8 @@ if __name__ == "__main__":
         config_output_path,
     )
     write_file(
-        "task_definition_preheat.yaml.jinja2",
-        "task_definition_preheat.yaml",
+        "task_definition_preflight.yaml.jinja2",
+        "task_definition_preflight.yaml",
         terraform_config,
         config_output_path,
     )

@@ -6,11 +6,11 @@ containerDefinitions:
       options:
         awslogs-group: {{ ecs_cluster_name }}
         awslogs-region: {{ region }}
-        awslogs-stream-prefix: cluster-preheat
+        awslogs-stream-prefix: cluster-preflight
     entryPoint:
       - /bin/sh
       - "-c"
-      - 'python /app/common/preheat/run.py'
+      - 'python /app/common/preflight/run.py'
     linuxParameters:
       devices: [ ]
       initProcessEnabled: true
@@ -21,7 +21,7 @@ containerDefinitions:
       - name: SETUPTOOLS_USE_DISTUTILS
         value: stdlib
       - name: RUNTIME_PROFILE
-        value: PREHEAT
+        value: PREFLIGHT
       - name: STAGE
         value: {{ stage }}
     dnsServers: [ ]
