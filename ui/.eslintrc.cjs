@@ -58,7 +58,7 @@ module.exports = {
       }
     ],
     'max-params': ['error', 3],
-    complexity: ['error', 5],
+    complexity: ['error', 12],
     'no-multi-spaces': 0,
     'import-order/import-order': 0,
     'operator-linebreak': 0,

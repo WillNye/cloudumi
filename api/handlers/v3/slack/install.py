@@ -177,9 +177,9 @@ class AsyncSlackHandler(BaseAdminHandler):
             return
 
         tenant = await Tenant.get_by_name(tenant_name)
-        tenant_oauth_rel = await TenantOauthRelationship.get_by_tenant(tenant)
-        if tenant_oauth_rel:
-            await tenant_oauth_rel.delete()
+        tenant_install_rel = await SlackTenantInstallRelationship.get_by_tenant(tenant)
+        if tenant_install_rel:
+            await tenant_install_rel.delete()
         self.write(WebResponse(success="success", status_code=200).dict())
 
     async def get(self, *args):
@@ -202,8 +202,8 @@ class AsyncSlackHandler(BaseAdminHandler):
             return
 
         tenant = await Tenant.get_by_name(tenant_name)
-        tenant_oauth_rel = await TenantOauthRelationship.get_by_tenant(tenant)
-        if tenant_oauth_rel:
+        tenant_install_rel = await SlackTenantInstallRelationship.get_by_tenant(tenant)
+        if tenant_install_rel:
             self.write(
                 WebResponse(
                     success="success", status_code=200, data={"installed": True}

@@ -176,3 +176,13 @@ class SlackTenantInstallRelationship(Base, SoftDeleteMixin):
                 session.add(entry)
                 await session.commit()
         return entry
+
+    @classmethod
+    async def get_by_tenant(cls, tenant):
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = select(SlackTenantInstallRelationship).where(
+                    SlackTenantInstallRelationship.tenant_id == tenant.id,
+                )
+                entry = await session.execute(stmt)
+                return entry.scalars().first()
