@@ -459,11 +459,7 @@ class TenantSlackApp:
             if slack_app_type not in FRIENDLY_RESOURCE_TYPE_NAMES.keys():
                 slack_app_type = None
 
-        redis_key = config.get_tenant_specific_key(
-            "cache_organization_structure.redis.key.org_structure_key",
-            self.tenant,
-            f"{self.tenant}_IAMBIC_TEMPLATES",
-        )
+        redis_key = f"{self.tenant}_IAMBIC_TEMPLATES"
         template_dicts = await retrieve_json_data_from_redis_or_s3(
             redis_key=redis_key,
             tenant=self.tenant,

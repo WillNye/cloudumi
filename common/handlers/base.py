@@ -405,6 +405,7 @@ class BaseHandler(TornadoRequestHandler):
             return True
         return False
 
+    # @async_profile
     async def authorization_flow(
         self,
         user: Optional[str] = None,
@@ -961,6 +962,7 @@ class BaseHandler(TornadoRequestHandler):
         cookie_name = self.get_noq_auth_cookie_key()
         self.clear_cookie(cookie_name)
 
+    # @async_profile
     async def set_jwt_cookie(self, tenant, roles: list = None):
         expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
             minutes=config.get_tenant_specific_key(
@@ -1282,6 +1284,7 @@ class BaseAdminHandler(BaseHandler):
         self.set_header("Content-Type", "application/json")
         super(BaseAdminHandler, self).set_default_headers()
 
+    # @async_profile
     async def authorization_flow(
         self,
         user: str = None,

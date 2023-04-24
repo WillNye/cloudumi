@@ -41,7 +41,6 @@ plugin_dist = Distribution("plugins")
 entrypoints = dict()
 logger.info("Adding plugins to entrypoint")
 for plugin in cloudumi_plugins:
-    logger.debug(f"Lazy loading {plugin.Name} as entrypoint")
     entrypoint = EntryPoint(
         plugin.Name, plugin.ModulePath, tuple([plugin.Attr]), dist=plugin_dist
     )
