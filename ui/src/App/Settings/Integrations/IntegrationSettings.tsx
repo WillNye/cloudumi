@@ -17,7 +17,8 @@ import {
   GENERAL_SECTION_DESCRPTION,
   GITHUB_CARD_DESCRIPTION,
   // GOOGLE_CARD_DESCRIPTION,
-  OKTA_CARD_DESCRIPTION
+  OKTA_CARD_DESCRIPTION,
+  SLACK_CARD_DESCRIPTION
 } from './constants';
 
 const IntegrationSettings = () => {
@@ -76,7 +77,7 @@ const IntegrationSettings = () => {
         <SectionHeader title="General" subtitle={GENERAL_SECTION_DESCRPTION} />
         <div className={styles.gridContainer}>
           <IntegrationCard
-            description={OKTA_CARD_DESCRIPTION}
+            description={SLACK_CARD_DESCRIPTION}
             title="Connect to Slack"
             icon={slackIcon}
             buttonText={isSlackConnected ? 'Connected' : 'Connect'}
