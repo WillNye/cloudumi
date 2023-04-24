@@ -80,10 +80,9 @@ const SlackIntegrationModal: FC<SlackIntegrationModalProps> = ({
     >
       <Segment isLoading={isGettingIntegrations}>
         <div>
-          Our Slack App offers real-time notifications, seamless collaboration,
-          and customizable settings to help you work more efficiently with your
-          team. With the app, you&apos;ll stay informed and engaged, and be able
-          to work on projects and tasks directly from Slack.
+          Noq&apos;s Slack App integration provides self-service workflows,
+          real-time notifications, and collaboration to help you work more
+          efficiently with your team.
         </div>
         <br />
         <br />

@@ -6713,6 +6713,11 @@ body-parser@1.20.1:
     type-is "~1.6.18"
     unpipe "1.0.0"
 
+body-scroll-lock@^4.0.0-beta.0:
+  version "4.0.0-beta.0"
+  resolved "https://registry.yarnpkg.com/body-scroll-lock/-/body-scroll-lock-4.0.0-beta.0.tgz#4f78789d10e6388115c0460cd6d7d4dd2bbc4f7e"
+  integrity sha512-a7tP5+0Mw3YlUJcGAKUqIBkYYGlYxk2fnCasq/FUph1hadxlTRjF+gAcZksxANnaMnALjxEddmSi/H3OR8ugcQ==
+
 boolbase@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/boolbase/-/boolbase-1.0.0.tgz#68dff5fbe60c51eb37725ea9e3ed310dcc1e776e"
@@ -8532,11 +8537,6 @@ execa@^7.0.0:
     onetime "^6.0.0"
     signal-exit "^3.0.7"
     strip-final-newline "^3.0.0"
-
-exenv@^1.2.2:
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/exenv/-/exenv-1.2.2.tgz#2ae78e85d9894158670b03d47bec1f03bd91bb9d"
-  integrity sha512-Z+ktTxTwv9ILfgKCk32OX3n/doe+OcLTRtqK9pcL+JsP3J1/VW8Uvl4ZjLlKqeW4rzK4oesDOGMEMRIZqtP4Iw==
 
 exit@^0.1.2:
   version "0.1.2"
@@ -12768,20 +12768,20 @@ raw-loader@^4.0.2:
     loader-utils "^2.0.0"
     schema-utils "^3.0.0"
 
-rdk@^6.4.1:
-  version "6.4.1"
-  resolved "https://registry.yarnpkg.com/rdk/-/rdk-6.4.1.tgz#347ace6de17603a3dfdf1bbb1783905b5b985310"
-  integrity sha512-JCrVOV2EV+VNWxe1kDtky757jr01Kze7OXSInQctNaVm9sUVtrrPsaIipIoJ8/K4sVWGvpXF0uxwqvyhDyH3VQ==
+rdk@>=6.4.4:
+  version "6.4.4"
+  resolved "https://registry.yarnpkg.com/rdk/-/rdk-6.4.4.tgz#6cfba22a5a801075ab56c9f9e9e61b09435b2bcd"
+  integrity sha512-8ix2MSQxPP9cElSfPRt3bmAIgSPC/sN164YJD/R22Kbo+GFEbVYnfJUggbUTHYodt7TCEV/BV/gFUPl12A4dGg==
   dependencies:
-    classnames "^2.3.1"
+    body-scroll-lock "^4.0.0-beta.0"
+    classnames "^2.3.2"
     framer-motion "7.8.0"
     popper.js "^1.16.1"
-    react-scrolllock "^5.0.1"
 
-reablocks@^3.0.1:
-  version "3.6.9"
-  resolved "https://registry.yarnpkg.com/reablocks/-/reablocks-3.6.9.tgz#ebb0c88c5c3ff390721994dfe86c7daafb5c0ecb"
-  integrity sha512-/QngpvMuS0/o0msXXWS6NxfCtXyVLbtza4lEzX08SZ2OBdOhXUqEfpB48ovRmaonCUBc19qJjpQJFb5X1UEElQ==
+reablocks@^3.6.20:
+  version "3.6.20"
+  resolved "https://registry.yarnpkg.com/reablocks/-/reablocks-3.6.20.tgz#ff7c89bd15d7b507f30b04d4081aba4c841dd2a0"
+  integrity sha512-LXSU+nurXaAEWKLjs3TrhgYkPMGI2YSrcdZ4HWjrjpaPkuRfok8tzjmZEcxvLvI+wcf9ORrN/u6o+pVY6/Lrjg==
   dependencies:
     "@reaviz/react-use-fuzzy" "^1.0.2"
     chroma-js "^2.4.2"
@@ -12795,8 +12795,8 @@ reablocks@^3.0.1:
     fuse.js "^6.6.2"
     human-format "^1.0.0"
     pluralize "^8.0.0"
-    rdk "^6.4.1"
-    react-fast-compare "^3.2.0"
+    rdk ">=6.4.4"
+    react-fast-compare "^3.2.1"
     react-highlight-words "^0.17.0"
     react-input-autosize "^3.0.0"
 
@@ -12881,7 +12881,7 @@ react-error-boundary@^3.1.4:
   dependencies:
     "@babel/runtime" "^7.12.5"
 
-react-fast-compare@^3.2.0:
+react-fast-compare@^3.2.0, react-fast-compare@^3.2.1:
   version "3.2.1"
   resolved "https://registry.yarnpkg.com/react-fast-compare/-/react-fast-compare-3.2.1.tgz#53933d9e14f364281d6cba24bfed7a4afb808b5f"
   integrity sha512-xTYf9zFim2pEif/Fw16dBiXpe0hoy5PxcD8+OwBnTtNLfIm3g6WxhKNurY+6OmdH1u6Ta/W/Vl6vjbYP1MFnDg==
@@ -13008,13 +13008,6 @@ react-router@6.10.0:
   integrity sha512-Nrg0BWpQqrC3ZFFkyewrflCud9dio9ME3ojHCF/WLsprJVzkq3q3UeEhMCAW1dobjeGbWgjNn/PVF6m46ANxXQ==
   dependencies:
     "@remix-run/router" "1.5.0"
-
-react-scrolllock@^5.0.1:
-  version "5.0.1"
-  resolved "https://registry.yarnpkg.com/react-scrolllock/-/react-scrolllock-5.0.1.tgz#da1cfb7b6d55c86ae41dbad5274b778c307752b7"
-  integrity sha512-poeEsjnZAlpA6fJlaNo4rZtcip2j6l5mUGU/SJe1FFlicEudS943++u7ZSdA7lk10hoyYK3grOD02/qqt5Lxhw==
-  dependencies:
-    exenv "^1.2.2"
 
 react-table@^7.8.0:
   version "7.8.0"
