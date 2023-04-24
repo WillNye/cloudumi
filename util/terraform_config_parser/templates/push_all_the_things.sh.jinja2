@@ -55,7 +55,9 @@ fi
 
 export VERSION_PATH="$VERSION-$GIT_HASH$GIT_DIRTY/$BRANCH/"
 export UPLOAD_DIRECTORY="s3://noq-global-frontend/$VERSION_PATH"
+export UPLOAD_DIRECTORY_V2="s3://noq-global-frontend/v2/$VERSION_PATH"
 export PUBLIC_URL="https://d2mxcvfujf7a5q.cloudfront.net/$VERSION_PATH"
+export PUBLIC_URL_V2="https://d2mxcvfujf7a5q.cloudfront.net/v2/$VERSION_PATH"
 export DOCKER_IMAGE_NAME={{ namespace }}-{{ stage }}-registry-api
 export DOCKER_IMAGE_TAG_LATEST={{ namespace }}-{{ stage }}-registry-api:latest
 export DOCKER_IMAGE_TAG_VERSIONED={{ namespace }}-{{ stage }}-registry-api:$VERSION
@@ -78,6 +80,7 @@ docker build --platform=linux/amd64 \
     --build-arg IAMBIC_REPO_USER="$IAMBIC_REPO_USER" \
     --build-arg IAMBIC_REPO_TOKEN="$IAMBIC_REPO_TOKEN" \
     --build-arg PUBLIC_URL="$PUBLIC_URL" \
+    --build-arg PUBLIC_URL_V2="$PUBLIC_URL_V2" \
     -t $DOCKER_IMAGE_NAME \
     --progress=plain \
     .
@@ -106,10 +109,16 @@ then
   docker run -v "$HOME/.aws:/root/.aws" \
     -e "AWS_PROFILE=$PROD_ROLE_ARN" {{ registry_repository_url_api }}:latest \
     bash -c "aws s3 sync /app/frontend/dist/ $UPLOAD_DIRECTORY"
+  docker run -v "$HOME/.aws:/root/.aws" \
+    -e "AWS_PROFILE=$PROD_ROLE_ARN" {{ registry_repository_url_api }}:latest \
+    bash -c "aws s3 sync /app/ui/dist/ $UPLOAD_DIRECTORY_V2"
 else
   docker run -v "$HOME/.aws:/root/.aws" \
     -e "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" -e "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" \
     {{ registry_repository_url_api }}:latest bash -c "aws s3 sync /app/frontend/dist/ $UPLOAD_DIRECTORY"
+  docker run -v "$HOME/.aws:/root/.aws" \
+    -e "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" -e "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" \
+    {{ registry_repository_url_api }}:latest bash -c "aws s3 sync /app/ui/dist/ $UPLOAD_DIRECTORY_V2"
 fi
 
 echo
