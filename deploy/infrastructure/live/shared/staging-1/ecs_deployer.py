@@ -207,7 +207,9 @@ while True:
         if task.get("status") in ["STOPPED", "DEPROVISIONING", "STOPPING"]:
             continue
         tasks = ecs_client.list_tasks(cluster=cluster_name)
-        task_details = ecs_client.describe_tasks(cluster=cluster_name, tasks=[task])
+        task_details = ecs_client.describe_tasks(
+            cluster=cluster_name, tasks=[task.get("task")]
+        )
 
         task["status"] = task_details["tasks"][0]["lastStatus"]
 
