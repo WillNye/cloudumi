@@ -9,7 +9,7 @@ extends:
 
 _global_:
   data_location: ~/.config/noq/cache/
-  profiler: yappi
+  # profiler: yappi
   #  tracing:
   #    enabled: true
   #_development_run_celery_tasks_1_min: true
@@ -87,7 +87,7 @@ _global_:
   tornado:
     debug: false
     port: 8092
-    xsrf: true
+    xsrf: false # Needed for Postman
     xsrf_cookie_kwargs:
       samesite: strict
       secure: true

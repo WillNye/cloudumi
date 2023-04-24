@@ -578,6 +578,8 @@ ordered-set==4.1.0
     # via deepdiff
 orderedmultidict==1.0.1
     # via furl
+orjson==3.8.10
+    # via -r ./common/lib/requirements.in
 packageurl-python==0.11.1
     # via
     #   checkov

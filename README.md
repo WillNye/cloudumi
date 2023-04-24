@@ -168,6 +168,20 @@ AWS_PROFILE=staging/staging_admin ecs-tunnel -L 7101:7101 -c staging-noq-dev-sha
 AWS_PROFILE=prod/prod_admin ecs-tunnel -L 7101:7101 -c noq-dev-shared-prod-1 -t 6a26122f6fdb4aeda3fdb3b62124b70e --region us-west-2
 ```
 
+### Connecting to Postgres DB in a cluster (TODO)
+
+(The below doesn't work verbatim yet.. Not sure why)
+
+To connect to a PostgreSQL database that is accessible by an ECS container but not directly by the user, you can use the same ecs-tunnel utility above to create an SSM tunnel from your local machine to the ECS container running the PostgreSQL server. Here are the general steps to follow:
+
+AWS_PROFILE=<aws_profile_name> ecs-tunnel -L <local_port>:<postgres_host>:<postgres_port> -c <ecs_cluster_name> -t <ecs_task_id> --region <aws_region>
+
+For example, to connect to the staging database, you can run the following command:
+
+```bash
+AWS_PROFILE=prod/prod_admin ecs-tunnel -L 55432:noq-dev-shared-prod-1.cluster-cxpteqvues57.us-west-2.rds.amazonaws.com:5432 -c noq-dev-shared-prod-1 -t 7d987a7f02064b389b4385142a82c026 --region us-west-2
+```
+
 ## Create a new Tenant
 
 Go to Postman, and login as engineering@noq.dev
@@ -199,3 +213,18 @@ Once the certificate is generated, run the frontend with the following configura
 SSL_CRT_FILE=/etc/letsencrypt/live/parlicy.com/cert.pem
 SSL_KEY_FILE=/etc/letsencrypt/live/parlicy.com/privkey.pem
 NODE_EXTRA_CA_CERTS=/etc/letsencrypt/live/parlicy.com/chain.pem
+
+## Debugging traffic hitting the web service
+
+If you need to debug the traffic hitting the web service, you can use tcpdump to capture the packets on port 8092. Tcpdump is a command-line packet analyzer that allows you to intercept and display network traffic in real-time.
+
+To capture traffic hitting the web service, you can use the following command:
+
+```bash
+sudo tcpdump -i any -A -s0 'tcp port 8092'
+```
+
+This command captures all TCP traffic on port 8092, and displays the packet payload in ASCII format using the "-A" option. The "-s0" option sets the snaplength to zero, which means the full packet payload will be captured.
+
+After connecting to the API service with `ecsgo`, run this command on the terminal to see the traffic hitting the web service. You will likely need to install
+tcpdump on the container first with `sudo apt-get install tcpdump`.
