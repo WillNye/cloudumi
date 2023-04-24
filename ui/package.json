@@ -6,6 +6,9 @@
   "scripts": {
     "start": "vite",
     "build": "vite build",
+    "build_template": "yarn run clean && yarn build && yarn run copy",
+    "clean": "rm -rf dist && rm -rf ../api/templates/v2_ui",
+    "copy": "cp -a dist/ ../api/templates/v2_ui/",
     "preview": "vite preview",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
