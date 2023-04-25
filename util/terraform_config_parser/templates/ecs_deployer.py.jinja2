@@ -217,11 +217,11 @@ while True:
             failed = True
             break
 
-        task_arns = [task["taskArn"] for task in tasks]
         if task["status"] == "COMPLETED" or task["status"] == "FAILED":
-            for task in tasks:
-                print(f"Stopping task: {task}")
-                ecs_client.stop_task(cluster=cluster_name, task=task, reason="Rollout")
+            task_arns = [task for task in tasks["taskArns"]]
+            for arn in task_arns:
+                print(f"Stopping task: {arn}")
+                ecs_client.stop_task(cluster=cluster_name, task=arn, reason="Rollout")
 
         if tasks_run is False:
             continue

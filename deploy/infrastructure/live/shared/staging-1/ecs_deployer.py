@@ -132,7 +132,7 @@ for task in run_task_definition_map:
             },
         )
 
-        task["arns"] = [task["taskArn"] for task in response["tasks"]]
+        task["arns"] = [task["task"] for task in response["tasks"]]
 
 for service in service_task_definition_map:
     service_name = service["service"]
@@ -224,20 +224,14 @@ while True:
             failed = True
             break
 
-        task_arns = [task["taskArn"] for task in tasks]
         if task["status"] == "COMPLETED" or task["status"] == "FAILED":
-            for task in tasks:
-                print(f"Stopping task: {task}")
-                ecs_client.stop_task(cluster=cluster_name, task=task, reason="Rollout")
+            task_arns = [task for task in tasks["taskArns"]]
+            for arn in task_arns:
+                print(f"Stopping task: {arn}")
+                ecs_client.stop_task(cluster=cluster_name, task=arn, reason="Rollout")
 
         if tasks_run is False:
             continue
-
-    if failed is True:
-        print(
-            "Rollout failed - tasks as defined in the run_task_definition_map have failed"
-        )
-        break
 
     if failed is True:
         print(
