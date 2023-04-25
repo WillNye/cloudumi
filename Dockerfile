@@ -11,6 +11,8 @@ ENV IAMBIC_REPO_TOKEN=$IAMBIC_REPO_TOKEN
 # Set environment variable PUBLIC_URL from build args, uses "/" as default
 ARG PUBLIC_URL
 ENV PUBLIC_URL=${PUBLIC_URL:-/}
+ARG PUBLIC_URL_V2
+ENV PUBLIC_URL_V2=${PUBLIC_URL_V2:-/}
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE=1
 
@@ -27,6 +29,8 @@ WORKDIR /app
 ADD requirements.lock requirements.lock
 ADD frontend/package.json frontend/package.json
 ADD frontend/yarn.lock frontend/yarn.lock
+ADD ui/package.json ui/package.json
+ADD ui/yarn.lock ui/yarn.lock
 
 # Install dependencies in as few layers as possible
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata && apt-get install -y software-properties-common gcc
@@ -54,14 +58,19 @@ RUN add-apt-repository -y ppa:deadsnakes/ppa && apt-get update && apt-get instal
     # Install yarn and frontend dependencies
     npm install yarn -g && \
     yarn --cwd frontend --dev && \
+    yarn --cwd ui && \
     apt-get dist-upgrade -y
 
 COPY configs/fluent-bit/fluent-bit.conf /etc/fluent-bit/fluent-bit.conf
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 COPY frontend frontend
+COPY ui ui
+
 # We don't need node_modules after building, so we can remove it and save space
 RUN yarn --cwd frontend build --base=$PUBLIC_URL && yarn --cwd frontend cache clean --all && rm -rf frontend/node_modules
+RUN yarn --cwd ui build --base=$PUBLIC_URL_V2 && yarn --cwd ui cache clean --all && rm -rf ui/node_modules
+
 COPY . /app
 # Copy entrypoint.sh to use virtualenv and install API
 RUN python3.11 -m pip install -e . && pip3 cache purge && apt-get -y autoremove
