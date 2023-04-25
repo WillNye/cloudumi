@@ -193,6 +193,7 @@ for service in service_task_definition_map:
 
 service_rollout_completed = 0
 rollout_finalized = False
+tasks_run = False
 failed = False
 
 while True:
@@ -208,10 +209,12 @@ while True:
     for task in run_task_definition_map:
         if task.get("status") in ["STOPPED", "DEPROVISIONING", "STOPPING"]:
             continue
-        tasks = ecs_client.list_tasks(cluster=cluster_name)
-
+        tasks = ecs_client.list_tasks(cluster=cluster_name, desiredStatus="RUNNING")
+        if len(tasks["taskArns"]) == 0:
+            tasks_run = True
+            break
         task_details = ecs_client.describe_tasks(
-            cluster=cluster_name, tasks=tasks["taskArns"]
+            cluster=cluster_name, tasks=tasks["taskArn"]
         )
 
         task["status"] = task_details["tasks"][0]["lastStatus"]
@@ -221,9 +224,20 @@ while True:
             failed = True
             break
 
-        for task in tasks:
-            print(f"Stopping task: {task}")
-            ecs_client.stop_task(cluster=cluster_name, task=task, reason="Rollout")
+        task_arns = [task["taskArn"] for task in tasks]
+        if task["status"] == "COMPLETED" or task["status"] == "FAILED":
+            for task in tasks:
+                print(f"Stopping task: {task}")
+                ecs_client.stop_task(cluster=cluster_name, task=task, reason="Rollout")
+
+        if tasks_run is False:
+            continue
+
+    if failed is True:
+        print(
+            "Rollout failed - tasks as defined in the run_task_definition_map have failed"
+        )
+        break
 
     if failed is True:
         print(
