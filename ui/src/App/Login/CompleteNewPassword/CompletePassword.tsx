@@ -14,8 +14,8 @@ import { AxiosError } from 'axios';
 import { ReactComponent as Logo } from 'assets/brand/mark.svg';
 import { extractErrorMessage } from 'core/API/utils';
 import { Notification, NotificationType } from 'shared/elements/Notification';
-import styles from './CompletePassword.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
+import styles from './CompletePassword.module.css';
 
 const comletePasswordSchema = Yup.object().shape({
   newPassword: Yup.string().required('Required'),
@@ -78,7 +78,7 @@ export const CompleteNewPassword: FC = () => {
         <title>Complete Password</title>
       </Helmet>
       <div className={styles.container}>
-        <Logo height={60} width={60} />
+        <Logo height={55} width={55} />
         <h2 className={styles.title}>Set New Password</h2>
 
         <p className={styles.description}>
