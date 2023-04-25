@@ -119,7 +119,7 @@ for task in run_task_definition_map:
             registered_task_definition["taskDefinition"]["revision"],
         )
 
-        ecs_client.run_task(
+        response = ecs_client.run_task(
             cluster=cluster_name,
             taskDefinition=task_definition_name,
             launchType="FARGATE",
@@ -131,6 +131,8 @@ for task in run_task_definition_map:
                 }
             },
         )
+
+        task["arns"] = [task["taskArn"] for task in response["tasks"]]
 
 for service in service_task_definition_map:
     service_name = service["service"]
@@ -207,8 +209,9 @@ while True:
         if task.get("status") in ["STOPPED", "DEPROVISIONING", "STOPPING"]:
             continue
         tasks = ecs_client.list_tasks(cluster=cluster_name)
+
         task_details = ecs_client.describe_tasks(
-            cluster=cluster_name, tasks=[task.get("task")]
+            cluster=cluster_name, tasks=tasks["taskArns"]
         )
 
         task["status"] = task_details["tasks"][0]["lastStatus"]
