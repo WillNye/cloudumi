@@ -3,7 +3,8 @@ pytest := PYTHONDONTWRITEBYTECODE=1 \
 	PYTHONPATH=$(PWD) \
 	AWS_DEFAULT_REGION=us-east-1 \
 	CONFIG_LOCATION=util/tests/test_configuration.yaml \
-	python -m pytest --ignore 'functional_tests' -c pytest.ini . #--tb short \
+	python -m pytest --ignore 'functional_tests' \
+	-c pytest.ini . #--tb short \
 	--cov-config .coveragerc --cov common --cov api \
 	--async-test-timeout=1600 --timeout=1600 -n auto \
 	--asyncio-mode=auto --dist loadscope \
@@ -14,7 +15,7 @@ pytest_functional := PYTHONDONTWRITEBYTECODE=1 \
 	PYTHONPATH=$(PWD) \
 	AWS_DEFAULT_REGION=us-east-1 \
 	CONFIG_LOCATION=util/tests/test_configuration.yaml \
-	python -m pytest -c pytest.ini .
+	python -m pytest -c pytest.ini functional_tests
 
 pytest_single_process := PYTHONDONTWRITEBYTECODE=1 \
 	PYTEST_PLUGINS=util.tests.fixtures.fixtures \
