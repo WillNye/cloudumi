@@ -8,6 +8,7 @@ import { getRoleCredentials } from 'core/API/roles';
 import { CodeBlock } from 'shared/elements/CodeBlock';
 import { Notification, NotificationType } from 'shared/elements/Notification';
 import { useIntersection } from 'react-use';
+import { useQuery } from '@tanstack/react-query';
 
 type RoleCredentialSummaryProps = {
   arn: string;
@@ -26,7 +27,6 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
   role
 }) => {
   const [showDialog, setShowDialog] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [activeLink, setActiveLink] = useState(ROLE_SUMMARY_LINKS.NOQ_CLI);
   const [crendentials, setCredentials] = useState<AWSCredentials | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -70,26 +70,25 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
     [environmentVariableIntersection]
   );
 
+  const { refetch, isFetching: isLoading } = useQuery({
+    enabled: false,
+    queryFn: getRoleCredentials,
+    queryKey: ['getRoleCredentials', { requested_role: arn }],
+    onSuccess: data => {
+      setCredentials(data.Credentials);
+    },
+    onError: () => {
+      setErrorMsg('Unable to get AWS Credentials for this role');
+    }
+  });
+
   useEffect(
     function onMount() {
       if (showDialog) {
-        const role = {
-          requested_role: arn
-        };
-        setIsLoading(true);
-        getRoleCredentials(role)
-          .then(({ data }) => {
-            setCredentials(data.Credentials);
-          })
-          .catch(error => {
-            setErrorMsg('Unable to get AWS Credentials for this role');
-          })
-          .finally(() => {
-            setIsLoading(false);
-          });
+        refetch();
       }
     },
-    [arn, showDialog]
+    [showDialog, refetch]
   );
 
   const handleOnClick = useCallback(

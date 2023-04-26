@@ -1,5 +1,6 @@
 import { Dispatch, createContext, useContext } from 'react';
 import { User } from './types';
+import { QueryObserverResult } from '@tanstack/react-query';
 
 export interface AuthLoginInputs {
   username: string;
@@ -14,7 +15,7 @@ export interface AuthResetPasswordInputs {
 export interface AuthContextProps {
   user: User | null;
   setUser: Dispatch<User | null>;
-  getUser: () => Promise<void>;
+  getUser: () => Promise<QueryObserverResult<any, unknown>>;
 }
 
 export const AuthContext = createContext<AuthContextProps>({

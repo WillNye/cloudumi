@@ -11,8 +11,10 @@ import { ROLE_PROPERTY_SEARCH_FILTER } from 'App/Access/constants';
 import AWSSignIn from '../common/AWSSignIn';
 import { Notification, NotificationType } from 'shared/elements/Notification';
 import css from './EligibleRoles.module.css';
+import { useQuery } from '@tanstack/react-query';
+import { getEligibleRoles } from 'core/API/roles';
 
-const EligibleRoles = ({ data, getData, isLoading }) => {
+const EligibleRoles = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [filter, setFilter] = useState<PropertyFilterProps.Query>({
     tokens: [],
@@ -36,17 +38,10 @@ const EligibleRoles = ({ data, getData, isLoading }) => {
     filtering: filter
   });
 
-  useEffect(
-    function onQueryUpdate() {
-      setErrorMessage(null);
-      getData(query);
-
-      return () => {
-        setErrorMessage(null);
-      };
-    },
-    [query, getData]
-  );
+  const { isLoading, data: eligibleRolesData } = useQuery({
+    queryFn: getEligibleRoles,
+    queryKey: ['eligibleRoles', query]
+  });
 
   useEffect(() => {
     setQuery(exstingQuery => ({
@@ -56,7 +51,7 @@ const EligibleRoles = ({ data, getData, isLoading }) => {
   }, [filter]);
 
   const tableRows = useMemo(() => {
-    return data.map(item => {
+    return (eligibleRolesData?.data || []).map(item => {
       const roleName = item.role_name.match(/\[(.+?)\]\((.+?)\)/)[1];
       return {
         ...item,
@@ -77,7 +72,7 @@ const EligibleRoles = ({ data, getData, isLoading }) => {
         moreActions: <MoreActions />
       };
     });
-  }, [data]);
+  }, [eligibleRolesData]);
 
   return (
     <>
