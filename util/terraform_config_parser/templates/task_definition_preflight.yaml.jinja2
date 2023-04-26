@@ -30,18 +30,18 @@ containerDefinitions:
         sourceVolume: efs-server-AP
     dockerSecurityOptions: [ ]
     volumesFrom: [ ]
-    image: {{ registry_repository_url_api }}:{{ stage }}
+    image: {{ registry_repository_url_api }}:{{ version }}
     essential: true
     links: [ ]
     extraHosts: [ ]
     pseudoTerminal: false
     readonlyRootFilesystem: false
     privileged: false
-    name: {{ ecs_cluster_name }}-celery-worker
+    name: {{ ecs_cluster_name }}-preflight-tasks
 placementConstraints: [ ]
 memory: '8192'
 taskRoleArn: {{ ecs_task_role_arn }}
-family: {{ ecs_cluster_name }}-celery-worker
+family: {{ ecs_cluster_name }}-preflight-tasks
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc

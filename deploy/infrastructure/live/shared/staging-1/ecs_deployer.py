@@ -108,7 +108,11 @@ for task in run_task_definition_map:
         task_definition = yaml.load(fp, Loader=yaml.FullLoader)
 
         for container in task_definition.get("containerDefinitions", []):
-            container["image"] = container["image"].split(":")[0] + f":{version}"
+            if version:
+                print(
+                    f"Updating image version to {version} from configured env var VERSION"
+                )
+                container["image"] = container["image"].split(":")[0] + f":{version}"
 
         registered_task_definition = ecs_client.register_task_definition(
             **task_definition
@@ -134,6 +138,50 @@ for task in run_task_definition_map:
 
         task["arns"] = [task["taskArn"] for task in response["tasks"]]
 
+service_rollout_completed = 0
+rollout_finalized = False
+tasks_run = False
+failed = False
+
+while True:
+    if rollout_finalized:
+        break
+
+    for task in run_task_definition_map:
+        task_arn = task["arns"][0]
+        task_details = ecs_client.describe_tasks(cluster=cluster_name, tasks=[task_arn])
+        task["status"] = task_details["tasks"][0]["lastStatus"]
+
+        task_failures = task_details["failures"]
+        if task_failures:
+            print(f"Task: {task}, failed: {task_failures}")
+            failed = True
+            break
+
+    service_rollout_completed = len(
+        [
+            task
+            for task in run_task_definition_map
+            if task["status"] == "STOPPED"
+            or task["status"] == "DEPROVISIONING"
+            or task["status"] == "STOPPING"
+        ]
+    )
+
+    if len(run_task_definition_map) == service_rollout_completed:
+        rollout_finalized = True
+
+    if failed is True:
+        print(
+            "Rollout failed - tasks as defined in the run_task_definition_map have failed"
+        )
+        break
+
+    print(
+        f"Currently waiting for {len(run_task_definition_map)} preflight tasks to complete:\n{[[x.get('task'), x.get('status'), x.get('arns')] for x in run_task_definition_map if x['status'] != 'STOPPED']}"
+    )
+    time.sleep(5.0)
+
 for service in service_task_definition_map:
     service_name = service["service"]
 
@@ -141,7 +189,11 @@ for service in service_task_definition_map:
         task_definition = yaml.load(f, Loader=yaml.FullLoader)
 
         for task in task_definition.get("containerDefinitions", []):
-            task["image"] = task["image"].split(":")[0] + f":{version}"
+            if version:
+                print(
+                    f"Updating image version to {version} from configured env var VERSION"
+                )
+                task["image"] = task["image"].split(":")[0] + f":{version}"
 
         registered_task_definition = ecs_client.register_task_definition(
             **task_definition
@@ -204,39 +256,6 @@ while True:
         break
 
     if failed is True:
-        break
-
-    for task in run_task_definition_map:
-        if task.get("status") in ["STOPPED", "DEPROVISIONING", "STOPPING"]:
-            continue
-        tasks = ecs_client.list_tasks(cluster=cluster_name, desiredStatus="RUNNING")
-        if len(tasks["taskArns"]) == 0:
-            tasks_run = True
-            break
-        task_details = ecs_client.describe_tasks(
-            cluster=cluster_name, tasks=tasks["taskArn"]
-        )
-
-        task["status"] = task_details["tasks"][0]["lastStatus"]
-
-        if task_details.get("failures"):
-            print(f"Task: {task}, failed")
-            failed = True
-            break
-
-        if task["status"] == "COMPLETED" or task["status"] == "FAILED":
-            task_arns = [task for task in tasks["taskArns"]]
-            for arn in task_arns:
-                print(f"Stopping task: {arn}")
-                ecs_client.stop_task(cluster=cluster_name, task=arn, reason="Rollout")
-
-        if tasks_run is False:
-            continue
-
-    if failed is True:
-        print(
-            "Rollout failed - tasks as defined in the run_task_definition_map have failed"
-        )
         break
 
     for service in service_task_definition_map:

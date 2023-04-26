@@ -30,7 +30,7 @@ containerDefinitions:
         sourceVolume: efs-server-AP
     dockerSecurityOptions: []
     volumesFrom: []
-    image: 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api:staging
+    image: 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api:1.5.559
     essential: true
     links: []
     extraHosts: []

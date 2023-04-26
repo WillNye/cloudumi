@@ -268,6 +268,7 @@ if __name__ == "__main__":
         )
         sys.exit(1)
 
+    terraform_config["version"] = get_current_git_version()
     terraform_config = __add_ecr_registry_aws_link(terraform_config)
     terraform_config = __set_aws_profile(terraform_config)
     terraform_config = replace_str_in_attribute(
