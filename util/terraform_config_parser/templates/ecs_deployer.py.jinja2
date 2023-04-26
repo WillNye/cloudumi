@@ -136,7 +136,7 @@ for task in run_task_definition_map:
             }
         )
 
-        task["arns"] = [task["task"] for task in response["tasks"]]
+        task["arns"] = [task["taskArn"] for task in response["tasks"]]
 
 service_rollout_completed = 0
 rollout_finalized = False
@@ -236,7 +236,7 @@ while True:
         break
 
     if rollout_finalized:
-            break
+        break
 
     if failed is True:
         break
