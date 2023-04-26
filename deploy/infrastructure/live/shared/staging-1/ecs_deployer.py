@@ -132,7 +132,7 @@ for task in run_task_definition_map:
             },
         )
 
-        task["arns"] = [task["task"] for task in response["tasks"]]
+        task["arns"] = [task["taskArn"] for task in response["tasks"]]
 
 for service in service_task_definition_map:
     service_name = service["service"]
