@@ -17,7 +17,7 @@ import { Notification, NotificationType } from 'shared/elements/Notification';
 import { LineBreak } from 'shared/elements/LineBreak';
 import styles from './CompletePassword.module.css';
 
-const comletePasswordSchema = Yup.object().shape({
+const completePasswordSchema = Yup.object().shape({
   newPassword: Yup.string().required('Required'),
   currentPassword: Yup.string().required('Required'),
   confirmNewPassword: Yup.string()
@@ -38,7 +38,7 @@ export const CompleteNewPassword: FC = () => {
   } = useForm({
     mode: 'onChange',
     reValidateMode: 'onChange',
-    resolver: yupResolver(comletePasswordSchema),
+    resolver: yupResolver(completePasswordSchema),
     defaultValues: {
       newPassword: '',
       currentPassword: '',

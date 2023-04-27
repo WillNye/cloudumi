@@ -18,7 +18,7 @@ interface ResetPasswordProps {
   token: string;
 }
 
-const comletePasswordSchema = Yup.object().shape({
+const resetPasswordSchema = Yup.object().shape({
   newPassword: Yup.string().required('Required'),
   confirmNewPassword: Yup.string()
     .required('Required')
@@ -38,7 +38,7 @@ export const ResetPassword: FC<ResetPasswordProps> = ({ token }) => {
   } = useForm({
     mode: 'onChange',
     reValidateMode: 'onChange',
-    resolver: yupResolver(comletePasswordSchema),
+    resolver: yupResolver(resetPasswordSchema),
     defaultValues: {
       newPassword: '',
       confirmNewPassword: ''
