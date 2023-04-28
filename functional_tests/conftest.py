@@ -5,8 +5,9 @@ import urllib.parse
 from http.cookies import SimpleCookie
 
 import ujson as json
-from _pytest.config import Config
-from pytest_cov.plugin import CovPlugin
+
+# from _pytest.config import Config
+# from pytest_cov.plugin import CovPlugin
 from tornado import escape
 from tornado.testing import AsyncHTTPTestCase
 
@@ -31,18 +32,18 @@ if not TEST_USER_DOMAIN:
 TEST_USER_DOMAIN_US = TEST_USER_DOMAIN.replace(".", "_")
 
 
-# @pytest.mark.tryfirst
-def pytest_configure(config: Config) -> None:
-    """Setup default pytest options."""
-    config.option.cov_report = {
-        "term-missing": None,
-        "html": "cov_html",
-    }
-    config.option.cov_branch = True
-    config.pluginmanager.register(
-        CovPlugin(config.option, config.pluginmanager), "_cov"
-    )
-    disable_coverage_on_deployment(config)
+# # @pytest.mark.tryfirst
+# def pytest_configure(config: Config) -> None:
+#     """Setup default pytest options."""
+#     config.option.cov_report = {
+#         "term-missing": None,
+#         "html": "cov_html",
+#     }
+#     config.option.cov_branch = True
+#     config.pluginmanager.register(
+#         CovPlugin(config.option, config.pluginmanager), "_cov"
+#     )
+#     disable_coverage_on_deployment(config)
 
 
 def disable_coverage_on_deployment(config):
