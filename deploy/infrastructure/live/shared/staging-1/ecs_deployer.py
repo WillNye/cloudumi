@@ -69,6 +69,51 @@ ecs_client = boto3.client("ecs", region_name=region)
 identity_res = boto3.client("sts").get_caller_identity()
 identity = identity_res["Arn"].replace(":sts:", ":iam:").replace("assumed-role", "role")
 
+
+def get_task_log_stream(log_group_name, log_stream_name_prefix):
+    logs_client = boto3.client("logs", region_name=region)
+
+    response = logs_client.describe_log_streams(
+        logGroupName=log_group_name,
+        logStreamNamePrefix=log_stream_name_prefix,
+    )
+
+    log_streams = response["logStreams"]
+
+    if log_streams:
+        # Sort log streams by the last event time
+        log_streams = sorted(log_streams, key=lambda x: x["creationTime"], reverse=True)
+        return log_streams[0]["logStreamName"]
+    else:
+        return None
+
+
+def print_new_log_events(log_group_name, log_stream_name_prefix, start_time):
+    logs_client = boto3.client("logs", region_name=region)
+    try:
+        log_stream_name = get_task_log_stream(log_group_name, log_stream_name_prefix)
+    except ClientError as exc:
+        if exc.response["Error"]["Code"] == "ResourceNotFoundException":
+            return None
+        else:
+            raise
+
+    if log_stream_name:
+        response = logs_client.get_log_events(
+            logGroupName=log_group_name,
+            logStreamName=log_stream_name,
+            startTime=start_time,
+            startFromHead=False,
+        )
+
+        for event in response["events"]:
+            print(f"{event['timestamp']}: {event['message']}")
+
+        return response["nextForwardToken"]
+    else:
+        return None
+
+
 try:
     ecs_client.create_cluster(
         clusterName=cluster_name,
@@ -140,8 +185,9 @@ for task in run_task_definition_map:
 
 service_rollout_completed = 0
 rollout_finalized = False
-tasks_run = False
 failed = False
+start_time = int(time.time() * 1000)
+next_token = None
 
 while True:
     if rollout_finalized:
@@ -180,7 +226,31 @@ while True:
     print(
         f"Currently waiting for {len(run_task_definition_map)} preflight tasks to complete:\n{[[x.get('task'), x.get('status'), x.get('arns')] for x in run_task_definition_map if x['status'] != 'STOPPED']}"
     )
+
+    for task in run_task_definition_map:
+        task_name = task["task"]
+
+        with open(task["task_definition"]) as fp:
+            task_definition = yaml.load(fp, Loader=yaml.FullLoader)
+
+        task_id = task["arns"][0].split("/")[-1]
+        cluster_prefix = task_definition["containerDefinitions"][0]["logConfiguration"][
+            "options"
+        ]["awslogs-stream-prefix"]
+        name = task_definition["containerDefinitions"][0]["name"]
+        awslogs_stream_prefix = f"{cluster_prefix}/{name}/{task_id}"
+        awslogs_group = task_definition["containerDefinitions"][0]["logConfiguration"][
+            "options"
+        ]["awslogs-group"]
+
+        result = print_new_log_events(awslogs_group, awslogs_stream_prefix, start_time)
+        if result is None:
+            print(f"Task {task_name} has not started logging yet")
+
     time.sleep(5.0)
+
+if failed is True:
+    sys.exit(1)
 
 for service in service_task_definition_map:
     service_name = service["service"]
@@ -245,7 +315,6 @@ for service in service_task_definition_map:
 
 service_rollout_completed = 0
 rollout_finalized = False
-tasks_run = False
 failed = False
 
 while True:
@@ -293,6 +362,29 @@ while True:
                         rollout_finalized = True
                         failed = True
                         break
+
+    for service in service_task_definition_map:
+        with open(service["task_definition"], "r") as f:
+            task_definition = yaml.load(f, Loader=yaml.FullLoader)
+
+        service_id = service["arns"][0].split("/")[-1]
+        service_name = service["service"]
+        cluster_prefix = task_definition["containerDefinitions"][0]["logConfiguration"][
+            "options"
+        ]["awslogs-stream-prefix"]
+        name = task_definition["containerDefinitions"][0]["name"]
+        awslogs_stream_prefix = f"{cluster_prefix}/{name}/{service_id}"
+        awslogs_group = task_definition["containerDefinitions"][0]["logConfiguration"][
+            "options"
+        ]["awslogs-group"]
+
+        task_name = service["service"]
+        task_id = service["arns"][0].split("/")[-1]
+        result = print_new_log_events(awslogs_group, awslogs_stream_prefix, start_time)
+
+        if result is None:
+            print(f"Service {task_name} has not started logging yet")
+
         time.sleep(5)
 
 
