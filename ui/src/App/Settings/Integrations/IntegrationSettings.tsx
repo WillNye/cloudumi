@@ -1,5 +1,5 @@
 import styles from './IntegrationSettings.module.css';
-import { useCallback, useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import IntegrationCard from './components/IntegrationCard/IntegrationCard';
 import slackIcon from 'assets/integrations/slackIcon.svg';
 import awsIcon from 'assets/integrations/awsIcon.svg';
@@ -20,29 +20,21 @@ import {
   OKTA_CARD_DESCRIPTION,
   SLACK_CARD_DESCRIPTION
 } from './constants';
+import { useQuery } from '@tanstack/react-query';
 
 const IntegrationSettings = () => {
   const [showSlackModal, setShowSlackModal] = useState(false);
-  const [isGettingIntegrations, setIsGettingIntegrations] = useState(false);
-  const [isSlackConnected, setIsSlackConnected] = useState(false);
 
-  const getIntegrationStatus = useCallback(() => {
-    setIsGettingIntegrations(true);
-    getSlackInstallationStatus()
-      .then(({ data }) => {
-        setIsSlackConnected(data.data.installed);
-      })
-      .catch(() => ({
-        // TODO handle error
-      }))
-      .finally(() => {
-        setIsGettingIntegrations(false);
-      });
-  }, []);
+  const {
+    refetch: getIntegrationStatus,
+    isLoading,
+    data
+  } = useQuery({
+    queryFn: getSlackInstallationStatus,
+    queryKey: ['integrationsStatuses']
+  });
 
-  useEffect(() => {
-    getIntegrationStatus();
-  }, [getIntegrationStatus]);
+  const isSlackConnected = useMemo(() => data?.data?.installed, [data]);
 
   return (
     <div className={styles.container}>
@@ -111,9 +103,8 @@ const IntegrationSettings = () => {
         showDialog={showSlackModal}
         setShowDialog={setShowSlackModal}
         isSlackConnected={isSlackConnected}
-        setIsSlackConnected={setIsSlackConnected}
         checkStatus={getIntegrationStatus}
-        isGettingIntegrations={isGettingIntegrations}
+        isGettingIntegrations={isLoading}
       />
     </div>
   );

@@ -13,12 +13,18 @@ import { AxiosError } from 'axios';
 import { createUser } from 'core/API/settings';
 import { Notification, NotificationType } from 'shared/elements/Notification';
 import styles from './InviteUserModal.module.css';
+import { useMutation } from '@tanstack/react-query';
+
+type CreateUserParams = {
+  email: string;
+  password: string;
+};
 
 const addUserSchema = Yup.object().shape({
   email: Yup.string().email().required('Required')
 });
 
-const InviteUserModal = () => {
+const InviteUserModal = ({ refreshData }) => {
   const [showDialog, setShowDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -37,23 +43,30 @@ const InviteUserModal = () => {
     }
   });
 
-  const onSubmit = useCallback(async ({ email, password }) => {
-    setErrorMessage(null);
-    setSuccessMessage(null);
-    try {
-      await createUser({
-        email,
-        password
-      });
-      setSuccessMessage('Successfully invited new user');
-      // TODO refetch all groups
-    } catch (error) {
-      const err = error as AxiosError;
-      const errorRes = err?.response;
-      const errorMsg = extractErrorMessage(errorRes?.data);
-      setErrorMessage(errorMsg || 'An error occurred while adding new user');
-    }
-  }, []);
+  const createUserMutation = useMutation({
+    mutationFn: (data: CreateUserParams) => createUser(data)
+  });
+
+  const onSubmit = useCallback(
+    async ({ email, password }) => {
+      setErrorMessage(null);
+      setSuccessMessage(null);
+      try {
+        await createUserMutation.mutateAsync({
+          email,
+          password
+        });
+        setSuccessMessage('Successfully invited new user');
+        refreshData();
+      } catch (error) {
+        const err = error as AxiosError;
+        const errorRes = err?.response;
+        const errorMsg = extractErrorMessage(errorRes?.data);
+        setErrorMessage(errorMsg || 'An error occurred while adding new user');
+      }
+    },
+    [refreshData, createUserMutation]
+  );
 
   return (
     <div className={styles.container}>

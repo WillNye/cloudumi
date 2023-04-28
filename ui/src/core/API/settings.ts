@@ -16,14 +16,18 @@ export const updateUser = (data, action) => {
   return axios.put(url, data);
 };
 
-export const getAllUsers = query => {
+export const getAllUsers = async ({ queryKey }) => {
+  const [_, query] = queryKey;
   const url = `${V4_API_URL}/list_users`;
-  return axios.post(url, query);
+  const response = await axios.post(url, query);
+  return response.data;
 };
 
-export const getAllGroups = query => {
+export const getAllGroups = async ({ queryKey }) => {
+  const [_, query] = queryKey;
   const url = `${V4_API_URL}/list_groups`;
-  return axios.post(url, query);
+  const response = await axios.post(url, query);
+  return response.data;
 };
 
 export const createGroup = data => {

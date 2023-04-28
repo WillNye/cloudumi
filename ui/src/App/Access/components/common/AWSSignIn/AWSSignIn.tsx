@@ -5,6 +5,7 @@ import { Dispatch, FC, useCallback, useMemo, useState } from 'react';
 import { Button } from 'shared/elements/Button';
 import { Dialog } from 'shared/layers/Dialog';
 import { AWS_SIGN_OUT_URL } from 'App/Access/constants';
+import { useQuery } from '@tanstack/react-query';
 import styles from './AWSSignin.module.css';
 
 type AWSSignInProps = {
@@ -16,39 +17,34 @@ const AWSSignIn: FC<AWSSignInProps> = ({ role, setErrorMessage }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
 
+  const { refetch: handleAWSSignIn } = useQuery({
+    enabled: false,
+    queryFn: awsSignIn,
+    queryKey: ['awsSignIn', role.arn],
+    onSuccess: roleData => {
+      if (!roleData) {
+        setShowDialog(false);
+        setIsLoading(false);
+        return;
+      }
+      if (roleData.type === 'redirect') {
+        window.location.assign(roleData.redirect_url);
+      }
+      setErrorMessage(roleData.message);
+      setShowDialog(false);
+      setIsLoading(false);
+    },
+    onError: error => {
+      const errorMessage = extractErrorMessage(error);
+      setErrorMessage(errorMessage || 'Error while generating AWS console URL');
+      setShowDialog(false);
+      setIsLoading(false);
+    }
+  });
+
   const btnText = useMemo(
     () => (role.inactive_tra ? 'Request Temporary Access' : 'Sign-In'),
     [role]
-  );
-
-  const handleAWSSignIn = useCallback(
-    async (roleArn: string) => {
-      setIsLoading(true);
-      try {
-        setErrorMessage(null);
-        const res = await awsSignIn(roleArn);
-        const roleData = res.data;
-        if (!roleData) {
-          setIsLoading(false);
-          setShowDialog(false);
-          return;
-        }
-        if (roleData.type === 'redirect') {
-          window.location.assign(roleData.redirect_url);
-        }
-        setErrorMessage(roleData.message);
-        setIsLoading(false);
-        setShowDialog(false);
-      } catch (error) {
-        const errorMessage = extractErrorMessage(error);
-        setErrorMessage(
-          errorMessage || 'Error while generating AWS console URL'
-        );
-        setIsLoading(false);
-        setShowDialog(false);
-      }
-    },
-    [setErrorMessage]
   );
 
   const handleOnClick = useCallback(() => {
@@ -89,7 +85,7 @@ const AWSSignIn: FC<AWSSignInProps> = ({ role, setErrorMessage }) => {
             </div>
           )}
           <iframe
-            onLoad={() => handleAWSSignIn(role.arn)}
+            onLoad={() => handleAWSSignIn()}
             src={AWS_SIGN_OUT_URL}
             style={{
               width: 0,
