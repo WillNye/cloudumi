@@ -1,15 +1,9 @@
+import importlib
 import os
 import shutil
 import sys
 import tempfile
 from typing import Optional, Union
-
-# Hacky way to add a policy
-from checkov.common.graph.db_connectors.networkx.networkx_db_connector import (
-    NetworkxConnector,
-)
-from checkov.terraform.graph_builder.local_graph import TerraformLocalGraph
-from checkov.terraform.graph_manager import TerraformGraphManager
 
 from common.config import config
 from common.lib.cache import (
@@ -23,6 +17,27 @@ from common.lib.terraform.models import (
 )
 
 log = config.get_logger()
+
+
+def get_TerraformLocalGraph():
+    TerraformLocalGraph = importlib.import_module(
+        "checkov.terraform.graph_builder.local_graph"
+    ).TerraformLocalGraph
+    return TerraformLocalGraph
+
+
+def get_TerraformGraphManager():
+    TerraformGraphManager = importlib.import_module(
+        "checkov.terraform.graph_manager"
+    ).TerraformGraphManager
+    return TerraformGraphManager
+
+
+def get_NetworkxConnector():
+    NetworkxConnector = importlib.import_module(
+        "checkov.common.graph.db_connectors.networkx.networkx_db_connector"
+    ).NetworkxConnector
+    return NetworkxConnector
 
 
 async def cache_terraform_resources(tenant):
@@ -116,6 +131,10 @@ async def cache_terraform_resources_for_repository(
             terraform:
               path_suffix: .tf
     """
+
+    TerraformLocalGraph = get_TerraformLocalGraph()
+    TerraformGraphManager = get_TerraformGraphManager()
+    NetworkxConnector = get_NetworkxConnector()
 
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {

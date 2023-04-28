@@ -580,6 +580,43 @@ class TestAwsPolicyNormalizer(TestCase):
             ["account:listregions", "organizations:describeorganization"],
         )
 
+    def test_normalize_wildcard_actions(self):
+        init_policy = [
+            {
+                "Action": ["sns:publish"],
+                "Effect": "Allow",
+                "Resource": [
+                    "arn:aws:sns:us-west-2:759357822767:local-dev-registration-topic"
+                ],
+                "Sid": "cmuser1649787257qetd",
+            },
+            {
+                "Action": [
+                    "sns:createplatformapplication",
+                    "sns:createplatformendpoint",
+                    "sns:deleteendpoint",
+                    "sns:deleteplatformapplication",
+                    "sns:getendpointattributes",
+                    "sns:getplatformapplicationattributes",
+                    "sns:listendpointsbyplatformapplication",
+                    "sns:publish",
+                ],
+                "Effect": "Allow",
+                "Resource": ["*"],
+            },
+        ]
+
+        normalized_policy = async_to_sync(condense_statements)(init_policy)
+        self.assertEqual(len(normalized_policy), 1)
+        print(normalized_policy)
+
+        self.assertIn("sns:publish", normalized_policy[0]["Action"])
+        self.assertIn("*", normalized_policy[0]["Resource"])
+        self.assertNotIn(
+            "arn:aws:sns:us-west-2:759357822767:local-dev-registration-topic",
+            normalized_policy[0]["Resource"],
+        )
+
     def test_remove_identical_actions_from_child_statement(self):
         init_policy = [
             {

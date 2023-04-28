@@ -1,6 +1,5 @@
-import { FC, useMemo, useState } from 'react';
+import { FC, useMemo } from 'react';
 import { Link, Outlet, useMatch } from 'react-router-dom';
-import appConfigImg from '../../../assets/vendor/app-config.svg';
 import styles from './SettingsMenu.module.css';
 import {
   BREAD_CRUMBS_ACCOUNTS_PATH,
@@ -27,18 +26,11 @@ const SettingsMenu: FC = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>Settings</div>
-
-      <Breadcrumbs items={breadCrumbsPaths} />
-
-      <p className={styles.description}>
-        Manage and customize all aspects of your account and system
-        integrations.
-      </p>
-
       <div className={styles.content}>
         <div className={styles.sideNav}>
           <nav className={styles.nav}>
+            <div className={styles.header}>Settings</div>
+
             <ul className={styles.navList}>
               <li
                 className={`${styles.navItem} ${
@@ -66,6 +58,12 @@ const SettingsMenu: FC = () => {
         </div>
 
         <div className={styles.outlet}>
+          <Breadcrumbs items={breadCrumbsPaths} />
+          <p className={styles.description}>
+            Manage and customize all aspects of your account and system
+            integrations.
+          </p>
+
           <Outlet />
         </div>
       </div>

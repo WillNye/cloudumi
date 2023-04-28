@@ -1,5 +1,6 @@
 import React, { Suspense, useMemo } from 'react';
 import styles from './Icon.module.css';
+import classNames from 'classnames';
 
 const iconPaths = import.meta.glob('../../../assets/icons/*.svg');
 
@@ -59,7 +60,7 @@ export const Icon: React.FC<IconProps> = ({
   }
 
   return (
-    <span className={styles.icon}>
+    <span className={classNames(className, styles.icon)}>
       <Suspense fallback={null}>
         <SVGIcon {...rest} width={iconSizes.width} height={iconSizes.height} />
       </Suspense>

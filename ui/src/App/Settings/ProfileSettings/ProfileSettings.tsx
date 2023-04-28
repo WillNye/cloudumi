@@ -1,10 +1,8 @@
-import { FC, useCallback, useMemo, useState } from 'react';
-import css from './ProfileSettings.module.css';
-import { Input } from 'shared/form/Input';
-import { Button } from 'shared/elements/Button';
+import { FC, useMemo, useState } from 'react';
 import { PROFILE_SETTINGS_TABS } from './constants';
 import ChangePassword from './components/ChangePassword';
 import UserDetails from './components/UserDetails';
+import css from './ProfileSettings.module.css';
 
 export const ProfileSettings: FC = () => {
   const [currentTab, setCurrentTab] = useState<PROFILE_SETTINGS_TABS>(

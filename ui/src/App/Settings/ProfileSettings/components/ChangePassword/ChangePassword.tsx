@@ -33,7 +33,7 @@ const ChangePassword = () => {
 
   const passwordValue = watch('newPassword');
 
-  const onSubmit = useCallback(async ({ oldPassword, newPassword }) => {
+  const onSubmit = useCallback(async () => {
     // TODO: Update password api route
   }, []);
 
@@ -47,6 +47,7 @@ const ChangePassword = () => {
           type="password"
           autoCapitalize="none"
           autoCorrect="off"
+          size="small"
           {...register('oldPassword')}
         />
         <br />
@@ -54,6 +55,7 @@ const ChangePassword = () => {
         <Input
           type="password"
           autoCapitalize="none"
+          size="small"
           autoCorrect="off"
           {...register('newPassword')}
         />
@@ -63,6 +65,7 @@ const ChangePassword = () => {
         <Input
           type="password"
           autoCapitalize="none"
+          size="small"
           autoCorrect="off"
           {...register('confirmNewPassword')}
         />

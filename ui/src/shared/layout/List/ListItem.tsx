@@ -1,4 +1,4 @@
-import { InputHTMLAttributes, ReactNode, FC } from 'react';
+import { InputHTMLAttributes, FC } from 'react';
 import classNames from 'classnames';
 import css from './ListItem.module.css';
 

@@ -24,3 +24,7 @@ export const AWSOrganizationCoulumns = [
     accessor: 'actions'
   }
 ];
+
+export const AWS_ORGANIZATION_DELETE_MESSAGE =
+  // eslint-disable-next-line max-len
+  'Are you sure you want to delete this item? This action cannot be undone and all associated data will be permanently removed.';

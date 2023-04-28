@@ -16,6 +16,7 @@ from api.handlers.v4.aws.roles import RolesHandlerV4
 from api.handlers.v4.groups.manage_group_memberships import (
     ManageGroupMembershipsHandler,
 )
+from api.handlers.v4.resources.datatable import ResourcesDataTableHandler
 from api.handlers.v4.scim.groups import ScimV2GroupHandler, ScimV2GroupsHandler
 from api.handlers.v4.scim.users import ScimV2UserHandler, ScimV2UsersHandler
 from api.handlers.v4.users.login import LoginHandler, MfaHandler
@@ -173,12 +174,26 @@ UUID_REGEX = "[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9
 logger = config.get_logger()
 
 
+class CookieMatcher(PathMatches):
+    def __init__(self, pattern, cookie_name):
+        super().__init__(pattern)
+        self.cookie_name = cookie_name
+
+    def match(self, request):
+        path_match = super().match(request)
+        if path_match is not None and self.cookie_name in request.cookies:
+            return path_match
+        return None
+
+
 def make_app(jwt_validator=None):
     """make_app."""
 
     frontend_path = os.getenv("FRONTEND_PATH") or config.get(
         "_global_.web.path", pkg_resources.resource_filename("api", "templates")
     )
+
+    frontend_v2_path = "ui/dist"
 
     docs_path = os.getenv("DOCS_PATH") or config.get(
         "_global_.docs.path", pkg_resources.resource_filename("api", "docs")
@@ -453,6 +468,7 @@ def make_app(jwt_validator=None):
         (r"/api/v4/scim/v2/Group/(.*)", ScimV2GroupHandler),
         (r"/api/v4/roles/access/?", ManageRoleAccessHandler),
         (r"/api/v4/roles", RolesHandlerV4),
+        (r"/api/v4/resources/datatable/?", ResourcesDataTableHandler),
     ]
 
     router = RuleRouter(routes)
@@ -483,6 +499,13 @@ def make_app(jwt_validator=None):
             UnauthenticatedFileHandler,
             dict(path=frontend_path, default_filename="favicon.ico"),
         )
+    )
+    router.rules.append(
+        Rule(
+            CookieMatcher(r"/(.*)", "V2_UI"),
+            FrontendHandler,
+            dict(path=frontend_v2_path, default_filename="index.html"),
+        ),
     )
     router.rules.append(
         Rule(

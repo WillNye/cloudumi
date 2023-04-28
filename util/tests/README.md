@@ -16,32 +16,16 @@ Magic? Yes.
 - Add unit tests close to their bazel module - so for instance, unit tests for the `common/config` bazel module should have tests in `common/config/tests`
 - Add any additional fixtures **only** in `/util/pytest/fixtures/` as a submodule (see #developing-new-fixtures--test-stuff)
 
-## Test with bazel
-
-- `bazel test //...` - runs all tests discovered
-- `bazel test //api/...` - runs all API tests
-- `bazel test //common/config:test_ip_restriction` - runs a specific test
-
 ## Test with VSCODE | command line
 
 - Make sure you run VSCODE as follows: `PYTHONPATH=$(pwd) code .` from your cloudumi repo
-- Build the cloudumi pytest utility: `bazel build //util/tests:wheel`
-- Note the path to the wheel file in the output (for instance: `bazel-bin/util/tests/cloudumi_fixtures-0.0.1-py3-none-any.whl`)
-- Make sure you are in your venv
-- `pip install <output - ie. bazel-bin/util/tests/cloudumi_fixtures-0.0.1-py3-none-any.whl>`
-- Ensure you have the following settings in your workspace settings (should be checked in under .vscode):
+- Ensure you have the following settings in your workspace settings (should be checked in under .vscode) // "functional_tests",:
+- The rest of all configuration is in the `pytest.ini` file in the project workspace root
 
 ```json
 {
   "python.formatting.provider": "black",
-  "python.testing.pytestArgs": [
-    "-pfixtures.fixtures",
-    "api",
-    "common",
-    "identity",
-    "plugins",
-    "util"
-  ],
+  "python.testing.pytestArgs": ["-c", "${workspaceFolder}/pytest.ini"],
   "python.envFile": "${workspaceFolder}/.env",
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
@@ -52,9 +36,16 @@ Magic? Yes.
 Here is the .env file content:
 
 ```json
-PYTHONPATH="/path/to/cloudumi"
-AWS_REGION="us-west-2"
-CONFIG_LOCATION="/path/to/cloudumi/util/tests/test_configuration.yaml"
+PYTHONPATH="/home/matt/dev/cloudumi"
+AWS_REGION="us-east-1"
+AWS_PROFILE="development/NoqSaasRoleLocalDev"
+# CONFIG_LOCATION="/home/matt/dev/cloudumi/configs/development_account/saas_development.yaml"  -- Use this for functional tests
+CONFIG_LOCATION="/home/matt/dev/cloudumi/util/tests/test_configuration.yaml"
+TEST_USER_DOMAIN="localhost"
+ASYNC_TEST_TIMEOUT=120
+PYTHONDONTWRITEBYTECODE=1
+PYTEST_PLUGINS=util.tests.fixtures.fixtures
+AWS_DEFAULT_REGION=us-east-1
 ```
 
 Obviously, change `/path/to/cloudumi` to be the absolute path on your system to the root of the cloudumi mono repo
@@ -64,6 +55,3 @@ For VSCODE, these are all one-time setup instructions. _This is important_ in VS
 ## Developing new fixtures / test stuff
 
 - In fixtures, update the fixtures.py file, or add any additional plugins
-- Any additional plugins must be referenced here:
-  - `fixtures/BUILD` (in exports_files)
-  - `BUILD` (py_library/srcs - follow the example of fixtures.py)
