@@ -89,6 +89,9 @@ export const Pagination: FC<PaginationProps> = ({
           type="number"
           onChange={e => {
             const page = e.target.value ? Number(e.target.value) : pageIndex;
+            if (page > pageCount || page < 1) {
+              return;
+            }
             gotoPage(page);
           }}
           style={{ width: '100px' }}

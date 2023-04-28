@@ -1,21 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Table } from 'shared/elements/Table';
 import { DELETE_DATA_TYPE, userTableColumns } from '../../constants';
 import UserModal from '../common/EditUserModal';
 import Delete from '../common/Delete';
 
-import { extractErrorMessage } from 'core/API/utils';
 import { getAllUsers } from 'core/API/settings';
-import InviteUserModal from '../common/InviteUserModal/InviteUserModal';
-import { User } from '../../types';
+import InviteUserModal from '../common/InviteUserModal';
+import { useQuery } from '@tanstack/react-query';
 import css from './UsersManagement.module.css';
 
 const UsersManagement = () => {
-  const [allUsersData, setAllUsersData] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [pageCount, setPageCount] = useState(1);
-  const [errorMsg, setErrorMsg] = useState(null);
-
   const [query, setQuery] = useState({
     pagination: {
       currentPageIndex: 1,
@@ -36,48 +30,31 @@ const UsersManagement = () => {
     }
   });
 
-  const callGetAllUsers = useCallback((query = {}) => {
-    setIsLoading(true);
-    setErrorMsg(null);
-    getAllUsers({ filter: query })
-      .then(({ data }) => {
-        setAllUsersData(data.data.data);
-        setPageCount(data.data.filtered_count);
-      })
-      .catch(error => {
-        const errorMessage = extractErrorMessage(error);
-        setErrorMsg(errorMessage);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+  const {
+    refetch: callGetAllUsers,
+    isLoading,
+    data
+  } = useQuery({
+    queryFn: getAllUsers,
+    queryKey: ['allUsers', { filter: query }]
+  });
+
+  const allUsersData = useMemo(() => {
+    return data?.data;
+  }, [data]);
+
+  const handleOnPageChange = useCallback((newPageIndex: number) => {
+    setQuery(query => ({
+      ...query,
+      pagination: {
+        ...query.pagination,
+        currentPageIndex: newPageIndex
+      }
+    }));
   }, []);
 
-  const handleOnPageChange = useCallback(
-    (newPageIndex: number) => {
-      const newQuery = {
-        ...query,
-        pagination: {
-          ...query.pagination,
-          currentPageIndex: newPageIndex
-        }
-      };
-      callGetAllUsers(newQuery);
-      setQuery(newQuery);
-    },
-    [callGetAllUsers, query]
-  );
-
-  useEffect(
-    function onQueryUpdate() {
-      callGetAllUsers(query);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
-
   const tableRows = useMemo(() => {
-    return allUsersData.map(item => {
+    return (allUsersData?.data || []).map(item => {
       const canEdit = item.managed_by === 'MANUAL';
       return {
         ...item,
@@ -88,21 +65,21 @@ const UsersManagement = () => {
             dataType={DELETE_DATA_TYPE.USER}
             dataId={item.email}
             title="Delete User"
-            refreshData={() => callGetAllUsers(query)}
+            refreshData={callGetAllUsers}
           />
         ),
         edit: <UserModal canEdit={canEdit} user={item} />,
         groups: item.groups.length
       };
     });
-  }, [allUsersData, callGetAllUsers, query]);
+  }, [allUsersData, callGetAllUsers]);
 
   return (
     <div className={css.container}>
       <div className={css.header}>
-        <div>Team Members ({allUsersData.length})</div>
+        <div>Team Members ({allUsersData?.data?.length})</div>
         <div>
-          <InviteUserModal />
+          <InviteUserModal refreshData={callGetAllUsers} />
         </div>
       </div>
       <div className={css.table}>
@@ -112,7 +89,7 @@ const UsersManagement = () => {
           border="row"
           isLoading={isLoading}
           showPagination
-          totalCount={pageCount}
+          totalCount={allUsersData?.filtered_count || query.pagination.pageSize}
           pageSize={query.pagination.pageSize}
           pageIndex={query.pagination.currentPageIndex}
           handleOnPageChange={handleOnPageChange}
