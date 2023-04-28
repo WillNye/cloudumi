@@ -17,10 +17,21 @@ import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
 import { User } from '../../../types';
 import { UPDATE_USER_ACTIONS } from '../../../constants';
-import styles from './EditUserModal.module.css';
 import { Search } from 'shared/form/Search';
 import { Chip } from 'reablocks';
 import { Divider } from 'shared/elements/Divider';
+import { useMutation } from '@tanstack/react-query';
+import styles from './EditUserModal.module.css';
+
+type UpdateUserParams = {
+  data: { id: string; email?: string; username?: string };
+  action: UPDATE_USER_ACTIONS;
+};
+
+type CreateUserGroupsParams = {
+  users: string[];
+  groups: string[];
+};
 
 type EditUserModalProps = {
   canEdit: boolean;
@@ -42,6 +53,30 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
   const [isUpdatingGroups, setIsUpdatingGroups] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [searchValue, setSearchValue] = useState('');
+
+  const updateUserMutation = useMutation({
+    mutationFn: (userData: UpdateUserParams) =>
+      updateUser(userData.data, userData.action)
+  });
+
+  const createUserGroupsMutation = useMutation({
+    mutationFn: (data: CreateUserGroupsParams) => createGroupMemberships(data)
+  });
+
+  const searchMutation = useMutation({
+    mutationFn: (search: string) => {
+      const query = {
+        filter: {
+          pagination: { currentPageIndex: 1, pageSize: 10 },
+          filtering: {
+            tokens: [{ propertyKey: 'name', operator: ':', value: search }],
+            operation: 'and'
+          }
+        }
+      };
+      return getAllGroups({ queryKey: ['userGroups', query] });
+    }
+  });
 
   const {
     register,
@@ -69,16 +104,16 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
   }, []);
 
   const resetUserCredentials = useCallback(
-    async (action: string) => {
+    async (action: UPDATE_USER_ACTIONS) => {
       reseActions();
       setIsLoading(true);
       try {
-        await updateUser(
-          {
+        await updateUserMutation.mutateAsync({
+          data: {
             id: user.id
           },
           action
-        );
+        });
         setSuccessMessage('Successfully updated user credentials');
       } catch (error) {
         const err = error as AxiosError;
@@ -90,21 +125,21 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
       }
       setIsLoading(false);
     },
-    [user.id, reseActions]
+    [user.id, reseActions, updateUserMutation]
   );
 
   const onSubmit = useCallback(
     async ({ email, username }) => {
       reseActions();
       try {
-        await updateUser(
-          {
+        await updateUserMutation.mutateAsync({
+          data: {
             id: user.id,
             email,
             username
           },
-          UPDATE_USER_ACTIONS.UPDATE_USER
-        );
+          action: UPDATE_USER_ACTIONS.UPDATE_USER
+        });
         setSuccessMessage('Successfully updated user');
         // TODO refetch all users
       } catch (error) {
@@ -116,43 +151,36 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
         );
       }
     },
-    [user.id, reseActions]
+    [user.id, reseActions, updateUserMutation]
   );
 
-  const handleSearch = useCallback(async e => {
-    const value = e.target.value;
-    setSearchValue(value);
-    const filter = {
-      filter: {
-        pagination: { currentPageIndex: 1, pageSize: 10 },
-        filtering: {
-          tokens: [{ propertyKey: 'name', operator: ':', value }],
-          operation: 'and'
-        }
-      }
-    };
+  const handleSearch = useCallback(
+    async e => {
+      const value = e.target.value;
+      setSearchValue(value);
 
-    if (!value) {
-      setSearchResults([]);
-      return;
-    }
-    setIsSearching(true);
-    try {
-      const res = await getAllGroups(filter);
-      const data = res.data.data;
-      setSearchResults(data.data);
-    } catch (error) {
-      // TODO: Properly handle error
-      console.error(error);
-    }
-    setIsSearching(false);
-  }, []);
+      if (!value) {
+        setSearchResults([]);
+        return;
+      }
+      setIsSearching(true);
+      try {
+        const res = await searchMutation.mutateAsync(value);
+        setSearchResults(res.data.data);
+      } catch (error) {
+        // TODO: Properly handle error
+        console.error(error);
+      }
+      setIsSearching(false);
+    },
+    [searchMutation]
+  );
 
   const updateGroupMemberships = useCallback(async () => {
     reseActions();
     setIsUpdatingGroups(true);
     try {
-      await createGroupMemberships({
+      await createUserGroupsMutation.mutateAsync({
         users: [user.email],
         groups: userGroups
       });
@@ -167,7 +195,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
       );
     }
     setIsUpdatingGroups(false);
-  }, [user.email, userGroups, reseActions]);
+  }, [user.email, userGroups, reseActions, createUserGroupsMutation]);
 
   if (!canEdit) {
     return <Fragment />;
@@ -272,7 +300,6 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
               resultRenderer={resultRenderer}
               results={searchResults}
               onChange={handleSearch}
-              showResults
               value={searchValue}
               onResultSelect={onSelectResult}
               isLoading={isSearching}

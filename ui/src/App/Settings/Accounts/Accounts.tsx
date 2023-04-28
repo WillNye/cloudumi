@@ -1,8 +1,8 @@
 import { FC, useMemo, useState } from 'react';
-import css from './Accounts.module.css';
 import { ACCOUNT_SETTINGS_TABS } from './constants';
 import Groups from './components/GroupsManagement';
 import Users from './components/UsersManagement';
+import css from './Accounts.module.css';
 
 export const AccountSettings: FC = () => {
   const [currentTab, setCurrentTab] = useState<ACCOUNT_SETTINGS_TABS>(

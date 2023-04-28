@@ -8,6 +8,7 @@ import { deleteGroup, deleteUser } from 'core/API/settings';
 import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
 import { Notification, NotificationType } from 'shared/elements/Notification';
+import { useMutation } from '@tanstack/react-query';
 
 interface DeleteProps {
   canEdit: boolean;
@@ -16,6 +17,10 @@ interface DeleteProps {
   title: string;
   refreshData: () => void;
 }
+
+type DeleteUserGroupParams = {
+  [x: string]: string;
+};
 
 const Delete: FC<DeleteProps> = ({
   canEdit,
@@ -31,14 +36,21 @@ const Delete: FC<DeleteProps> = ({
 
   const isUser = useMemo(() => dataType === DELETE_DATA_TYPE.USER, [dataType]);
 
+  const deleteUserMutation = useMutation({
+    mutationFn: (data: DeleteUserGroupParams) => deleteUser(data)
+  });
+  const deleteGroupMutation = useMutation({
+    mutationFn: (data: DeleteUserGroupParams) => deleteGroup(data)
+  });
+
   const handleOnSubmit = useCallback(async () => {
     setErrorMessage(null);
     setSuccessMessage(null);
     setIsLoading(true);
     try {
-      const deleteAction = isUser ? deleteUser : deleteGroup;
+      const deleteAction = isUser ? deleteUserMutation : deleteGroupMutation;
       const deleteKey = isUser ? 'email' : 'name';
-      await deleteAction({
+      await deleteAction.mutateAsync({
         [deleteKey]: dataId
       });
       setSuccessMessage(`Successfully deleted ${dataType}: ${dataId}`);
@@ -54,7 +66,14 @@ const Delete: FC<DeleteProps> = ({
       );
       setIsLoading(false);
     }
-  }, [dataId, isUser, dataType, refreshData]);
+  }, [
+    dataId,
+    isUser,
+    dataType,
+    refreshData,
+    deleteGroupMutation,
+    deleteUserMutation
+  ]);
 
   if (!canEdit) {
     return <Fragment />;
@@ -110,7 +129,6 @@ const Delete: FC<DeleteProps> = ({
               variant="outline"
               onClick={() => setShowDialog(false)}
               fullWidth
-              disabled
             >
               Cancel
             </Button>

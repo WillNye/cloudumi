@@ -6,12 +6,12 @@ import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
 import { Segment } from 'shared/layout/Segment';
 import { toast } from 'react-toastify';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 interface SlackIntegrationModalProps {
   showDialog: boolean;
   setShowDialog: Dispatch<boolean>;
   isSlackConnected: boolean;
-  setIsSlackConnected: Dispatch<boolean>;
   checkStatus: () => void;
   isGettingIntegrations: boolean;
 }
@@ -20,11 +20,20 @@ const SlackIntegrationModal: FC<SlackIntegrationModalProps> = ({
   isSlackConnected,
   showDialog,
   setShowDialog,
-  setIsSlackConnected,
   checkStatus,
   isGettingIntegrations
 }) => {
   const [isLoading, setIsLoading] = useState(false);
+  0;
+  const deleteMutation = useMutation({ mutationFn: deleteNoqSlackApp });
+  const { refetch } = useQuery({
+    queryFn: addNoqSlackApp,
+    queryKey: ['installSlackLink'],
+    onSuccess: data => {
+      window.open(data.data.slack_install_url, '_blank');
+    },
+    enabled: false
+  });
 
   useEffect(
     function onMount() {
@@ -38,11 +47,11 @@ const SlackIntegrationModal: FC<SlackIntegrationModalProps> = ({
   const handleOnDelete = useCallback(async () => {
     setIsLoading(true);
     try {
-      await deleteNoqSlackApp();
+      await deleteMutation.mutateAsync();
       toast.success(`Successfully remove Slack App`);
       setIsLoading(false);
-      setIsSlackConnected(false);
       setShowDialog(false);
+      checkStatus();
     } catch (error) {
       const err = error as AxiosError;
       const errorRes = err?.response;
@@ -50,14 +59,12 @@ const SlackIntegrationModal: FC<SlackIntegrationModalProps> = ({
       toast.error(errorMsg || `Error when removing Slack App`);
       setIsLoading(false);
     }
-  }, [setIsSlackConnected, setShowDialog]);
+  }, [setShowDialog, deleteMutation, checkStatus]);
 
   const handleOnGenerateLink = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await addNoqSlackApp();
-      const data = res.data;
-      window.open(data.data.slack_install_url, '_blank');
+      await refetch();
       setIsLoading(false);
       setShowDialog(false);
     } catch (error) {
@@ -67,7 +74,7 @@ const SlackIntegrationModal: FC<SlackIntegrationModalProps> = ({
       toast.error(errorMsg || `Error when generating Slack intsallation Link`);
       setIsLoading(false);
     }
-  }, [setShowDialog]);
+  }, [setShowDialog, refetch]);
 
   return (
     <Dialog

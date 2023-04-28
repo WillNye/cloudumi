@@ -12,6 +12,7 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [invalidTenant, setInvalidTenant] = useState(false);
   const [internalServerError, setInternalServerError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const isResetPasswordRoute = useMatch('/login/password-reset');
 
@@ -19,16 +20,18 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
 
   useAxiosInterceptors({ setUser, setInvalidTenant, setInternalServerError });
 
-  const { isLoading, refetch: getUser } = useQuery({
+  const { refetch: getUser } = useQuery({
     queryKey: ['userProfile'],
     queryFn: getUserDetails,
     onSuccess: userData => {
       setUser(userData);
+      setIsLoading(false);
     },
     onError: () => {
       if (!isResetPasswordRoute) {
         navigate('/login');
       }
+      setIsLoading(false);
     }
   });
 

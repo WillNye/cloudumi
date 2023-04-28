@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { Table } from 'shared/elements/Table';
 
@@ -7,17 +7,11 @@ import { DELETE_DATA_TYPE, groupsTableColumns } from '../../constants';
 import css from './GroupsManagement.module.css';
 import Delete from '../common/Delete';
 import GroupsModal from '../common/EditGroupsModal';
-import { extractErrorMessage } from 'core/API/utils';
 import { getAllGroups } from 'core/API/settings';
 import AddGroupModal from '../common/AddGroupModal/AddGroupModal';
-import { Group } from '../../types';
+import { useQuery } from '@tanstack/react-query';
 
 const GroupsManagement = () => {
-  const [allGroupsData, setAllGroupsData] = useState<Group[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [pageCount, setPageCount] = useState(1);
-  const [errorMsg, setErrorMsg] = useState(null);
-
   const [query, setQuery] = useState({
     pagination: {
       currentPageIndex: 1,
@@ -38,47 +32,29 @@ const GroupsManagement = () => {
     }
   });
 
-  const callGetAllGroups = useCallback((query = {}) => {
-    setIsLoading(true);
-    setErrorMsg(null);
-    getAllGroups({ filter: query })
-      .then(({ data }) => {
-        setAllGroupsData(data.data.data);
-      })
-      .catch(error => {
-        const errorMessage = extractErrorMessage(error);
-        setErrorMsg(errorMessage);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+  const {
+    refetch: callGetAllGroups,
+    isLoading,
+    data
+  } = useQuery({
+    queryFn: getAllGroups,
+    queryKey: ['allGroups', { filter: query }]
+  });
+
+  const allGroupsData = useMemo(() => data?.data, [data]);
+
+  const handleOnPageChange = useCallback((newPageIndex: number) => {
+    setQuery(query => ({
+      ...query,
+      pagination: {
+        ...query.pagination,
+        currentPageIndex: newPageIndex
+      }
+    }));
   }, []);
 
-  const handleOnPageChange = useCallback(
-    (newPageIndex: number) => {
-      const newQuery = {
-        ...query,
-        pagination: {
-          ...query.pagination,
-          currentPageIndex: newPageIndex
-        }
-      };
-      callGetAllGroups(newQuery);
-      setQuery(newQuery);
-    },
-    [callGetAllGroups, query]
-  );
-
-  useEffect(
-    function onQueryUpdate() {
-      callGetAllGroups(query);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
-
   const tableRows = useMemo(() => {
-    return allGroupsData.map(item => {
+    return (allGroupsData?.data || []).map(item => {
       const canEdit = item.managed_by === 'MANUAL';
 
       return {
@@ -90,20 +66,20 @@ const GroupsManagement = () => {
             dataType={DELETE_DATA_TYPE.GROUP}
             dataId={item.name}
             title="Delete Group"
-            refreshData={() => callGetAllGroups(query)}
+            refreshData={callGetAllGroups}
           />
         ),
         edit: <GroupsModal canEdit={canEdit} group={item} />,
         users: item.users.length
       };
     });
-  }, [allGroupsData, callGetAllGroups, query]);
+  }, [allGroupsData, callGetAllGroups]);
 
   return (
     <div className={css.container}>
       <div className={css.header}>
-        <div>Groups ({allGroupsData.length})</div>
-        <AddGroupModal />
+        <div>Groups ({allGroupsData?.data?.length})</div>
+        <AddGroupModal refreshData={callGetAllGroups} />
       </div>
       <div className={css.table}>
         <Table
@@ -111,7 +87,7 @@ const GroupsManagement = () => {
           columns={groupsTableColumns}
           border="row"
           isLoading={isLoading}
-          totalCount={pageCount}
+          totalCount={allGroupsData?.filteredCount || query.pagination.pageSize}
           pageSize={query.pagination.pageSize}
           pageIndex={query.pagination.currentPageIndex}
           handleOnPageChange={handleOnPageChange}
