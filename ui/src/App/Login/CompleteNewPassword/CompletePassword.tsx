@@ -11,11 +11,13 @@ import { Button } from 'shared/elements/Button';
 import { Block } from 'shared/layout/Block';
 import { completePassword } from 'core/API/auth';
 import { AxiosError } from 'axios';
+import { ReactComponent as Logo } from 'assets/brand/mark.svg';
 import { extractErrorMessage } from 'core/API/utils';
 import { Notification, NotificationType } from 'shared/elements/Notification';
-import css from './CompletePassword.module.css';
+import { LineBreak } from 'shared/elements/LineBreak';
+import styles from './CompletePassword.module.css';
 
-const comletePasswordSchema = Yup.object().shape({
+const completePasswordSchema = Yup.object().shape({
   newPassword: Yup.string().required('Required'),
   currentPassword: Yup.string().required('Required'),
   confirmNewPassword: Yup.string()
@@ -36,7 +38,7 @@ export const CompleteNewPassword: FC = () => {
   } = useForm({
     mode: 'onChange',
     reValidateMode: 'onChange',
-    resolver: yupResolver(comletePasswordSchema),
+    resolver: yupResolver(completePasswordSchema),
     defaultValues: {
       newPassword: '',
       currentPassword: '',
@@ -73,58 +75,74 @@ export const CompleteNewPassword: FC = () => {
   return (
     <>
       <Helmet>
-        <title>Reset Password</title>
+        <title>Complete Password</title>
       </Helmet>
-      <div className={css.container}>
-        <h1>Reset Password</h1>
-        <br />
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <Block label="Current Password" disableLabelPadding>
-            <Input
-              type="password"
-              autoCapitalize="none"
-              autoCorrect="off"
-              placeholder="Current password"
-              {...register('currentPassword')}
-            />
-          </Block>
-          <br />
-          <Block label="New Password" disableLabelPadding>
-            <Input
-              type="password"
-              autoCapitalize="none"
-              autoCorrect="off"
-              placeholder="New password"
-              {...register('newPassword')}
-            />
-          </Block>
-          <PasswordMeter value={passwordValue} />
-          <br />
-          <Block label="Confirm Password" disableLabelPadding>
-            <Input
-              type="password"
-              autoCapitalize="none"
-              autoCorrect="off"
-              placeholder="Confirm password"
-              {...register('confirmNewPassword')}
-            />
-          </Block>
-          {errors?.confirmNewPassword && touchedFields.confirmNewPassword && (
-            <p>{errors.confirmNewPassword.message}</p>
-          )}
-          <br />
-          {errorMessage && (
-            <Notification
-              type={NotificationType.ERROR}
-              header={errorMessage}
-              showCloseIcon={false}
-            />
-          )}
-          <br />
-          <Button type="submit" disabled={isSubmitting || !isValid} fullWidth>
-            {isSubmitting ? 'Resetting Password...' : 'Reset Password'}
-          </Button>
-        </form>
+      <div className={styles.container}>
+        <Logo height={55} width={55} />
+        <h2 className={styles.title}>Set New Password</h2>
+
+        <p className={styles.description}>
+          Your current password was provided for your initial login. To ensure
+          the security of your account, please create a new password before
+          proceeding with access to your account.
+        </p>
+
+        <div className={styles.box}>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <Block label="Current Password" disableLabelPadding>
+              <Input
+                type="password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                placeholder="Current password"
+                fullWidth
+                {...register('currentPassword')}
+              />
+            </Block>
+            <LineBreak />
+
+            <Block label="New Password" disableLabelPadding>
+              <Input
+                type="password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                placeholder="New password"
+                fullWidth
+                {...register('newPassword')}
+              />
+            </Block>
+            <PasswordMeter value={passwordValue} />
+            <LineBreak />
+
+            <Block label="Confirm Password" disableLabelPadding>
+              <Input
+                type="password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                placeholder="Confirm password"
+                fullWidth
+                {...register('confirmNewPassword')}
+              />
+            </Block>
+            {errors?.confirmNewPassword && touchedFields.confirmNewPassword && (
+              <p>{errors.confirmNewPassword.message}</p>
+            )}
+            <LineBreak />
+
+            {errorMessage && (
+              <Notification
+                type={NotificationType.ERROR}
+                header={errorMessage}
+                fullWidth
+                showCloseIcon={false}
+              />
+            )}
+
+            <Button type="submit" disabled={isSubmitting || !isValid} fullWidth>
+              {isSubmitting ? 'Resetting Password...' : 'Reset Password'}
+            </Button>
+          </form>
+        </div>
       </div>
     </>
   );
