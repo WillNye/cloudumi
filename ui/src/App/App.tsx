@@ -4,6 +4,8 @@ import { ToastContainer } from 'react-toastify';
 import { AuthRoute } from 'core/Auth';
 import { Loader } from 'shared/elements/Loader';
 import 'react-toastify/dist/ReactToastify.css';
+import Resources from './Resources/Resources';
+import ResourceDetails from './Resources/Details/ResourceDetails';
 
 const Login = lazy(() => import('./Login'));
 const Settings = lazy(() => import('./Settings'));
@@ -22,6 +24,15 @@ export const App: FC = () => (
         <Route path="/" element={<Dashboard />}>
           <Route path="/" element={<Access />} />
           <Route path="/settings/*" element={<Settings />} />
+          <Route path="/resources" element={<Resources />} />
+
+          <Route
+            path="/resources/:provider/*"
+            loader={({ params }) => {
+              console.log(params['*']); // "one/two"
+            }}
+            element={<ResourceDetails />}
+          />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Route>

@@ -1,4 +1,6 @@
-export const darkTheme = () => ({
+import { editor } from 'monaco-editor';
+
+export const darkTheme = (): editor.IStandaloneThemeData => ({
   base: 'vs-dark',
   inherit: true,
   rules: [
@@ -8,5 +10,6 @@ export const darkTheme = () => ({
   colors: {
     // 'editor.background': '#000000',
     // 'editor.lineHighlightBackground':'#cccccc'
-  }
+  },
+  encodedTokensColors: []
 });
