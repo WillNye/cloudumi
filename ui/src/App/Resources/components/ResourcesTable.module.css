@@ -1,0 +1,19 @@
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  margin-top: 15px;
+  overflow-y: hidden;
+}
+
+.header {
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-bottom: 15px;
+}
+
+.filter {
+  width: 100%;
+  margin-bottom: 15px;
+}
