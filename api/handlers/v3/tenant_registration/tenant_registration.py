@@ -3,55 +3,31 @@ import time
 from secrets import token_urlsafe
 from urllib.parse import urlparse
 
-import boto3
+import furl
 import sentry_sdk
 import tornado.escape
 import tornado.web
 from email_validator import validate_email
-from jinja2 import FileSystemLoader, select_autoescape
-from jinja2.sandbox import ImmutableSandboxedEnvironment
 
 from api.handlers.v3.tenant_registration.models import NewTenantRegistration
 from common.config import config
+from common.config.globals import ASYNC_PG_ENGINE
+from common.group_memberships.models import GroupMembership
+from common.groups.models import Group
 from common.handlers.base import TornadoRequestHandler
 from common.lib.cognito.identity import (
     ADMIN_GROUP_NAME,
-    CognitoUserClient,
-    create_user_pool,
-    create_user_pool_client,
-    create_user_pool_domain,
     generate_dev_domain,
+    generate_password,
     get_external_id,
 )
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.free_email_domains import is_email_free
 from common.lib.tenant.models import TenantDetails
+from common.tenants.models import Tenant
+from common.users.models import User
 
 log = config.get_logger()
-
-
-async def set_login_page_ui(user_pool_id):
-    cognito = boto3.client("cognito-idp", region_name=config.region)
-    env = ImmutableSandboxedEnvironment(
-        loader=FileSystemLoader("common/templates"),
-        extensions=["jinja2.ext.loopcontrols"],
-        autoescape=select_autoescape(),
-    )
-    cognito_login_css_template = env.get_template("cognito_login_page.css.j2")
-    cognito_login_css = cognito_login_css_template.render()
-    nog_logo = open(
-        config.get(
-            "_global_.tenant_registration.set_login_page_ui.logo_location",
-            "common/templates/NoqLogo.png",
-        ),
-        "rb",
-    ).read()
-    return cognito.set_ui_customization(
-        UserPoolId=user_pool_id,
-        ClientId="ALL",
-        CSS=cognito_login_css,
-        ImageFile=nog_logo,
-    )
 
 
 class TenantRegistrationAwsMarketplaceHandler(TornadoRequestHandler):
@@ -62,18 +38,6 @@ class TenantRegistrationAwsMarketplaceHandler(TornadoRequestHandler):
             self.set_status(400)
             self.write({"error": "x-amzn-marketplace-token is required"})
             return
-        # marketplace_client = boto3.client("meteringmarketplace")
-        # customer_data = await aio_wrapper(marketplace_client.resolve_customer,
-        #     amazon_marketplace_reg_token
-        # )
-        # customer_id = customer_data["CustomerIdentifier"]
-        # Expected customer_id: {
-        #     'CustomerIdentifier': 'string',
-        #     'ProductCode': 'string'
-        # }
-        # TODO: Validate no other accounts share the same customerID
-        # TODO: Store customer information
-        # TODO: Should we give the user a signed cookie, then ask them to specify credentials / domain?
 
 
 class TenantRegistrationHandler(TornadoRequestHandler):
@@ -99,6 +63,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
     async def post(self):
         # Get the data from the request
         data = tornado.escape.json_decode(self.request.body)
+
         # Check if the data is valid
         if not data:
             self.set_status(400)
@@ -110,6 +75,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
             )
             return
 
+        # Validate email
         try:
             valid = validate_email(data.get("email"))
             if not valid:
@@ -143,24 +109,15 @@ class TenantRegistrationHandler(TornadoRequestHandler):
             )
             return
 
-        # TODO: Check if email already registered
-        # if await is_email_registered(data.get("email")):
-        #     self.set_status(400)
-        #     self.write(
-        #         {
-        #             "error": "Email already registered",
-        #             "error_description": "The email is already registered",
-        #         }
-        #     )
-        #     return
-
-        # TODO: When we allow custom domain registrations, don't allow noq, registration, or anything else in the domain
-        # name
-
+        # Validate registration code
         valid_registration_code = hashlib.sha256(
             "noq_tenant_{}".format(data.get("email")).encode()
         ).hexdigest()[0:20]
-        # check if registration code is valid
+        # Validate registration code
+        valid_registration_code = hashlib.sha256(
+            "noq_tenant_{}".format(data.get("email")).encode()
+        ).hexdigest()[0:20]
+
         if data.get("registration_code") != valid_registration_code:
             self.set_status(400)
             self.write(
@@ -171,8 +128,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
             )
             return
 
-        region = config.region
-        # validate tenant
+        # Validate tenant
         try:
             tenant = NewTenantRegistration.parse_obj(data)
         except Exception as e:
@@ -220,74 +176,31 @@ class TenantRegistrationHandler(TornadoRequestHandler):
                 )
                 return
 
-        cognito_url_domain = data.get("domain", "").replace(".", "-")
         dev_domain_url = f'https://{dev_domain.replace("_", ".")}'
 
-        try:
-            # create new tenant
-            user_pool_id = await create_user_pool(dev_domain, dev_domain_url)
-        except Exception as e:
-            self.set_status(400)
-            self.write(
-                {
-                    "error": f"Unable to create user pool {str(e)}",
-                    "error_description": "Failed to create user pool. Please try again.",
-                }
+        async with ASYNC_PG_ENGINE.begin():
+            tenant_db = await Tenant.create(
+                name=dev_domain,
+                organization_id=dev_domain,
             )
-            return
-
-        try:
-            user_pool_domain = await create_user_pool_domain(
-                user_pool_id, cognito_url_domain
+            email_domain = tenant.email.split("@")[1]
+            password = generate_password()
+            user = await User.create(
+                tenant_db,
+                tenant.email,
+                tenant.email,
+                password,
+                email_verified=True,
+                managed_by="MANUAL",
             )
-        except Exception as e:
-            # TODO: Remove the user pool because it is now orphaned
-            self.set_status(400)
-            self.write(
-                {
-                    "error": f"Unable to create user pool domain: {str(e)}",
-                    "error_description": "Failed to create user pool domain. Please try again.",
-                }
+            group = await Group.create(
+                tenant=tenant_db,
+                name="noq_admins",
+                email=f"noq_admins@{email_domain}",
+                description="Noq Admins",
+                managed_by="MANUAL",
             )
-            return
-
-        if user_pool_domain["ResponseMetadata"]["HTTPStatusCode"] != 200:
-            # TODO: Remove the user pool because it is now orphaned
-            self.set_status(400)
-            self.write(
-                {
-                    "error": "Unable to create user pool domain",
-                    "error_description": "Failed to create user pool domain. Please try again.",
-                }
-            )
-            return
-
-        try:
-            await set_login_page_ui(user_pool_id)
-        except Exception as e:
-            # it's not fatal not able to set logo...let's capture in log and continue
-            sentry_sdk.capture_exception(e)
-
-        (
-            cognito_client_id,
-            cognito_user_pool_client_secret,
-        ) = await create_user_pool_client(user_pool_id, dev_domain_url)
-        try:
-            cognito_idp = CognitoUserClient(
-                user_pool_id, cognito_client_id, cognito_user_pool_client_secret
-            )
-            await cognito_idp.create_init_user(tenant.email)
-        except Exception as e:
-            # TODO: Remove the user pool and domain because it is now orphaned
-            self.set_status(400)
-            self.write(
-                {
-                    "error": "Unable to create user pool user",
-                    "error_description": str(e),
-                }
-            )
-            sentry_sdk.capture_exception(e)
-            return
+            await GroupMembership.create(user, group)
 
         external_id = await get_external_id(dev_domain, tenant.email)
 
@@ -318,39 +231,10 @@ application_admin:
   - {ADMIN_GROUP_NAME}
 secrets:
   jwt_secret: {token_urlsafe(32)}
-  auth:
-    oidc:
-      client_id: {cognito_client_id}
-      client_secret: {cognito_user_pool_client_secret}
-  cognito:
-    config:
-        user_pool_id: {user_pool_id}
-        user_pool_client_id: {cognito_client_id}
-        user_pool_client_secret: {cognito_user_pool_client_secret}
-        user_pool_region: {config.region}
-get_user_by_oidc_settings:
-  client_scopes:
-    - email
-    - openid
-    - profile
-    - aws.cognito.signin.user.admin
-  resource: noq_tenant
-  metadata_url: https://cognito-idp.{region}.amazonaws.com/{user_pool_id}/.well-known/openid-configuration
-  jwt_verify: true
-  jwt_email_key: email
-  jwt_groups_key: 'custom:groups'
-  grant_type: authorization_code
-  id_token_response_key: id_token
-  access_token_response_key: access_token
-  access_token_audience: null
 auth:
   extra_auth_cookies:
     - AWSELBAuthSessionCookie
-  logout_redirect_url: https://{cognito_url_domain}.auth.{region}.amazoncognito.com/logout?client_id={cognito_client_id}&logout_uri={dev_domain_url}
-  get_user_by_oidc: true
   force_redirect_to_identity_provider: false
-  # get_user_by_password: true
-  # get_user_by_cognito: true
 """
 
         # Store tenant information in DynamoDB
@@ -360,10 +244,94 @@ auth:
         await ddb.update_static_config_for_tenant(
             tenant_config, tenant.email, dev_domain
         )
-        self.write(
-            {
-                "success": True,
-                "username": tenant.email,
-                "domain": dev_domain_url,
-            }
-        )
+
+        await user.send_password_via_email(furl.furl(dev_domain_url), password)
+        return_data = {
+            "success": True,
+            "username": tenant.email,
+            "domain": dev_domain_url,
+        }
+
+        # For our functional tests, we want to return the password
+        if config.get("_global_.environment") in ["dev", "staging"]:
+            # Make sure dev_domain_url starts with `test_`
+            if dev_domain_url.startswith("https://test-") and dev_domain_url.endswith(
+                ".staging.noq.dev"
+            ):
+                # Make sure self.request.host is localhost
+                if self.request.host == "localhost:8092":
+                    # Make sure email starts with `cypress_ui_saas_functional_tests+` and ends in `@noq.dev`
+                    email_prefix = "cypress_ui_saas_functional_tests+"
+                    email_suffix = "@noq.dev"
+                    if tenant.email.startswith(email_prefix) and tenant.email.endswith(
+                        email_suffix
+                    ):
+                        return_data["password"] = password
+
+        self.write(return_data)
+
+    async def delete(self):
+        environment = config.get("_global_.environment")
+        if environment not in ["dev", "staging"]:
+            self.set_status(403)
+            self.write(
+                {
+                    "error": "This endpoint is only allowed in dev and staging environments."
+                }
+            )
+            return
+
+        data = tornado.escape.json_decode(self.request.body)
+        email = data.get("email")
+
+        if email is None:
+            self.set_status(400)
+            self.write({"error": "Email is required."})
+            return
+
+        email_prefix = "cypress_ui_saas_functional_tests+"
+        email_suffix = "@noq.dev"
+
+        if not (email.startswith(email_prefix) and email.endswith(email_suffix)):
+            self.set_status(403)
+            self.write(
+                {
+                    "error": "This endpoint only allows deletion of tenants used for functional tests."
+                }
+            )
+            return
+
+        dev_domain_url = data.get("domain", "")
+
+        dev_domain = dev_domain_url.replace(".", "_")
+
+        if not dev_domain:
+            self.set_status(400)
+            self.write({"error": "A valid domain must be provided."})
+            return
+
+        if not (
+            dev_domain_url.startswith("test-")
+            and dev_domain_url.endswith(".staging.noq.dev")
+        ):
+            self.set_status(403)
+            self.write(
+                {
+                    "error": "This endpoint only allows deletion of tenants used for functional tests."
+                }
+            )
+            return
+
+        async with ASYNC_PG_ENGINE.begin():
+            tenant = await Tenant.get_by_name(dev_domain)
+            if tenant is not None:
+                await tenant.delete()
+
+        ddb = RestrictedDynamoHandler()
+        await ddb.delete_static_config_for_tenant(dev_domain)
+
+        tenant_details = await TenantDetails.get(dev_domain)
+
+        await TenantDetails.delete(tenant_details)
+
+        self.write({"success": True, "message": f"Tenant {dev_domain} deleted."})

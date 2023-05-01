@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, and_
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import select
 
 from common.config.globals import ASYNC_PG_SESSION
@@ -11,6 +12,10 @@ class Tenant(SoftDeleteMixin, Base):
     id = Column(Integer(), primary_key=True, autoincrement=True)
     name = Column(String, index=True)
     organization_id = Column(String)
+    groups = relationship(
+        "Group", back_populates="tenant", cascade="all, delete-orphan"
+    )
+    users = relationship("User", back_populates="tenant", cascade="all, delete-orphan")
 
     @classmethod
     async def get_by_id(cls, tenant_id):
@@ -44,6 +49,9 @@ class Tenant(SoftDeleteMixin, Base):
     async def delete(self):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
+                # for group in self.groups:
+                #     session.delete(group)
+                # await session.commit()
                 await session.delete(self)
                 await session.commit()
         return True

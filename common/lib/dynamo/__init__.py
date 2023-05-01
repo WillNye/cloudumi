@@ -1471,6 +1471,43 @@ class RestrictedDynamoHandler(BaseDynamoHandler):
 
         return new_config_d
 
+    async def delete_static_config_for_tenant(self, tenant: str) -> None:
+        """
+        Delete the static configuration for a given tenant.
+        """
+
+        # Check if the tenant configuration exists in the table
+        current_config_entry = await aio_wrapper(
+            self.tenant_static_configs.get_item, Key={"tenant": tenant, "id": "master"}
+        )
+        current_config_entry = current_config_entry.get("Item", {})
+
+        if not current_config_entry:
+            raise ValueError(f"No configuration found for tenant {tenant}")
+
+        # Delete the master configuration
+        await aio_wrapper(
+            self.tenant_static_configs.delete_item,
+            Key={"tenant": tenant, "id": "master"},
+        )
+
+        # Delete all historical configurations
+        historical_config_items = await aio_wrapper(
+            self.tenant_static_configs.query,
+            KeyConditionExpression=Key("tenant").eq(tenant),
+        )
+        historical_config_items = historical_config_items.get("Items", [])
+
+        for item in historical_config_items:
+            await aio_wrapper(
+                self.tenant_static_configs.delete_item,
+                Key={"tenant": tenant, "id": item["id"]},
+            )
+
+        # Delete configuration from Redis
+        red = RedisHandler().redis_sync(tenant)
+        red.delete(f"{tenant}_STATIC_CONFIGURATION")
+
 
 # from asgiref.sync import async_to_sync
 # ddb = UserDynamoHandler("cyberdyne_noq_dev", user="ccastrapel@gmail.com")

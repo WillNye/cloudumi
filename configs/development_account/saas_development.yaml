@@ -136,9 +136,6 @@ _global_:
     endpoint: "localhost"
     port: 5432
     database: "noq"
-  tenant_registration:
-    set_login_page_ui:
-      logo_location: frontend/src/assets/NoqLogo.png
   tenant_storage:
     base_path: ~/.config/noq/tenant_storage_dev/
 # Localhost configuration

@@ -57,6 +57,7 @@ RUN add-apt-repository -y ppa:deadsnakes/ppa && apt-get update && apt-get instal
     python3.11 -m pip install -r requirements.lock && \
     # Install yarn and frontend dependencies
     npm install yarn -g && \
+    npm install cypress -g && \
     yarn --cwd frontend --dev && \
     yarn --cwd ui && \
     apt-get dist-upgrade -y

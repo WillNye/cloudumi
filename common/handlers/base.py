@@ -851,6 +851,7 @@ class BaseHandler(TornadoRequestHandler):
                 "TenantEulaHandler",
                 "AuthenticatedStaticFileHandler",
                 "MfaHandler",
+                "UserMFASelfServiceHandler",
             ]:
                 # Force them to the eula page if they're an admin, return a 403 otherwise
                 if self.is_admin:
