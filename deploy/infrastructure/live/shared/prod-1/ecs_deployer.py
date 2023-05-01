@@ -2,6 +2,7 @@ import os
 import pathlib
 import sys
 import time
+from collections import defaultdict
 
 import boto3
 import yaml
@@ -188,7 +189,7 @@ for task in run_task_definition_map:
 service_rollout_completed = 0
 rollout_finalized = False
 failed = False
-start_time = int(time.time() * 1000)
+start_time = defaultdict(int)
 next_token = None
 
 while True:
@@ -200,8 +201,16 @@ while True:
         task_details = ecs_client.describe_tasks(cluster=cluster_name, tasks=[task_arn])
         task["status"] = task_details["tasks"][0]["lastStatus"]
 
-        task_failures = task_details["failures"]
-        if task_failures:
+        task_failures = sum(
+            [
+                exit_code
+                for exit_code in task_details["tasks"][0]["containers"].get(
+                    "exitCode", 0
+                )
+                if exit_code != 0
+            ]
+        )
+        if task_failures > 0:
             print(f"Task: {task}, failed: {task_failures}")
             failed = True
             break
@@ -245,11 +254,13 @@ while True:
             "options"
         ]["awslogs-group"]
 
-        result = print_new_log_events(awslogs_group, awslogs_stream_prefix, start_time)
+        result = print_new_log_events(
+            awslogs_group, awslogs_stream_prefix, start_time.get(task_name, 0)
+        )
         if result is None:
             print(f"Task {task_name} has not started logging yet")
         else:
-            start_time = result
+            start_time[task_name] = result
 
     time.sleep(5.0)
 
@@ -338,7 +349,12 @@ while True:
         service_status = ecs_client.describe_services(
             cluster=cluster_name, services=[service_name]
         )
-        service["arn"] = service_status["services"][0]["serviceArn"]
+        if service.get("arn") is None:
+            service["arn"] = service_status["services"][0]["serviceArn"]
+        if service.get("taskArns") is []:
+            service["taskArns"] = ecs_client.list_tasks(
+                cluster=cluster_name, serviceName=service_name
+            ).get("taskArns", [])
         for service_status in service_status["services"]:
             for deployment in service_status["deployments"]:
                 if deployment["status"] == "PRIMARY":
@@ -372,25 +388,28 @@ while True:
         with open(service["task_definition"], "r") as f:
             task_definition = yaml.load(f, Loader=yaml.FullLoader)
 
-        service_id = service["arn"].split("/")[-1]
         service_name = service["service"]
         cluster_prefix = task_definition["containerDefinitions"][0]["logConfiguration"][
             "options"
         ]["awslogs-stream-prefix"]
         name = task_definition["containerDefinitions"][0]["name"]
-        awslogs_stream_prefix = f"{cluster_prefix}/{name}/{service_id}"
-        awslogs_group = task_definition["containerDefinitions"][0]["logConfiguration"][
-            "options"
-        ]["awslogs-group"]
+        for task_arn in service.get("taskArns", []):
+            task_id = task_arn.split("/")[-1]
+            awslogs_stream_prefix = f"{cluster_prefix}/{name}/{task_id}"
+            awslogs_group = task_definition["containerDefinitions"][0][
+                "logConfiguration"
+            ]["options"]["awslogs-group"]
 
-        task_name = service["service"]
-        task_id = service["arn"].split("/")[-1]
-        result = print_new_log_events(awslogs_group, awslogs_stream_prefix, start_time)
+            task_name = service["service"]
+            task_id = service["arn"].split("/")[-1]
+            result = print_new_log_events(
+                awslogs_group, awslogs_stream_prefix, start_time
+            )
 
-        if result is None:
-            print(f"Service {task_name} has not started logging yet")
-        else:
-            start_time = result
+            if result is None:
+                print(f"Service {task_name} has not started logging yet")
+            else:
+                start_time = result
 
     time.sleep(5)
 
