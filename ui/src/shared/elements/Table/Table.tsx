@@ -112,7 +112,7 @@ export const Table = <T, D>({
   }, [selectedFlatRows, handleSelectRows]);
 
   const shouldShowPagination = useMemo(() => {
-    return showPagination && !isLoading && rows.length;
+    return Boolean(showPagination && !isLoading && rows.length);
   }, [showPagination, isLoading, rows]);
 
   return (

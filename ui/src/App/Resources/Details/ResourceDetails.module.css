@@ -1,0 +1,34 @@
+.container {
+  width: 95%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden;
+  margin: auto;
+
+  .pageHeader {
+    padding: var(--spacing-lg) 0;
+  }
+
+  .section {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-self: space-between;
+    width: 100%;
+    height: 100%;
+  }
+
+  .sidebar {
+    width: 35%;
+  }
+
+  .content {
+    width: 65%;
+  }
+
+  .editor {
+    border: solid 1px var(--gray-500);
+    border-radius: var(--border-radius-md);
+  }
+}

@@ -1,20 +1,14 @@
 import { PropertyFilter, PropertyFilterProps } from '@noqdev/cloudscape';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { Table } from 'shared/elements/Table';
 import { resourcesColumns } from './constants';
-import css from './ResourcesTable.module.css';
 import { useQuery } from '@tanstack/react-query';
-import { getAllResources } from 'core/API/settings';
-// import { Resource } from './types';
+import { getAllResources } from 'core/API/resources';
+import css from './ResourcesTable.module.css';
 
 const ResourcesTable = () => {
-  const [filter, setFilter] = useState<PropertyFilterProps.Query>({
-    tokens: [],
-    operation: 'and'
-  });
-
   const [query, setQuery] = useState({
     pagination: {
       currentPageIndex: 1,
@@ -29,7 +23,10 @@ const ResourcesTable = () => {
       },
       sortingDescending: false
     },
-    filtering: filter
+    filtering: {
+      tokens: [],
+      operation: 'and'
+    }
   });
 
   const { isLoading, data: resourcesData } = useQuery({
@@ -37,24 +34,20 @@ const ResourcesTable = () => {
     queryKey: ['resources', query]
   });
 
-  useEffect(() => {
-    setQuery(existingQuery => ({
-      ...existingQuery,
-      filtering: filter
-    }));
-  }, [filter]);
-
   const tableRows = useMemo(() => {
     return (resourcesData?.data || []).map(item => {
-      const resourceId = item.id;
       return {
         ...item,
-        name: <Link to={`/resources/edit/${resourceId}`}>{item.name}</Link>
+        file_path: (
+          <Link to={`/resources/${item.provider}${item.file_path}`}>
+            {item.file_path}
+          </Link>
+        )
       };
     });
   }, [resourcesData]);
 
-  const handleOnPageChange = (newPageIndex: number) => {
+  const handleOnPageChange = useCallback((newPageIndex: number) => {
     setQuery(query => ({
       ...query,
       pagination: {
@@ -62,7 +55,14 @@ const ResourcesTable = () => {
         currentPageIndex: newPageIndex
       }
     }));
-  };
+  }, []);
+
+  const handleOnFilterChange = useCallback(filter => {
+    setQuery(query => ({
+      ...query,
+      filtering: filter
+    }));
+  }, []);
 
   return (
     <>
@@ -70,8 +70,8 @@ const ResourcesTable = () => {
         <div className={css.filter}>
           <PropertyFilter
             expandToViewport
-            onChange={({ detail }) => setFilter(detail)}
-            query={filter}
+            onChange={({ detail }) => handleOnFilterChange(detail)}
+            query={query.filtering as PropertyFilterProps.Query}
             i18nStrings={{
               filteringAriaLabel: 'your choice',
               dismissAriaLabel: 'Dismiss',
@@ -139,13 +139,13 @@ const ResourcesTable = () => {
             data={tableRows}
             border="row"
             isLoading={isLoading}
-            showPagination
             totalCount={
-              resourcesData?.filtered_count || query.pagination.pageSize
+              resourcesData?.filteredCount || query.pagination.pageSize
             }
             pageSize={query.pagination.pageSize}
             pageIndex={query.pagination.currentPageIndex}
             handleOnPageChange={handleOnPageChange}
+            showPagination
           />
         </div>
       </div>

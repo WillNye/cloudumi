@@ -3,6 +3,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow-y: hidden;
 
   .filter {
     width: 100%;
@@ -12,6 +13,7 @@
 
   .table {
     overflow-y: auto;
+    margin-bottom: 25px;
 
     thead {
       z-index: 12;

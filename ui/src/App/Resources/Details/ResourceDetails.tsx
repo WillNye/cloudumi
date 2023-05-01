@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import Editor from '@monaco-editor/react';
 import { useParams } from 'react-router-dom';
 import { mockData } from './mockData';
 // Replace this with the actual API function to fetch the template details
@@ -8,6 +7,11 @@ import { Uri } from 'monaco-editor';
 import { setDiagnosticsOptions } from 'monaco-yaml';
 import schema from './aws_iam_role_template.json';
 import { JSONSchema7 } from 'json-schema';
+import { CodeEditor } from 'shared/form/CodeEditor';
+import { Button } from 'shared/elements/Button';
+import styles from './ResourceDetails.module.css';
+import { Breadcrumbs } from 'shared/elements/Breadcrumbs';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 const configureYAMLSchema = async (
   editorInstance: any,
@@ -87,27 +91,41 @@ const ResourcesDetails = () => {
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ height: '400px' }}>
-        <Editor
-          height="100%"
-          width="100%"
-          defaultLanguage="yaml"
-          theme="vs-dark"
-          value={templateContent}
-          onChange={handleEditorChange}
-          onMount={(editor, monaco) =>
-            configureYAMLSchema(editor, monaco, templateContent)
-          }
+    <div className={styles.container}>
+      <div className={styles.pageHeader}>
+        <h3>Resources</h3>
+        <LineBreak />
+        <Breadcrumbs
+          items={[
+            { name: 'Resources', url: '/resources' },
+            { name: 'template_name', url: '/resources' }
+          ]}
         />
       </div>
-      <button
-        style={{ marginTop: '1rem' }}
-        onClick={() => alert('Submitting request')}
-        disabled={!isModified}
-      >
-        Submit Request
-      </button>
+
+      <div className={styles.section}>
+        <div className={styles.sidebar}>Resource</div>
+        <div className={styles.content}>
+          <div className={styles.editor}>
+            <CodeEditor
+              defaultLanguage="yaml"
+              value={templateContent}
+              onChange={handleEditorChange}
+              onMount={(editor, monaco) =>
+                configureYAMLSchema(editor, monaco, templateContent)
+              }
+            />
+          </div>
+          <LineBreak />
+          <Button
+            onClick={() => alert('Submitting request')}
+            disabled={!isModified}
+            size="small"
+          >
+            Submit Request
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
