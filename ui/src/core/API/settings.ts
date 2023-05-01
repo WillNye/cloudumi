@@ -23,13 +23,6 @@ export const getAllUsers = async ({ queryKey }) => {
   return response.data;
 };
 
-export const getAllResources = async ({ queryKey }) => {
-  const [_, query] = queryKey;
-  const url = `${V4_API_URL}/resources/datatable`;
-  const response = await axios.post(url, query);
-  return response.data;
-};
-
 export const getAllGroups = async ({ queryKey }) => {
   const [_, query] = queryKey;
   const url = `${V4_API_URL}/list_groups`;
