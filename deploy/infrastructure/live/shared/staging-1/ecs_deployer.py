@@ -392,7 +392,7 @@ while True:
         else:
             start_time = result
 
-        time.sleep(5)
+    time.sleep(5)
 
 
 tasks = ecs_client.list_tasks(
