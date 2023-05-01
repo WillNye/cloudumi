@@ -223,7 +223,8 @@
         "AWS_PROFILE": "staging/staging_admin",
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
         "STAGE": "staging",
-        "TEST_USER_DOMAIN": "localhost"
+        "TEST_USER_DOMAIN": "localhost",
+        "VERSION": "1.5.571"
       }
     },
     {

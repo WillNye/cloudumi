@@ -32,7 +32,7 @@ containerDefinitions:
     mountPoints: []
     dockerSecurityOptions: []
     volumesFrom: []
-    image: 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api:1.5.572
+    image: 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api:latest
     essential: true
     links: []
     extraHosts: []
