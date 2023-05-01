@@ -82,9 +82,7 @@ def get_task_log_stream(log_group_name, log_stream_name_prefix):
 
     if log_streams:
         # Sort log streams by the last event time
-        log_streams = sorted(
-            log_streams, key=lambda x: x["lastEventTimestamp"], reverse=True
-        )
+        log_streams = sorted(log_streams, key=lambda x: x["creationTime"], reverse=True)
         return log_streams[0]["logStreamName"]
     else:
         return None
@@ -100,6 +98,7 @@ def print_new_log_events(log_group_name, log_stream_name_prefix, start_time):
         else:
             raise
 
+    new_start_time = start_time
     if log_stream_name:
         response = logs_client.get_log_events(
             logGroupName=log_group_name,
@@ -110,8 +109,9 @@ def print_new_log_events(log_group_name, log_stream_name_prefix, start_time):
 
         for event in response["events"]:
             print(f"{event['timestamp']}: {event['message']}")
+            new_start_time = event["timestamp"] + 1
 
-        return response["nextForwardToken"]
+        return new_start_time
     else:
         return None
 
@@ -248,6 +248,8 @@ while True:
         result = print_new_log_events(awslogs_group, awslogs_stream_prefix, start_time)
         if result is None:
             print(f"Task {task_name} has not started logging yet")
+        else:
+            start_time = result
 
     time.sleep(5.0)
 
@@ -336,6 +338,7 @@ while True:
         service_status = ecs_client.describe_services(
             cluster=cluster_name, services=[service_name]
         )
+        service["arn"] = service_status["services"][0]["serviceArn"]
         for service_status in service_status["services"]:
             for deployment in service_status["deployments"]:
                 if deployment["status"] == "PRIMARY":
@@ -369,7 +372,7 @@ while True:
         with open(service["task_definition"], "r") as f:
             task_definition = yaml.load(f, Loader=yaml.FullLoader)
 
-        service_id = service["arns"][0].split("/")[-1]
+        service_id = service["arn"].split("/")[-1]
         service_name = service["service"]
         cluster_prefix = task_definition["containerDefinitions"][0]["logConfiguration"][
             "options"
@@ -381,11 +384,13 @@ while True:
         ]["awslogs-group"]
 
         task_name = service["service"]
-        task_id = service["arns"][0].split("/")[-1]
+        task_id = service["arn"].split("/")[-1]
         result = print_new_log_events(awslogs_group, awslogs_stream_prefix, start_time)
 
         if result is None:
             print(f"Service {task_name} has not started logging yet")
+        else:
+            start_time = result
 
         time.sleep(5)
 
