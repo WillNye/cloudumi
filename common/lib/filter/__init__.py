@@ -87,7 +87,7 @@ async def filter_data(
         if filter.operation == FilterOperation._and:
             match = True
             for token in filter.tokens:
-                prop_val = item[token.propertyKey]
+                prop_val = item.get(token.propertyKey)
                 if token.operator == FilterOperator.equals:
                     match = match and prop_val == token.value
                 elif token.operator == FilterOperator.not_equals:
@@ -105,7 +105,7 @@ async def filter_data(
         elif filter.operation == FilterOperation._or:
             match = False
             for token in filter.tokens:
-                prop_val = item[token.propertyKey]
+                prop_val = item.get(token.propertyKey)
                 if token.operator == FilterOperator.equals:
                     match = match or prop_val == token.value
                 elif token.operator == FilterOperator.not_equals:
