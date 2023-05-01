@@ -11,6 +11,8 @@ import ujson as json
 from policyuniverse.expander_minimizer import _expand_wildcard_action
 from slack_bolt.async_app import AsyncApp
 from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
+from slack_bolt.oauth.callback_options import CallbackOptions, FailureArgs, SuccessArgs
+from slack_bolt.response import BoltResponse
 from slack_sdk.errors import SlackApiError
 from slack_sdk.oauth.installation_store import Bot, Installation
 from slack_sdk.oauth.installation_store.async_installation_store import (
@@ -183,6 +185,22 @@ def get_installation_store():
     )
 
 
+async def success(args: SuccessArgs) -> BoltResponse:
+    # Do anything here ...
+    args.request.context["team_id"] = args.installation.team_id
+    args.request.context["app_id"] = args.installation.app_id
+
+    # Call the default handler to return HTTP response
+    return await args.default.success(args)
+
+
+async def failure(args: FailureArgs) -> BoltResponse:
+    # Do anything here ...
+
+    # Call the default handler to return HTTP response
+    return await args.default.failure(args)
+
+
 def get_slack_app():
     database_url = globals.ASYNC_PG_CONN_STR
 
@@ -200,6 +218,7 @@ def get_slack_app():
         # user_scopes=scopes,
         install_path="/api/v3/slack/install",
         redirect_uri_path="/api/v3/slack/oauth_redirect",
+        callback_options=CallbackOptions(success=success, failure=failure),
     )
 
     slack_app = AsyncApp(
