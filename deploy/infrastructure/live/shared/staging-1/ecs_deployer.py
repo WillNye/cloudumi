@@ -203,11 +203,9 @@ while True:
 
         task_failures = sum(
             [
-                exit_code
-                for exit_code in task_details["tasks"][0]["containers"].get(
-                    "exitCode", 0
-                )
-                if exit_code != 0
+                exit_code.get("exitCode", 0)
+                for exit_code in task_details["tasks"][0]["containers"]
+                if exit_code.get("exitCode", 0) != 0
             ]
         )
         if task_failures > 0:
