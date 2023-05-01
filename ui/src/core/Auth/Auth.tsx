@@ -1,11 +1,4 @@
-import {
-  FC,
-  PropsWithChildren,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState
-} from 'react';
+import { FC, PropsWithChildren, useMemo, useState } from 'react';
 import { useMatch, useNavigate } from 'react-router-dom';
 import { AuthProvider } from './AuthContext';
 import { User } from './types';
@@ -13,12 +6,13 @@ import { User } from './types';
 import { getUserDetails } from 'core/API/auth';
 import { Loader } from 'shared/elements/Loader';
 import { useAxiosInterceptors } from './hooks';
+import { useQuery } from '@tanstack/react-query';
 
 export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [invalidTenant, setInvalidTenant] = useState(false);
   const [internalServerError, setInternalServerError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const isResetPasswordRoute = useMatch('/login/password-reset');
 
@@ -26,25 +20,20 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
 
   useAxiosInterceptors({ setUser, setInvalidTenant, setInternalServerError });
 
-  useEffect(function onMount() {
-    getUser();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const getUser = useCallback(async () => {
-    setIsLoading(true);
-    getUserDetails()
-      .then(({ data }) => {
-        setUser(data);
-      })
-      .catch(() => {
-        if (!isResetPasswordRoute) {
-          navigate('/login');
-        }
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [navigate, isResetPasswordRoute]);
+  const { refetch: getUser } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: getUserDetails,
+    onSuccess: userData => {
+      setUser(userData);
+      setIsLoading(false);
+    },
+    onError: () => {
+      if (!isResetPasswordRoute) {
+        navigate('/login');
+      }
+      setIsLoading(false);
+    }
+  });
 
   const values = useMemo(
     () => ({

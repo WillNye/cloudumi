@@ -5,4 +5,23 @@
   justify-content: center;
   align-items: center;
   flex-direction: column;
+
+  .title {
+    padding: var(--spacing-lg) 0px;
+  }
+
+  .description {
+    max-width: 450px;
+    text-align: center;
+    padding: 0px var(--spacing-lg);
+  }
+
+  .warning {
+    max-width: 600px;
+    text-align: center;
+    padding: 0px var(--spacing-lg);
+    color: var(--gray-200);
+    font-style: italic;
+    font-size: 13px;
+  }
 }

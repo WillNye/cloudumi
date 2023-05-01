@@ -48,9 +48,10 @@ export const verifyMFA = (data: VerifyMFAParams) => {
   return axios.post(url, data);
 };
 
-export const getUserDetails = () => {
+export const getUserDetails = async () => {
   const url = `${V2_API_URL}/user_profile`;
-  return axios.get(url);
+  const response = await axios.get(url);
+  return response.data;
 };
 
 export const completePassword = (data: CompletePasswordParams) => {
@@ -68,9 +69,11 @@ export const signinWithSSO = () => {
   return axios.get(url);
 };
 
-export const awsSignIn = (role: string) => {
+export const awsSignIn = async ({ queryKey }) => {
+  const [_, role] = queryKey;
   const url = `${V2_API_URL}/role_login/${role}`;
-  return axios.get(url);
+  const response = await axios.get(url);
+  return response.data;
 };
 
 export const getEndUserAgreement = () => {

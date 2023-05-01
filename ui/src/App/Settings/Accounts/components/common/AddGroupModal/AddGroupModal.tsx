@@ -10,19 +10,25 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { extractErrorMessage } from 'core/API/utils';
 import { AxiosError } from 'axios';
 import { createGroup } from 'core/API/settings';
-
-import styles from './AddGroupModal.module.css';
 import { Notification, NotificationType } from 'shared/elements/Notification';
+import { useMutation } from '@tanstack/react-query';
+import styles from './AddGroupModal.module.css';
+
+type CreateGroupParams = { name: string; description: string };
 
 const addGroupSchema = Yup.object().shape({
   name: Yup.string().required('Required'),
   description: Yup.string().required('Required')
 });
 
-export const AddGroupModal = () => {
+export const AddGroupModal = ({ refreshData }) => {
   const [showDialog, setShowDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const createGroupMutation = useMutation({
+    mutationFn: (data: CreateGroupParams) => createGroup(data)
+  });
 
   const {
     register,
@@ -38,23 +44,26 @@ export const AddGroupModal = () => {
     }
   });
 
-  const onSubmit = useCallback(async ({ name, description }) => {
-    setErrorMessage(null);
-    setSuccessMessage(null);
-    try {
-      await createGroup({
-        name,
-        description
-      });
-      setSuccessMessage('Successfully added new group');
-      // TODO refetch all groups
-    } catch (error) {
-      const err = error as AxiosError;
-      const errorRes = err?.response;
-      const errorMsg = extractErrorMessage(errorRes?.data);
-      setErrorMessage(errorMsg || 'An error occurred while adding new group');
-    }
-  }, []);
+  const onSubmit = useCallback(
+    async ({ name, description }) => {
+      setErrorMessage(null);
+      setSuccessMessage(null);
+      try {
+        await createGroupMutation.mutateAsync({
+          name,
+          description
+        });
+        setSuccessMessage('Successfully added new group');
+        refreshData();
+      } catch (error) {
+        const err = error as AxiosError;
+        const errorRes = err?.response;
+        const errorMsg = extractErrorMessage(errorRes?.data);
+        setErrorMessage(errorMsg || 'An error occurred while adding new group');
+      }
+    },
+    [refreshData, createGroupMutation]
+  );
 
   return (
     <div className={styles.container}>

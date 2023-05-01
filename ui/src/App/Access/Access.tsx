@@ -1,11 +1,9 @@
-import { FC, useCallback, useState } from 'react';
+import { FC, useState } from 'react';
 
 import css from './Access.module.css';
 import { ROLES_TABS } from './constants';
 import EligibleRoles from './components/EligibleRoles/EligibleRoles';
 import AllRoles from './components/AllRoles';
-import { getAllRoles, getEligibleRoles } from 'core/API/roles';
-import { extractErrorMessage } from 'core/API/utils';
 
 export interface AccessRole {
   arn: string;
@@ -18,42 +16,6 @@ export interface AccessRole {
 
 export const Access: FC = () => {
   const [currentTab, setCurrentTab] = useState(ROLES_TABS.ELIGIBLE_ROLES);
-  const [eligibleRolesData, setEligibleRolesData] = useState([]);
-  const [allRolesData, setAllRolesData] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState(null);
-
-  const callGetEligibleRoles = useCallback((query = {}) => {
-    setIsLoading(true);
-    setErrorMsg(null);
-    getEligibleRoles(query)
-      .then(({ data }) => {
-        setEligibleRolesData(data.data);
-      })
-      .catch(error => {
-        const errorMessage = extractErrorMessage(error);
-        setErrorMsg(errorMessage);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, []);
-
-  const callGetAllRoles = useCallback(() => {
-    setIsLoading(true);
-    setErrorMsg(null);
-    getAllRoles()
-      .then(({ data }) => {
-        setAllRolesData(data.data);
-      })
-      .catch(error => {
-        const errorMessage = extractErrorMessage(error);
-        setErrorMsg(errorMessage);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, []);
 
   return (
     <div className={css.container}>
@@ -82,17 +44,9 @@ export const Access: FC = () => {
       </div>
 
       {currentTab === ROLES_TABS.ELIGIBLE_ROLES ? (
-        <EligibleRoles
-          data={eligibleRolesData}
-          getData={callGetEligibleRoles}
-          isLoading={isLoading}
-        />
+        <EligibleRoles />
       ) : (
-        <AllRoles
-          data={allRolesData}
-          getData={callGetAllRoles}
-          isLoading={isLoading}
-        />
+        <AllRoles />
       )}
     </div>
   );

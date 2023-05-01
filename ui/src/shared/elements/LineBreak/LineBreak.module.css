@@ -1,0 +1,16 @@
+.lineBreak {
+  width: 100%;
+  clear: both;
+}
+
+.small {
+  height: 0.5rem;
+}
+
+.medium {
+  height: 1rem;
+}
+
+.large {
+  height: 2rem;
+}
