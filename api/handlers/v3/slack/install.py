@@ -1,4 +1,3 @@
-import re
 from urllib.parse import urljoin
 
 import tornado
@@ -355,9 +354,8 @@ class AsyncSlackOAuthHandler(TornadoRequestHandler):
                 # browser for this domain.
                 # Decode tenant from the state that was passed back from Slack
                 self.request.headers["Cookie"] = f"slack-app-oauth-state={state}"
-                bolt_resp = await oauth_flow.handle_callback(
-                    to_async_bolt_request(self.request)
-                )
+                bolt_request = to_async_bolt_request(self.request)
+                bolt_resp = await oauth_flow.handle_callback(bolt_request)
                 # TODO: Store tenant and Slack relationship
 
                 # team_id = bolt_resp.body['team']['id']
@@ -365,23 +363,40 @@ class AsyncSlackOAuthHandler(TornadoRequestHandler):
 
                 if bolt_resp.status != 200:
                     return
-                # This is so sad, but we have to parse out team_id and app_id from the body of the
-                # response because slack_bolt doesn't give us another way to get it.
-                match = re.search(r"team=(\w+)&id=(\w+)", bolt_resp.body)
-                if not match:
+
+                # through the magic of custom success handler, it sets the info into bolt_request.context
+                team_id = bolt_request.context.get("team_id")
+                app_id = bolt_request.context.get("app_id")
+                if not team_id or not app_id:
+                    # what's the appropriate message mechanism?
+                    # the response already is rended by user,
+                    # but some very sad issue that the success handler
+                    # did not setup team_id and app_id correctly.
+                    log_data = {
+                        "function": f"{type(self).__name__}.{__name__}",
+                        "user": self.user,
+                        "message": "Slack App installation flow missing team_id or app_id",
+                        "user-agent": self.request.headers.get("User-Agent"),
+                        "request_id": self.request_uuid,
+                        "tenant": tenant,
+                    }
+
+                    errors = ["Slack App installation flow missing team_id or app_id"]
+                    generic_error_message = (
+                        "Slack App installation flow missing team_id or app_id"
+                    )
+                    await handle_generic_error_response(
+                        self,
+                        generic_error_message,
+                        errors,
+                        500,
+                        "unauthorized",
+                        log_data,
+                    )
                     return
-                team_id = match.group(1)
-                app_id = match.group(2)
+
                 slack_bot = await get_slack_bot(team_id, app_id)
                 await SlackTenantInstallRelationship.create(tenant, slack_bot.id)
-                # Unfortunately, Slack isn't giving us many options to get the actual team
-                # Or enterprise IDs back.
-                # team_id_parse = re.search(r'team=([A-Z0-9]+)?[&\"]', bolt_resp.body)
-                # team_id = team_id_parse[1]
-                # TODO: Store tenant and Slack relationship
-                # Use NoqSlackInstallationStore to store based on team ID
-                # TODO: Need to get Team ID and optionally enterprise ID here
-                # Hopefully not from the bolt_resp body
                 return
         self.set_status(404)
 
