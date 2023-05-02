@@ -5,8 +5,6 @@ os.environ.setdefault(
 )
 os.environ.setdefault("AWS_PROFILE", "development/NoqSaasRoleLocalDev")
 
-from alembic import command  # noqa: E402
-from alembic.config import Config  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 
 from common.config.globals import ASYNC_PG_ENGINE  # noqa: E402
@@ -64,8 +62,3 @@ async def rebuild_tables():
             description="test",
         )
         await GroupMembership.create(user2, group2)
-
-
-def run_alembic_migrations():
-    alembic_cfg = Config("alembic.ini")
-    command.upgrade(alembic_cfg, "head")
