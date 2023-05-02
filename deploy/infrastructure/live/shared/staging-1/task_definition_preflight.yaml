@@ -6,11 +6,11 @@ containerDefinitions:
       options:
         awslogs-group: staging-noq-dev-shared-staging-1
         awslogs-region: us-west-2
-        awslogs-stream-prefix: celery-scheduler
+        awslogs-stream-prefix: cluster-preflight
     entryPoint:
       - /bin/sh
       - "-c"
-      - "python /app/common/celery_tasks/run.py"
+      - "python /app/common/preflight/run.py"
     linuxParameters:
       devices: []
       initProcessEnabled: true
@@ -21,11 +21,13 @@ containerDefinitions:
       - name: SETUPTOOLS_USE_DISTUTILS
         value: stdlib
       - name: RUNTIME_PROFILE
-        value: CELERY_SCHEDULER
+        value: PREFLIGHT
       - name: STAGE
         value: staging
     dnsServers: []
-    mountPoints: []
+    mountPoints:
+      - containerPath: /data
+        sourceVolume: efs-server-AP
     dockerSecurityOptions: []
     volumesFrom: []
     image: 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api:latest
@@ -35,13 +37,20 @@ containerDefinitions:
     pseudoTerminal: false
     readonlyRootFilesystem: false
     privileged: false
-    name: staging-noq-dev-shared-staging-1-celery-scheduler
+    name: staging-noq-dev-shared-staging-1-preflight-tasks
 placementConstraints: []
-memory: "2048"
+memory: "8192"
 taskRoleArn: arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskRole
-family: staging-noq-dev-shared-staging-1-celery-scheduler
+family: staging-noq-dev-shared-staging-1-preflight-tasks
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
-cpu: "1024"
-volumes: []
+cpu: "2048"
+volumes:
+  - name: efs-server-AP
+    efsVolumeConfiguration:
+      fileSystemId: fs-00d025e10faa53ff6
+      transitEncryption: ENABLED
+      authorizationConfig:
+        accessPointId: fsap-05a781c2b23d8ef89
+        iam: ENABLED

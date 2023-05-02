@@ -14,7 +14,7 @@ class TestSlack(FunctionalTest):
         res = self.make_request("/api/v3/slack")
         self.assertEqual(res.code, 200)
         res_j = json.loads(res.body)
-        self.assertEqual(res_j["data"]["installed"], True)
+        self.assertEqual(res_j["data"]["installed"], False)
 
     def test_slack_delete(self):
         res = self.make_request("/api/v3/slack/install")

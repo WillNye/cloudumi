@@ -269,6 +269,7 @@ if __name__ == "__main__":
         )
         sys.exit(1)
 
+    terraform_config["version"] = get_current_git_version()
     terraform_config = __add_ecr_registry_aws_link(terraform_config)
     terraform_config = __set_aws_profile(terraform_config)
     terraform_config = replace_str_in_attribute(
@@ -343,6 +344,12 @@ if __name__ == "__main__":
     write_file(
         "task_definition_celery_worker.yaml.jinja2",
         "task_definition_celery_worker.yaml",
+        terraform_config,
+        config_output_path,
+    )
+    write_file(
+        "task_definition_preflight.yaml.jinja2",
+        "task_definition_preflight.yaml",
         terraform_config,
         config_output_path,
     )
