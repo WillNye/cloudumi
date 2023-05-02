@@ -49,9 +49,6 @@ class Tenant(SoftDeleteMixin, Base):
     async def delete(self):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
-                # for group in self.groups:
-                #     session.delete(group)
-                # await session.commit()
                 await session.delete(self)
                 await session.commit()
         return True

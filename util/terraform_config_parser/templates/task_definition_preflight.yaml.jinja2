@@ -10,7 +10,7 @@ containerDefinitions:
     entryPoint:
       - /bin/sh
       - "-c"
-      - 'python /app/common/preflight/run.py'
+      - 'python /app/common/preflight/run.py && (python api/__main__.py & echo $! > api_pid.txt) & (sleep 10; cd ui; cypress run; cypress_exit_code=$?; kill $(cat ../api_pid.txt); exit $cypress_exit_code)'
     linuxParameters:
       devices: [ ]
       initProcessEnabled: true

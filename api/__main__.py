@@ -47,11 +47,6 @@ if configured_profiler:
         raise ValueError(f"Profiler {configured_profiler} not supported")
 
 
-async def run_cypress_ui_tests_after_server_start():
-    await asyncio.sleep(1)  # Give the server some time to start before running tests
-    await functional_tests.run_cypress_ui_tests()
-
-
 def main():
     if config.get("_global_.sso.create_mock_jwk"):
         app = make_app(jwt_validator=lambda x: {})
@@ -108,7 +103,6 @@ def init():
         signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
         fluent_bit.add_fluent_bit_service()
         loop = asyncio.get_event_loop()
-        loop.create_task(run_cypress_ui_tests_after_server_start())
         for s in signals:
             loop.add_signal_handler(
                 s, lambda s=s: asyncio.create_task(shutdown(s, loop))
