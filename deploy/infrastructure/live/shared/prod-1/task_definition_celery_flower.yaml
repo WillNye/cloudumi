@@ -32,7 +32,7 @@ containerDefinitions:
     mountPoints: []
     dockerSecurityOptions: []
     volumesFrom: []
-    image: 940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-api:prod
+    image: 940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-api:latest
     essential: true
     links: []
     extraHosts: []
