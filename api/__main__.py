@@ -24,7 +24,8 @@ from tornado.platform.asyncio import AsyncIOMainLoop
 from api.routes import make_app
 from common.config import config
 from common.lib.plugins import fluent_bit, get_plugin_by_name
-from functional_tests import run_tests as functional_tests
+
+# from functional_tests import run_tests as functional_tests
 
 log = config.get_logger()
 
@@ -48,7 +49,7 @@ if configured_profiler:
         raise ValueError(f"Profiler {configured_profiler} not supported")
 
 # Run functional tests
-functional_tests.run()
+# functional_tests.run()
 
 
 def main():

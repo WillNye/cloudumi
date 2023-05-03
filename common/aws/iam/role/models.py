@@ -1,8 +1,8 @@
-import json
 import sys
 from datetime import datetime
 from typing import Dict, Iterable, Optional, Sequence, Type
 
+from async_lru import alru_cache
 from botocore.exceptions import ClientError
 from pynamodax.attributes import ListAttribute, NumberAttribute, UnicodeAttribute
 from pynamodax.exceptions import DoesNotExist
@@ -11,6 +11,7 @@ from pynamodax.models import _T, _KeyType
 from pynamodax.pagination import ResultIterator
 from pynamodax.settings import OperationSettings
 
+import common.lib.noq_json as json
 from common.aws.base_model import TagMap
 from common.aws.iam.role.utils import (
     _clone_iam_role,
@@ -401,6 +402,7 @@ class IAMRole(NoqModel):
         return await cls._parse_results(results)
 
     @classmethod
+    @alru_cache(maxsize=128, ttl=60)
     async def query(
         cls: Type[_T],
         hash_key: _KeyType,

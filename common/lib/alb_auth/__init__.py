@@ -1,5 +1,4 @@
 import base64
-import json
 import sys
 
 import jwt
@@ -15,6 +14,7 @@ from jwt.exceptions import (
 )
 from okta_jwt.utils import verify_exp, verify_iat
 
+import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import MissingConfigurationValue, UnableToAuthenticate
 

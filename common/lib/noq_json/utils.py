@@ -63,3 +63,19 @@ def loads(s: str, **kwargs) -> any:
     except ValueError:
         result = json.loads(s, **kwargs)
     return result
+
+
+def load(f, **kwargs) -> any:
+    try:
+        result = ujson.load(f, **kwargs)
+    except ValueError:
+        result = json.load(f, **kwargs)
+    return result
+
+
+def dump(obj, f, **kwargs) -> any:
+    try:
+        result = ujson.dump(obj, f, **kwargs)
+    except ValueError:
+        result = json.dump(obj, f, **kwargs)
+    return result

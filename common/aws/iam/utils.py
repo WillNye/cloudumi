@@ -1,10 +1,10 @@
 import copy
-import json
 import os
 import pathlib
 import sys
 from typing import Optional
 
+import common.lib.noq_json as json
 from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
