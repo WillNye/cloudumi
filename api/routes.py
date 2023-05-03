@@ -16,6 +16,7 @@ from api.handlers.v4.aws.roles import RolesHandlerV4
 from api.handlers.v4.groups.manage_group_memberships import (
     ManageGroupMembershipsHandler,
 )
+from api.handlers.v4.iambic.handler import IambicResourcesHandler
 from api.handlers.v4.resources.datatable import ResourcesDataTableHandler
 from api.handlers.v4.scim.groups import ScimV2GroupHandler, ScimV2GroupsHandler
 from api.handlers.v4.scim.users import ScimV2UserHandler, ScimV2UsersHandler
@@ -469,6 +470,7 @@ def make_app(jwt_validator=None):
         (r"/api/v4/roles/access/?", ManageRoleAccessHandler),
         (r"/api/v4/roles", RolesHandlerV4),
         (r"/api/v4/resources/datatable/?", ResourcesDataTableHandler),
+        (r"/api/v4/resources/iambic/(.*)", IambicResourcesHandler),
     ]
 
     router = RuleRouter(routes)
