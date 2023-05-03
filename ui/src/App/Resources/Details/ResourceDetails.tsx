@@ -1,8 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { mockData } from './mockData';
-// Replace this with the actual API function to fetch the template details
-// import { getTemplateDetails } from 'core/API/resources';
+import { useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { Uri } from 'monaco-editor';
 import { setDiagnosticsOptions } from 'monaco-yaml';
 import schema from './aws_iam_role_template.json';
@@ -12,6 +9,12 @@ import { Button } from 'shared/elements/Button';
 import styles from './ResourceDetails.module.css';
 import { Breadcrumbs } from 'shared/elements/Breadcrumbs';
 import { LineBreak } from 'shared/elements/LineBreak';
+import { useQuery } from '@tanstack/react-query';
+import { getResource } from 'core/API/resources';
+import { NotFound } from 'App/NotFound/NotFound';
+import { Loader } from 'shared/elements/Loader';
+import { AxiosError } from 'axios';
+import { extractErrorMessage } from 'core/API/utils';
 
 const configureYAMLSchema = async (
   editorInstance: any,
@@ -19,7 +22,7 @@ const configureYAMLSchema = async (
   content: string
 ) => {
   const modelUri = Uri.parse('inmemory://model/main.yaml');
-  //const monaco = editorInstance.getModel().getMode()._worker(monaco);
+  // const monaco = editorInstance.getModel().getMode()._worker(monaco);
   console.log(editorInstance);
   console.log(monaco);
 
@@ -39,56 +42,39 @@ const configureYAMLSchema = async (
   });
   const model = monaco.editor.createModel(content, 'yaml', modelUri);
   editorInstance.setModel(model);
-  // monaco.editor.createModel(content, 'yaml', modelUri);
+  monaco.editor.createModel(content, 'yaml', modelUri);
 };
 
 const ResourcesDetails = () => {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isModified, setIsModified] = useState<boolean>(false);
+
   const { provider, '*': fullPath } = useParams<{
     provider: string;
     '*': string;
   }>();
-  const [orgName, repoName, ...filePathParts] = fullPath.split('/');
-  const fullRepoName = `${orgName}/${repoName}`;
-  const filePath = filePathParts.join('/') + '.yaml';
-  const [templateContent, setTemplateContent] = useState<string>('');
-  const [isModified, setIsModified] = useState<boolean>(false);
 
-  async function getTemplateDetails(repoName: string, filePath: string) {
-    // TODO: Implement this function to fetch the template details
-    return { data: { file_content: '123' } }; // Return an empty object for now
-  }
-
-  async function fetchTemplateDetails() {
-    try {
-      const response = await getTemplateDetails(repoName, filePath);
-      setTemplateContent(response.data.file_content);
-    } catch (error) {
-      console.error('Error fetching template details:', error);
+  const { data, isLoading } = useQuery({
+    queryFn: getResource,
+    queryKey: ['getResource', `${provider}/${fullPath}`],
+    onError: (error: AxiosError) => {
+      const errorRes = error?.response;
+      const errorMsg = extractErrorMessage(errorRes?.data);
+      setErrorMessage(errorMsg || 'An error occurred fetching resource');
     }
-  }
-
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      // Use the resourceId to find the corresponding mock resource
-      const mockResource = mockData.find(
-        resource => resource.file_path === filePath
-      );
-
-      // If the mock resource is found, set the content to the file_contents property
-      if (mockResource) {
-        setTemplateContent(mockResource.file_contents);
-      } else {
-        console.error(`Resource with identifier "${filePath}" not found.`);
-      }
-    } else {
-      fetchTemplateDetails();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filePath]);
+  });
 
   const handleEditorChange = (value: string) => {
-    setIsModified(value !== templateContent);
+    setIsModified(value !== data?.raw_template_yaml);
   };
+
+  if (isLoading) {
+    return <Loader />;
+  }
+
+  if (errorMessage) {
+    return <NotFound />;
+  }
 
   return (
     <div className={styles.container}>
@@ -98,21 +84,57 @@ const ResourcesDetails = () => {
         <Breadcrumbs
           items={[
             { name: 'Resources', url: '/resources' },
-            { name: 'template_name', url: '/resources' }
+            { name: `${provider}/${fullPath}`, url: `/${provider}/${fullPath}` }
           ]}
         />
       </div>
 
+      <div className={styles.details}>
+        <table className={styles.table}>
+          <tbody>
+            <tr>
+              <td>Template Type</td>
+              <td>{data?.template_type}</td>
+            </tr>
+            <tr>
+              <td>Identifier</td>
+              <td>{data?.identifier}</td>
+            </tr>
+            <tr>
+              <td>Description</td>
+              <td>{data?.description}</td>
+            </tr>
+            <tr>
+              <td>File path</td>
+              <td>{data?.file_path}</td>
+            </tr>
+            <tr>
+              <td>External Link</td>
+              <td>
+                <Link to={data?.external_link} target="_blank">
+                  Click here
+                </Link>
+              </td>
+            </tr>
+            <tr>
+              <td>Last Updated</td>
+              <td>{new Date(data?.last_updated).toUTCString()}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <div className={styles.section}>
-        <div className={styles.sidebar}>Resource</div>
+        <h4 className={styles.sidebar}>Resource History</h4>
         <div className={styles.content}>
           <div className={styles.editor}>
             <CodeEditor
+              height="100%"
               defaultLanguage="yaml"
-              value={templateContent}
+              value={data?.raw_template_yaml}
               onChange={handleEditorChange}
               onMount={(editor, monaco) =>
-                configureYAMLSchema(editor, monaco, templateContent)
+                configureYAMLSchema(editor, monaco, data?.raw_template_yaml)
               }
             />
           </div>

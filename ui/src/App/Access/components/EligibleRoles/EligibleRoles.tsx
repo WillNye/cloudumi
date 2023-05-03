@@ -44,9 +44,13 @@ const EligibleRoles = () => {
   });
 
   useEffect(() => {
-    setQuery(exstingQuery => ({
-      ...exstingQuery,
-      filtering: filter
+    setQuery(existingQuery => ({
+      ...existingQuery,
+      filtering: filter,
+      pagination: {
+        ...existingQuery.pagination,
+        currentPageIndex: 1
+      }
     }));
   }, [filter]);
 
