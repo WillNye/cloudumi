@@ -91,7 +91,12 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
         maybe_set_security_headers(self)
 
     async def prepare(self):
-        unprotected_routes = ["/healthcheck", "/api/v3/tenant_registration"]
+        unprotected_routes = [
+            "/healthcheck",
+            "/api/v3/tenant_registration",
+            "/api/v3/slack/oauth_redirect",
+            "/api/v3/slack/events",
+        ]
         tenant = self.get_tenant_name()
         # Ensure request is for a valid tenant
         if config.is_tenant_configured(tenant):
@@ -105,7 +110,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
             return
 
         # Ignore unprotected routes, like /healthcheck
-        if self.request.uri in unprotected_routes:
+        if self.request.path in unprotected_routes:
             return
 
         # Complain loudly that we don't have a configuration for the tenant. Instruct
@@ -400,6 +405,7 @@ class BaseHandler(TornadoRequestHandler):
             return True
         return False
 
+    # @async_profile
     async def authorization_flow(
         self,
         user: Optional[str] = None,
@@ -471,6 +477,7 @@ class BaseHandler(TornadoRequestHandler):
 
         # Validate auth cookie and use it to retrieve group information
         if auth_cookie:
+            # Is this slow?
             res = await validate_and_return_jwt_token(auth_cookie, tenant)
             if isinstance(res, dict):
                 self.user = res.get("user")
@@ -817,7 +824,6 @@ class BaseHandler(TornadoRequestHandler):
             "MfaHandler",
             "AuthenticatedStaticFileHandler",
         ]:
-
             self.write(
                 WebResponse(
                     status_code=403,
@@ -956,6 +962,7 @@ class BaseHandler(TornadoRequestHandler):
         cookie_name = self.get_noq_auth_cookie_key()
         self.clear_cookie(cookie_name)
 
+    # @async_profile
     async def set_jwt_cookie(self, tenant, roles: list = None):
         expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
             minutes=config.get_tenant_specific_key(
@@ -1277,6 +1284,7 @@ class BaseAdminHandler(BaseHandler):
         self.set_header("Content-Type", "application/json")
         super(BaseAdminHandler, self).set_default_headers()
 
+    # @async_profile
     async def authorization_flow(
         self,
         user: str = None,

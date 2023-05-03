@@ -1,13 +1,22 @@
 import os
 
+import slack_bolt
+
 from api.handlers.v3.automatic_policy_request_handler.aws import (
     AutomaticPolicyRequestHandler,
+)
+from api.handlers.v3.slack.install import (
+    AsyncSlackEventsHandler,
+    AsyncSlackHandler,
+    AsyncSlackInstallHandler,
+    AsyncSlackOAuthHandler,
 )
 from api.handlers.v3.typeahead import UserAndGroupTypeAheadHandler
 from api.handlers.v4.aws.roles import RolesHandlerV4
 from api.handlers.v4.groups.manage_group_memberships import (
     ManageGroupMembershipsHandler,
 )
+from api.handlers.v4.resources.datatable import ResourcesDataTableHandler
 from api.handlers.v4.scim.groups import ScimV2GroupHandler, ScimV2GroupsHandler
 from api.handlers.v4.scim.users import ScimV2UserHandler, ScimV2UsersHandler
 from api.handlers.v4.users.login import LoginHandler, MfaHandler
@@ -141,7 +150,6 @@ from api.handlers.v3.services.aws.role_access import (
 from api.handlers.v3.services.effective_role_policy import (
     EffectiveUnusedRolePolicyHandler,
 )
-from api.handlers.v3.slack import SlackIntegrationConfigurationCrudHandler
 from api.handlers.v3.tenant_details.handler import (
     EulaHandler,
     TenantDetailsHandler,
@@ -159,8 +167,23 @@ from api.handlers.v4.requests import IambicRequestCommentHandler, IambicRequestH
 from api.handlers.v4.role_access.manage_role_access import ManageRoleAccessHandler
 from common.config import config
 from common.lib.sentry import before_send_event
+from common.lib.slack.app import get_slack_app
 
 UUID_REGEX = "[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}"
+
+logger = config.get_logger()
+
+
+class CookieMatcher(PathMatches):
+    def __init__(self, pattern, cookie_name):
+        super().__init__(pattern)
+        self.cookie_name = cookie_name
+
+    def match(self, request):
+        path_match = super().match(request)
+        if path_match is not None and self.cookie_name in request.cookies:
+            return path_match
+        return None
 
 
 def make_app(jwt_validator=None):
@@ -170,9 +193,19 @@ def make_app(jwt_validator=None):
         "_global_.web.path", pkg_resources.resource_filename("api", "templates")
     )
 
+    frontend_v2_path = "ui/dist"
+
     docs_path = os.getenv("DOCS_PATH") or config.get(
         "_global_.docs.path", pkg_resources.resource_filename("api", "docs")
     )
+
+    try:
+        slack_app = get_slack_app()
+    except slack_bolt.error.BoltError:
+        slack_app = None
+        logger.warning("Slack app not configured")
+    except Exception as exc:
+        logger.exception(f"Error configuring Slack app: {exc}")
 
     routes = [
         (r"/auth/?", AuthHandler),  # /auth is still used by OIDC callback
@@ -324,10 +357,6 @@ def make_app(jwt_validator=None):
             IpRestrictionsRequesterIpOnlyToggleHandler,
         ),
         (
-            r"/api/v3/slack/?",
-            SlackIntegrationConfigurationCrudHandler,
-        ),
-        (
             r"/api/v3/auth/sso/google/?",
             GoogleOidcIdpConfigurationCrudHandler,
         ),
@@ -368,6 +397,23 @@ def make_app(jwt_validator=None):
             r"/docs/?(.*)",
             AuthenticatedStaticFileHandler,
             {"path": docs_path, "default_filename": "index.html"},
+        ),
+        (r"/api/v3/slack/events", AsyncSlackEventsHandler, dict(app=slack_app)),
+        (
+            r"/api/v3/slack/install/?",
+            AsyncSlackInstallHandler,
+            dict(app=slack_app),
+        ),
+        (
+            r"/api/v3/slack/install/?(.*)",
+            AsyncSlackInstallHandler,
+            dict(app=slack_app),
+        ),
+        (r"/api/v3/slack/?", AsyncSlackHandler, dict(app=slack_app)),
+        (
+            r"/api/v3/slack/oauth_redirect/?(.*)",
+            AsyncSlackOAuthHandler,
+            dict(app=slack_app),
         ),
         # (r"/api/v3/identities/groups_page_config", IdentityGroupPageConfigHandler),
         # (r"/api/v3/identities/groups", IdentityGroupsTableHandler),
@@ -422,9 +468,11 @@ def make_app(jwt_validator=None):
         (r"/api/v4/scim/v2/Group/(.*)", ScimV2GroupHandler),
         (r"/api/v4/roles/access/?", ManageRoleAccessHandler),
         (r"/api/v4/roles", RolesHandlerV4),
+        (r"/api/v4/resources/datatable/?", ResourcesDataTableHandler),
     ]
 
     router = RuleRouter(routes)
+
     for domain in config.get("_global_.landing_page_domains", []):
         router.rules.append(
             Rule(
@@ -451,6 +499,13 @@ def make_app(jwt_validator=None):
             UnauthenticatedFileHandler,
             dict(path=frontend_path, default_filename="favicon.ico"),
         )
+    )
+    router.rules.append(
+        Rule(
+            CookieMatcher(r"/(.*)", "V2_UI"),
+            FrontendHandler,
+            dict(path=frontend_v2_path, default_filename="index.html"),
+        ),
     )
     router.rules.append(
         Rule(

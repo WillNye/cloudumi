@@ -1,8 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import styles from './CodeBlock.module.css';
-import { Icon } from '../Icon';
 import { Button } from '../Button';
-import { useTimeout } from 'react-use';
 
 export const CodeBlock = ({ children }) => {
   const [isCopied, setIsCopied] = useState(false);

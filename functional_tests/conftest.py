@@ -5,8 +5,9 @@ import urllib.parse
 from http.cookies import SimpleCookie
 
 import ujson as json
-from _pytest.config import Config
-from pytest_cov.plugin import CovPlugin
+
+# from _pytest.config import Config
+# from pytest_cov.plugin import CovPlugin
 from tornado import escape
 from tornado.testing import AsyncHTTPTestCase
 
@@ -31,18 +32,18 @@ if not TEST_USER_DOMAIN:
 TEST_USER_DOMAIN_US = TEST_USER_DOMAIN.replace(".", "_")
 
 
-# @pytest.mark.tryfirst
-def pytest_configure(config: Config) -> None:
-    """Setup default pytest options."""
-    config.option.cov_report = {
-        "term-missing": None,
-        "html": "cov_html",
-    }
-    config.option.cov_branch = True
-    config.pluginmanager.register(
-        CovPlugin(config.option, config.pluginmanager), "_cov"
-    )
-    disable_coverage_on_deployment(config)
+# # @pytest.mark.tryfirst
+# def pytest_configure(config: Config) -> None:
+#     """Setup default pytest options."""
+#     config.option.cov_report = {
+#         "term-missing": None,
+#         "html": "cov_html",
+#     }
+#     config.option.cov_branch = True
+#     config.pluginmanager.register(
+#         CovPlugin(config.option, config.pluginmanager), "_cov"
+#     )
+#     disable_coverage_on_deployment(config)
 
 
 def disable_coverage_on_deployment(config):
@@ -64,14 +65,9 @@ class FunctionalTest(AsyncHTTPTestCase):
     maxDiff = None
     cookies = SimpleCookie()
 
-    token = asyncio.run(
-        generate_jwt_token(
-            TEST_USER_NAME,
-            TEST_USER_GROUPS,
-            TEST_USER_DOMAIN_US,
-            eula_signed=True,
-        )
-    )
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.token = None
 
     def get_app(self):
         """
@@ -129,6 +125,17 @@ class FunctionalTest(AsyncHTTPTestCase):
         if not headers.get("Content-Type"):
             headers["Content-Type"] = "application/json"
         headers["Host"] = TEST_USER_DOMAIN
+
+        if not self.token:
+            self.token = asyncio.run(
+                generate_jwt_token(
+                    TEST_USER_NAME,
+                    TEST_USER_GROUPS,
+                    TEST_USER_DOMAIN_US,
+                    eula_signed=True,
+                )
+            )
+
         self.cookies["noq_auth"] = self.token
         headers["X-Forwarded-For"] = "127.0.0.1"
 
@@ -149,7 +156,7 @@ class FunctionalTest(AsyncHTTPTestCase):
             body = json.dumps(body)
         if body is not None and body_type == "urlencode":
             body = urllib.parse.urlencode(body)
-        if method == "post":
+        if method.lower() == "post":
             r = self.fetch(
                 path,
                 body=body,
@@ -159,7 +166,10 @@ class FunctionalTest(AsyncHTTPTestCase):
                 request_timeout=request_timeout,
             )
             return r
-        if method == "get":
+        if method.lower() == "get":
             r = self.fetch(path, body=body, headers=headers)
+            return r
+        if method.lower() == "delete":
+            r = self.fetch(path, body=body, headers=headers, method="DELETE")
             return r
         raise Exception("Invalid method")

@@ -85,13 +85,14 @@ const editorDidMount = (editor, monaco) => {
       return await getMonacoCompletions(model, position, monaco)
     },
   })
+
   editor.onDidChangeModelDecorations(() => {
     const model = editor.getModel()
-    if (model === null || model.getModeId() !== 'json') {
+    if (model === null || model.id !== 'json') {
       return
     }
 
-    const owner = model.getModeId()
+    const owner = model.id
     const uri = model.uri
     const markers = monaco.editor.getModelMarkers({ owner, resource: uri })
     onLintError(

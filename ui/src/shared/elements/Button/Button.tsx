@@ -56,7 +56,7 @@ export const Button: FC<ButtonProps & ButtonRef> = forwardRef(
           navigate(href);
           return;
         }
-        onClick && onClick(event);
+        onClick?.(event);
       },
       [onClick, asAnchor, href, navigate]
     );

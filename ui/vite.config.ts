@@ -9,30 +9,32 @@ import fs from 'fs';
 export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd());
 
+  const plugins = [
+    svgrPlugin(),
+    tsconfigPaths(),
+    react(),
+    checker({
+      typescript: true
+    })
+  ];
+
+  if (mode !== 'production') {
+    plugins.push(eslint());
+  }
+
   const config = {
-    plugins: [
-      svgrPlugin(),
-      tsconfigPaths(),
-      react(),
-      eslint(),
-      checker({
-        typescript: true
-      })
-    ],
-    define: {
-      // AWS Amplify throws error about global undefined
-      // Reference: https://github.com/vitejs/vite/discussions/5912#discussioncomment-2908994
-      global: {}
-    },
+    plugins,
     server: {
       port: 3000,
       open: true,
       host: '127.0.0.1',
-      https: {
-        // Reference: https://stackoverflow.com/questions/69417788/vite-https-on-localhost
-        key: fs.readFileSync('./.certs/server.key.pem'),
-        cert: fs.readFileSync('./.certs/server.pem')
-      },
+      https:
+        command === 'serve'
+          ? {
+              key: fs.readFileSync('./.certs/server.key.pem'),
+              cert: fs.readFileSync('./.certs/server.pem')
+            }
+          : undefined,
       proxy: {
         '/auth': {
           target: env.VITE_API_URL,
@@ -58,14 +60,16 @@ export default defineConfig(({ mode, command }) => {
     },
     test: {
       globals: true,
-      environment: 'jsdom'
+      environment: 'happy-dom',
+      coverage: {
+        reporter: ['text', 'json', 'html'],
+        all: true,
+        include: ['src/**/*']
+      }
     }
   };
 
-  // Make CSS module names less annoying in dev mode
   if (command === 'serve') {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     config.css = {
       modules: {
         generateScopedName: '[name]-[local]'

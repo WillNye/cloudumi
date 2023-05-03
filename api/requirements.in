@@ -37,6 +37,7 @@ PyYAML
 requests
 retrying
 ruamel.yaml
+ruamel-yaml-clib
 sentry_sdk
 simplejson
 tornado

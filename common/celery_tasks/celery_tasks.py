@@ -90,6 +90,7 @@ from common.lib.cloudtrail.auto_perms import detect_cloudtrail_denies_and_update
 from common.lib.event_bridge.role_updates import detect_role_changes_and_update_cache
 from common.lib.generic import un_wrap_json_and_dump_values
 from common.lib.git import store_iam_resources_in_git
+from common.lib.iambic.git import IambicGit
 from common.lib.iambic.sync import sync_all_iambic_data
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import get_aws_config_history_url_for_resource
@@ -2803,6 +2804,35 @@ def workos_cache_users_from_directory() -> Dict:
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
+def sync_iambic_templates_for_tenant(tenant: str) -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    log_data = {
+        "function": function,
+        "message": "Syncing Iambic Templates",
+        "tenant": tenant,
+    }
+    log.debug(log_data)
+    iambic = IambicGit(tenant)
+    async_to_sync(iambic.clone_or_pull_git_repos)()
+    async_to_sync(iambic.gather_templates_for_tenant)()
+    return log_data
+
+
+@app.task(soft_time_limit=600, **default_retry_kwargs)
+def sync_iambic_templates_all_tenants() -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    log_data = {
+        "function": function,
+        "message": "Syncing Iambic Templates",
+    }
+    log.debug(log_data)
+    tenants = get_all_tenants()
+    for tenant in tenants:
+        sync_iambic_templates_for_tenant.delay(tenant)
+    return log_data
+
+
+@app.task(soft_time_limit=600, **default_retry_kwargs)
 def cache_iambic_data_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
@@ -2810,6 +2840,8 @@ def cache_iambic_data_for_all_tenants() -> Dict:
         "message": "Caching Iambic Data",
     }
     log.debug(log_data)
+    # TODO: MUST be converted to a celery task per tenant, otherwise we lose
+    # scalability
     async_to_sync(sync_all_iambic_data)()
 
     return log_data
@@ -2939,7 +2971,7 @@ schedule = {
     "cache_access_advisor_across_accounts_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_access_advisor_across_accounts_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": get_schedule(60 * 6),
+        "schedule": get_schedule(60 * 24),
     },
     # "cache_identities_for_all_tenants": {
     #     "task": "common.celery_tasks.celery_tasks.cache_identities_for_all_tenants",
@@ -2966,6 +2998,11 @@ schedule = {
         "options": {"expires": 180},
         "schedule": get_schedule(60 * 6),
     },
+    "sync_iambic_templates_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.sync_iambic_templates_all_tenants",
+        "options": {"expires": 180},
+        "schedule": get_schedule(60),
+    },
     "cache_iambic_data_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_iambic_data_for_all_tenants",
         "options": {"expires": 180},
@@ -2989,3 +3026,27 @@ app.autodiscover_tasks(
 
 app.conf.beat_schedule = schedule
 app.conf.timezone = "UTC"
+
+# TODO: Check status of Pull Requests via Slack App
+
+# TODO: Remove
+# TODO: Need a way to get signaled with files change in repo
+# from multiprocessing import current_process  # noqa: E402
+
+# if current_process().name == "MainProcess":
+#     tenants = get_all_tenants()
+#     import asyncio
+
+#     for tenant in tenants:
+#         if tenant != "localhost":
+#             continue
+#         sync_iambic_templates_for_tenant(tenant)
+#         iambic = IambicGit(tenant)
+#         templates = asyncio.run(iambic.gather_templates_for_tenant())
+# print("here")
+
+
+# cache_iambic_data_for_all_tenants()
+
+# TODO: Message user with information about this being reviewed
+# TODO: Determine how to map IdP groups to Slack channels

@@ -35,9 +35,11 @@ jobs:
           IAMBIC_REPO_TOKEN: ${{ secrets.IAMBIC_REPO_TOKEN }}
         run: |
           set -x
+          sudo apt-get install -y software-properties-common
           export AWS_ACCESS_KEY_ID=${{ secrets.NOQ_ECR_USER_ACCESS_KEY_ID }}
           export AWS_SECRET_ACCESS_KEY=${{ secrets.NOQ_ECR_USER_SECRET_ACCESS_KEY }}
           export PATH="$PATH:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+          export NODE_OPTIONS=--openssl-legacy-provider
           curl -sL https://deb.nodesource.com/setup_18.x | sudo bash
           curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
           curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
@@ -47,7 +49,6 @@ jobs:
           sudo apt-get install \
             libssl-dev \
             libcurl4-openssl-dev \
-            software-properties-common \
             python3.11-dev \
             build-essential \
             libpq-dev \

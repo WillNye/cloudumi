@@ -1,5 +1,8 @@
 import { Table } from 'shared/elements/Table';
-import { AWSOrganizationCoulumns } from './constants';
+import {
+  AWSOrganizationCoulumns,
+  AWS_ORGANIZATION_DELETE_MESSAGE
+} from './constants';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
@@ -22,6 +25,7 @@ const AWSOrganizations = () => {
 
   useEffect(function onMount() {
     getAllAWSOrganizations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getAllAWSOrganizations = useCallback(async () => {
@@ -75,7 +79,7 @@ const AWSOrganizations = () => {
           </Button>
           <DeleteModal
             title="Delete Aws Organization"
-            warningMessage="Are you sure you want to delete this item? This action cannot be undone and all associated data will be permanently removed."
+            warningMessage={AWS_ORGANIZATION_DELETE_MESSAGE}
             refreshData={getAllAWSOrganizations}
             onDelete={handleDeleteOrganizationAccount}
             data={item}
@@ -113,10 +117,7 @@ const AWSOrganizations = () => {
         setShowDialog={setShowDialog}
         showDialog={showDialog}
       >
-        <AWSOrganizationModal
-          onClose={() => setShowDialog(false)}
-          defaultValues={defaultData}
-        />
+        <AWSOrganizationModal defaultValues={defaultData} />
       </Dialog>
     </div>
   );

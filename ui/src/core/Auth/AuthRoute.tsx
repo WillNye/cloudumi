@@ -2,7 +2,7 @@ import { FC, PropsWithChildren } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 
-export const AuthRoute: FC<PropsWithChildren> = props => {
+export const AuthRoute: FC<PropsWithChildren> = () => {
   const { user } = useAuth();
 
   if (!user) {

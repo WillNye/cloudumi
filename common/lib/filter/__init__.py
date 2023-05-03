@@ -71,7 +71,9 @@ class FilterModel(BaseModel):
     filtering: Filter = None
 
 
-async def filter_data(data, filter_obj) -> DataTableResponse:
+async def filter_data(
+    data, filter_obj, model: Optional[BaseModel] = None
+) -> DataTableResponse:
     options = FilterModel.parse_obj(filter_obj)
     filter = options.filtering
     sorting = options.sorting
@@ -127,9 +129,18 @@ async def filter_data(data, filter_obj) -> DataTableResponse:
     if pagination and pagination.pageSize and pagination.currentPageIndex:
         start = (pagination.currentPageIndex - 1) * pagination.pageSize
         end = start + pagination.pageSize
-        paginated_data = filtered_data[start:end]
+        if model:
+            paginated_data = [
+                model.parse_obj(item).dict(by_alias=True)
+                for item in filtered_data[start:end]
+            ]
+        else:
+            paginated_data = filtered_data[start:end]
     else:
-        paginated_data = filtered_data
+        if model:
+            [model.parse_obj(item).dict(by_alias=True) for item in filtered_data]
+        else:
+            paginated_data = filtered_data
 
     return DataTableResponse(
         totalCount=total_count, filteredCount=filtered_count, data=paginated_data
@@ -243,6 +254,7 @@ async def filter_data_with_sqlalchemy(filter_obj, tenant, Table, allow_deleted=F
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
             query = select(Table).filter(getattr(Table, "tenant") == tenant)
+            conditions = []
             if not allow_deleted:
                 query = query.filter(getattr(Table, "deleted") == allow_deleted)
             if filter and filter.tokens:
@@ -259,7 +271,6 @@ async def filter_data_with_sqlalchemy(filter_obj, tenant, Table, allow_deleted=F
                         )
                         query = query.filter(and_(*conditions))
                 elif filter.operation == FilterOperation._or:
-                    conditions = []
                     for token in filter.tokens:
                         try:
                             token = await get_dynamic_objects_from_filter_tokens(

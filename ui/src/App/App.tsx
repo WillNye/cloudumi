@@ -1,8 +1,9 @@
 import { FC, lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
 import { AuthRoute } from 'core/Auth';
 import { Loader } from 'shared/elements/Loader';
-import './App.module.css';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Login = lazy(() => import('./Login'));
 const Settings = lazy(() => import('./Settings'));
@@ -13,6 +14,7 @@ const EULA = lazy(() => import('./EULA'));
 
 export const App: FC = () => (
   <Suspense fallback={<Loader fullPage />}>
+    <ToastContainer theme="dark" />
     <Routes>
       {/** Wrap all Route under ProtectedRoutes element */}
       <Route path="/eula" element={<EULA />} />

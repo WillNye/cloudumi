@@ -7,6 +7,7 @@ import SettingsMenu from './SettingsMenu';
 import ProfileSettings from './ProfileSettings';
 import { Helmet } from 'react-helmet-async';
 import OnBoarding from './Integrations/components/CloudProviderSettings/AWSProvider/AWSOnboarding';
+import AWSProvider from './Integrations/components/CloudProviderSettings/AWSProvider';
 
 export const Settings: FC = () => (
   <>
@@ -17,7 +18,8 @@ export const Settings: FC = () => (
       <Route path="/" element={<SettingsMenu />}>
         <Route path="/" element={<ProfileSettings />} />
         <Route path="/integrations" element={<Integrations />} />
-        <Route path="/integrations/aws" element={<OnBoarding />} />
+        <Route path="/integrations/aws" element={<AWSProvider />} />
+        <Route path="/integrations/aws/onboarding" element={<OnBoarding />} />
         <Route path="/user_management" element={<Accounts />} />
       </Route>
       <Route path="*" element={<NotFound fullPage />} />

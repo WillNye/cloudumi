@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { DiffEditor, useMonaco } from '@monaco-editor/react'
 import PropTypes from 'prop-types'
 import {
@@ -24,7 +24,6 @@ const MonacoDiffComponent = (props) => {
       : true
   )
 
-  const modifiedEditorRef = useRef()
   const [language, setLanguage] = useState('json')
   const [languageDetected, setLanguageDetected] = useState(false)
   const [activeItem, setActiveItem] = useState(
@@ -56,29 +55,28 @@ const MonacoDiffComponent = (props) => {
   )
 
   const editorDidMount = (editor, monaco) => {
-    editor._modifiedEditor.onDidChangeModelContent((_) => {
-      onChange(editor._modifiedEditor.getValue())
+    const modifiedEditor = editor.getModifiedEditor()
+    modifiedEditor.onDidChangeModelContent((_) => {
+      onChange(modifiedEditor.getValue())
     })
-    editor._modifiedEditor.onDidChangeModelDecorations(() => {
-      if (modifiedEditorRef.current) {
-        const model = modifiedEditorRef.current.getModel()
-        if (model === null || model.getModeId() !== 'json') {
-          return
-        }
-
-        const owner = model.getModeId()
-        const uri = model.uri
-        const markers = monaco.editor.getModelMarkers({ owner, resource: uri })
-        onLintError(
-          markers.map(
-            (marker) =>
-              `Lint error on line ${marker.startLineNumber} columns
-              ${marker.startColumn}-${marker.endColumn}: ${marker.message}`
-          )
-        )
+    console.log('--here--3')
+    modifiedEditor.onDidChangeModelDecorations(() => {
+      const model = modifiedEditor.getModel()
+      if (model === null || model.id !== 'json') {
+        return
       }
+
+      const owner = model.id
+      const uri = model.uri
+      const markers = monaco.editor.getModelMarkers({ owner, resource: uri })
+      onLintError(
+        markers.map(
+          (marker) =>
+            `Lint error on line ${marker.startLineNumber} columns
+              ${marker.startColumn}-${marker.endColumn}: ${marker.message}`
+        )
+      )
     })
-    modifiedEditorRef.current = editor._modifiedEditor
   }
 
   const { oldValue, newValue, readOnly } = props

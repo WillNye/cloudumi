@@ -5,11 +5,13 @@ import { User } from './types';
 type AxiosInterceptorsProps = {
   setUser: Dispatch<User | null>;
   setInvalidTenant: Dispatch<boolean>;
+  setInternalServerError: Dispatch<boolean>;
 };
 
 export const useAxiosInterceptors = ({
   setUser,
-  setInvalidTenant
+  setInvalidTenant,
+  setInternalServerError
 }: AxiosInterceptorsProps) => {
   useEffect(
     function onMount() {
@@ -25,6 +27,7 @@ export const useAxiosInterceptors = ({
           }
 
           if (error?.response?.status === 500) {
+            setInternalServerError(true);
             // log sentry error
           }
 
@@ -40,6 +43,6 @@ export const useAxiosInterceptors = ({
         axios.interceptors.request.eject(interceptor);
       };
     },
-    [setInvalidTenant, setUser]
+    [setInvalidTenant, setUser, setInternalServerError]
   );
 };

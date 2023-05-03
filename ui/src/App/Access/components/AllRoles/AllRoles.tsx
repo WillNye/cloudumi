@@ -1,5 +1,5 @@
 import { PropertyFilter, PropertyFilterProps } from '@noqdev/cloudscape';
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import MoreActions from '../common/MoreActions';
@@ -8,8 +8,10 @@ import { allRolesColumns } from '../EligibleRoles/constants';
 
 import { ROLE_PROPERTY_SEARCH_FILTER } from 'App/Access/constants';
 import css from './AllRoles.module.css';
+import { useQuery } from '@tanstack/react-query';
+import { getAllRoles } from 'core/API/roles';
 
-const AllRoles = ({ data, getData, isLoading }) => {
+const AllRoles = () => {
   const [filter, setFilter] = useState<PropertyFilterProps.Query>({
     tokens: [],
     operation: 'and'
@@ -32,12 +34,10 @@ const AllRoles = ({ data, getData, isLoading }) => {
     filtering: filter
   });
 
-  useEffect(
-    function onQueryUpdate() {
-      getData(query);
-    },
-    [query, getData]
-  );
+  const { isLoading, data: allRolesData } = useQuery({
+    queryFn: getAllRoles,
+    queryKey: ['allRoles', query]
+  });
 
   useEffect(() => {
     setQuery(exstingQuery => ({
@@ -47,9 +47,8 @@ const AllRoles = ({ data, getData, isLoading }) => {
   }, [filter]);
 
   const tableRows = useMemo(() => {
-    return data.map(item => {
+    return (allRolesData?.data || []).map(item => {
       const arn = item.arn.match(/\[(.+?)\]\((.+?)\)/)[1];
-      const roleName = arn.split(':role').pop();
       return {
         ...item,
         roleName: <Link to={`/resources/edit/${arn}`}>{arn}</Link>,
@@ -62,7 +61,7 @@ const AllRoles = ({ data, getData, isLoading }) => {
         moreActions: <MoreActions />
       };
     });
-  }, [data]);
+  }, [allRolesData]);
 
   return (
     <>

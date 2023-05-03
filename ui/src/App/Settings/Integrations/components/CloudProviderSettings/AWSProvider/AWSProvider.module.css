@@ -1,9 +1,10 @@
 .aws {
   display: flex;
-  height: 100%;
+  height: 95%;
   overflow-y: auto;
   flex-direction: column;
   width: 100%;
+  padding-bottom: var(--spacing-lg);
 
   .section {
     margin: var(--spacing-lg);

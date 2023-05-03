@@ -1,7 +1,6 @@
 import React from 'react';
 import { useMemo, useState } from 'react';
 import { useAsyncDebounce } from 'react-table';
-import { Checkbox } from 'shared/form/Checkbox';
 import { Input } from 'shared/form/Input';
 
 export const GlobalFilter = ({
@@ -169,8 +168,3 @@ export const NumberRangeColumnFilter = ({
     </div>
   );
 };
-
-interface IndeterminateCheckboxProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
-  indeterminate: boolean;
-}

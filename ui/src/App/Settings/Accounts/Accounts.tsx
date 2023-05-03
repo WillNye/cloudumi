@@ -1,9 +1,8 @@
-import { FC, useEffect, useMemo, useState } from 'react';
-import css from './Accounts.module.css';
+import { FC, useMemo, useState } from 'react';
 import { ACCOUNT_SETTINGS_TABS } from './constants';
 import Groups from './components/GroupsManagement';
 import Users from './components/UsersManagement';
-import { PropertyFilterProps } from '@noqdev/cloudscape';
+import css from './Accounts.module.css';
 
 export const AccountSettings: FC = () => {
   const [currentTab, setCurrentTab] = useState<ACCOUNT_SETTINGS_TABS>(

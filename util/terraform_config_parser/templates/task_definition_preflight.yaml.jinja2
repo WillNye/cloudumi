@@ -1,0 +1,56 @@
+executionRoleArn: {{ ecs_task_execution_role_arn }}
+containerDefinitions:
+  - dnsSearchDomains: [ ]
+    logConfiguration:
+      logDriver: awslogs
+      options:
+        awslogs-group: {{ ecs_cluster_name }}
+        awslogs-region: {{ region }}
+        awslogs-stream-prefix: cluster-preflight
+    entryPoint:
+      - /bin/sh
+      - "-c"
+      - 'python /app/common/preflight/run.py'
+    linuxParameters:
+      devices: [ ]
+      initProcessEnabled: true
+    cpu: 0
+    environment:
+      - name: CONFIG_LOCATION
+        value: {{ config_path_with_bucket }}
+      - name: SETUPTOOLS_USE_DISTUTILS
+        value: stdlib
+      - name: RUNTIME_PROFILE
+        value: PREFLIGHT
+      - name: STAGE
+        value: {{ stage }}
+    dnsServers: [ ]
+    mountPoints:
+      - containerPath: /data
+        sourceVolume: efs-server-AP
+    dockerSecurityOptions: [ ]
+    volumesFrom: [ ]
+    image: {{ registry_repository_url_api }}:latest
+    essential: true
+    links: [ ]
+    extraHosts: [ ]
+    pseudoTerminal: false
+    readonlyRootFilesystem: false
+    privileged: false
+    name: {{ ecs_cluster_name }}-preflight-tasks
+placementConstraints: [ ]
+memory: '8192'
+taskRoleArn: {{ ecs_task_role_arn }}
+family: {{ ecs_cluster_name }}-preflight-tasks
+requiresCompatibilities:
+  - FARGATE
+networkMode: awsvpc
+cpu: '2048'
+volumes:
+ - name: efs-server-AP
+   efsVolumeConfiguration:
+    fileSystemId: {{ aws_efs_data_storage_file_system_id }}
+    transitEncryption: ENABLED
+    authorizationConfig:
+      accessPointId: {{ aws_efs_data_storage_access_point_id }}
+      iam: ENABLED

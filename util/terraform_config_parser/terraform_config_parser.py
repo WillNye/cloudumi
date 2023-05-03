@@ -100,6 +100,7 @@ def upload_configuration_to_s3(terraform_config: dict):
     terraform_config[
         "config_path_with_bucket"
     ] = f"s3://{bucket_name}/{__get_key_name_from_config(terraform_config)}"
+    my_path.joinpath("configuration.yaml").unlink(missing_ok=True)
     return terraform_config
 
 
@@ -268,6 +269,7 @@ if __name__ == "__main__":
         )
         sys.exit(1)
 
+    terraform_config["version"] = get_current_git_version()
     terraform_config = __add_ecr_registry_aws_link(terraform_config)
     terraform_config = __set_aws_profile(terraform_config)
     terraform_config = replace_str_in_attribute(
@@ -321,7 +323,6 @@ if __name__ == "__main__":
         terraform_config,
         config_output_path,
     )
-    write_file("build_file.jinja2", "BUILD", terraform_config, config_output_path)
     write_file(
         "task_definition_api.yaml.jinja2",
         "task_definition_api.yaml",
@@ -343,6 +344,12 @@ if __name__ == "__main__":
     write_file(
         "task_definition_celery_worker.yaml.jinja2",
         "task_definition_celery_worker.yaml",
+        terraform_config,
+        config_output_path,
+    )
+    write_file(
+        "task_definition_preflight.yaml.jinja2",
+        "task_definition_preflight.yaml",
         terraform_config,
         config_output_path,
     )

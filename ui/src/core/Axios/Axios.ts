@@ -1,4 +1,4 @@
-import axios, { AxiosHeaders, AxiosInstance } from 'axios';
+import axios, { AxiosHeaders } from 'axios';
 import { InternalAxiosRequestConfig } from 'axios';
 
 const client = axios.create({

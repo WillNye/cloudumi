@@ -3,11 +3,14 @@ import { FC, useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { AuthCode } from 'shared/form/AuthCode';
-import css from './MFA.module.css';
 import { verifyMFA } from 'core/API/auth';
 import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
 import { Notification, NotificationType } from 'shared/elements/Notification';
+import { ReactComponent as Logo } from 'assets/brand/mark.svg';
+import { LineBreak } from 'shared/elements/LineBreak';
+
+import styles from './MFA.module.css';
 
 export const MFA: FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -46,11 +49,14 @@ export const MFA: FC = () => {
       <Helmet>
         <title>MFA</title>
       </Helmet>
-      <div className={css.container}>
-        <h1>MFA</h1>
-        {/* TODO (Kayizzi) - MFA text appears black in Chrome and it is hard to read */}
-        {/* TODO (Kayizzi) - MFA component needs to return error on invalid MFA */}
-        <br />
+      <div className={styles.container}>
+        <Logo height={55} width={55} />
+        <h2 className={styles.title}>MFA Verification</h2>
+        <p className={styles.description}>
+          Secure your account with Multi-Factor Authentication. Enter your
+          unique verification code to log in securely.
+        </p>
+        <LineBreak size="large" />
         <AuthCode
           disabled={isLoading}
           onChange={val => {
@@ -58,12 +64,11 @@ export const MFA: FC = () => {
             if (val?.length === 6) {
               // TODO (Kayizzi) - If invalid MFA is entered , often times the user cannot retry
               // because the session has already been used. We need to handle this and get a new session
-              // {"__type":"NotAuthorizedException","message":"Invalid session for the user, session can only be used once."}
               verifyTOTPCode(val);
             }
           }}
         />
-        <br />
+        <LineBreak />
         {errorMessage && (
           <Notification
             type={NotificationType.ERROR}
@@ -71,6 +76,13 @@ export const MFA: FC = () => {
             showCloseIcon={false}
           />
         )}
+        <LineBreak size="large" />
+        <div className={styles.warning}>
+          Warning: If you are unable to login with Multi-Factor Authentication,
+          please contact an administrator from your company. Do not attempt to
+          disable or bypass MFA as it could compromise the security of your
+          account.
+        </div>
       </div>
     </>
   );

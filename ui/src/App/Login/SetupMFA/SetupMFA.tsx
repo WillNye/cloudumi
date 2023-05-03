@@ -4,13 +4,15 @@ import { Helmet } from 'react-helmet-async';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { QRCode } from 'shared/elements/QRCode';
 import { AuthCode } from 'shared/form/AuthCode';
-
-import css from './SetupMFA.module.css';
+import { ReactComponent as Logo } from 'assets/brand/mark.svg';
 import { setupMFA } from 'core/API/auth';
 import { extractErrorMessage } from 'core/API/utils';
 import { AxiosError } from 'axios';
 import { Loader } from 'shared/elements/Loader';
 import { Notification, NotificationType } from 'shared/elements/Notification';
+import { LineBreak } from 'shared/elements/LineBreak';
+
+import styles from './SetupMFA.module.css';
 
 export const SetupMFA: FC = () => {
   const [totpCode, setTotpCode] = useState<Record<string, string>>();
@@ -86,19 +88,27 @@ export const SetupMFA: FC = () => {
       <Helmet>
         <title>Setup MFA</title>
       </Helmet>
-      <div className={css.container}>
+      <div className={styles.container}>
         {isLoading ? (
           <Loader fullPage />
         ) : (
           <>
-            <h1>Setup MFA</h1>
-            <br />
+            <Logo height={55} width={55} />
+            <h2 className={styles.title}>Setup MFA</h2>
+            <p className={styles.description}>
+              Scan the QR code to enable Multi-Factor Authentication and add an
+              extra layer of security to your account.
+            </p>
+            <LineBreak size="large" />
             <QRCode value={totpCode?.totp_uri ?? ''} />
-            <br />
-            <div>{totpCode?.mfa_secret}</div>
-            <br />
+            <LineBreak size="large" />
+            <div>or use manual code</div>
+            <div className={styles.box}>
+              <pre>{totpCode?.mfa_secret}</pre>
+            </div>
+            <LineBreak />
             <h3>Enter Code</h3>
-            <br />
+            <LineBreak />
             <AuthCode
               disabled={isSubmitting}
               onChange={val => {
@@ -108,6 +118,7 @@ export const SetupMFA: FC = () => {
                 }
               }}
             />
+            <LineBreak />
             {submittingError && (
               <Notification
                 type={NotificationType.ERROR}

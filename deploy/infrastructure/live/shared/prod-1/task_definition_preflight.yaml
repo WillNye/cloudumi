@@ -1,0 +1,56 @@
+executionRoleArn: arn:aws:iam::940552945933:role/noq-dev-shared-prod-1-ecsTaskExecutionRole
+containerDefinitions:
+  - dnsSearchDomains: []
+    logConfiguration:
+      logDriver: awslogs
+      options:
+        awslogs-group: noq-dev-shared-prod-1
+        awslogs-region: us-west-2
+        awslogs-stream-prefix: cluster-preflight
+    entryPoint:
+      - /bin/sh
+      - "-c"
+      - "python /app/common/preflight/run.py"
+    linuxParameters:
+      devices: []
+      initProcessEnabled: true
+    cpu: 0
+    environment:
+      - name: CONFIG_LOCATION
+        value: s3://noq-dev-shared-prod-1-tenant-configuration-store/shared/prod.1.config.yaml
+      - name: SETUPTOOLS_USE_DISTUTILS
+        value: stdlib
+      - name: RUNTIME_PROFILE
+        value: PREFLIGHT
+      - name: STAGE
+        value: prod
+    dnsServers: []
+    mountPoints:
+      - containerPath: /data
+        sourceVolume: efs-server-AP
+    dockerSecurityOptions: []
+    volumesFrom: []
+    image: 940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-api:latest
+    essential: true
+    links: []
+    extraHosts: []
+    pseudoTerminal: false
+    readonlyRootFilesystem: false
+    privileged: false
+    name: noq-dev-shared-prod-1-preflight-tasks
+placementConstraints: []
+memory: "8192"
+taskRoleArn: arn:aws:iam::940552945933:role/noq-dev-shared-prod-1-ecsTaskRole
+family: noq-dev-shared-prod-1-preflight-tasks
+requiresCompatibilities:
+  - FARGATE
+networkMode: awsvpc
+cpu: "2048"
+volumes:
+  - name: efs-server-AP
+    efsVolumeConfiguration:
+      fileSystemId: fs-0170f7fd4ae4e61ea
+      transitEncryption: ENABLED
+      authorizationConfig:
+        accessPointId: fsap-0e1bc4d033da3c98f
+        iam: ENABLED

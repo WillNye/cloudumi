@@ -3,9 +3,13 @@ aiofiles
 aiopath
 cryptography
 locust
+humanfriendly
+jq
 noq-dax-client
 pydantic
 python3-saml
 pynamodax
+slack_bolt
 workos
 types-ujson
+types-pytz

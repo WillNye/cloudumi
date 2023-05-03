@@ -295,6 +295,7 @@ class Configuration(metaclass=Singleton):
         if allow_start_background_threads:
             Timer(0, self.__set_flag_on_main_exit, ()).start()
 
+    # @profile
     def get(
         self,
         key: str,
@@ -401,6 +402,7 @@ class Configuration(metaclass=Singleton):
                 f"{tenant}_STATIC_CONFIGURATION",
                 json.dumps(self.tenant_configs[tenant], default=str),
             )
+        return self.tenant_configs[tenant]
 
     def load_tenant_config_from_redis(self, tenant):
         from common.lib.redis import RedisHandler
@@ -408,44 +410,50 @@ class Configuration(metaclass=Singleton):
         red = RedisHandler().redis_sync(tenant)
         return json.loads(red.get(f"{tenant}_STATIC_CONFIGURATION") or "{}")
 
+    # @profile
     def get_tenant_specific_key(
         self, key: str, tenant: str, default: Any = None
     ) -> Any:
         """
-        Get a tenant specific value for configuration entry in dot notation.
+        Get a tenant specific value for configuration entry in dot notation. We first check if the in-memory tenant config
+        is older than 10 seconds. If it is, we try to fetch the tenant config from Redis. If the Redis cache is also older
+        than 10 seconds, we fetch the config from DynamoDB, update the Redis cache, and update the in-memory tenant
+         config with the latest values.
         """
+        # This is a hack to get around the usage of `tenant`=`_global_.accounts.tenant_data`
+        # when we're making a request for tenant EULA info.
+        if tenant.startswith("_global_"):
+            return default
         # Only support keys that explicitly call out a tenant in development mode
         if self.get("_global_.development"):
             static_config_key = f"site_configs.{tenant}.{key}"
-            # If we've defined a static config yaml file for the tenant, that takes precedence over
-            # anything in Dynamo, even if the static config doesn't actually have the config
-            # key the user is querying.
             if self.get(static_config_key):
                 return self.get(static_config_key, default=default)
 
-        # Otherwise, we need to get the config from local variable,
-        # fall back to Redis cache, and lastly fall back to Dynamo
         current_time = int(time.time())
         last_updated = self.tenant_configs[tenant].get("last_updated", 0)
-        # # If doesn't exist, or not updated for 60s, reload from DynamoDB and cache in Redis
-        # if current_time - last_updated > 5:
-        #     tenant_config = self.load_tenant_config_from_redis(tenant)
-        #     last_updated = int(tenant_config.get("last_updated", 0))
-        #     # If Redis config cache for tenant is newer than 60 seconds, update in-memory variables
-        #     if current_time - last_updated < 60:
-        #         self.tenant_configs[tenant]["config"] = tenant_config["config"]
-        #         self.tenant_configs[tenant]["last_updated"] = last_updated
-        # If local variables and Redis config cache for the tenant are still older than 60 seconds,
-        # pull from Dynamo, update local cache, redis cache, and in-memory variables
-        if current_time - last_updated > 10:
-            self.copy_tenant_config_dynamo_to_redis(tenant)
 
-        # Convert commented map to dictionary
+        # If the tenant config is not updated for more than 10 seconds, try fetching from Redis
+        if current_time - last_updated > 10:
+            tenant_config = self.load_tenant_config_from_redis(tenant)
+            last_updated = int(tenant_config.get("last_updated", 0))
+
+            # If the Redis cache is also older than 10 seconds, fetch from DynamoDB
+            if current_time - last_updated > 10:
+                tenant_config = self.copy_tenant_config_dynamo_to_redis(tenant)
+                last_updated = int(tenant_config.get("last_updated", 0))
+
+            # Update the in-memory tenant config with the latest config
+            if not tenant_config.get("config"):
+                return default
+            self.tenant_configs[tenant]["config"] = tenant_config["config"]
+            self.tenant_configs[tenant]["last_updated"] = last_updated
+
         c = self.tenant_configs[tenant].get("config")
         if not c:
             return default
 
-        value = json.loads(json.dumps(self.tenant_configs[tenant].get("config")))
+        value = json.loads(json.dumps(c))
         if not value:
             return default
 
@@ -546,6 +554,9 @@ class Configuration(metaclass=Singleton):
             "elasticapm.conf": "WARNING",
             "elasticapm.transport": "WARNING",
             "elasticapm.transport.http": "WARNING",
+            "github.Requester": "WARNING",
+            "slack_sdk.web.async_base_client": "WARNING",
+            "root": "WARNING",
         }
         for logger, level in self.get(
             "_global_.logging_levels", default_logging_levels

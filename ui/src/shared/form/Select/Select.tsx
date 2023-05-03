@@ -28,15 +28,12 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       containerClassname,
       error,
       fullWidth,
-      selectOnFocus,
       prefix,
       suffix,
-      autoFocus,
       disabled,
       value,
       size = 'small',
       showBorder,
-      onFocus,
       ...rest
     },
     ref: Ref<HTMLSelectElement>

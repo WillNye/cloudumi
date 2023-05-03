@@ -1,84 +1,111 @@
-import { Button } from 'shared/elements/Button';
 import styles from './IntegrationSettings.module.css';
-import { INTEGRATIONS_TABS } from './constants';
 import { useMemo, useState } from 'react';
-import NotificationSettings from './components/NotificationSettings';
-import AuthenticationSettings from './components/AuthenticationSettings';
-import CloudProviderSettings from './components/CloudProviderSettings';
-import IambicSettings from './components/IambicSettings';
+import IntegrationCard from './components/IntegrationCard/IntegrationCard';
+import slackIcon from 'assets/integrations/slackIcon.svg';
+import awsIcon from 'assets/integrations/awsIcon.svg';
+// import gcpIcon from 'assets/integrations/gcpIcon.svg';
+// import azureIcon from 'assets/integrations/azureIcon.svg';
+import githubIcon from 'assets/integrations/githubIcon.svg';
+import oktaIcon from 'assets/integrations/oktaIcon.svg';
+import SectionHeader from 'shared/elements/SectionHeader/SectionHeader';
+import SlackIntegrationModal from './components/SlackIntegrationsModal';
+import { getSlackInstallationStatus } from 'core/API/integrations';
+import {
+  AWS_CARD_DESCRIPTION,
+  // AZURE_CARD_DESCRIPTION,
+  CLOUD_PROVIDER_SECTION_DESCRIPTION,
+  GENERAL_SECTION_DESCRPTION,
+  GITHUB_CARD_DESCRIPTION,
+  // GOOGLE_CARD_DESCRIPTION,
+  OKTA_CARD_DESCRIPTION,
+  SLACK_CARD_DESCRIPTION
+} from './constants';
+import { useQuery } from '@tanstack/react-query';
 
 const IntegrationSettings = () => {
-  const [currentTab, setCurrentTab] = useState<INTEGRATIONS_TABS>(
-    INTEGRATIONS_TABS.AUTHENTICATION
-  );
+  const [showSlackModal, setShowSlackModal] = useState(false);
 
-  const content = useMemo(() => {
-    if (currentTab === INTEGRATIONS_TABS.AUTHENTICATION) {
-      return <AuthenticationSettings />;
-    }
+  const {
+    refetch: getIntegrationStatus,
+    isLoading,
+    data
+  } = useQuery({
+    queryFn: getSlackInstallationStatus,
+    queryKey: ['integrationsStatuses']
+  });
 
-    if (currentTab === INTEGRATIONS_TABS.CLOUD_PROVIDER) {
-      return <CloudProviderSettings />;
-    }
-
-    if (currentTab === INTEGRATIONS_TABS.IAMBIC) {
-      return <IambicSettings />;
-    }
-
-    return <NotificationSettings />;
-  }, [currentTab]);
+  const isSlackConnected = useMemo(() => data?.data?.installed, [data]);
 
   return (
     <div className={styles.container}>
-      <p>
-        Set up Single Sign-On (SSO) and System for Cross-domain Identity
+      <div className={styles.content}>
+        <SectionHeader
+          title="Cloud Providers"
+          subtitle={CLOUD_PROVIDER_SECTION_DESCRIPTION}
+        />
+        <div className={styles.gridContainer}>
+          <IntegrationCard
+            description={AWS_CARD_DESCRIPTION}
+            title="Configure AWS"
+            icon={awsIcon}
+            buttonText="Configure"
+            link="/settings/integrations/aws"
+          />
+          {/* <IntegrationCard
+            description={GOOGLE_CARD_DESCRIPTION}
+            title="Configure GCP"
+            icon={gcpIcon}
+            buttonText="Configure"
+            disableBtn
+          />
+          <IntegrationCard
+            description={AZURE_CARD_DESCRIPTION}
+            title="Configure Azure"
+            icon={azureIcon}
+            buttonText="Configure"
+            disableBtn
+          /> */}
+        </div>
+        <SectionHeader title="General" subtitle={GENERAL_SECTION_DESCRPTION} />
+        <div className={styles.gridContainer}>
+          <IntegrationCard
+            description={SLACK_CARD_DESCRIPTION}
+            title="Connect to Slack"
+            icon={slackIcon}
+            buttonText={isSlackConnected ? 'Connected' : 'Connect'}
+            handleConnect={() => setShowSlackModal(true)}
+          />
+          <IntegrationCard
+            description={GITHUB_CARD_DESCRIPTION}
+            title="Connect to Github"
+            icon={githubIcon}
+            buttonText="Connect"
+            disableBtn
+          />
+        </div>
+        <SectionHeader
+          title="SCIM/SSO"
+          subtitle="Set up Single Sign-On (SSO) and System for Cross-domain Identity
         Management (SCIM) integrations, receive notifications, and connect with
-        cloud providers for secure and streamlined operations.
-      </p>
-      <br />
-
-      <div>
-        <nav className={styles.nav}>
-          <ul className={styles.navList}>
-            <li
-              className={`${styles.navItem} ${
-                currentTab === INTEGRATIONS_TABS.AUTHENTICATION &&
-                styles.isActive
-              }`}
-              onClick={() => setCurrentTab(INTEGRATIONS_TABS.AUTHENTICATION)}
-            >
-              <div className={styles.text}>Authentication</div>
-            </li>
-            <li
-              className={`${styles.navItem} ${
-                currentTab === INTEGRATIONS_TABS.CLOUD_PROVIDER &&
-                styles.isActive
-              }`}
-              onClick={() => setCurrentTab(INTEGRATIONS_TABS.CLOUD_PROVIDER)}
-            >
-              <div className={styles.text}>Cloud Providers</div>
-            </li>
-            <li
-              className={`${styles.navItem} ${
-                currentTab === INTEGRATIONS_TABS.NOTIFICATIONS &&
-                styles.isActive
-              }`}
-              onClick={() => setCurrentTab(INTEGRATIONS_TABS.NOTIFICATIONS)}
-            >
-              <div className={styles.text}>Notifications</div>
-            </li>
-            <li
-              className={`${styles.navItem} ${
-                currentTab === INTEGRATIONS_TABS.IAMBIC && styles.isActive
-              }`}
-              onClick={() => setCurrentTab(INTEGRATIONS_TABS.IAMBIC)}
-            >
-              <div className={styles.text}>Iambic</div>
-            </li>
-          </ul>
-        </nav>
+        cloud providers for secure and streamlined operations."
+        />
+        <div className={styles.gridContainer}>
+          <IntegrationCard
+            description={OKTA_CARD_DESCRIPTION}
+            title="Connect to OKta"
+            icon={oktaIcon}
+            buttonText="Connect"
+            disableBtn
+          />
+        </div>
       </div>
-      <div className={styles.content}>{content}</div>
+      <SlackIntegrationModal
+        showDialog={showSlackModal}
+        setShowDialog={setShowSlackModal}
+        isSlackConnected={isSlackConnected}
+        checkStatus={getIntegrationStatus}
+        isGettingIntegrations={isLoading}
+      />
     </div>
   );
 };

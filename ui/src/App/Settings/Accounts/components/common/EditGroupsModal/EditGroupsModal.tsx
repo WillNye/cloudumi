@@ -20,10 +20,22 @@ import styles from './EditGroupsModal.module.css';
 import { Search } from 'shared/form/Search';
 import { Divider } from 'shared/elements/Divider';
 import { Chip } from 'reablocks';
+import { useMutation } from '@tanstack/react-query';
 
 type EditGroupsModalProps = {
   canEdit: boolean;
   group: Group;
+};
+
+type UpdateGroupParams = {
+  id: string;
+  name: string;
+  description: string;
+};
+
+type CreateGroupUserParams = {
+  users: string[];
+  groups: string[];
 };
 
 const updatingGroupSchema = Yup.object().shape({
@@ -35,12 +47,34 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
   const [showDialog, setShowDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [groupUsers, setGroupUsers] = useState(group.users);
   const [isSearching, setIsSearching] = useState(false);
   const [isUpdatingGroups, setIsUpdatingGroups] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [searchValue, setSearchValue] = useState('');
+
+  const updateGroupMutation = useMutation({
+    mutationFn: (groupData: UpdateGroupParams) => updateGroup(groupData)
+  });
+
+  const createGroupUsersMutation = useMutation({
+    mutationFn: (data: CreateGroupUserParams) => createGroupMemberships(data)
+  });
+
+  const searchMutation = useMutation({
+    mutationFn: (search: string) => {
+      const query = {
+        filter: {
+          pagination: { currentPageIndex: 1, pageSize: 10 },
+          filtering: {
+            tokens: [{ propertyKey: 'email', operator: ':', value: search }],
+            operation: 'and'
+          }
+        }
+      };
+      return getAllUsers({ queryKey: ['groupUsers', query] });
+    }
+  });
 
   const {
     register,
@@ -71,7 +105,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
     async ({ name, description }) => {
       reseActions();
       try {
-        await updateGroup({
+        await updateGroupMutation.mutateAsync({
           id: group.id,
           name,
           description
@@ -87,44 +121,36 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
         );
       }
     },
-    [group.id, reseActions]
+    [group.id, reseActions, updateGroupMutation]
   );
 
-  const handleSearch = useCallback(async e => {
-    const value = e.target.value;
-    setSearchValue(value);
-    const filter = {
-      filter: {
-        pagination: { currentPageIndex: 1, pageSize: 10 },
-        filtering: {
-          tokens: [{ propertyKey: 'email', operator: ':', value }],
-          operation: 'and'
-        }
+  const handleSearch = useCallback(
+    async e => {
+      const value = e.target.value;
+      setSearchValue(value);
+      if (!value) {
+        setSearchResults([]);
+        return;
       }
-    };
 
-    if (!value) {
-      setSearchResults([]);
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      const res = await getAllUsers(filter);
-      const data = res.data.data;
-      setSearchResults(data.data);
-    } catch (error) {
-      // TODO: Properly handle error
-      console.error(error);
-    }
-    setIsSearching(false);
-  }, []);
+      setIsSearching(true);
+      try {
+        const res = await searchMutation.mutateAsync(value);
+        setSearchResults(res.data.data);
+      } catch (error) {
+        // TODO: Properly handle error
+        console.error(error);
+      }
+      setIsSearching(false);
+    },
+    [searchMutation]
+  );
 
   const updateGroupMemberships = useCallback(async () => {
     reseActions();
     setIsUpdatingGroups(true);
     try {
-      await createGroupMemberships({
+      await createGroupUsersMutation.mutateAsync({
         users: groupUsers,
         groups: [group.name]
       });
@@ -139,7 +165,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
       );
     }
     setIsUpdatingGroups(false);
-  }, [group.name, groupUsers, reseActions]);
+  }, [group.name, groupUsers, reseActions, createGroupUsersMutation]);
 
   if (!canEdit) {
     return <Fragment />;
@@ -211,7 +237,6 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
               resultRenderer={resultRenderer}
               results={searchResults}
               onChange={handleSearch}
-              showResults
               value={searchValue}
               isLoading={isSearching}
               onResultSelect={onSelectResult}

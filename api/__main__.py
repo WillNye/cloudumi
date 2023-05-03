@@ -25,8 +25,6 @@ from api.routes import make_app
 from common.config import config
 from common.lib.plugins import fluent_bit, get_plugin_by_name
 
-# from functional_tests import run_tests as functional_tests
-
 log = config.get_logger()
 
 configured_profiler = config.get("_global_.profiler")
@@ -47,9 +45,6 @@ if configured_profiler:
         yappi.start()
     else:
         raise ValueError(f"Profiler {configured_profiler} not supported")
-
-# Run functional tests
-# functional_tests.run()
 
 
 def main():

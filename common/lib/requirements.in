@@ -7,9 +7,12 @@ cryptography
 deepdiff
 ed25519
 Jinja2
+jq
 onelogin
+orjson
 parliament
 policy_sentry
+PyGithub
 pyjwt
 redis
 simplejson

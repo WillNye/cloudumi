@@ -11,6 +11,8 @@ ENV IAMBIC_REPO_TOKEN=$IAMBIC_REPO_TOKEN
 # Set environment variable PUBLIC_URL from build args, uses "/" as default
 ARG PUBLIC_URL
 ENV PUBLIC_URL=${PUBLIC_URL:-/}
+ARG PUBLIC_URL_V2
+ENV PUBLIC_URL_V2=${PUBLIC_URL_V2:-/}
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE=1
 
@@ -19,6 +21,7 @@ ENV PYTHONUNBUFFERED=1
 ENV BUILD_PATH=./frontend/build
 ENV DISABLE_ESLINT_PLUGIN=true
 ENV VIRTUAL_ENV=/app/env
+ENV NODE_OPTIONS=--openssl-legacy-provider
 
 RUN mkdir /app
 WORKDIR /app
@@ -26,10 +29,12 @@ WORKDIR /app
 ADD requirements.lock requirements.lock
 ADD frontend/package.json frontend/package.json
 ADD frontend/yarn.lock frontend/yarn.lock
+ADD ui/package.json ui/package.json
+ADD ui/yarn.lock ui/yarn.lock
 
 # Install dependencies in as few layers as possible
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata && apt-get install -y software-properties-common gcc && \
-    add-apt-repository -y ppa:deadsnakes/ppa && apt-get update && apt-get install -y python3.11 python3.11-distutils \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata && apt-get install -y software-properties-common gcc
+RUN add-apt-repository -y ppa:deadsnakes/ppa && apt-get update && apt-get install -y python3.11 python3.11-distutils \
     python3-apt python3.11-dev python-is-python3 pkg-config awscli libpq-dev \
     git-all python3.11-venv curl telnet iputils-ping sudo systemctl apt-transport-https \
     build-essential libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev && \
@@ -53,14 +58,19 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y insta
     # Install yarn and frontend dependencies
     npm install yarn -g && \
     yarn --cwd frontend --dev && \
+    yarn --cwd ui && \
     apt-get dist-upgrade -y
 
 COPY configs/fluent-bit/fluent-bit.conf /etc/fluent-bit/fluent-bit.conf
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 COPY frontend frontend
+COPY ui ui
+
 # We don't need node_modules after building, so we can remove it and save space
 RUN yarn --cwd frontend build --base=$PUBLIC_URL && yarn --cwd frontend cache clean --all && rm -rf frontend/node_modules
+RUN yarn --cwd ui build --base=$PUBLIC_URL_V2 && yarn --cwd ui cache clean --all && rm -rf ui/node_modules
+
 COPY . /app
 # Copy entrypoint.sh to use virtualenv and install API
 RUN python3.11 -m pip install -e . && pip3 cache purge && apt-get -y autoremove

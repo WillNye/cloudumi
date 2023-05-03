@@ -3,6 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
+import orjson
 import ujson
 from deepdiff.model import PrettyOrderedSet
 
@@ -32,36 +33,46 @@ def dumps(
     indent: int = 0,
     **kwargs
 ) -> str:
-    # Try fast "ujson is 3x faster than the standard json library" first
     try:
-        result = ujson.dumps(
-            obj,
-            ensure_ascii=ensure_ascii,
-            double_precision=double_precision,
-            encode_html_chars=encode_html_chars,
-            escape_forward_slashes=escape_forward_slashes,
-            sort_keys=sort_keys,
-            indent=indent,
-            **kwargs
-        )
+        # Try orjson first
+        result = orjson.dumps(obj, option=orjson.OPT_NON_STR_KEYS).decode()
     except TypeError:
-        # Fallback to slower json library
-        result = json.dumps(
-            obj,
-            cls=SetEncoder,
-            ensure_ascii=ensure_ascii,
-            sort_keys=sort_keys,
-            indent=indent,
-            **kwargs
-        )
+        try:
+            # Try ujson next
+            result = ujson.dumps(
+                obj,
+                ensure_ascii=ensure_ascii,
+                double_precision=double_precision,
+                encode_html_chars=encode_html_chars,
+                escape_forward_slashes=escape_forward_slashes,
+                sort_keys=sort_keys,
+                indent=indent,
+                **kwargs
+            )
+        except TypeError:
+            # Fallback to the slower json library
+            result = json.dumps(
+                obj,
+                cls=SetEncoder,
+                ensure_ascii=ensure_ascii,
+                sort_keys=sort_keys,
+                indent=indent,
+                **kwargs
+            )
     return result
 
 
 def loads(s: str, **kwargs) -> any:
     try:
-        result = ujson.loads(s, **kwargs)
+        # Try orjson first
+        result = orjson.loads(s)
     except ValueError:
-        result = json.loads(s, **kwargs)
+        try:
+            # Try ujson next
+            result = ujson.loads(s, **kwargs)
+        except ValueError:
+            # Fallback to the json library
+            result = json.loads(s, **kwargs)
     return result
 
 
