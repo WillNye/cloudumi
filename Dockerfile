@@ -74,6 +74,7 @@ COPY ui ui
 RUN yarn --cwd frontend build --base=$PUBLIC_URL && yarn --cwd frontend cache clean --all && rm -rf frontend/node_modules
 RUN yarn --cwd ui build --base=$PUBLIC_URL_V2 && yarn --cwd ui cache clean --all && rm -rf ui/node_modules
 
+WORKDIR /app
 COPY . /app
 # Copy entrypoint.sh to use virtualenv and install API
 RUN python3.11 -m pip install -e . && pip3 cache purge && apt-get -y autoremove
