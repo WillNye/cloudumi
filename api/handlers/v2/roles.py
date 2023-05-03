@@ -237,6 +237,9 @@ class RolesHandler(BaseAPIV2Handler):
         )
 
     async def get(self):
+        if not self.eligible_roles:
+            await self.set_eligible_roles(self.console_only)
+
         payload = {
             "eligible_roles": self.eligible_roles,
             "escalated_roles": await get_tra_supported_roles_by_tag(
@@ -806,6 +809,9 @@ class GetRolesMTLSHandler(BaseMtlsHandler):
         console_only = True
         if include_all_roles == ["true"]:
             console_only = False
+
+        if not self.eligible_roles:
+            await self.set_eligible_roles(console_only)
 
         log_data = {
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",

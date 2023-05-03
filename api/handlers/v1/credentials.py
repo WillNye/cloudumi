@@ -344,6 +344,9 @@ class GetCredentialsHandler(BaseMtlsHandler):
         data = tornado.escape.json_decode(self.request.body)
         try:
             request = await aio_wrapper(credentials_schema.load, data)
+            if not self.eligible_roles:
+                await self.set_eligible_roles(request["console_only"])
+
         except ValidationError as ve:
             stats.count(
                 "GetCredentialsHandler.post",

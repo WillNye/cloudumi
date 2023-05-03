@@ -37,6 +37,9 @@ class GetRolesHandler(BaseMtlsHandler):
         if include_all_roles == ["true"]:
             console_only = False
 
+        if not self.eligible_roles:
+            await self.set_eligible_roles(console_only)
+
         log_data = {
             "function": "GetRolesHandler.get",
             "user": self.user,

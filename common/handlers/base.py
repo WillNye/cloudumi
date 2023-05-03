@@ -702,22 +702,23 @@ class BaseHandler(TornadoRequestHandler):
 
         await self.set_groups()
 
-        # Set Per-User Role Name (This logic is not used in OSS deployment)
-        if (
-            config.get_tenant_specific_key("user_roles.opt_in_group", tenant)
-            and config.get_tenant_specific_key("user_roles.opt_in_group", tenant)
-            in self.groups
-        ):
-            # Get or create user_role_name attribute
-            self.user_role_name = await auth.get_or_create_user_role_name(self.user)
-        await self.set_eligible_roles(console_only)
+        self.console_only = console_only
+        # # Set Per-User Role Name (This logic is not used in OSS deployment)
+        # if (
+        #     config.get_tenant_specific_key("user_roles.opt_in_group", tenant)
+        #     and config.get_tenant_specific_key("user_roles.opt_in_group", tenant)
+        #     in self.groups
+        # ):
+        #     # Get or create user_role_name attribute
+        #     self.user_role_name = await auth.get_or_create_user_role_name(self.user)
+        # await self.set_eligible_roles(console_only)
 
-        if not self.eligible_roles:
-            log_data[
-                "message"
-            ] = "No eligible roles detected for user. But letting them continue"
-            log.warning(log_data)
-        log_data["eligible_roles"] = len(self.eligible_roles)
+        # if not self.eligible_roles:
+        #     log_data[
+        #         "message"
+        #     ] = "No eligible roles detected for user. But letting them continue"
+        #     log.warning(log_data)
+        # log_data["eligible_roles"] = len(self.eligible_roles)
 
         if (
             not self.eligible_accounts
@@ -948,7 +949,7 @@ class BaseHandler(TornadoRequestHandler):
             )
         )()
 
-        self.eligible_roles += await get_user_active_tra_roles_by_tag(tenant, self.user)
+        # self.eligible_roles += await get_user_active_tra_roles_by_tag(tenant, self.user)
         self.eligible_roles = await group_mapping.get_eligible_roles(
             self.eligible_roles,
             self.user,
