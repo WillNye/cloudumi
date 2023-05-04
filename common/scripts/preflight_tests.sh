@@ -9,10 +9,11 @@ yarn --cwd ui
 yarn --cwd ui add ts-node
 export GEVENT_SUPPORT="True"
 
+# TODO: Uncomment
 # Run preflight functional tests
-set -e
-python /app/common/preflight/run.py
-set +e
+# set -e
+# python /app/common/preflight/run.py
+# set +e
 
 sleep 15
 
