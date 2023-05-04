@@ -1,4 +1,5 @@
 import hashlib
+import sys
 import time
 from secrets import token_urlsafe
 from urllib.parse import urlparse
@@ -61,6 +62,11 @@ class TenantRegistrationHandler(TornadoRequestHandler):
         pass
 
     async def post(self):
+        log_data = {
+            "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
+            "message": "Tenant registration POST request received",
+        }
+        log.debug(log_data)
         # Get the data from the request
         data = tornado.escape.json_decode(self.request.body)
 
@@ -108,6 +114,8 @@ class TenantRegistrationHandler(TornadoRequestHandler):
                 }
             )
             return
+
+        log_data["email"] = data["email"]
 
         # Validate registration code
         valid_registration_code = hashlib.sha256(
@@ -177,6 +185,8 @@ class TenantRegistrationHandler(TornadoRequestHandler):
                 return
 
         dev_domain_url = f'https://{dev_domain.replace("_", ".")}'
+        log_data["dev_domain"] = dev_domain
+        log_data["dev_domain_url"] = dev_domain_url
 
         async with ASYNC_PG_ENGINE.begin():
             tenant_db = await Tenant.create(
@@ -268,10 +278,16 @@ auth:
                         email_suffix
                     ):
                         return_data["password"] = password
-
+        log_data["message"] = "Tenant registration POST request processed successfully"
+        log.debug(log_data)
         self.write(return_data)
 
     async def delete(self):
+        log_data = {
+            "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
+            "message": "Tenant registration DELETE request received",
+        }
+        log.debug(log_data)
         environment = config.get("_global_.environment")
         if environment not in ["dev", "staging"]:
             self.set_status(403)
@@ -339,3 +355,7 @@ auth:
         await TenantDetails.delete(tenant_details)
 
         self.write({"success": True, "message": f"Tenant {dev_domain} deleted."})
+        log_data[
+            "message"
+        ] = "Tenant registration DELETE request processed successfully"
+        log.debug(log_data)

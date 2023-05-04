@@ -11,11 +11,9 @@ export GEVENT_SUPPORT="True"
 
 # TODO: Uncomment
 # Run preflight functional tests
-# set -e
-# python /app/common/preflight/run.py
-# set +e
-
-sleep 15
+set -e
+python /app/common/preflight/run.py
+set +e
 
 # Start API server in the background, save its process ID to a file, and redirect its output to a log file
 RUNTIME_PROFILE=API python api/__main__.py > /tmp/api_output.log 2>&1 & echo $! > /tmp/api_pid.txt
