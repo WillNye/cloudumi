@@ -313,7 +313,10 @@ auth:
 
         if not (
             dev_domain_url.startswith("test-")
-            and dev_domain_url.endswith(".staging.noq.dev")
+            and (
+                dev_domain_url.endswith(".staging.noq.dev")
+                or dev_domain_url.endswith(".example.com")
+            )
         ):
             self.set_status(403)
             self.write(

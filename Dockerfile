@@ -26,42 +26,36 @@ ENV NODE_OPTIONS=--openssl-legacy-provider
 RUN mkdir /app
 WORKDIR /app
 # Add PIP Requirements
-ADD requirements.lock requirements.lock
-ADD frontend/package.json frontend/package.json
-ADD frontend/yarn.lock frontend/yarn.lock
-ADD ui/package.json ui/package.json
-ADD ui/yarn.lock ui/yarn.lock
+COPY requirements.lock requirements.lock
+COPY frontend/package.json frontend/package.json
+COPY frontend/yarn.lock frontend/yarn.lock
+COPY ui/package.json ui/package.json
+COPY ui/yarn.lock ui/yarn.lock
 
 # Install dependencies in as few layers as possible
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata && apt-get install -y software-properties-common gcc
-RUN add-apt-repository -y ppa:deadsnakes/ppa && apt-get update && apt-get install -y python3.11 python3.11-distutils \
-    python3-apt python3.11-dev python-is-python3 pkg-config awscli libpq-dev \
-    git-all python3.11-venv curl telnet iputils-ping sudo systemctl apt-transport-https \
-    # Below dependencies are required for Cypress
-    libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb \
-    build-essential libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev && \
-    mkdir -p /app && \
-    apt-get clean && apt-get update && \
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata software-properties-common gcc && \
+    add-apt-repository -y ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y python3.11 python3.11-distutils python3-apt python3.11-dev python-is-python3 pkg-config awscli libpq-dev git-all python3.11-venv curl telnet iputils-ping sudo systemctl apt-transport-https libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb build-essential libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev && \
     curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 && \
-    # Install Node
     curl -sL https://deb.nodesource.com/setup_18.x | bash && \
     apt-get install -y nodejs && \
-    # Install Fluent Bit
     curl https://raw.githubusercontent.com/fluent/fluent-bit/master/install.sh | bash && \
-    # Creates a non-root user with an explicit UID and adds permission to access the /app folder
     addgroup --gid 1111 appgroup && \
-    adduser -uid 1111 --gid 1111 --disabled-password --no-create-home --gecos "" appuser && chown -R appuser /app && \
+    adduser -uid 1111 --gid 1111 --disabled-password --no-create-home --gecos "" appuser && \
+    chown -R appuser /app && \
     mkdir -p /home/appuser/.aws/ && \
     chown -R appuser /home/appuser && \
-    # Install Python requirements
     python3.11 -m venv $VIRTUAL_ENV && \
     . env/bin/activate && \
     python3.11 -m pip install -r requirements.lock && \
-    # Install yarn and frontend dependencies
     npm install yarn -g && \
     npm install cypress -g && \
     yarn --cwd frontend --dev && \
     yarn --cwd ui && \
+    apt-get clean && \
+    apt-get -y autoremove && \
     apt-get dist-upgrade -y
 
 COPY configs/fluent-bit/fluent-bit.conf /etc/fluent-bit/fluent-bit.conf
@@ -71,13 +65,19 @@ COPY frontend frontend
 COPY ui ui
 
 # We don't need node_modules after building, so we can remove it and save space
-RUN yarn --cwd frontend build --base=$PUBLIC_URL && yarn --cwd frontend cache clean --all && rm -rf frontend/node_modules
-RUN yarn --cwd ui build --base=$PUBLIC_URL_V2 && yarn --cwd ui cache clean --all && rm -rf ui/node_modules
+RUN yarn --cwd frontend build --base=$PUBLIC_URL && \
+    yarn --cwd frontend cache clean --all && \
+    rm -rf frontend/node_modules && \
+    yarn --cwd ui build --base=$PUBLIC_URL_V2 && \
+    yarn --cwd ui cache clean --all && \
+    rm -rf ui/node_modules
 
 WORKDIR /app
 COPY . /app
 # Copy entrypoint.sh to use virtualenv and install API
-RUN python3.11 -m pip install -e . && pip3 cache purge && apt-get -y autoremove
+RUN python3.11 -m pip install -e . && \
+    pip3 cache purge && \
+    apt-get -y autoremove
 
 RUN $CONFIG_LOCATION || alembic upgrade head
 
