@@ -1,9 +1,9 @@
-import { Icon } from '../Icon';
-import { Tooltip } from '../Tooltip';
 import { Link } from 'react-router-dom';
 import styles from './Navbar.module.css';
+import { Icon } from '../../../shared/elements/Icon';
+import { Tooltip } from '../../../shared/elements/Tooltip';
 import Logo from '../../../assets/brand/mark.svg';
-import { Avatar } from '../Avatar';
+import { Avatar } from '../../../shared/elements/Avatar';
 
 export const Navbar = () => {
   return (
@@ -18,6 +18,13 @@ export const Navbar = () => {
           <Tooltip text="Access" alignment="right">
             <div>
               <Icon name="lock" width="26px" height="26px" />
+            </div>
+          </Tooltip>
+        </Link>
+        <Link to="/resources">
+          <Tooltip text="Resources" alignment="right">
+            <div>
+              <Icon width="26px" height="26px" name="resource" />
             </div>
           </Tooltip>
         </Link>
