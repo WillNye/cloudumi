@@ -162,3 +162,5 @@ networks:
     driver: bridge
   cloudumi-localstack:
     driver: bridge
+  cloudumi-pg:
+    driver: bridge

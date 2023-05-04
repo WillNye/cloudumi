@@ -255,8 +255,9 @@ auth:
         # For our functional tests, we want to return the password
         if config.get("_global_.environment") in ["dev", "staging"]:
             # Make sure dev_domain_url starts with `test_`
-            if dev_domain_url.startswith("https://test-") and dev_domain_url.endswith(
-                ".staging.noq.dev"
+            if dev_domain_url.startswith("https://test-") and (
+                dev_domain_url.endswith(".staging.noq.dev")
+                or dev_domain_url.endswith(".example.com")
             ):
                 # Make sure self.request.host is localhost
                 if self.request.host == "localhost:8092":

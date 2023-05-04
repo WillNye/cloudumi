@@ -103,7 +103,7 @@ export const SetupMFA: FC = () => {
             <QRCode value={totpCode?.totp_uri ?? ''} />
             <LineBreak size="large" />
             <div>or use manual code</div>
-            <div className={styles.box}>
+            <div className={styles.box} data-testid="manual-code">
               <pre>{totpCode?.mfa_secret}</pre>
             </div>
             <LineBreak />

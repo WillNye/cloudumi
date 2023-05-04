@@ -1,3 +1,4 @@
+# noq file -p arn:aws:iam::759357822767:role/NoqSaasRoleLocalDev arn:aws:iam::759357822767:role/NoqSaasRoleLocalDev -f
 # docker-compose -f docker-compose.yaml -f deploy/docker-compose-dependencies.yaml down && docker-compose -f docker-compose.yaml -f deploy/docker-compose-dependencies.yaml build && docker-compose -f docker-compose.yaml -f deploy/docker-compose-dependencies.yaml up --force-recreate
 version: "3"
 services:
@@ -10,6 +11,7 @@ services:
       - ~/.aws:/root/.aws:cached
       # - .:/app:cached
       # Don't allow node_modules to be a volume in container
+      - ./common/scripts/preflight_tests.sh:/app/common/scripts/preflight_tests.sh:cached
       - /app/frontend/node_modules/
       - /app/ui/node_modules/
     ports:
@@ -17,9 +19,11 @@ services:
     depends_on:
       - cloudumi-redis
       - cloudumi-dynamodb
+      - cloudumi-pg
     links:
       - cloudumi-redis
       - cloudumi-dynamodb
+      - cloudumi-pg
     command: bash -c 'common/scripts/preflight_tests.sh'
     # command: tail -f /dev/null
     environment:
@@ -29,3 +33,4 @@ services:
       AWS_DEFAULT_REGION: us-west-2
       STAGE: development
       PYTHONPATH: /app
+      RUNTIME_PROFILE: PREFLIGHT

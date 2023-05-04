@@ -11,6 +11,7 @@ containerDefinitions:
       - /bin/sh
       - "-c"
       - "./common/scripts/preflight_tests.sh"
+    command: []
     linuxParameters:
       devices: []
       initProcessEnabled: true

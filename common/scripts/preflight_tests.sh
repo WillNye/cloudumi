@@ -7,6 +7,7 @@ source /app/env/bin/activate
 pip install alembic
 yarn --cwd ui
 yarn --cwd ui add ts-node
+export GEVENT_SUPPORT="True"
 
 # TODO: This ignores functional tests, uncomment before merging
 # # Run preflight functional tests
@@ -14,14 +15,16 @@ yarn --cwd ui add ts-node
 # python /app/common/preflight/run.py
 # set +e
 
+sleep 15
+
 # Start API server in the background, save its process ID to a file, and redirect its output to a log file
-python api/__main__.py > /tmp/api_output.log 2>&1 & echo $! > /tmp/api_pid.txt
+RUNTIME_PROFILE=API python api/__main__.py > /tmp/api_output.log 2>&1 & echo $! > /tmp/api_pid.txt
 
 # Tail the API server log to the screen in the background and save its process ID to a file
 tail -f /tmp/api_output.log 2>&1 & echo $! > /tmp/tail_pid.txt
 
 # Wait for the API server to start
-max_wait_time=180
+max_wait_time=600
 wait_time=0
 while ! grep -q "Server started" /tmp/api_output.log && [ $wait_time -lt $max_wait_time ]; do
   sleep 1

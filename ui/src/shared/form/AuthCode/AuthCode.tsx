@@ -40,11 +40,13 @@ export const AuthCode: FC<AuthCodeInput> = ({
   return (
     <Code
       key={authKey}
+      ariaLabel="Authentication Code"
       allowedCharacters={allowedCharacters}
       length={length}
       {...rest}
       inputClassName={classNames(css.input, inputClassName)}
       containerClassName={classNames(css.authCode, containerClassName)}
+      data-testid="auth-code"
     />
   );
 };
