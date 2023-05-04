@@ -6,6 +6,9 @@ version: "3"
 services:
   cloudumi-preflight:
     container_name: cloudumi-preflight
+    # TODO: Uncomment to limit resources to the same extent as ECS Fargate API server.
+    # cpus: 2
+    # mem_limit: 8g
     build:
       context: .
       dockerfile: Dockerfile
