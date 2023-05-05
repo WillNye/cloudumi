@@ -40,6 +40,12 @@ containerDefinitions:
     readonlyRootFilesystem: false
     privileged: false
     name: staging-noq-dev-shared-staging-1-api
+
+    command:
+      - bash
+      - -c
+      - pip install argh watchdog; watchmedo auto-restart --recursive --pattern="api/*.py" --directory="." --verbose python3.11 api/__main__.py
+
 placementConstraints: []
 memory: "8192"
 taskRoleArn: arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskRole
