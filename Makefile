@@ -31,6 +31,17 @@ pytest_single_process := PYTHONDONTWRITEBYTECODE=1 \
 html_report := --cov-report html
 test_args := --cov-report term-missing
 
+BASE_DIR := $(shell pwd)
+AWS_PROFILE_STAGING = staging/staging_admin
+AWS_REGION_STAGING = us-west-2
+STAGING_VAR_FILES = --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars
+
+AWS_PROFILE_PROD = production/prod_admin
+AWS_REGION_PROD = us-west-2
+PROD_VAR_FILES = --var-file=live/shared/prod-1/noq.dev-prod.tfvars --var-file=live/shared/prod-1/secret.tfvars
+
+.PHONY: tf-staging-refresh tf-staging-plan tf-staging-apply tf-prod-refresh tf-prod-plan tf-prod-apply
+
 .PHONY: clean
 clean:
 	rm -rf dist/ || echo $?
@@ -81,20 +92,6 @@ docker_deps_up:
 docker_deps_down:
 	docker-compose -f deploy/docker-compose-dependencies.yaml down
 
-.PHONY: ssm_prod
-ssm_prod:
-	AWS_REGION=us-west-2 AWS_DEFAULT_REGION=us-west-2 AWS_PROFILE=prod/prod_admin ecsgo
-
-.PHONY: ssm_staging
-ssm_staging:
-	AWS_REGION=us-west-2 AWS_DEFAULT_REGION=us-west-2 AWS_PROFILE=staging/staging_admin ecsgo
-
-.PHONY: ecs-tunnel-staging-ssh
-ecs-tunnel-staging-ssh:
-	export AWS_PROFILE=staging/staging_admin
-	@TASK_ID=$$(aws ecs list-tasks --cluster staging-noq-dev-shared-staging-1 --service api --profile staging/staging_admin --region us-west-2 --query 'taskArns[0]' --output text | awk -F/ '{print $$NF}') && \
-	AWS_PROFILE=staging/staging_admin ecs-tunnel -L 2222:22 -c staging-noq-dev-shared-staging-1 -t $$TASK_ID --region us-west-2
-
 .PHONY: ecs-tunnel-staging-celery-flower
 ecs-tunnel-staging-celery-flower:
 	export AWS_PROFILE=staging/staging_admin
@@ -120,3 +117,84 @@ ecsgo-prod:
 	export AWS_REGION=us-west-2 && \
 	export AWS_PROFILE=prod/prod_admin && \
 	ecsgo --cluster noq-dev-shared-prod-1 --region us-west-2
+
+.PHONY: ecs-set-ssh-password-staging
+ecs-set-ssh-password-staging:
+	@TASK_ID=$$(aws ecs list-tasks --cluster staging-noq-dev-shared-staging-1 --service api --profile staging/staging_admin --region us-west-2 --query 'taskArns[0]' --output text | awk -F/ '{print $$NF}') && \
+	CONTAINER_NAME=$$(aws ecs describe-tasks --tasks $$TASK_ID --cluster staging-noq-dev-shared-staging-1 --profile staging/staging_admin --region us-west-2 --query 'tasks[0].containers[0].name' --output text) && \
+	aws ecs execute-command --cluster staging-noq-dev-shared-staging-1 --task $$TASK_ID --container $$CONTAINER_NAME --command "/bin/sh -c 'echo root:TEMP_PASS | chpasswd'" --profile staging/staging_admin --region us-west-2 --interactive
+
+.PHONY: ecs-tunnel-staging-ssh
+ecs-tunnel-staging-ssh: ecs-set-ssh-password-staging
+	@echo "SSH to the staging host with the following command:"
+	@echo "ssh root@127.0.0.1 -p 2222"
+	@echo "Password: TEMP_PASS"
+	export AWS_PROFILE=staging/staging_admin
+	@TASK_ID=$$(aws ecs list-tasks --cluster staging-noq-dev-shared-staging-1 --service api --profile staging/staging_admin --region us-west-2 --query 'taskArns[0]' --output text | awk -F/ '{print $$NF}') && \
+	AWS_PROFILE=staging/staging_admin ecs-tunnel -L 2222:22 -c staging-noq-dev-shared-staging-1 -t $$TASK_ID --region us-west-2
+
+.PHONY: ecs-set-ssh-password-prod
+ecs-set-ssh-password-prod:
+	@TASK_ID=$$(aws ecs list-tasks --cluster noq-dev-shared-prod-1 --service api --profile prod/prod_admin --region us-west-2 --query 'taskArns[0]' --output text | awk -F/ '{print $$NF}') && \
+	CONTAINER_NAME=$$(aws ecs describe-tasks --tasks $$TASK_ID --cluster noq-dev-shared-prod-1 --profile prod/prod_admin --region us-west-2 --query 'tasks[0].containers[0].name' --output text) && \
+	aws ecs execute-command --cluster noq-dev-shared-prod-1 --task $$TASK_ID --container $$CONTAINER_NAME --command "/bin/sh -c 'echo root:TEMP_PASS | chpasswd'" --profile prod/prod_admin --region us-west-2 --interactive
+
+tf-staging-refresh:
+	@cd deploy/infrastructure && \
+	export AWS_PROFILE=$(AWS_PROFILE_STAGING) AWS_REGION=$(AWS_REGION_STAGING); \
+	terraform workspace select shared-staging-1; \
+	terraform refresh $(STAGING_VAR_FILES)
+
+tf-staging-plan:
+	@cd deploy/infrastructure && \
+	export AWS_PROFILE=$(AWS_PROFILE_STAGING) AWS_REGION=$(AWS_REGION_STAGING); \
+	terraform workspace select shared-staging-1; \
+	terraform plan $(STAGING_VAR_FILES)
+
+tf-staging-apply:
+	@cd deploy/infrastructure && \
+	export AWS_PROFILE=$(AWS_PROFILE_STAGING) AWS_REGION=$(AWS_REGION_STAGING); \
+	terraform workspace select shared-staging-1; \
+	terraform apply $(STAGING_VAR_FILES)
+
+tf-prod-refresh:
+	@cd deploy/infrastructure && \
+	export AWS_PROFILE=$(AWS_PROFILE_PROD) AWS_REGION=$(AWS_REGION_PROD); \
+	terraform workspace select shared-prod-1; \
+	terraform refresh $(PROD_VAR_FILES)
+
+tf-prod-plan:
+	@cd deploy/infrastructure && \
+	export AWS_PROFILE=$(AWS_PROFILE_PROD) AWS_REGION=$(AWS_REGION_PROD); \
+	terraform workspace select shared-prod-1; \
+	terraform plan $(PROD_VAR_FILES)
+
+tf-prod-apply:
+	@cd deploy/infrastructure && \
+	export AWS_PROFILE=$(AWS_PROFILE_PROD) AWS_REGION=$(AWS_REGION_PROD); \
+	terraform workspace select shared-prod-1; \
+	terraform apply $(PROD_VAR_FILES)
+
+.PHONY: deploy-staging
+deploy-staging:
+	@./deploy/infrastructure/live/shared/staging-1/push_all_the_things.sh
+
+.PHONY: deploy-prod
+deploy-prod:
+	@./deploy/infrastructure/live/shared/prod-1/push_all_the_things.sh
+
+.PHONY: update-config-staging
+update-config-staging:
+	@echo "Updating SaaS configuration for staging environment..."
+	@cd deploy/infrastructure && \
+	terraform workspace select shared-staging-1 && \
+	terraform output -json | python ../../util/terraform_config_parser/terraform_config_parser.py $(BASE_DIR)
+	@echo "SaaS configuration for staging environment updated."
+
+.PHONY: update-config-prod
+update-config-prod:
+	@echo "Updating SaaS configuration for production environment..."
+	@cd deploy/infrastructure && \
+	terraform workspace select shared-prod-1 && \
+	terraform output -json | python ../../util/terraform_config_parser/terraform_config_parser.py $(BASE_DIR)
+	@echo "SaaS configuration for production environment updated."

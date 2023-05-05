@@ -214,23 +214,23 @@ The `ecs-tunnel` utility is used to create a tunnel between your local machine a
 
    For more details about `ecs-tunnel`, visit its [PyPI page](https://pypi.org/project/ecs-tunnel/).
 
+Here is the updated README snippet with instructions to run `make ecs-tunnel-staging-ssh` and the SSH command and password to connect:
+
 ### Connecting to the Fargate Task
 
-1. Clone your project repository and navigate to the project directory.
+1. Run the following `make` command to set the SSH password and create an SSH tunnel from your local machine to the Fargate task:
 
-2. Run the following `make` command to create an SSH tunnel from your local machine to the Fargate task:
-
-   ```
+   ```bash
    make ecs-tunnel-staging-ssh
    ```
 
-3. With the tunnel established, you can now connect to the Fargate task using SSH on port 2222:
+2. The command will output the SSH connection details. Use the provided SSH command and password to connect to the Fargate task:
 
-   ```
-   ssh -p 2222 root@localhost
+   ```bash
+   ssh root@127.0.0.1 -p 2222
    ```
 
-   Replace `root` with the appropriate user for your Fargate container.
+   Password: TEMP_PASS
 
 ### Connecting to Postgres DB in a cluster (TODO)
 
