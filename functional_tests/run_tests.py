@@ -5,7 +5,7 @@ import pathlib
 
 import gevent
 import pytest
-from locust import HttpUser, events, task
+from locust import events
 from locust.env import Environment
 from locust.stats import stats_history, stats_printer
 from pytest import ExitCode
@@ -41,19 +41,19 @@ class MyPlugin:
 
 def run():
     if stage and loc and stage in ["staging", "prod2"]:
-        # logger.info("Running functional tests")
-        # conftest = __import__("functional_tests.conftest")
+        logger.info("Running functional tests")
+        conftest = __import__("functional_tests.conftest")
 
-        # if pytest.main(
-        #     # ["-s", "-k", "test_api_v4_role_access", loc],
-        #     # ["-s", "-k", "test_celery", loc],
-        #     ["-s", loc],
-        #     plugins=[conftest, MyPlugin()],
-        # ) in [
-        #     ExitCode.TESTS_FAILED,
-        #     ExitCode.USAGE_ERROR,
-        # ]:
-        #     raise RuntimeError("Functional tests failed")
+        if pytest.main(
+            # ["-s", "-k", "test_api_v4_role_access", loc],
+            # ["-s", "-k", "test_celery", loc],
+            ["-s", loc],
+            plugins=[conftest, MyPlugin()],
+        ) in [
+            ExitCode.TESTS_FAILED,
+            ExitCode.USAGE_ERROR,
+        ]:
+            raise RuntimeError("Functional tests failed")
 
         runner = locust_env.create_local_runner()
         locust_env.events.init.fire(environment=locust_env, runner=runner)

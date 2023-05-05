@@ -21,6 +21,29 @@
       }
     },
     {
+      "name": "Locust: 5 users, with specific config file",
+      "type": "python",
+      "request": "launch",
+      "module": "locust",
+      "args": [
+        "-f",
+        "${workspaceFolder}/load_tests",
+        "--headless",
+        "--users=5",
+        "--config=${workspaceFolder}/locust.conf"
+      ],
+      "console": "integratedTerminal",
+      "gevent": true,
+      "env": {
+        "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
+        "AWS_REGION": "us-west-2",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
+        "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
+        "STAGE": "staging",
+        "TEST_USER_DOMAIN": "localhost"
+      }
+    },
+    {
       "name": "Local Config: CloudUmi Celery",
       "program": "${workspaceFolder}/common/celery_tasks/run.py",
       "type": "python",

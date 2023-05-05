@@ -68,9 +68,9 @@ class LoadTest(FastHttpUser):
     def user_profile_auth(self):
         resp = self.client.request(
             "GET",
-            # "/api/v2/user_profile",
+            "/api/v2/user_profile",
             # "/healthcheck",
-            "/api/v4/verify",
+            # "/api/v4/verify",
             headers={
                 "Host": TEST_USER_DOMAIN,
                 "Accept": "application/json, text/plain, */*",
