@@ -3,6 +3,7 @@ aiopath
 cryptography
 humanfriendly
 jq
+more-itertools
 noq-dax-client
 pydantic
 python3-saml

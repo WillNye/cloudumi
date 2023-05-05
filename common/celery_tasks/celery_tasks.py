@@ -38,6 +38,7 @@ from celery.signals import (
     task_success,
     task_unknown,
 )
+from more_itertools import chunked
 
 # from celery_progress.backend import ProgressRecorder
 from retrying import retry
@@ -1099,6 +1100,12 @@ def cache_access_advisor_for_account(tenant: str, account_id: str) -> Dict[str, 
     :param tenant: Tenant ID
     :param account_id: AWS Account ID
     """
+    if not config.get_tenant_specific_key(
+        "cache_iam_resources_for_account.check_unused_permissions.enabled",
+        tenant,
+        True,
+    ):
+        return {}
     log_data = {
         "account_id": account_id,
         "tenant": tenant,
@@ -1122,6 +1129,13 @@ def cache_access_advisor_across_accounts(tenant: str) -> Dict:
     """
     if not tenant:
         raise Exception("`tenant` must be passed to this task.")
+
+    if not config.get_tenant_specific_key(
+        "cache_iam_resources_for_account.check_unused_permissions.enabled",
+        tenant,
+        True,
+    ):
+        return {}
 
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
@@ -1237,10 +1251,15 @@ def cache_iam_resources_across_accounts(
             else:
                 tasks.append(cache_iam_resources_for_account.s(account_id, tenant))
         if run_subtasks:
-            results = group(*tasks).apply_async()
-            if wait_for_subtask_completion:
-                # results.join() forces function to wait until all tasks are complete
-                results.join(disable_sync_subtasks=False)
+            chunk_size = config.get_tenant_specific_key(
+                "celery.task_chunk_size", tenant, 10
+            )
+
+            for task_chunk in chunked(tasks, chunk_size):
+                task_group = group(*task_chunk)
+                result = task_group.apply_async()
+                if wait_for_subtask_completion:
+                    result.join(disable_sync_subtasks=False)
     else:
         log.debug(
             {

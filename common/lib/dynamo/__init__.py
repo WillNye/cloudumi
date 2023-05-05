@@ -15,6 +15,7 @@ import bcrypt
 import simplejson as json
 from boto3.dynamodb.conditions import Key
 from boto3.dynamodb.types import Binary  # noqa
+from botocore.exceptions import ClientError
 from tenacity import Retrying, stop_after_attempt, wait_fixed
 
 from common.config import config
@@ -25,6 +26,7 @@ from common.exceptions.exceptions import (
     NoExistingRequest,
     NoMatchingRequest,
     PendingRequestAlreadyExists,
+    ProvisionedThroughputExceededError,
 )
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
@@ -249,8 +251,18 @@ class BaseDynamoHandler:
                     stop=stop_after_attempt(cluster_config.dynamo_retry_count),
                     wait=wait_fixed(cluster_config.dynamo_wait_time_between_retries),
                 ):
-                    with attempt:
-                        batch.put_item(Item=self._data_to_dynamo_replace(item))
+                    try:
+                        with attempt:
+                            batch.put_item(Item=self._data_to_dynamo_replace(item))
+                    except ClientError as e:
+                        error_code = e.response["Error"]["Code"]
+                        if error_code == "ProvisionedThroughputExceededException":
+                            raise ProvisionedThroughputExceededError(
+                                f"Provisioned throughput exceeded for table '{table.name}'. "
+                                "Consider increasing the provisioning level with the UpdateTable API."
+                            )
+                        else:
+                            raise
 
     def parallel_delete_table_entries(self, table, keys):
         with table.batch_writer() as batch:
