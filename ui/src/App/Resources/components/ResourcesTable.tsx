@@ -36,10 +36,12 @@ const ResourcesTable = () => {
 
   const tableRows = useMemo(() => {
     return (resourcesData?.data || []).map(item => {
+      const strippedPath = item.file_path.replace(/\.yaml$/, '');
+      const provider = item.provider.toLowerCase();
       return {
         ...item,
         file_path: (
-          <Link to={`/resources/${item.provider}${item.file_path}`}>
+          <Link to={`/resources/${provider}${strippedPath}`}>
             {item.file_path}
           </Link>
         )
@@ -60,7 +62,11 @@ const ResourcesTable = () => {
   const handleOnFilterChange = useCallback(filter => {
     setQuery(query => ({
       ...query,
-      filtering: filter
+      filtering: filter,
+      pagination: {
+        ...query.pagination,
+        currentPageIndex: 1
+      }
     }));
   }, []);
 
