@@ -291,7 +291,7 @@ class TenantSlackApp:
             lazy=[self.noq_command_welcome_selection],
         )
         # This is the handler for the `/noq` command
-        self.tenant_slack_app.command("/noq")(
+        self.tenant_slack_app.command(re.compile("/noq.*"))(
             ack=self.handle_generic_ack,
             lazy=[self.noq_command_welcome_selection],
         )

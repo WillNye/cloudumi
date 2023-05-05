@@ -8,12 +8,13 @@ modify_ecs_task_role = false
 account_id = "259868150464"
 
 # General cluster metadata
-namespace            = "shared"
-zone                 = "staging.noq.dev"
-stage                = "staging"
-attributes           = 1
-domain_name          = "*.staging.noq.dev"
-landing_page_domains = ["shared.staging.noq.dev"]
+namespace   = "shared"
+zone        = "staging.noq.dev"
+stage       = "staging"
+attributes  = 1
+domain_name = "*.staging.noq.dev"
+# `localhost` needed for testing, as we need to hit the tenant_registration endpoint through localhost
+landing_page_domains = ["shared.staging.noq.dev", "localhost"]
 profile              = "staging/staging_admin"
 
 region     = "us-west-2"
