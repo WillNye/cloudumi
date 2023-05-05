@@ -24,7 +24,6 @@ TEST_USER_DOMAIN_US = (
 
 
 class LoadTest(FastHttpUser):
-    host = "http://localhost:8092"
     default_headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"
     }
@@ -69,7 +68,9 @@ class LoadTest(FastHttpUser):
     def user_profile_auth(self):
         resp = self.client.request(
             "GET",
-            "/api/v2/user_profile",
+            # "/api/v2/user_profile",
+            # "/healthcheck",
+            "/api/v4/verify",
             headers={
                 "Host": TEST_USER_DOMAIN,
                 "Accept": "application/json, text/plain, */*",
@@ -84,6 +85,7 @@ class LoadTest(FastHttpUser):
                 "sec-ch-ua": '"Google Chrome";v="111", "Not(A:Brand";v="8", "Chromium";v="111"',
                 "sec-ch-ua-mobile": "?0",
                 "sec-ch-ua-platform": '"macOS"',
+                "X-Forwarded-Host": TEST_USER_DOMAIN,
                 "X-Forwarded-For": "127.0.0.1",
             },
         )

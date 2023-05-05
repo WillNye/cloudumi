@@ -405,7 +405,6 @@ class BaseHandler(TornadoRequestHandler):
             return True
         return False
 
-    # @async_profile
     async def authorization_flow(
         self,
         user: Optional[str] = None,
@@ -676,6 +675,9 @@ class BaseHandler(TornadoRequestHandler):
 
         self.contractor = False  # TODO: Add functionality later for contractor detection via regex or something else
 
+        if not self.groups:
+            await self.set_groups()
+
         if (
             config.get_tenant_specific_key(
                 "auth.cache_user_info_server_side", tenant, True
@@ -700,25 +702,7 @@ class BaseHandler(TornadoRequestHandler):
                 self.user_role_name = cache.get("user_role_name")
                 refreshed_user_roles_from_cache = True
 
-        await self.set_groups()
-
         self.console_only = console_only
-        # # Set Per-User Role Name (This logic is not used in OSS deployment)
-        # if (
-        #     config.get_tenant_specific_key("user_roles.opt_in_group", tenant)
-        #     and config.get_tenant_specific_key("user_roles.opt_in_group", tenant)
-        #     in self.groups
-        # ):
-        #     # Get or create user_role_name attribute
-        #     self.user_role_name = await auth.get_or_create_user_role_name(self.user)
-        # await self.set_eligible_roles(console_only)
-
-        # if not self.eligible_roles:
-        #     log_data[
-        #         "message"
-        #     ] = "No eligible roles detected for user. But letting them continue"
-        #     log.warning(log_data)
-        # log_data["eligible_roles"] = len(self.eligible_roles)
 
         if (
             not self.eligible_accounts
@@ -963,7 +947,6 @@ class BaseHandler(TornadoRequestHandler):
         cookie_name = self.get_noq_auth_cookie_key()
         self.clear_cookie(cookie_name)
 
-    # @async_profile
     async def set_jwt_cookie(self, tenant, roles: list = None):
         expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
             minutes=config.get_tenant_specific_key(
@@ -1285,7 +1268,6 @@ class BaseAdminHandler(BaseHandler):
         self.set_header("Content-Type", "application/json")
         super(BaseAdminHandler, self).set_default_headers()
 
-    # @async_profile
     async def authorization_flow(
         self,
         user: str = None,

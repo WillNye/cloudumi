@@ -132,7 +132,8 @@
         "PYTHONASYNCIODEBUG": "1",
         "AWS_REGION": "us-west-2",
         "RUNTIME_PROFILE": "API",
-        "GEVENT_SUPPORT": "true"
+        "GEVENT_SUPPORT": "true",
+        "PYTHON_PROFILE_ENABLE": "true"
       }
     },
     {
@@ -150,7 +151,8 @@
         // "PYTHONASYNCIODEBUG": "1",
         "AWS_REGION": "us-west-2",
         "RUNTIME_PROFILE": "API",
-        "GEVENT_SUPPORT": "true"
+        "GEVENT_SUPPORT": "true",
+        "PYTHON_PROFILE_ENABLE": "true"
       }
     },
     {
