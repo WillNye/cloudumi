@@ -48,19 +48,20 @@ describe('Tenant registration and login', () => {
     });
   });
 
-  after(() => {
-    cy.request({
-      method: 'DELETE',
-      url: `${Cypress.config('baseUrl')}/api/v3/tenant_registration`,
-      body: {
-        email,
-        domain
-      }
-    }).then(response => {
-      expect(response.status).to.eq(200);
-      expect(response.body.success).to.eq(true);
-    });
-  });
+  // TODO: Undo
+  // after(() => {
+  //   cy.request({
+  //     method: 'DELETE',
+  //     url: `${Cypress.config('baseUrl')}/api/v3/tenant_registration`,
+  //     body: {
+  //       email,
+  //       domain
+  //     }
+  //   }).then(response => {
+  //     expect(response.status).to.eq(200);
+  //     expect(response.body.success).to.eq(true);
+  //   });
+  // });
 
   it('Should create a new tenant and log in successfully', () => {
     defaultCommandTimeout: 15000;

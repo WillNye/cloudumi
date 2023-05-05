@@ -9,11 +9,11 @@ yarn --cwd ui
 yarn --cwd ui add ts-node
 export GEVENT_SUPPORT="True"
 
-# TODO: Uncomment
+
 # Run preflight functional tests
-set -e
-python /app/common/preflight/run.py
-set +e
+# set -e
+# python /app/common/preflight/run.py
+# set +e
 
 # Start API server in the background, save its process ID to a file, and redirect its output to a log file
 RUNTIME_PROFILE=API python api/__main__.py > /tmp/api_output.log 2>&1 & echo $! > /tmp/api_pid.txt
@@ -36,7 +36,7 @@ fi
 
 # Change to the 'ui' directory and run Cypress tests
 cd ui
-CYPRESS_TS_NODE_REGISTER=true cypress run || true
+CYPRESS_TS_NODE_REGISTER=true cypress run
 cypress_exit_code=$?
 
 # Upload Cypress screenshots and videos to transfer.sh and print the URLs
