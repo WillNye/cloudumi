@@ -330,7 +330,7 @@ class IambicGit:
                 configure_plugins=False,
                 approved_plugins_only=True,
             )
-            return load_templates([full_path])
+            return load_templates([full_path], use_multiprocessing=False)
         raise Exception("Template not found")
 
     async def okta_add_user_to_app(

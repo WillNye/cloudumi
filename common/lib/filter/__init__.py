@@ -88,36 +88,56 @@ async def filter_data(
             match = True
             for token in filter.tokens:
                 prop_val = item.get(token.propertyKey)
-                if token.operator == FilterOperator.equals:
-                    match = match and prop_val == token.value
-                elif token.operator == FilterOperator.not_equals:
-                    match = match and prop_val != token.value
-                elif token.operator == FilterOperator.contains:
-                    match = match and token.value in prop_val
-                elif token.operator == FilterOperator.does_not_contain:
-                    match = match and token.value not in prop_val
-                elif token.operator == FilterOperator.greater_than:
-                    match = match and prop_val > token.value
-                elif token.operator == FilterOperator.less_than:
-                    match = match and prop_val < token.value
+                if prop_val is None:  # If prop_val is None, do a generic search
+                    generic_match = any(
+                        token.value in str(item[key]) for key in item.keys()
+                    )
+                    match = match and generic_match
+                else:
+                    if token.operator == FilterOperator.equals:
+                        match = match and prop_val == token.value
+                    elif token.operator == FilterOperator.not_equals:
+                        match = match and prop_val != token.value
+                    elif token.operator == FilterOperator.contains:
+                        match = match and (
+                            prop_val is not None and token.value in prop_val
+                        )
+                    elif token.operator == FilterOperator.does_not_contain:
+                        match = match and (
+                            prop_val is None or token.value not in prop_val
+                        )
+                    elif token.operator == FilterOperator.greater_than:
+                        match = match and prop_val > token.value
+                    elif token.operator == FilterOperator.less_than:
+                        match = match and prop_val < token.value
             if match:
                 filtered_data.append(item)
         elif filter.operation == FilterOperation._or:
             match = False
             for token in filter.tokens:
                 prop_val = item.get(token.propertyKey)
-                if token.operator == FilterOperator.equals:
-                    match = match or prop_val == token.value
-                elif token.operator == FilterOperator.not_equals:
-                    match = match or prop_val != token.value
-                elif token.operator == FilterOperator.contains:
-                    match = match or token.value in prop_val
-                elif token.operator == FilterOperator.does_not_contain:
-                    match = match or token.value not in prop_val
-                elif token.operator == FilterOperator.greater_than:
-                    match = match or prop_val > token.value
-                elif token.operator == FilterOperator.less_than:
-                    match = match or prop_val < token.value
+                if prop_val is None:  # If prop_val is None, do a generic search
+                    generic_match = any(
+                        token.value in str(item[key]) for key in item.keys()
+                    )
+                    match = match or generic_match
+                else:
+                    if token.operator == FilterOperator.equals:
+                        match = match or prop_val == token.value
+                    elif token.operator == FilterOperator.not_equals:
+                        match = match or prop_val != token.value
+                    elif token.operator == FilterOperator.contains:
+                        match = match or (
+                            prop_val is not None and token.value in prop_val
+                        )
+                    elif token.operator == FilterOperator.does_not_contain:
+                        match = match or (
+                            prop_val is None or token.value not in prop_val
+                        )
+                    elif token.operator == FilterOperator.greater_than:
+                        match = match or prop_val > token.value
+                    elif token.operator == FilterOperator.less_than:
+                        match = match or prop_val < token.value
             if match:
                 filtered_data.append(item)
     filtered_count = len(filtered_data)

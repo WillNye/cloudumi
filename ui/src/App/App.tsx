@@ -28,9 +28,9 @@ export const App: FC = () => (
 
           <Route
             path="/resources/:provider/*"
-            loader={({ params }) => {
-              console.log(params['*']); // "one/two"
-            }}
+            // loader={({ params }) => {
+            //   console.log(params['*']); // "one/two"
+            // }}
             element={<ResourceDetails />}
           />
           <Route path="*" element={<NotFound />} />

@@ -3050,7 +3050,7 @@ app.conf.timezone = "UTC"
 
 # TODO: Remove
 # TODO: Need a way to get signaled with files change in repo
-# from multiprocessing import current_process  # noqa: E402
+from multiprocessing import current_process  # noqa: E402
 
 # if current_process().name == "MainProcess":
 #     tenants = get_all_tenants()
