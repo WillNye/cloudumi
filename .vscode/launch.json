@@ -285,6 +285,19 @@
         "AWS_CA_BUNDLE": "/usr/local/share/ca-certificates/burpsuite.crt",
         "REQUESTS_CA_BUNDLE": "/usr/local/share/ca-certificates/burpsuite.crt"
       }
+    },
+    {
+      "name": "Staging Deploy: ecs_deployer.py",
+      "program": "${workspaceFolder}/deploy/infrastructure/live/shared/staging-1/ecs_deployer.py",
+      "type": "python",
+      "request": "launch",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        // Run `git describe --tags --abbrev=0` to get VERSION
+        "VERSION": "1.5.579",
+        "AWS_PROFILE": "staging/staging_admin"
+      }
     }
   ]
 }

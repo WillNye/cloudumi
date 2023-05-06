@@ -3,17 +3,19 @@ import argparse
 import os
 import pathlib
 
-import gevent
+# import gevent
 import pytest
-from locust import events
-from locust.env import Environment
-from locust.stats import stats_history, stats_printer
+
+# from locust import events
+# from locust.env import Environment
+# from locust.stats import stats_history, stats_printer
 from pytest import ExitCode
 
 from common.config import config
-from load_tests.locustfile import LoadTest
 
-locust_env = Environment(user_classes=[LoadTest], events=events)
+# from load_tests.locustfile import LoadTest
+
+# locust_env = Environment(user_classes=[LoadTest], events=events)
 
 logger = config.get_logger()
 
@@ -55,13 +57,13 @@ def run():
         ]:
             raise RuntimeError("Functional tests failed")
 
-        runner = locust_env.create_local_runner()
-        locust_env.events.init.fire(environment=locust_env, runner=runner)
-        gevent.spawn(stats_printer(locust_env.stats))
-        gevent.spawn(stats_history, locust_env.runner)
-        runner.start(2, spawn_rate=0.25)
-        gevent.spawn_later(60, lambda: runner.quit())
-        runner.greenlet.join()
+        # runner = locust_env.create_local_runner()
+        # locust_env.events.init.fire(environment=locust_env, runner=runner)
+        # gevent.spawn(stats_printer(locust_env.stats))
+        # gevent.spawn(stats_history, locust_env.runner)
+        # runner.start(2, spawn_rate=0.25)
+        # gevent.spawn_later(60, lambda: runner.quit())
+        # runner.greenlet.join()
 
 
 if __name__ == "__main__":
