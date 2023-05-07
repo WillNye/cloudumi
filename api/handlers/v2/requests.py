@@ -152,6 +152,10 @@ async def validate_request_creation(
         None,
     ):
         role_arn = tra_change.principal.principal_arn
+        if not handler.eligible_roles:
+            handler.eligible_roles = await handler.get_eligible_roles(
+                handler.console_only
+            )
         tra_supported_roles = await get_tra_supported_roles_by_tag(
             handler.eligible_roles, handler.groups, handler.user, tenant
         )

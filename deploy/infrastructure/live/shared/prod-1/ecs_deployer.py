@@ -40,11 +40,15 @@ service_task_definition_map = [
     },
 ]
 
-run_task_definition_map = [
+preflight_task_definition_map = [
     {
-        "task": "preflight",
-        "task_definition": f"{current_path}/task_definition_preflight.yaml",
-    }
+        "task": "preflight_load_tests",
+        "task_definition": f"{current_path}/task_definition_preflight_load_tests.yaml",
+    },
+    {
+        "task": "preflight_functional_tests",
+        "task_definition": f"{current_path}/task_definition_preflight_functional_tests.yaml",
+    },
 ]
 
 cluster_name = "noq-dev-shared-prod-1"
@@ -71,6 +75,23 @@ identity_res = boto3.client("sts").get_caller_identity()
 identity = identity_res["Arn"].replace(":sts:", ":iam:").replace("assumed-role", "role")
 
 
+def get_task_failure_reason(cluster_name, task_arn):
+    ecs_client = boto3.client("ecs", region_name=region)
+    task_details = ecs_client.describe_tasks(cluster=cluster_name, tasks=[task_arn])
+    task = task_details["tasks"][0]
+
+    if task.get("stoppedReason"):
+        return task["stoppedReason"]
+
+    container_reasons = [
+        container["reason"]
+        for container in task["containers"]
+        if container.get("reason")
+    ]
+
+    return ", ".join(container_reasons)
+
+
 def get_task_log_stream(log_group_name, log_stream_name_prefix):
     logs_client = boto3.client("logs", region_name=region)
 
@@ -89,7 +110,9 @@ def get_task_log_stream(log_group_name, log_stream_name_prefix):
         return None
 
 
-def print_new_log_events(log_group_name, log_stream_name_prefix, start_time):
+def print_new_log_events(
+    log_group_name, log_stream_name_prefix, start_time, container_name, task_name
+):
     logs_client = boto3.client("logs", region_name=region)
     try:
         log_stream_name = get_task_log_stream(log_group_name, log_stream_name_prefix)
@@ -100,7 +123,7 @@ def print_new_log_events(log_group_name, log_stream_name_prefix, start_time):
             raise
 
     new_start_time = start_time
-    if log_stream_name:
+    if log_stream_name and isinstance(start_time, int):
         response = logs_client.get_log_events(
             logGroupName=log_group_name,
             logStreamName=log_stream_name,
@@ -109,7 +132,9 @@ def print_new_log_events(log_group_name, log_stream_name_prefix, start_time):
         )
 
         for event in response["events"]:
-            print(f"{event['timestamp']}: {event['message']}")
+            print(
+                f"{task_name} - {container_name} - {event['timestamp']}: {event['message']}"
+            )
             new_start_time = event["timestamp"] + 1
 
         return new_start_time
@@ -151,7 +176,7 @@ except ClientError as e:
         },
     )
 
-for task in run_task_definition_map:
+for task in preflight_task_definition_map:
     with open(task["task_definition"]) as fp:
         task_definition = yaml.load(fp, Loader=yaml.FullLoader)
 
@@ -196,47 +221,51 @@ while True:
     if rollout_finalized:
         break
 
-    for task in run_task_definition_map:
+    for task in preflight_task_definition_map:
         task_arn = task["arns"][0]
         task_details = ecs_client.describe_tasks(cluster=cluster_name, tasks=[task_arn])
         task["status"] = task_details["tasks"][0]["lastStatus"]
 
+        # Check all the containers in the task for the exit code, and not just the first one
         task_failures = sum(
             [
-                exit_code.get("exitCode", 0)
-                for exit_code in task_details["tasks"][0]["containers"]
-                if exit_code.get("exitCode", 0) != 0
+                container.get("exitCode", 0)
+                for container in task_details["tasks"][0]["containers"]
+                if container.get("exitCode", 0) != 0
             ]
         )
+
         if task_failures > 0:
+            failure_reason = get_task_failure_reason(cluster_name, task_arn)
             print(f"Task: {task}, failed: {task_failures}")
+            print(f"Failure reason: {failure_reason}")
             failed = True
             break
 
     service_rollout_completed = len(
         [
             task
-            for task in run_task_definition_map
+            for task in preflight_task_definition_map
             if task["status"] == "STOPPED"
             or task["status"] == "DEPROVISIONING"
             or task["status"] == "STOPPING"
         ]
     )
 
-    if len(run_task_definition_map) == service_rollout_completed:
+    if len(preflight_task_definition_map) == service_rollout_completed:
         rollout_finalized = True
 
     if failed is True:
         print(
-            "Rollout failed - tasks as defined in the run_task_definition_map have failed"
+            "Rollout failed - tasks as defined in the preflight_task_definition_map have failed"
         )
         break
 
     print(
-        f"Currently waiting for {len(run_task_definition_map)} preflight tasks to complete:\n{[[x.get('task'), x.get('status'), x.get('arns')] for x in run_task_definition_map if x['status'] != 'STOPPED']}"
+        f"Currently waiting for {len(preflight_task_definition_map)} preflight tasks to complete:\n{[[x.get('task'), x.get('status'), x.get('arns')] for x in preflight_task_definition_map if x['status'] != 'STOPPED']}"
     )
 
-    for task in run_task_definition_map:
+    for task in preflight_task_definition_map:
         task_name = task["task"]
 
         with open(task["task_definition"]) as fp:
@@ -251,14 +280,22 @@ while True:
         awslogs_group = task_definition["containerDefinitions"][0]["logConfiguration"][
             "options"
         ]["awslogs-group"]
-
-        result = print_new_log_events(
-            awslogs_group, awslogs_stream_prefix, start_time.get(task_name, 0)
-        )
-        if result is None:
-            print(f"Task {task_name} has not started logging yet")
-        else:
-            start_time[task_name] = result
+        for container in task_definition.get("containerDefinitions", []):
+            container_name = container["name"]
+            awslogs_stream_prefix = f"{cluster_prefix}/{container_name}/{task_id}"
+            result = print_new_log_events(
+                awslogs_group,
+                awslogs_stream_prefix,
+                start_time.get(task_name, 0),
+                container_name,
+                task_name,
+            )
+            if result is None:
+                print(
+                    f"Task {task_name} and container {container_name} has not started logging yet"
+                )
+            else:
+                start_time[task_name] = result
 
     time.sleep(5.0)
 
@@ -398,16 +435,22 @@ while True:
                 "logConfiguration"
             ]["options"]["awslogs-group"]
 
-            task_name = service["service"]
-            task_id = service["arn"].split("/")[-1]
-            result = print_new_log_events(
-                awslogs_group, awslogs_stream_prefix, start_time
-            )
-
-            if result is None:
-                print(f"Service {task_name} has not started logging yet")
-            else:
-                start_time = result
+            for container in task_definition.get("containerDefinitions", []):
+                container_name = container["name"]
+                awslogs_stream_prefix = f"{cluster_prefix}/{container_name}/{task_id}"
+                result = print_new_log_events(
+                    awslogs_group,
+                    awslogs_stream_prefix,
+                    start_time.get(service_name, 0),
+                    container_name,
+                    service_name,
+                )
+                if result is None:
+                    print(
+                        f"Service {service_name} and container {container_name} has not started logging yet"
+                    )
+                else:
+                    start_time[service_name] = result
 
     time.sleep(5)
 

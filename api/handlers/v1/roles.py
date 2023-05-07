@@ -19,7 +19,7 @@ class GetRolesHandler(BaseMtlsHandler):
 
     async def get(self):
         """
-        /api/v1/get_roles - Endpoint used to get list of roles. Used by noq and newt.
+        /api/v1/get_roles - Endpoint used to get list of roles. Used by noq cli.
         ---
         get:
             description: Presents json-encoded list of eligible roles for the user.
@@ -36,6 +36,9 @@ class GetRolesHandler(BaseMtlsHandler):
         console_only = True
         if include_all_roles == ["true"]:
             console_only = False
+
+        if not self.eligible_roles:
+            await self.set_eligible_roles(console_only)
 
         log_data = {
             "function": "GetRolesHandler.get",
@@ -56,6 +59,9 @@ class GetRolesHandler(BaseMtlsHandler):
         )
 
         await self.authorization_flow(user=self.user, console_only=console_only)
+        if not self.eligible_roles:
+            await self.set_eligible_roles(console_only=console_only)
+
         self.write(json.dumps(sorted(self.eligible_roles)))
         self.set_header("Content-Type", "application/json")
         await self.finish()

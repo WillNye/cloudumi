@@ -177,6 +177,13 @@ class SlackTenantInstallRelationship(Base, SoftDeleteMixin):
                 await session.commit()
         return entry
 
+    async def delete(self):
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                await session.delete(self)
+                await session.commit()
+        return True
+
     @classmethod
     async def get_by_tenant(cls, tenant):
         async with ASYNC_PG_SESSION() as session:

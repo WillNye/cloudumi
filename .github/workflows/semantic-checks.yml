@@ -3,7 +3,7 @@ on: pull_request
 
 jobs:
   branch-naming-rules:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Cancel Previous Runs # Cancels github action runs if the PR/branch is updated
         uses: styfle/cancel-workflow-action@0.9.1
