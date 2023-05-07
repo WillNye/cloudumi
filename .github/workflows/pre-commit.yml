@@ -65,6 +65,7 @@ jobs:
             terraform \
             clang \
             nodejs -y
+          rm -rf /tmp/env
           mkdir -p /tmp/env
           python3.11 -m venv /tmp/env
           source /tmp/env/bin/activate
