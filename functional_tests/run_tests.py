@@ -69,7 +69,7 @@ def run():
             prev_stdout = os.dup(1)
             os.dup2(output_file.fileno(), 1)
             exit_code = pytest.main(
-                # ["--capture=sys", "-k", "TestCredentials", loc],
+                # ["--capture=sys", "-k", "test_retrieve_items", loc],
                 ["--capture=sys", loc],
                 plugins=[conftest, MyPlugin()],
             )

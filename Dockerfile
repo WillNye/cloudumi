@@ -51,7 +51,6 @@ RUN apt-get update && \
     . env/bin/activate && \
     python3.11 -m pip install -r requirements.lock && \
     npm install yarn -g && \
-    npm install cypress -g && \
     yarn --cwd frontend --dev && \
     yarn --cwd ui && \
     mkdir -p /var/run/sshd && \

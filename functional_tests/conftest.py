@@ -141,7 +141,7 @@ class FunctionalTest(AsyncHTTPTestCase):
 
         # Get XSRF token
         if method.lower() in ["post", "put", "delete"]:
-            r = self.fetch("/", headers=headers)
+            r = self.fetch("/api/v1/auth", headers=headers)
             self._update_cookies_return_xsrf(r.headers)
             for s in ["XSRF-TOKEN", "_xsrf"]:
                 if self.cookies.get(s):

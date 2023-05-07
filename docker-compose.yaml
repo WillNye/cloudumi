@@ -4,8 +4,8 @@
 # docker-compose -f docker-compose.yaml -f deploy/docker-compose-dependencies.yaml down && docker-compose -f docker-compose.yaml -f deploy/docker-compose-dependencies.yaml build && docker-compose -f docker-compose.yaml -f deploy/docker-compose-dependencies.yaml up --force-recreate
 version: "3"
 services:
-  cloudumi-preflight:
-    container_name: cloudumi-preflight
+  cloudumi-preflight-cypress:
+    container_name: cloudumi-preflight-cypress
     # TODO: Uncomment to limit resources to the same extent as ECS Fargate API server.
     # cpus: 2
     # mem_limit: 8g
@@ -17,7 +17,7 @@ services:
       # Uncomment to mount local code into container to see changes in realtime:
       # - .:/app:cached
       # Don't allow node_modules to be a volume in container
-      - ./common/scripts/preflight_tests.sh:/app/common/scripts/preflight_tests.sh:cached
+      - ./common/scripts/preflight/preflight_cypress.sh:/app/common/scripts/preflight/preflight_cypress.sh:cached
       - /app/frontend/node_modules/
       - /app/ui/node_modules/
     ports:
@@ -30,7 +30,7 @@ services:
       - cloudumi-redis
       - cloudumi-dynamodb
       - cloudumi-pg
-    command: bash -c 'common/scripts/preflight_tests.sh'
+    command: bash -c 'common/scripts/preflight/preflight_cypress.sh'
     # Uncomment to run container in background and connect via `docker run`:
     # command: tail -f /dev/null
     environment:
