@@ -137,7 +137,7 @@ def print_new_log_events(log_group_name, log_stream_name_prefix, start_time, con
         )
 
         for event in response["events"]:
-            print(f"{task_name} - {container_name} - {event["timestamp"]}: {event["message"]}")
+            print(f"{task_name} - {container_name} - {event['timestamp']}: {event['message']}")
             new_start_time = event["timestamp"] + 1
 
         return new_start_time

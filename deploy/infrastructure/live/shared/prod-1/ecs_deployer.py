@@ -49,6 +49,10 @@ preflight_task_definition_map = [
         "task": "preflight_functional_tests",
         "task_definition": f"{current_path}/task_definition_preflight_functional_tests.yaml",
     },
+    {
+        "task": "preflight_cypress",
+        "task_definition": f"{current_path}/task_definition_preflight_cypress.yaml",
+    },
 ]
 
 cluster_name = "noq-dev-shared-prod-1"
