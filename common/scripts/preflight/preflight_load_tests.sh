@@ -2,6 +2,7 @@
 
 # Function to send messages to Slack webhook
 send_to_slack() {
+  # #alerts slack channel
   webhook_url="A_SECRET"
   message=$1
   curl -X POST -H 'Content-type: application/json' --data "{'text': '${message}'}" ${webhook_url}
