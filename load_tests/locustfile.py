@@ -37,33 +37,6 @@ class LoadTest(FastHttpUser):
         )
     )
 
-    # # TODO: Uncomment this function when we switch to new UI
-    # @task
-    # def login(self):
-    #     with self.client.request(
-    #         "GET",
-    #         f"/login",
-    #         headers={
-    #             "Host": TEST_USER_DOMAIN,
-    #             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-    #             "Accept-Encoding": "gzip, deflate, br",
-    #             "Accept-Language": "en-US,en;q=0.9",
-    #             "Cache-Control": "max-age=0",
-    #             "Connection": "keep-alive",
-    #             "Sec-Fetch-Dest": "document",
-    #             "Sec-Fetch-Mode": "navigate",
-    #             "Sec-Fetch-Site": "none",
-    #             "Sec-Fetch-User": "?1",
-    #             "Upgrade-Insecure-Requests": "1",
-    #             "sec-ch-ua": '"Google Chrome";v="111", "Not(A:Brand";v="8", "Chromium";v="111"',
-    #             "sec-ch-ua-mobile": "?0",
-    #             "sec-ch-ua-platform": '"macOS"',
-    #             "X-Forwarded-For": "127.0.0.1"
-    #         },
-    #         catch_response=True,
-    #     ) as resp:
-    #         assert resp.status_code == 200
-
     @task
     def user_profile_auth(self):
         resp = self.client.request(
@@ -90,6 +63,91 @@ class LoadTest(FastHttpUser):
             },
         )
 
+        if resp.status_code != 200:
+            print(TEST_USER_DOMAIN)
+            print(self.host)
+            print(resp.text)
+            print(f"Error response: {resp.status_code}")
+
+    @task
+    def auth_endpoint_without_auth(self):
+        # This will return a non 200 since it doesn't contain an auth cookie
+        with self.client.request(
+            "GET",
+            "/api/v1/auth",
+            headers={
+                "Host": TEST_USER_DOMAIN,
+                "Accept": "application/json, text/plain, */*",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Connection": "keep-alive",
+                "Referer": f"{TEST_USER_DOMAIN}/login",
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "same-origin",
+                "sec-ch-ua": '"Google Chrome";v="111", "Not(A:Brand";v="8", "Chromium";v="111"',
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": '"macOS"',
+                "X-Forwarded-Host": TEST_USER_DOMAIN,
+                "X-Forwarded-For": "127.0.0.1",
+            },
+            catch_response=True,
+        ) as resp:
+            if resp.status_code != 200:
+                resp.success()
+
+    @task
+    def healthcheck_vanilla_tornado_handler(self):
+        # This should be the fastest endpoint, because it
+        # uses the native tornado.web.RequestHandler
+        resp = self.client.request(
+            "GET",
+            "/healthcheck_vanilla",
+            headers={
+                "Host": TEST_USER_DOMAIN,
+                "Accept": "application/json, text/plain, */*",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Connection": "keep-alive",
+                "Referer": f"{TEST_USER_DOMAIN}/login",
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "same-origin",
+                "sec-ch-ua": '"Google Chrome";v="111", "Not(A:Brand";v="8", "Chromium";v="111"',
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": '"macOS"',
+                "X-Forwarded-Host": TEST_USER_DOMAIN,
+                "X-Forwarded-For": "127.0.0.1",
+            },
+        )
+        if resp.status_code != 200:
+            print(TEST_USER_DOMAIN)
+            print(self.host)
+            print(resp.text)
+            print(f"Error response: {resp.status_code}")
+
+    @task
+    def healthcheck(self):
+        resp = self.client.request(
+            "GET",
+            "/healthcheck",
+            headers={
+                "Host": TEST_USER_DOMAIN,
+                "Accept": "application/json, text/plain, */*",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Connection": "keep-alive",
+                "Referer": f"{TEST_USER_DOMAIN}/login",
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "same-origin",
+                "sec-ch-ua": '"Google Chrome";v="111", "Not(A:Brand";v="8", "Chromium";v="111"',
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": '"macOS"',
+                "X-Forwarded-Host": TEST_USER_DOMAIN,
+                "X-Forwarded-For": "127.0.0.1",
+            },
+        )
         if resp.status_code != 200:
             print(TEST_USER_DOMAIN)
             print(self.host)

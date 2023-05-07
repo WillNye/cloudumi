@@ -699,7 +699,7 @@ class BaseHandler(TornadoRequestHandler):
                 self.eligible_accounts = cache.get("eligible_accounts")
                 self.user_role_name = cache.get("user_role_name")
                 refreshed_user_roles_from_cache = True
-        if not self.groups:
+        if not refreshed_user_roles_from_cache:
             await self.set_groups()
         self.console_only = console_only
 
