@@ -727,21 +727,23 @@ class BaseHandler(TornadoRequestHandler):
             and not refreshed_user_roles_from_cache
         ):
             try:
-                red = await RedisHandler().redis(tenant)
-                red.setex(
-                    f"{tenant}_USER-{self.user}-CONSOLE-{console_only}",
-                    config.get_tenant_specific_key(
-                        "role_cache.cache_expiration", tenant, 60
-                    ),
-                    json.dumps(
-                        {
-                            "groups": self.groups,
-                            "eligible_roles": self.eligible_roles,
-                            "eligible_accounts": self.eligible_accounts,
-                            "user_role_name": self.user_role_name,
-                        }
-                    ),
-                )
+                # TODO: Figure out how to get smarter about eligible role caching
+                if self.eligible_roles:
+                    red = await RedisHandler().redis(tenant)
+                    red.setex(
+                        f"{tenant}_USER-{self.user}-CONSOLE-{console_only}",
+                        config.get_tenant_specific_key(
+                            "role_cache.cache_expiration", tenant, 60
+                        ),
+                        json.dumps(
+                            {
+                                "groups": self.groups,
+                                "eligible_roles": self.eligible_roles,
+                                "eligible_accounts": self.eligible_accounts,
+                                "user_role_name": self.user_role_name,
+                            }
+                        ),
+                    )
             except (
                 redis.exceptions.ConnectionError,
                 redis.exceptions.ClusterDownError,

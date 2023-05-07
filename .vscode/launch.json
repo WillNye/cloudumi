@@ -251,17 +251,28 @@
       }
     },
     {
-      "name": "Debug test",
+      "name": "Debug: Unit tests",
       "type": "python",
       "request": "launch",
+      "module": "pytest",
+      "args": [
+        "--ignore",
+        "functional_tests",
+        "-c",
+        "pytest.ini",
+        "-s",
+        "test_role_api_fail_multiple_matching_roles",
+        "."
+      ],
       "console": "externalTerminal",
       "justMyCode": false,
       "stopOnEntry": false,
       "env": {
         "CONFIG_LOCATION": "${workspaceFolder}/util/pytest/test_configuration.yaml",
-        "PYTHONPATH": "${workspaceFolder}/",
+        "PYTHONPATH": "${workspaceFolder}",
         "PYTEST_PLUGINS": "util.tests.fixtures.fixtures",
-        "PYTHONASYNCIODEBUG": "1"
+        "PYTHONASYNCIODEBUG": "1",
+        "PYTHONDONTWRITEBYTECODE": "1"
       }
     },
     {

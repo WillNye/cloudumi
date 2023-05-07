@@ -328,6 +328,8 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 403:
                     description: No matching roles found, or user has failed authn/authz.
         """
+        console_only = False
+
         tenant = self.ctx.tenant
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
@@ -339,6 +341,9 @@ class GetCredentialsHandler(BaseMtlsHandler):
             "tenant": tenant,
             "user": self.user,
         }
+
+        if not self.eligible_roles:
+            await self.set_eligible_roles(console_only)
 
         # Validate the input:
         data = tornado.escape.json_decode(self.request.body)

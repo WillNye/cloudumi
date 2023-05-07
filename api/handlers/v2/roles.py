@@ -46,6 +46,9 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
             302:
                 description: Redirects to AWS console
         """
+        console_only = True
+        if not self.eligible_roles:
+            await self.set_eligible_roles(console_only)
         tenant = self.ctx.tenant
         arguments = {k: self.get_argument(k) for k in self.request.arguments}
         role = role.lower()
@@ -424,9 +427,12 @@ class RoleDetailHandler(BaseAPIV2Handler):
                 role_details = None
 
         if not role_details:
+            error_message = f"Unable to retrieve the specified role: {account_id}/{role_name}. {error}"
+            log_data["message"] = error_message
+            log.debug(log_data)
             self.send_error(
                 404,
-                message=f"Unable to retrieve the specified role: {account_id}/{role_name}. {error}",
+                message=error_message,
             )
             return
         self.write(role_details.json())
@@ -671,9 +677,16 @@ class RoleDetailAppHandler(BaseMtlsHandler):
             error = str(e)
 
         if not role_details:
+            error_message = f"Unable to retrieve the specified role: {account_id}/{role_name}. {error}"
+            log.debug(
+                {
+                    **log_data,
+                    "message": error_message,
+                }
+            )
             self.send_error(
                 404,
-                message=f"Unable to retrieve the specified role: {account_id}/{role_name}. {error}",
+                message=error_message,
             )
             return
         self.write(role_details.json())
