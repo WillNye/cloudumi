@@ -1,5 +1,20 @@
 #!/bin/bash
 
+# Function to send messages to Slack webhook
+send_to_slack() {
+  webhook_url="A_SECRET"
+  message=$1
+  curl -X POST -H 'Content-type: application/json' --data "{'text': '${message}'}" ${webhook_url}
+}
+
+# Function to upload a file to transfer.sh and return the download URL
+upload_to_transfer_sh() {
+  filepath=$1
+  filename=$(basename "${filepath}")
+  transfer_url=$(curl --progress-bar --upload-file "${filepath}" "https://transfer.sh/${filename}")
+  echo "${transfer_url}"
+}
+
 # Start API server in the background, save its process ID to a file, and redirect its output to a log file
 RUNTIME_PROFILE=API python api/__main__.py > /tmp/api_output.log 2>&1 & echo $! > /tmp/api_pid.txt
 # Tail the API server log to the screen in the background and save its process ID to a file
@@ -25,13 +40,19 @@ kill $(cat /tmp/tail_pid.txt) || true
 # Kill the API server process
 kill $(cat /tmp/api_pid.txt) || true
 
-# Check the locust exit code and print the output log in case of failure
+# Print locust output and upload it to transfer.sh
+echo "Printing locust output:"
+cat /tmp/locust_output.log
+transfer_url=$(upload_to_transfer_sh "/tmp/locust_output.log")
+echo "Uploaded locust output to transfer.sh: ${transfer_url}"
+
+# Check the locust exit code and send the summary to the Slack webhook
 if [ $locust_exit_code -ne 0 ]; then
   echo "Locust load tests failed with exit code: $locust_exit_code"
-  echo "Printing locust output:"
-  cat /tmp/locust_output.log
+  send_to_slack "Locust load tests failed with exit code: $locust_exit_code. Check the logs for more information. Locust output: ${transfer_url}"
   exit $locust_exit_code
 else
   echo "Locust load tests finished successfully"
+  send_to_slack "Locust load tests finished successfully. Locust output: ${transfer_url}"
   exit 0
 fi
