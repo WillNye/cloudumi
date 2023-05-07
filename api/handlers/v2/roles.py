@@ -845,6 +845,8 @@ class GetRolesMTLSHandler(BaseMtlsHandler):
         )
 
         await self.authorization_flow(user=self.user, console_only=console_only)
+        if not self.eligible_roles:
+            await self.set_eligible_roles(console_only=console_only)
         eligible_roles_details_array = await get_eligible_role_details(
             sorted(self.eligible_roles),
             tenant,

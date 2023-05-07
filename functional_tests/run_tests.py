@@ -47,9 +47,9 @@ def run():
         conftest = __import__("functional_tests.conftest")
 
         if pytest.main(
-            # ["-s", "-k", "test_api_v4_role_access", loc],
-            # ["-s", "-k", "test_celery", loc],
-            ["-s", loc],
+            # ["--capture=sys", "-k", "test_api_v4_role_access", loc],
+            # ["--capture=sys", "-k", "TestCredentials", loc],
+            ["--capture=sys", loc],
             plugins=[conftest, MyPlugin()],
         ) in [
             ExitCode.TESTS_FAILED,

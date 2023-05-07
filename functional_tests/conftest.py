@@ -19,7 +19,7 @@ TEST_ROLE = "FunctionalTestNullRole"
 TEST_ROLE_ARN = f"arn:aws:iam::{TEST_ACCOUNT_ID}:role/{TEST_ROLE}"
 TEST_USER_NAME = "user@noq.dev"
 TEST_USER_GROUPS = ["engineering@noq.dev"]
-TEST_USER_DOMAIN = os.getenv("TEST_USER_DOMAIN")
+TEST_USER_DOMAIN: str = os.getenv("TEST_USER_DOMAIN", "")
 
 stage = os.getenv("STAGE", "staging")
 if not TEST_USER_DOMAIN:

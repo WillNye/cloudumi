@@ -425,6 +425,7 @@ class BaseHandler(TornadoRequestHandler):
         self.mfa_verification_required = None
         self.sso_user = None
         self.eligible_roles = []
+        self.user_role_name = None
         self.eligible_accounts = []
         self.request_uuid = str(uuid.uuid4())
         sso_signin_toggle = self.request.query_arguments.get("sso_signin") == [b"true"]
@@ -675,9 +676,6 @@ class BaseHandler(TornadoRequestHandler):
 
         self.contractor = False  # TODO: Add functionality later for contractor detection via regex or something else
 
-        if not self.groups:
-            await self.set_groups()
-
         if (
             config.get_tenant_specific_key(
                 "auth.cache_user_info_server_side", tenant, True
@@ -702,6 +700,7 @@ class BaseHandler(TornadoRequestHandler):
                 self.user_role_name = cache.get("user_role_name")
                 refreshed_user_roles_from_cache = True
 
+        await self.set_groups()
         self.console_only = console_only
 
         if (
@@ -1063,6 +1062,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
         self.request_uuid = str(uuid.uuid4())
         self.auth_cookie_expiration = 0
         self.password_reset_required = False
+        self.user_role_name = None
         tenant = self.get_tenant_name()
         self.ctx = RequestContext(
             tenant=tenant,
