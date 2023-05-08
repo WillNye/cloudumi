@@ -97,7 +97,9 @@ class IambicResourcesHandler(BaseHandler):
             )
         except KeyError:
             self.set_status(400)
-            self.write({"message": "Request body must contain a 'yaml' field"})
+            self.write(
+                {"message": "Request body must contain a 'raw_template_yaml' field"}
+            )
             return
 
         # Reuse the existing path matching and file path candidates
