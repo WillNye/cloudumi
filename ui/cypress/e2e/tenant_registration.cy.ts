@@ -49,20 +49,20 @@ describe('Tenant registration and login', () => {
     });
   });
 
-  // TODO: Undo
-  // after(() => {
-  //   cy.request({
-  //     method: 'DELETE',
-  //     url: `${Cypress.config('baseUrl')}/api/v3/tenant_registration`,
-  //     body: {
-  //       email,
-  //       domain
-  //     }
-  //   }).then(response => {
-  //     expect(response.status).to.eq(200);
-  //     expect(response.body.success).to.eq(true);
-  //   });
-  // });
+  // Delete tenant after testing completion
+  after(() => {
+    cy.request({
+      method: 'DELETE',
+      url: `${Cypress.config('baseUrl')}/api/v3/tenant_registration`,
+      body: {
+        email,
+        domain
+      }
+    }).then(response => {
+      expect(response.status).to.eq(200);
+      expect(response.body.success).to.eq(true);
+    });
+  });
 
   it('Should create a new tenant and log in successfully', () => {
     defaultCommandTimeout: 15000;
@@ -80,10 +80,6 @@ describe('Tenant registration and login', () => {
       // Wait for the tenant to be fully created, replicated and available
       cy.wait(10000);
 
-      // cy.intercept('http://localhost:8092/*', (req) => {
-      //   req.headers['Host'] = domain;
-      //   req.headers['V2_UI'] = 'true';
-      // });
       // Log in as admin for new tenant
       // Visit the login page
       cy.visit({
@@ -190,34 +186,6 @@ describe('Tenant registration and login', () => {
           generateAndFillTotpCode();
         });
 
-      // Get the manual TOTP code
-      // cy.get('[data-testid="manual-code"] pre')
-      //   .invoke('text')
-      //   .then(manualCode => {
-      //     // Generate a valid TOTP key using the manual code
-      //     const totpKey = authenticator.generate(manualCode);
-
-      //     // Fill in the TOTP key input
-      //     const totpKeyDigits = totpKey.split('');
-      //     totpKeyDigits.forEach((digit, index) => {
-      //       cy.wait(100);
-      //       cy.get(`input[aria-label="Authentication Code. Character ${index + 1}."]`)
-      //         .then(($input) => {
-      //           cy.wrap($input).type(digit).should('have.value', digit);
-      //         });
-      //     });
-
-      // Fill in the TOTP key input
-      // const totpKeyDigits = totpKey.split('');
-      // totpKeyDigits.forEach((digit, index) => {
-      //   cy.wait(1000);
-      //   cy.get(
-      //     `input[aria-label="Authentication Code. Character ${index + 1}."]`
-      //   )
-      //     .type(digit)
-      //     .should('have.value', digit);
-      // });
-
       // EULA
       // Scroll to the bottom of the EULA
       cy.get('[data-cy="eula-textarea"]').scrollTo('bottom', {
@@ -240,4 +208,3 @@ describe('Tenant registration and login', () => {
     });
   });
 });
-// });
