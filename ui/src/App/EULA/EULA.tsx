@@ -96,7 +96,7 @@ const EULA = () => {
             <h1>An error occured</h1>
             <p>We are already informed, please try again later</p>
             <br />
-            <Link to="/">
+            <Link to="/" data-cy="return-home-link">
               <Button color="primary">Return to Home</Button>
             </Link>
           </div>
@@ -112,6 +112,7 @@ const EULA = () => {
                 className={styles.document}
                 readOnly
                 value={agreementDocument}
+                data-cy="eula-textarea"
               ></textarea>
             </Segment>
 
@@ -122,6 +123,7 @@ const EULA = () => {
                 type={NotificationType.ERROR}
                 header="Error"
                 fullWidth
+                data-cy="submit-error-notification"
               >
                 {submitError}
               </Notification>
@@ -147,6 +149,7 @@ const EULA = () => {
                     onChange={handleOnChange}
                     checked={acceptAgreement}
                     disabled={!hasViewedAgreement}
+                    data-cy="accept-eula-checkbox"
                   />
                 </div>
               </Tooltip>
@@ -161,6 +164,7 @@ const EULA = () => {
                 fullWidth
                 disabled={!acceptAgreement}
                 onClick={handleOnSubmit}
+                data-cy="continue-button"
               >
                 Continue
               </Button>

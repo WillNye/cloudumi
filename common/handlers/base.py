@@ -701,6 +701,7 @@ class BaseHandler(TornadoRequestHandler):
                 refreshed_user_roles_from_cache = True
         if not refreshed_user_roles_from_cache:
             await self.set_groups()
+        self.is_admin = is_tenant_admin(self.user, self.groups, tenant)
         self.console_only = console_only
 
         if (
@@ -751,8 +752,6 @@ class BaseHandler(TornadoRequestHandler):
 
         if hasattr(self, "tracer") and self.tracer:
             await self.tracer.set_additional_tags({"USER": self.user})
-
-        self.is_admin = is_tenant_admin(self.user, self.groups, tenant)
         stats.timer(
             "base_handler.incoming_request",
             {

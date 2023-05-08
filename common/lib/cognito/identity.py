@@ -26,7 +26,7 @@ from common.models import (
     SSOIDPProviders,
 )
 
-ADMIN_GROUP_NAME = "noq_administrators"
+ADMIN_GROUP_NAME = "noq_admins"
 CLIENT_SECRET_MASK = "********"
 log = config.get_logger()
 

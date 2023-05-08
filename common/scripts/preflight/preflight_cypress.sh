@@ -25,6 +25,7 @@ pip install alembic
 yarn --cwd ui
 yarn --cwd ui add ts-node
 export GEVENT_SUPPORT="True"
+export TZ=UTC
 
 # Change `development` to `True`. This is needed
 # so the API server respects the X-Forwarded-For header

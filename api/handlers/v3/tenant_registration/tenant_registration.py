@@ -121,10 +121,6 @@ class TenantRegistrationHandler(TornadoRequestHandler):
         valid_registration_code = hashlib.sha256(
             "noq_tenant_{}".format(data.get("email")).encode()
         ).hexdigest()[0:20]
-        # Validate registration code
-        valid_registration_code = hashlib.sha256(
-            "noq_tenant_{}".format(data.get("email")).encode()
-        ).hexdigest()[0:20]
 
         if data.get("registration_code") != valid_registration_code:
             self.set_status(400)

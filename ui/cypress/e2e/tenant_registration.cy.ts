@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 import * as CryptoJS from 'crypto-js';
 import { authenticator } from 'otplib';
-
+const date = new Date();
 const DOMAIN = 'test-RANDOM_DIGITS.example.com';
 
 const generateRandomDigits = (): string => {
@@ -121,13 +121,13 @@ describe('Tenant registration and login', () => {
       // Submit the change password form
       // Update the selector to match your submit button element on the change password form
       cy.get('button[type="submit"]').click();
+      cy.task('log', `Date: ${date}`);
 
       // Get the manual TOTP code
       cy.get('[data-testid="manual-code"] pre')
         .invoke('text')
         .then(manualCode => {
-          console.log('Manual Code:', manualCode);
-          cy.log(`Manual Code: ${manualCode}`); // Log the value of manualCode
+          cy.task('log', `Manual Code: ${manualCode}`);
 
           // Recursive function to fill in the TOTP code
           const fillTotpCode = (index, totpKey) => {
@@ -166,8 +166,7 @@ describe('Tenant registration and login', () => {
             // Generate a valid TOTP key using the manual code
             const totpKey = authenticator.generate(manualCode);
 
-            console.log('Generated TOTP Key:', totpKey);
-            cy.log(`Generated TOTP Key: ${totpKey}`); // Log the value of the generated TOTP key
+            cy.task('log', `Generated TOTP Key: ${totpKey}`);
 
             // Check the remaining time for the current TOTP token
             const remainingTime = authenticator.timeRemaining();
@@ -180,10 +179,10 @@ describe('Tenant registration and login', () => {
             } else {
               // Start filling in the TOTP key input
               fillTotpCode(0, totpKey);
-              // Check for "Invalid MFA token" message after filling the TOTP key
-              cy.wait(1000).then(() => {
-                checkAndRetry();
-              });
+              // // Check for "Invalid MFA token" message after filling the TOTP key
+              // cy.wait(1000).then(() => {
+              //   checkAndRetry();
+              // });
             }
           };
 
@@ -218,6 +217,20 @@ describe('Tenant registration and login', () => {
       //     .type(digit)
       //     .should('have.value', digit);
       // });
+
+      // EULA
+      // Scroll to the bottom of the EULA
+      cy.get('[data-cy="eula-textarea"]').scrollTo('bottom', {
+        duration: 1000
+      });
+
+      // Wait for the checkbox to become enabled
+      cy.get('[data-cy="accept-eula-checkbox"]')
+        .should('not.be.disabled')
+        .click();
+
+      // Wait for the Continue button to become enabled
+      cy.get('[data-cy="continue-button"]').should('not.be.disabled').click();
 
       cy.contains('Role Access').should('be.visible');
       cy.contains('AWS Console Sign-In').should('be.visible');

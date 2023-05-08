@@ -19,7 +19,8 @@
     "prettier": "prettier --check 'src/**/*.{js,jsx,ts,tsx,json,md,graphql,gql}'",
     "prettier:fix": "prettier --loglevel warn --write 'src/**/*.{js,jsx,ts,tsx,json,md,graphql,gql}'",
     "format": "npm run prettier:fix && npm run lint:fix",
-    "cypress:open": "cypress open"
+    "cypress:open": "TZ=UTC cypress open",
+    "cypress:run": "TZ=UTC cypress run"
   },
   "dependencies": {
     "@apollo/client": "^3.7.0",
