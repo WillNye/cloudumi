@@ -108,6 +108,9 @@ class EligibleRoleHandler(BaseHandler):
         active_tra_roles = await get_user_active_tra_roles_by_tag(tenant, self.user)
         friendly_names = await get_account_id_to_name_mapping(tenant)
 
+        if not self.eligible_roles:
+            await self.set_eligible_roles(self.console_only)
+
         for arn in self.eligible_roles:
             role_name = arn.split("/")[-1]
             account_id = await ResourceAccountCache.get(tenant, arn)

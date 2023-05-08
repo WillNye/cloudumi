@@ -127,6 +127,7 @@ async def generate_jwt_token(
     return encoded_cookie
 
 
+# TODO: Implement 30s cache here?
 async def validate_and_return_jwt_token(auth_cookie, tenant):
     jwt_secret = config.get_tenant_specific_key("secrets.jwt_secret", tenant)
     if not jwt_secret:

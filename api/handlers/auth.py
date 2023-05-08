@@ -1,10 +1,10 @@
-import json
 import sys
 from typing import Optional
 
 import sentry_sdk
 from tornado.web import Finish
 
+import common.lib.noq_json as json
 from common.config import config
 from common.handlers.base import BaseHandler, JwtAuthType, TornadoRequestHandler
 from common.models import WebResponse

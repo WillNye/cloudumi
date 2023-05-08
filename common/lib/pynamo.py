@@ -1,4 +1,3 @@
-import json
 from datetime import datetime, timedelta
 from decimal import Decimal
 from threading import local
@@ -17,6 +16,7 @@ from pynamodax.models import _T, Model, _KeyType
 from pynamodax.pagination import ResultIterator
 from pynamodax.settings import OperationSettings, get_settings_value
 
+import common.lib.noq_json as json
 from common.config import config
 from common.lib.asyncio import aio_wrapper
 

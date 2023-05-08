@@ -261,8 +261,8 @@ class Configuration(metaclass=Singleton):
         raise Exception(
             "Unable to find CloudUmi's configuration. It either doesn't exist, or "
             "CloudUmi doesn't have permission to access it. Please set the CONFIG_LOCATION environment variable "
-            "to the path of the configuration, or to an s3 location with your configuration"
-            "(i.e: s3://YOUR_BUCKET/path/to/config.yaml). Otherwise, CloudUmi will automatically search for the"
+            "to the path of the configuration, or to an s3 location with your configuration "
+            "(i.e: s3://YOUR_BUCKET/path/to/config.yaml). Otherwise, CloudUmi will automatically search for the "
             f"configuration in these locations: {', '.join(config_locations)}"
         )
 

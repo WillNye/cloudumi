@@ -318,7 +318,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
             return f"arn:aws:iam::{account_id}:role/{self.user_role_name}"
 
     async def post(self):
-        """/api/v1/get_credentials - Endpoint used to get credentials via mtls. Used by newt and noq.
+        """/api/v1/get_credentials - Endpoint used to get credentials via mtls. Used by noq cli.
         ---
         get:
             description: Credentials endpoint. Authenticates user via MTLS and returns requested credentials.
@@ -328,6 +328,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 403:
                     description: No matching roles found, or user has failed authn/authz.
         """
+
         tenant = self.ctx.tenant
         stats = get_plugin_by_name(
             config.get("_global_.plugins.metrics", "cmsaas_metrics")
@@ -344,6 +345,8 @@ class GetCredentialsHandler(BaseMtlsHandler):
         data = tornado.escape.json_decode(self.request.body)
         try:
             request = await aio_wrapper(credentials_schema.load, data)
+            await self.set_eligible_roles(request["console_only"])
+
         except ValidationError as ve:
             stats.count(
                 "GetCredentialsHandler.post",
@@ -591,9 +594,9 @@ class GetCredentialsHandler(BaseMtlsHandler):
         )()
         log_data["user"] = user_email
 
-        await self.authorization_flow(
-            user=user_email, console_only=request["console_only"]
-        )
+        if not self.eligible_roles:
+            await self.set_eligible_roles(request["console_only"])
+
         # Get the role to request:
         requested_role = await self._get_the_requested_role(
             request, log_data, stats, self.request
@@ -701,6 +704,7 @@ class GetCredentialsHandler(BaseMtlsHandler):
                 "eligible roles": self.eligible_roles,
                 "request_id": self.request_uuid,
             }
+            self.set_status(403)
             self.write(error)
             await self.finish()
             return
