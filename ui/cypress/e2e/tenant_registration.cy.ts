@@ -44,6 +44,7 @@ describe('Tenant registration and login', () => {
       if (req.url.startsWith(Cypress.config('baseUrl'))) {
         req.headers['Host'] = domain; // Host header won't work with cypress
         req.headers['X-Forwarded-Host'] = domain;
+        req.headers['X-Forwarded-For'] = '127.0.0.1';
       }
     });
   });
@@ -75,6 +76,9 @@ describe('Tenant registration and login', () => {
 
       // Get the password from the response body
       const password = response.body.password;
+
+      // Wait for the tenant to be fully created, replicated and available
+      cy.wait(10000);
 
       // cy.intercept('http://localhost:8092/*', (req) => {
       //   req.headers['Host'] = domain;
@@ -115,32 +119,112 @@ describe('Tenant registration and login', () => {
         .should('have.value', password);
 
       // Submit the change password form
-      cy.get('button[type="submit"]') // Update the selector to match your submit button element on the change password form
-        .click();
+      // Update the selector to match your submit button element on the change password form
+      cy.get('button[type="submit"]').click();
 
       // Get the manual TOTP code
       cy.get('[data-testid="manual-code"] pre')
         .invoke('text')
         .then(manualCode => {
-          // Generate a valid TOTP key using the manual code
-          const totpKey = authenticator.generate(manualCode);
+          console.log('Manual Code:', manualCode);
+          cy.log(`Manual Code: ${manualCode}`); // Log the value of manualCode
 
-          // Fill in the TOTP key input
-          const totpKeyDigits = totpKey.split('');
-          totpKeyDigits.forEach((digit, index) => {
+          // Recursive function to fill in the TOTP code
+          const fillTotpCode = (index, totpKey) => {
+            // If all digits have been filled, exit the function
+            if (index >= totpKey.length) {
+              return;
+            }
+
+            // Get the current digit
+            const currentDigit = totpKey.charAt(index);
+
+            cy.wait(100);
             cy.get(
               `input[aria-label="Authentication Code. Character ${index + 1}."]`
-            )
-              .type(digit)
-              .should('have.value', digit);
-          });
+            ).then($input => {
+              cy.wrap($input)
+                .type(currentDigit)
+                .should('have.value', currentDigit);
+              // Move to the next digit
+              fillTotpCode(index + 1, totpKey);
+            });
+          };
 
-          cy.contains('Role Access').should('be.visible');
-          cy.contains('AWS Console Sign-In').should('be.visible');
-          cy.get(
-            'input[placeholder="Filter Roles by Account Name, Account ID or Role Name"]'
-          ).should('be.visible');
+          // Function to check for "Invalid MFA token" message and retry if necessary
+          const checkAndRetry = () => {
+            cy.get('body').then($body => {
+              if ($body.text().includes('Invalid MFA token')) {
+                // Retry the TOTP generation and filling process
+                generateAndFillTotpCode();
+              }
+            });
+          };
+
+          // Function to generate a TOTP key and start filling in the TOTP key input
+          const generateAndFillTotpCode = () => {
+            // Generate a valid TOTP key using the manual code
+            const totpKey = authenticator.generate(manualCode);
+
+            console.log('Generated TOTP Key:', totpKey);
+            cy.log(`Generated TOTP Key: ${totpKey}`); // Log the value of the generated TOTP key
+
+            // Check the remaining time for the current TOTP token
+            const remainingTime = authenticator.timeRemaining();
+
+            if (remainingTime < 5) {
+              // If less than 5 seconds remaining, wait for the next period and generate a new TOTP token
+              cy.wait((remainingTime + 1) * 1000).then(() => {
+                generateAndFillTotpCode();
+              });
+            } else {
+              // Start filling in the TOTP key input
+              fillTotpCode(0, totpKey);
+              // Check for "Invalid MFA token" message after filling the TOTP key
+              cy.wait(1000).then(() => {
+                checkAndRetry();
+              });
+            }
+          };
+
+          // Generate and fill TOTP code
+          generateAndFillTotpCode();
         });
+
+      // Get the manual TOTP code
+      // cy.get('[data-testid="manual-code"] pre')
+      //   .invoke('text')
+      //   .then(manualCode => {
+      //     // Generate a valid TOTP key using the manual code
+      //     const totpKey = authenticator.generate(manualCode);
+
+      //     // Fill in the TOTP key input
+      //     const totpKeyDigits = totpKey.split('');
+      //     totpKeyDigits.forEach((digit, index) => {
+      //       cy.wait(100);
+      //       cy.get(`input[aria-label="Authentication Code. Character ${index + 1}."]`)
+      //         .then(($input) => {
+      //           cy.wrap($input).type(digit).should('have.value', digit);
+      //         });
+      //     });
+
+      // Fill in the TOTP key input
+      // const totpKeyDigits = totpKey.split('');
+      // totpKeyDigits.forEach((digit, index) => {
+      //   cy.wait(1000);
+      //   cy.get(
+      //     `input[aria-label="Authentication Code. Character ${index + 1}."]`
+      //   )
+      //     .type(digit)
+      //     .should('have.value', digit);
+      // });
+
+      cy.contains('Role Access').should('be.visible');
+      cy.contains('AWS Console Sign-In').should('be.visible');
+      cy.get(
+        'input[placeholder="Filter Roles by Account Name, Account ID or Role Name"]'
+      ).should('be.visible');
     });
   });
 });
+// });

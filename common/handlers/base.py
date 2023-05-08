@@ -1238,6 +1238,15 @@ class StaticFileHandler(tornado.web.StaticFileHandler):
     def initialize(self, **kwargs) -> None:
         tenant = self.get_tenant_name()
         if not config.is_tenant_configured(tenant):
+            function: str = (
+                f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
+            )
+            log_data = {
+                "function": function,
+                "message": "Invalid tenant specified. Redirecting to main page",
+                "tenant": tenant,
+            }
+            log.debug(log_data)
             self.set_status(418)
             raise tornado.web.Finish()
         self.ctx = RequestContext(

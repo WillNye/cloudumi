@@ -9,5 +9,6 @@ export default defineConfig({
   },
   browserLaunchOptions: {
     args: ['--disable-gpu']
-  }
+  },
+  defaultCommandTimeout: 10000
 });
