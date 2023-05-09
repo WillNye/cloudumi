@@ -5,6 +5,7 @@ import slack_bolt
 from api.handlers.v3.automatic_policy_request_handler.aws import (
     AutomaticPolicyRequestHandler,
 )
+from api.handlers.v3.github.handler import GitHubCallbackHandler, GitHubOAuthHandler
 from api.handlers.v3.slack.install import (
     AsyncSlackEventsHandler,
     AsyncSlackHandler,
@@ -400,6 +401,11 @@ def make_app(jwt_validator=None):
             {"path": docs_path, "default_filename": "index.html"},
         ),
         (r"/api/v3/slack/events", AsyncSlackEventsHandler, dict(app=slack_app)),
+        (
+            r"/api/v3/github/install/?",
+            GitHubOAuthHandler,
+        ),
+        (r"/api/v3/github/callback/?", GitHubCallbackHandler),
         (
             r"/api/v3/slack/install/?",
             AsyncSlackInstallHandler,

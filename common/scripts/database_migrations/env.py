@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from common.aws.accounts.models import AWSAccount  # noqa: F401,E402
 from common.config.globals import ASYNC_PG_CONN_STR
+from common.github.models import GitHubInstall, GitHubOAuthState  # noqa: F401,E402
 from common.group_memberships.models import GroupMembership  # noqa: F401,E402
 from common.groups.models import Group  # noqa: F401,E402
 

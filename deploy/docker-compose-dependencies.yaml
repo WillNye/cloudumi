@@ -48,7 +48,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - cloudumi-pg:/data:delegated
+      - cloudumi-pg-githubpr:/data:delegated
 
   cloudumi-pg-admin:
     image: adminer
@@ -58,6 +58,7 @@ services:
 volumes:
   cloudumi-pg:
   cloudumi-redis:
+  cloudumi-pg-githubpr:
 
   # redis-cluster:
   #   image: noqdev/redis-cluster

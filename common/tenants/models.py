@@ -16,6 +16,12 @@ class Tenant(SoftDeleteMixin, Base):
         "Group", back_populates="tenant", cascade="all, delete-orphan"
     )
     users = relationship("User", back_populates="tenant", cascade="all, delete-orphan")
+    github_installs = relationship(
+        "GitHubInstall", back_populates="tenant", cascade="all, delete-orphan"
+    )
+    github_oauth_states = relationship(
+        "GitHubOAuthState", back_populates="tenant", cascade="all, delete-orphan"
+    )
 
     @classmethod
     async def get_by_id(cls, tenant_id):
