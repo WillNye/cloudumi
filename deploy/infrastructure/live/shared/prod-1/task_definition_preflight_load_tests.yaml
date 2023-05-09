@@ -6,11 +6,12 @@ containerDefinitions:
       options:
         awslogs-group: noq-dev-shared-prod-1
         awslogs-region: us-west-2
-        awslogs-stream-prefix: cluster-preflight
+        awslogs-stream-prefix: cluster-preflight-load-tests
     entryPoint:
       - /bin/sh
       - "-c"
-      - "python /app/common/preflight/run.py"
+      - "chmod +x /app/common/scripts/preflight/preflight_load_tests.sh && /app/common/scripts/preflight/preflight_load_tests.sh"
+    command: []
     linuxParameters:
       devices: []
       initProcessEnabled: true
@@ -37,11 +38,11 @@ containerDefinitions:
     pseudoTerminal: false
     readonlyRootFilesystem: false
     privileged: false
-    name: noq-dev-shared-prod-1-preflight-tasks
+    name: noq-dev-shared-prod-1-preflight-load-tests
 placementConstraints: []
 memory: "8192"
 taskRoleArn: arn:aws:iam::940552945933:role/noq-dev-shared-prod-1-ecsTaskRole
-family: noq-dev-shared-prod-1-preflight-tasks
+family: noq-dev-shared-prod-1-preflight-load-tests
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc

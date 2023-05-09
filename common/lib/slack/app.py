@@ -226,7 +226,7 @@ def get_slack_app():
         installation_store=get_installation_store(),
         # token=config.get("_global_.secrets.slack.bot_token"),
         signing_secret=config.get("_global_.secrets.slack.signing_secret"),
-        oauth_settings=oauth_settings,
+        # oauth_settings=oauth_settings,
         process_before_response=True,
     )
 
@@ -291,7 +291,7 @@ class TenantSlackApp:
             lazy=[self.noq_command_welcome_selection],
         )
         # This is the handler for the `/noq` command
-        self.tenant_slack_app.command("/noq")(
+        self.tenant_slack_app.command(re.compile("/noq.*"))(
             ack=self.handle_generic_ack,
             lazy=[self.noq_command_welcome_selection],
         )

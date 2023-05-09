@@ -6,11 +6,12 @@ containerDefinitions:
       options:
         awslogs-group: {{ ecs_cluster_name }}
         awslogs-region: {{ region }}
-        awslogs-stream-prefix: cluster-preflight
+        awslogs-stream-prefix: cluster-preflight-functional-tests
     entryPoint:
       - /bin/sh
       - "-c"
       - 'python /app/common/preflight/run.py'
+    command: [ ]
     linuxParameters:
       devices: [ ]
       initProcessEnabled: true
@@ -37,11 +38,11 @@ containerDefinitions:
     pseudoTerminal: false
     readonlyRootFilesystem: false
     privileged: false
-    name: {{ ecs_cluster_name }}-preflight-tasks
+    name: {{ ecs_cluster_name }}-preflight-functional-tests
 placementConstraints: [ ]
 memory: '8192'
 taskRoleArn: {{ ecs_task_role_arn }}
-family: {{ ecs_cluster_name }}-preflight-tasks
+family: {{ ecs_cluster_name }}-preflight-functional_tests
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc

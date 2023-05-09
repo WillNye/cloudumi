@@ -1,4 +1,3 @@
-import json
 import sys
 from hashlib import sha256
 
@@ -6,6 +5,7 @@ import sentry_sdk
 import tornado.escape
 import tornado.web
 
+import common.lib.noq_json as json
 from common.config import config
 from common.handlers.base import BaseHandler
 from common.lib.asyncio import aio_wrapper

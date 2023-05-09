@@ -6,11 +6,12 @@ containerDefinitions:
       options:
         awslogs-group: {{ ecs_cluster_name }}
         awslogs-region: {{ region }}
-        awslogs-stream-prefix: web
-    portMappings:
-      - hostPort: 8092
-        protocol: tcp
-        containerPort: 8092
+        awslogs-stream-prefix: cluster-preflight-load-tests
+    entryPoint:
+      - /bin/sh
+      - "-c"
+      - 'chmod +x /app/common/scripts/preflight/preflight_load_tests.sh && /app/common/scripts/preflight/preflight_load_tests.sh'
+    command: [ ]
     linuxParameters:
       devices: [ ]
       initProcessEnabled: true
@@ -18,12 +19,10 @@ containerDefinitions:
     environment:
       - name: CONFIG_LOCATION
         value: {{ config_path_with_bucket }}
-      - name: FRONTEND_SENTRY_DSN
-        value: "https://5f3b026abb7649fe8b41e903dcb5820f@sentry.noq.dev:4443/2"
       - name: SETUPTOOLS_USE_DISTUTILS
         value: stdlib
       - name: RUNTIME_PROFILE
-        value: API
+        value: PREFLIGHT
       - name: STAGE
         value: {{ stage }}
     dnsServers: [ ]
@@ -39,17 +38,11 @@ containerDefinitions:
     pseudoTerminal: false
     readonlyRootFilesystem: false
     privileged: false
-    name: {{ ecs_cluster_name }}-api
-    {% if stage == "staging" %}
-    command:
-      - bash
-      - -c
-      - pip install argh watchdog; watchmedo auto-restart --recursive --pattern="api/*.py" --directory="." --verbose python3.11 api/__main__.py
-    {% endif %}
+    name: {{ ecs_cluster_name }}-preflight-load-tests
 placementConstraints: [ ]
 memory: '8192'
 taskRoleArn: {{ ecs_task_role_arn }}
-family: {{ ecs_cluster_name }}-api
+family: {{ ecs_cluster_name }}-preflight-load-tests
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc

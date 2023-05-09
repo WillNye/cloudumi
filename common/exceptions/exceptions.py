@@ -35,6 +35,12 @@ class WebAuthNError(tornado.web.HTTPError):
         super().__init__(**kwargs)
 
 
+class ProvisionedThroughputExceededError(Exception):
+    def __init__(self, msg=""):
+        stats.count("ProvisionedThroughputExceededError")
+        super().__init__(msg)
+
+
 class MissingDataException(BaseException):
     """MissingDataException."""
 

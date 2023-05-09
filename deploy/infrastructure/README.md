@@ -1,209 +1,73 @@
-# NOQ Infrastructure
+To get started with Terraform for this project, follow these steps:
 
-Each NOQ infrastructure is setup in its own tenant and AWS account. When needed, a new deployment configuration tfvars
-is added to the `live` directory under the new tenant id. Use this only to setup a new account backend infrastructure
-and to update the infrastructure when changes are needed.
+1. Install `tfenv` to manage Terraform versions easily:
 
-**NOTE**: it is imperative you enter the correct workspace using `terraform workspace select` before attempting to
-update prod or production environments!
+   For MacOS:
 
-**NOTE**: currently all configuration files (.yaml, .yml) need to be updated manually after running terraform deploy or updates. The requisite outputs that are needed to update the `live` configuration files, use the `terraform output` command with the appropiate workspace (`terraform workspace select shared-prod-1` for instance)
+   ```
+   brew install tfenv
+   ```
 
-**NOTE**: the ecs task role is incredibly important - once created it should **never** be deleted. This is why there is a special variable that is called `modify_ecs_task_role`, which should always be set to false. Once set to true, it allows modification, to include deletions of the variable.
-The only time the variable should be set to true is upon initial cluster creation - this is to ensure that the ecs task role is created.
+   For Linux:
 
-## Pre-requisites:
+   ```
+   git clone https://github.com/tfutils/tfenv.git ~/.tfenv
+   ln -s ~/.tfenv/bin/* /usr/local/bin
+   ```
 
-- AWS keys configured in ~/.aws/credentials - see the `AWS Credentials` section below
-- terraform
-- ecs-cli
+2. Set the desired Terraform version (use the latest stable version):
 
-## Quick Start
+   ```
+   tfenv install latest
+   tfenv use latest
+   ```
 
-Ensure that your AWS profile is setup correctly in the `~/.aws/credentials` file - the expectation is that there is a
-`staging/staging_admin` entry with AWS keys configured; this is the profile that terraform will look for explicitly.
+3. Make sure you have the latest `secrets.tfvars` file. You can find it in the AWS Secrets Manager in the respective account and region. The structure of the file should look like this (make sure to ask a coworker to double-check, as missing secrets could cause issues in staging or production environments):
 
-- Ensure you have the pre-requisites installed
-- Export your AWS Profile (see the `AWS Credentials` section below): `export AWS_PROFILE=staging/staging_admin`
+   ```
+   # File must have a new line at the bottom
+   redis_secrets                      = "hidden"
+   noq_db_username                    = "hidden"
+   noq_db_password                    = "hidden"
+   aws_secrets_manager_cluster_string = <<-EOT
+   _global_:
+     secrets:
+       slack:
+         app_id: hidden
+         app_token: hidden
+         bot_token: hidden
+         client_id: "hidden"
+         client_secret: hidden
+         signing_secret: hidden
+       sendgrid:
+         from_address: notifications@noq.dev
+         username: hidden
+         password: hidden
+       redis:
+         password: hidden
+       postgresql:
+         username: hidden
+         password: hidden
+   EOT
+   ```
 
-## Terraform
+4. The Makefile will set the `BASE_DIR` for you, so no need to set it manually.
 
-### Cheat Codes
+5. Use the following commands to refresh, plan, and apply changes in staging and production environments:
 
-#### Staging
+   - Staging:
 
-export AWS_PROFILE=staging/staging_admin AWS_REGION=us-west-2
-terraform workspace select shared-staging-1
-terraform refresh --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars
-terraform plan --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars
-terraform apply --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars
+     ```
+     make tf-staging-refresh
+     make tf-staging-plan
+     make tf-staging-apply
+     ```
 
-#### Prod
+   - Production:
+     ```
+     make tf-prod-refresh
+     make tf-prod-plan
+     make tf-prod-apply
+     ```
 
-export AWS_PROFILE=noq_prod AWS_REGION=us-west-2
-terraform workspace select shared-prod-1
-terraform refresh --var-file=live/shared/prod-1/noq.dev-prod.tfvars --var-file=live/shared/prod-1/secret.tfvars
-terraform plan --var-file=live/shared/prod-1/noq.dev-prod.tfvars --var-file=live/shared/prod-1/secret.tfvars
-terraform apply --var-file=live/shared/prod-1/noq.dev-prod.tfvars --var-file=live/shared/prod-1/secret.tfvars
-
-#### Cyberdyne
-
-export AWS_PROFILE=cyberdyne/cyberdyne_admin
-export AWS_REGION=us-west-2
-terraform workspace select cyberdyne-prod-1
-terraform refresh --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars --var-file=live/cyberdyne/prod-1/secret.tfvars
-terraform plan --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars --var-file=live/cyberdyne/prod-1/secret.tfvars
-terraform apply --var-file=live/cyberdyne/prod-1/cyberdyne.noq.dev-prod.tfvars --var-file=live/cyberdyne/prod-1/secret.tfvars
-
-#### Akasa
-
-Add this to ~/.aws/config:
-
-```
-[profile akasa_deployment_role]
-credential_process = noq credential_process arn:aws:iam::940552945933:role/deployment_role -A arn:aws:iam::277516517760:role/NoqTerraformApplyRole
-```
-
-export AWS_PROFILE=akasa_deployment_role
-export AWS_REGION=us-west-2
-terraform workspace select akasa-prod-1
-terraform refresh --var-file=live/akasa/prod-1/akasa.noq.dev-prod.tfvars --var-file=live/akasa/prod-1/secret.tfvars
-terraform plan --var-file=live/akasa/prod-1/akasa.noq.dev-prod.tfvars --var-file=live/akasa/prod-1/secret.tfvars
-terraform apply --var-file=live/akasa/prod-1/akasa.noq.dev-prod.tfvars --var-file=live/akasa/prod-1/secret.tfvars
-
-Terraform is only required when either establishing a new tenant / account or updating a current account. Each Terraform deployment is governed by a set of modules and environment specific tfvars (under the live folder hierarchy). See the `Structure` section below for a more detailed explanation.
-
-To use terraform, follow the below steps:
-
-- Ensure `AWS_PROFILE` is set to respective environment (`staging/staging_admin` or `noq_prod`)
-- Ensure `AWS_REGION` is set correctly (`us-west-2` for most clusters)
-- Initialize Terraform if you haven't already: `terraform init`
-- Setup your workspaces: `./setup.sh`
-- Select the appropriate workspace: `terraform workspace select shared-staging-1` (for instance)
-- For the first time, initialize the environment: `terraform init --var-file=live/shared/staging-1/noq.dev-staging.tfvars`
-- Plan: `terraform plan --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars`
-- Apply: `terraform apply --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars`
-- Create the NOQ configuration files in the corresponding `live` configuration folder: `terraform output -json | python ../../util/terraform_config_parser/terraform_config_parser.py ~/dev/noq/cloudumi` -- see the `terraform_config_parser` section below
-- Destroy: `terraform destroy --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars`
-- Get outputs: `terraform output`
-- Refresh: `terraform refresh`
-
-### terraform_config_parser
-
-We provide a script that automatically generates (from templates) the product configuration files by parsing the Terraform output files. The script itself lives in the util/terrafom_config_parser directory in the mono repo and performs the following steps:
-
-Note: in order for this to work, there are two pre-requisites:
-
-1. The
-
-- Uses the exported AWS_PROFILE to push the configuration.yaml file to S3 to the following location: `s3://noq.tenant-configuration-store/<namespace>/<stage>.<attributes>.config.yaml`
-- Parse terraform output and writes the `live/<namespace>/<stage/attributes>/BUILD` file
-- Parse terraform output and writes the `live/<namespace>/<stage/attributes>/compose.yaml` file
-- Parse terraform output and writes the `live/<namespace>/<stage/attributes>/configuration.yaml` file
-- Parse terraform output and writes the `live/<namespace>/<stage/attributes>/ecs.yaml` file
-
-## Structure
-
-- `live`: has configuration tfvars for each tenant that is instantiated
-  - Each tenant should be stored in it's own directory using the form: `shared/`, if using the noq.dev domain. Otherwise tenant configuration should be stored under `<company_name>`.
-  - This **only** applies to those companies that _require their own separate environment_. This **does not** apply to companies that are using the `noq.dev` shared environment that is managed by CloudUmi.
-  - Tenants can be destroyed as well; tenant configuration should be retained for historical records
-- `modules`: has all infrastucture as code modules
-  - `services`: has services to be configured for deployment
-    - `dynamo`: the table configurations
-    - `elasticache`: the redis table
-    - `s3`: the bucket to be used for configuration
-
-## AWS Credentials
-
-The AWS SDK must be able to find updated credentials for the `development/development_admin`, `staging/staging_admin`, and `noq_prod` profiles.
-The AWS SDK will attempt to find credentials from a number of locations. See the [AWS Default Credential Provider Chain](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html#credentials-default) for more details.
-
-Noq enables you to retrieve temporary 1 hour credentials from our Noq tenant (https://corp.noq.dev). Here
-are the recommended avenues:
-
-Option 1: Set your AWS Profile with `credential_process` to never think about credentials. This method is problematic
-if you are running services in a container and the container doesn't have access to the Noq binary.
-update your `~/.aws/config` file with the following:
-
-```
-[profile development/development_admin]
-credential_process = noq credential_process arn:aws:iam::759357822767:role/development_admin
-
-[profile staging/staging_admin]
-credential_process = noq credential_process arn:aws:iam::259868150464:role/staging_admin
-
-[profile noq_prod]
-credential_process = noq credential_process arn:aws:iam::940552945933:role/prod_admin
-```
-
-Option 2: To retrieve temporary 1 hour credentials from Noq for each profile, run the following commands:
-
-```
-noq file development_admin --profile development/development_admin
-noq file staging_admin --profile staging/staging_admin
-noq file prod_admin --profile noq_prod
-```
-
-Option 3: To export temporary 1 hour credentials as environment variables, run the following command (You can only
-set one credential at a time per terminal with this method):
-
-```
-eval $(noq export development_admin)
-# To verify you have credentials
-env | grep AWS
-aws sts get-caller-identity
-```
-
-Option 4: Noq can emulate the ECS credential provider locally. This method is much more performant than credential_process, and
-it handles automatic credential refresh before your credentials expire. This method is extremely useful for long-lived operations:
-
-Run `noq serve` in a separate terminal, or as a daemon
-
-Then run the following commands (You can configure your IDE to use these settings):
-
-```
-export AWS_CONTAINER_CREDENTIALS_FULL_URI=http://localhost:9091/ecs/development_admin
-aws sts get-caller-identity
-```
-
-# Deploy to staging automation
-
-- Deploy using out Github Action Worker: https://github.com/noqdev/cloudumi/actions (Publish to staging using Docker)
-
-# Deploy to production automation
-
-- Deploy using out Github Action Worker: https://github.com/noqdev/cloudumi/actions (Publish to prod using Docker)
-
-# Deploy to isolated clusters
-
-- For convenience, run the `deploy/infrastructure/live/cyberdyne/prod-1/push_all_the_things.sh` script. If you are a
-  masochist and desire to do this manually, run the below commands:
-
-- Understand the environment: does the isolated cluster have staging and prod? Just prod? Select the AWS_PROFILE appropriately
-- Set AWS_PROFILE: `export AWS_PROFILE=noq_prod` - this is assuming we are looking to update their prod-1 part in their cluster
-- Authenticate: `aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 940552945933.dkr.ecr.us-west-2.amazonaws.com`
-- Create the infrastructure environment (see documentation on using `terraform workspace` and the terraform_config_parser)
-- Deploy using the `push_all_the_things.sh` script that is generated in the relevant deployment configuration (look in `live/`)
-
-# How to use ecs-cli
-
-Sometimes it is necessary to experiment with the ECS compose jobs. In those scenarios, the best way to get around the Bazel build targets is to start in a `live` configuration folder (for instance: `deploy/infrastructure/live/shared/staging-1`). The compose.yaml file and the ecs.yaml file will be require to manipulate the cluster. Furthermore, you will need to set the requisite `AWS_PROFILE` environment variable (using something like `export AWS_PROFILE="staging/staging_admin"` for instance).
-
-- To create a service with containers (and to circumvent the load balancer configuration): `ecs-cli compose -f compose.yaml --cluster-config noq-dev-shared-staging-1 --ecs-params ecs.yaml -p noq-dev-shared-staging-1 --task-role-arn arn:aws:iam::259868150464:role/noq-dev-shared-staging-1-ecsTaskRole --region us-west-2 service up --create-log-groups --timeout 15`
-  - This can be useful when making manual changes to the configuration file (either compose.yaml or ecs.yaml)
-  - See below for the accompanying `ecs-cli compose service rm` call to remove the service
-- To remove a service: `ecs-cli compose -p noq-dev-shared-staging-1 -f compose.yaml service rm`
-- Reference: [ECS-CLI reference](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_reference.html)
-
-# Troubleshooting
-
-## Error creating service... draining
-
-```
-ERRO[0001] Error creating service                        error="InvalidParameterException: Unable to Start a service that is still Draining." service=noq-dev-shared-staging-1
-INFO[0001] Created an ECS service                        service=noq-dev-shared-staging-1 taskDefinition="noq-dev-shared-staging-1:18"
-FATA[0001] InvalidParameterException: Unable to Start a service that is still Draining.
-```
-
-This happens when a service is removed and recreated too quickly. It'll take a few minutes between teardown and setup.
+You don't need to run `terraform plan` or `terraform apply` manually, as the Makefile provides commands for them. Follow these steps, and you should be good to go.
