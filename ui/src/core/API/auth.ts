@@ -85,3 +85,9 @@ export const acceptEndUserAgreement = () => {
   const url = `${V3_API_URL}/tenant/details/eula`;
   return axios.post(url);
 };
+
+export const checkPasswordComplexity = async data => {
+  const url = `${V4_API_URL}/users/password/complexity`;
+  const response = await axios.post(url, data);
+  return response.data;
+};
