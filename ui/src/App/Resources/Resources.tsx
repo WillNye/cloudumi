@@ -7,14 +7,7 @@ import ResourcesList from './ResourcesList';
 const Resources: FC = () => (
   <Routes>
     <Route path="/" element={<ResourcesList />} />
-    <Route
-      path="/:provider/*"
-      loader={({ params }) => {
-        console.log(params['*']);
-        ('one/two');
-      }}
-      element={<ResourceDetails />}
-    />
+    <Route path="/:provider/*" element={<ResourceDetails />} />
     <Route path="*" element={<NotFound fullPage />} />
   </Routes>
 );
