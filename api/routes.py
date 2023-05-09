@@ -51,7 +51,7 @@ from api.handlers.auth import (
     UnauthenticatedAuthSettingsHandler,
 )
 from api.handlers.v1.credentials import GetCredentialsHandler
-from api.handlers.v1.health import HealthHandler
+from api.handlers.v1.health import HealthHandler, HealthVanillaHandler
 from api.handlers.v1.policies import (
     ApiResourceTypeAheadHandler,
     AutocompleteHandler,
@@ -215,6 +215,7 @@ def make_app(jwt_validator=None):
         (r"/auth/?", AuthHandler),  # /auth is still used by OIDC callback
         (r"/saml/(.*)", SamlHandler),
         (r"/healthcheck", HealthHandler),
+        (r"/healthcheck_vanilla", HealthVanillaHandler),
         (r"/api/v1/auth", AuthHandler),
         (r"/api/v1/auth/cognito", CognitoAuthHandler),
         (r"/api/v1/auth/settings", UnauthenticatedAuthSettingsHandler),

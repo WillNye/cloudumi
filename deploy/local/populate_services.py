@@ -598,10 +598,8 @@ async_to_sync(ddb.update_static_config_for_tenant)(
 
 
 def create_tables():
-    from common.scripts.initialize_postgres import (  # noqa: F401,E402
-        rebuild_tables,
-        run_alembic_migrations,
-    )
+    from common.scripts.alembic import run_alembic_migrations
+    from common.scripts.initialize_postgres import rebuild_tables  # noqa: F401,E402
 
     asyncio.run(rebuild_tables())
     run_alembic_migrations()

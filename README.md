@@ -116,18 +116,13 @@ Start the API, browse to Noq, then view traces at http://localhost:9411/
 
 ## Troubleshooting in Container
 
-We use a slightly modified version of `ecsgo` to connect to our containers. Run the following commands to install `ecsgo`:
-
-```bash
-gh repo clone noqdev/ecsgo
-cd ecsgo/cmd
-go build
-sudo cp ./cmd /usr/local/bin/ecsgo
-```
+Install ecsgo from the official repo and connect to the containers: https://github.com/tedsmitt/ecsgo
 
 To connect to the containers:
 
 ```bash
+AWS_REGION=us-west-2
+AWS_DEFAULT_REGION=us-west-2
 AWS_PROFILE=staging/staging_admin ecsgo
 # For prod
 AWS_PROFILE=prod/prod_admin ecsgo
@@ -238,3 +233,11 @@ our normal deployment process. The [Cookie-Editor](https://cookie-editor.cgagnie
 2. Use `Cookie-Editor` to add a cookie with a key of `V2_UI` and any value
 3. Refresh the page
    ==> Voila! The new UI should load.
+
+## Testing changes in staging
+
+The staging API container runs with watchdog and watchmedo (links needed), which will automatically restart the api server
+whenever any python files under /app/api are modified. If you are making other changes, you can just add a `#` (empty comment) on
+the top of `/app/api/__main__.py` to force a restart.
+
+You can verify the restart of the container in Cloudwatch logs.

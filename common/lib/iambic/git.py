@@ -193,7 +193,7 @@ class IambicGit:
                                 rtemplate = Environment(
                                     loader=BaseLoader()
                                 ).from_string(arn)
-                                arn = rtemplate.render(**variables)
+                                arn = rtemplate.render(var=variables)
                                 arns.append(arn)
                     pass
                 d = json.loads(template.json())

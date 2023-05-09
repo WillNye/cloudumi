@@ -46,6 +46,9 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
             302:
                 description: Redirects to AWS console
         """
+        console_only = True
+        if not self.eligible_roles:
+            await self.set_eligible_roles(console_only)
         tenant = self.ctx.tenant
         arguments = {k: self.get_argument(k) for k in self.request.arguments}
         role = role.lower()
@@ -237,6 +240,9 @@ class RolesHandler(BaseAPIV2Handler):
         )
 
     async def get(self):
+        if not self.eligible_roles:
+            await self.set_eligible_roles(self.console_only)
+
         payload = {
             "eligible_roles": self.eligible_roles,
             "escalated_roles": await get_tra_supported_roles_by_tag(
@@ -421,9 +427,12 @@ class RoleDetailHandler(BaseAPIV2Handler):
                 role_details = None
 
         if not role_details:
+            error_message = f"Unable to retrieve the specified role: {account_id}/{role_name}. {error}"
+            log_data["message"] = error_message
+            log.debug(log_data)
             self.send_error(
                 404,
-                message=f"Unable to retrieve the specified role: {account_id}/{role_name}. {error}",
+                message=error_message,
             )
             return
         self.write(role_details.json())
@@ -668,9 +677,16 @@ class RoleDetailAppHandler(BaseMtlsHandler):
             error = str(e)
 
         if not role_details:
+            error_message = f"Unable to retrieve the specified role: {account_id}/{role_name}. {error}"
+            log.debug(
+                {
+                    **log_data,
+                    "message": error_message,
+                }
+            )
             self.send_error(
                 404,
-                message=f"Unable to retrieve the specified role: {account_id}/{role_name}. {error}",
+                message=error_message,
             )
             return
         self.write(role_details.json())
@@ -807,6 +823,9 @@ class GetRolesMTLSHandler(BaseMtlsHandler):
         if include_all_roles == ["true"]:
             console_only = False
 
+        if not self.eligible_roles:
+            await self.set_eligible_roles(console_only)
+
         log_data = {
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
             "user": self.user,
@@ -826,6 +845,8 @@ class GetRolesMTLSHandler(BaseMtlsHandler):
         )
 
         await self.authorization_flow(user=self.user, console_only=console_only)
+        if not self.eligible_roles:
+            await self.set_eligible_roles(console_only=console_only)
         eligible_roles_details_array = await get_eligible_role_details(
             sorted(self.eligible_roles),
             tenant,

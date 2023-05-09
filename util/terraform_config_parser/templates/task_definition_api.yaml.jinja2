@@ -32,7 +32,7 @@ containerDefinitions:
         sourceVolume: efs-server-AP
     dockerSecurityOptions: [ ]
     volumesFrom: [ ]
-    image: {{ registry_repository_url_api }}:{{ stage }}
+    image: {{ registry_repository_url_api }}:latest
     essential: true
     links: [ ]
     extraHosts: [ ]
@@ -40,6 +40,12 @@ containerDefinitions:
     readonlyRootFilesystem: false
     privileged: false
     name: {{ ecs_cluster_name }}-api
+    {% if stage == "staging" %}
+    command:
+      - bash
+      - -c
+      - pip install argh watchdog; watchmedo auto-restart --recursive --pattern="api/*.py" --directory="." --verbose python3.11 api/__main__.py
+    {% endif %}
 placementConstraints: [ ]
 memory: '8192'
 taskRoleArn: {{ ecs_task_role_arn }}

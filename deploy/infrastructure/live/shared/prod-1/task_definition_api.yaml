@@ -32,7 +32,7 @@ containerDefinitions:
         sourceVolume: efs-server-AP
     dockerSecurityOptions: []
     volumesFrom: []
-    image: 940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-api:prod
+    image: 940552945933.dkr.ecr.us-west-2.amazonaws.com/shared-prod-registry-api:latest
     essential: true
     links: []
     extraHosts: []
@@ -40,6 +40,7 @@ containerDefinitions:
     readonlyRootFilesystem: false
     privileged: false
     name: noq-dev-shared-prod-1-api
+
 placementConstraints: []
 memory: "8192"
 taskRoleArn: arn:aws:iam::940552945933:role/noq-dev-shared-prod-1-ecsTaskRole

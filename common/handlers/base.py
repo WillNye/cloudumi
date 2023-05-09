@@ -405,7 +405,6 @@ class BaseHandler(TornadoRequestHandler):
             return True
         return False
 
-    # @async_profile
     async def authorization_flow(
         self,
         user: Optional[str] = None,
@@ -426,6 +425,7 @@ class BaseHandler(TornadoRequestHandler):
         self.mfa_verification_required = None
         self.sso_user = None
         self.eligible_roles = []
+        self.user_role_name = None
         self.eligible_accounts = []
         self.request_uuid = str(uuid.uuid4())
         sso_signin_toggle = self.request.query_arguments.get("sso_signin") == [b"true"]
@@ -699,25 +699,9 @@ class BaseHandler(TornadoRequestHandler):
                 self.eligible_accounts = cache.get("eligible_accounts")
                 self.user_role_name = cache.get("user_role_name")
                 refreshed_user_roles_from_cache = True
-
-        await self.set_groups()
-
-        # Set Per-User Role Name (This logic is not used in OSS deployment)
-        if (
-            config.get_tenant_specific_key("user_roles.opt_in_group", tenant)
-            and config.get_tenant_specific_key("user_roles.opt_in_group", tenant)
-            in self.groups
-        ):
-            # Get or create user_role_name attribute
-            self.user_role_name = await auth.get_or_create_user_role_name(self.user)
-        await self.set_eligible_roles(console_only)
-
-        if not self.eligible_roles:
-            log_data[
-                "message"
-            ] = "No eligible roles detected for user. But letting them continue"
-            log.warning(log_data)
-        log_data["eligible_roles"] = len(self.eligible_roles)
+        if not refreshed_user_roles_from_cache:
+            await self.set_groups()
+        self.console_only = console_only
 
         if (
             not self.eligible_accounts
@@ -948,7 +932,7 @@ class BaseHandler(TornadoRequestHandler):
             )
         )()
 
-        self.eligible_roles += await get_user_active_tra_roles_by_tag(tenant, self.user)
+        # self.eligible_roles += await get_user_active_tra_roles_by_tag(tenant, self.user)
         self.eligible_roles = await group_mapping.get_eligible_roles(
             self.eligible_roles,
             self.user,
@@ -962,7 +946,6 @@ class BaseHandler(TornadoRequestHandler):
         cookie_name = self.get_noq_auth_cookie_key()
         self.clear_cookie(cookie_name)
 
-    # @async_profile
     async def set_jwt_cookie(self, tenant, roles: list = None):
         expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
             minutes=config.get_tenant_specific_key(
@@ -1077,6 +1060,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
         self.request_uuid = str(uuid.uuid4())
         self.auth_cookie_expiration = 0
         self.password_reset_required = False
+        self.user_role_name = None
         tenant = self.get_tenant_name()
         self.ctx = RequestContext(
             tenant=tenant,
@@ -1284,7 +1268,6 @@ class BaseAdminHandler(BaseHandler):
         self.set_header("Content-Type", "application/json")
         super(BaseAdminHandler, self).set_default_headers()
 
-    # @async_profile
     async def authorization_flow(
         self,
         user: str = None,

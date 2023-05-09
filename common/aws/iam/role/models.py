@@ -1,4 +1,3 @@
-import json
 import sys
 from datetime import datetime
 from typing import Dict, Iterable, Optional, Sequence, Type
@@ -11,6 +10,7 @@ from pynamodax.models import _T, _KeyType
 from pynamodax.pagination import ResultIterator
 from pynamodax.settings import OperationSettings
 
+import common.lib.noq_json as json
 from common.aws.base_model import TagMap
 from common.aws.iam.role.utils import (
     _clone_iam_role,
