@@ -149,7 +149,7 @@ Here are the steps to follow to update your local database:
 
 # Note: For Kayizzi, this didn't work for removing his database, you may want to manually delete the `noq` database using DBeaver or PG Admin
 
-# PG Admin runs on localhost:8080 through the Docker-Compose file.
+# PG Admin runs on localhost:8008 through the Docker-Compose file.
 
 3. docker-compose -f deploy/docker-compose-dependencies.yaml up -d
 4. (In VSCode) Alembic Upgrade Head
