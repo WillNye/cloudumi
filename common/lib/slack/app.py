@@ -223,7 +223,7 @@ def get_slack_app():
 
     slack_app = AsyncApp(
         logger=logger,
-        installation_store=get_installation_store(),
+        # installation_store=get_installation_store(),
         # token=config.get("_global_.secrets.slack.bot_token"),
         signing_secret=config.get("_global_.secrets.slack.signing_secret"),
         oauth_settings=oauth_settings,

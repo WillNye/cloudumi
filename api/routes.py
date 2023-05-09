@@ -5,7 +5,11 @@ import slack_bolt
 from api.handlers.v3.automatic_policy_request_handler.aws import (
     AutomaticPolicyRequestHandler,
 )
-from api.handlers.v3.github.handler import GitHubCallbackHandler, GitHubOAuthHandler
+from api.handlers.v3.github.handler import (
+    GitHubCallbackHandler,
+    GitHubEventsHandler,
+    GitHubOAuthHandler,
+)
 from api.handlers.v3.slack.install import (
     AsyncSlackEventsHandler,
     AsyncSlackHandler,
@@ -405,7 +409,9 @@ def make_app(jwt_validator=None):
             r"/api/v3/github/install/?",
             GitHubOAuthHandler,
         ),
+        (r"/api/v3/github/events/?", GitHubEventsHandler),
         (r"/api/v3/github/callback/?", GitHubCallbackHandler),
+        # TODO: /api/v3/github/events/? route
         (
             r"/api/v3/slack/install/?",
             AsyncSlackInstallHandler,

@@ -13,7 +13,7 @@ class GitHubInstall(Base):
     __tablename__ = "github_installs"
 
     id = Column(Integer(), primary_key=True, autoincrement=True, unique=True)
-    tenant_id = Column(Integer(), ForeignKey("tenant.id"), nullable=False)
+    tenant_id = Column(Integer(), ForeignKey("tenant.id"), nullable=False, unique=True)
     tenant = relationship(
         "Tenant",
         primaryjoin="Tenant.id == GitHubInstall.tenant_id",
@@ -29,6 +29,7 @@ class GitHubInstall(Base):
                 if existing_entry:
                     existing_entry.access_token = access_token
                     entry = existing_entry
+                    session.add(entry)
                 else:
                     entry = cls(tenant_id=tenant.id, access_token=access_token)
                     session.add(entry)
@@ -45,10 +46,8 @@ class GitHubInstall(Base):
     @classmethod
     async def get(cls, tenant, session=None):
         async def _query(session):
-            stmt = select(GitHubOAuthState).where(
-                and_(
-                    GitHubOAuthState.tenant_id == tenant.id,
-                )
+            stmt = select(GitHubInstall).where(
+                GitHubInstall.tenant_id == tenant.id,
             )
             result = await session.execute(stmt)
             return result.scalars().first()
@@ -84,7 +83,7 @@ class GitHubOAuthState(Base):
         entry = cls(tenant=tenant, state=state)
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
-                existing_entry = await cls.get(tenant, state, session=session)
+                existing_entry = await cls.get_by_tenant(tenant, session=session)
                 if existing_entry:
                     existing_entry.state = state
                     existing_entry.expires_at = entry.expires_at
@@ -100,6 +99,22 @@ class GitHubOAuthState(Base):
                 await session.delete(self)
                 await session.commit()
         return True
+
+    @classmethod
+    async def get_by_tenant(cls, tenant, session=None):
+        async def _query(session):
+            stmt = select(GitHubOAuthState).where(
+                GitHubOAuthState.tenant_id == tenant.id,
+            )
+            result = await session.execute(stmt)
+            return result.scalars().first()
+
+        if session:
+            return await _query(session)
+
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                return await _query(session)
 
     @classmethod
     async def get(cls, tenant, state, session=None):

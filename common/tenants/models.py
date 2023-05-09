@@ -34,7 +34,7 @@ class Tenant(SoftDeleteMixin, Base):
                     )
                 )
                 tenant = await session.execute(stmt)
-                return tenant.scalars().first()
+        return tenant.scalars().first()
 
     def dict(self):
         return dict(
