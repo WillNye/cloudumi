@@ -12078,11 +12078,6 @@ pascalcase@^0.1.1:
   resolved "https://registry.yarnpkg.com/pascalcase/-/pascalcase-0.1.1.tgz#b363e55e8006ca6fe21784d2db22bd15d7917f14"
   integrity sha512-XHXfu/yOQRy9vYOtUDVMN60OEJjW013GoObG1o+xwQTpB9eYJX/BjXMsdW13ZDPruFhYYn0AG22w0xgQMwl3Nw==
 
-passwordmeter@^1.3.5:
-  version "1.3.5"
-  resolved "https://registry.yarnpkg.com/passwordmeter/-/passwordmeter-1.3.5.tgz#9a1f96db9a8d60e980978c5e33d5213c550b04c6"
-  integrity sha512-UDmLeK11iVWN7oWiLu/sAZLa2xCnJ9sjSEZmz1QNhKFEqmQNuL+uZ/HdvVrVa93GYHv1HODcGs/5Gdb0W+vbbA==
-
 path-browserify@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/path-browserify/-/path-browserify-1.0.1.tgz#d98454a9c3753d5790860f16f68867b9e46be1fd"
