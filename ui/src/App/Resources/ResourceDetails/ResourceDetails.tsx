@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Uri } from 'monaco-editor';
 import { setDiagnosticsOptions } from 'monaco-yaml';
@@ -6,15 +6,21 @@ import schema from './aws_iam_role_template.json';
 import { JSONSchema7 } from 'json-schema';
 import { CodeEditor } from 'shared/form/CodeEditor';
 import { Button } from 'shared/elements/Button';
-import styles from './ResourceDetails.module.css';
 import { Breadcrumbs } from 'shared/elements/Breadcrumbs';
 import { LineBreak } from 'shared/elements/LineBreak';
-import { useQuery } from '@tanstack/react-query';
-import { getResource } from 'core/API/resources';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { getResource, updateResource } from 'core/API/resources';
 import { NotFound } from 'App/NotFound/NotFound';
 import { Loader } from 'shared/elements/Loader';
 import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
+import styles from './ResourceDetails.module.css';
+import { Notification, NotificationType } from 'shared/elements/Notification';
+
+type UpdateResourceparams = {
+  justification: string;
+  changes: { path: string; body: string }[];
+};
 
 const configureYAMLSchema = async (
   editorInstance: any,
@@ -47,6 +53,8 @@ const configureYAMLSchema = async (
 
 const ResourcesDetails = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [modifiedTemplate, setModifiedTemplate] = useState<string | null>(null);
   const [isModified, setIsModified] = useState<boolean>(false);
 
   const { provider, '*': fullPath } = useParams<{
@@ -61,12 +69,43 @@ const ResourcesDetails = () => {
       const errorRes = error?.response;
       const errorMsg = extractErrorMessage(errorRes?.data);
       setErrorMessage(errorMsg || 'An error occurred fetching resource');
+    },
+    onSuccess: res => {
+      setModifiedTemplate(res.data);
     }
   });
 
+  const { mutateAsync: updateResourceMutation, isLoading: isSubmitting } =
+    useMutation({
+      mutationFn: (newTemplate: UpdateResourceparams) =>
+        updateResource(newTemplate),
+      mutationKey: ['updateResource']
+    });
+
   const handleEditorChange = (value: string) => {
     setIsModified(value !== data?.raw_template_yaml);
+    setModifiedTemplate(value);
   };
+
+  const handleOnUpdate = useCallback(() => {
+    setSubmitError(null);
+    try {
+      updateResourceMutation({
+        justification: '',
+        changes: [
+          {
+            path: data?.file_path,
+            body: modifiedTemplate
+          }
+        ]
+      });
+    } catch (err) {
+      const error = err as AxiosError;
+      const errorRes = error?.response;
+      const errorMsg = extractErrorMessage(errorRes?.data);
+      setSubmitError(errorMsg || 'An error occurred while updating resource');
+    }
+  }, [modifiedTemplate, updateResourceMutation, data]);
 
   if (isLoading) {
     return <Loader />;
@@ -89,63 +128,67 @@ const ResourcesDetails = () => {
         />
       </div>
 
-      <div className={styles.details}>
-        <table className={styles.table}>
-          <tbody>
-            <tr>
-              <td>Template Type</td>
-              <td>{data?.template_type}</td>
-            </tr>
-            <tr>
-              <td>Identifier</td>
-              <td>{data?.identifier}</td>
-            </tr>
-            <tr>
-              <td>Description</td>
-              <td>{data?.description}</td>
-            </tr>
-            <tr>
-              <td>File path</td>
-              <td>{data?.file_path}</td>
-            </tr>
-            <tr>
-              <td>External Link</td>
-              <td>
-                <Link to={data?.external_link} target="_blank">
-                  Click here
-                </Link>
-              </td>
-            </tr>
-            <tr>
-              <td>Last Updated</td>
-              <td>{new Date(data?.last_updated).toUTCString()}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div className={styles.section}>
-        <h4 className={styles.sidebar}>Resource History</h4>
-        <div className={styles.content}>
-          <div className={styles.editor}>
-            <CodeEditor
-              height="100%"
-              defaultLanguage="yaml"
-              value={data?.raw_template_yaml}
-              onChange={handleEditorChange}
-              onMount={(editor, monaco) =>
-                configureYAMLSchema(editor, monaco, data?.raw_template_yaml)
-              }
-            />
+      <div className={styles.wrapper}>
+        <div className={styles.details}>
+          <table className={styles.table}>
+            <tbody>
+              <tr>
+                <td>Template Type</td>
+                <td>{data?.template_type}</td>
+              </tr>
+              <tr>
+                <td>Identifier</td>
+                <td>{data?.identifier}</td>
+              </tr>
+              <tr>
+                <td>Description</td>
+                <td>{data?.description}</td>
+              </tr>
+              <tr>
+                <td>File path</td>
+                <td>{data?.file_path}</td>
+              </tr>
+              <tr>
+                <td>External Link</td>
+                <td>
+                  <Link to={data?.external_link} target="_blank">
+                    Click here
+                  </Link>
+                </td>
+              </tr>
+              <tr>
+                <td>Last Updated</td>
+                <td>{new Date(data?.last_updated).toUTCString()}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        {submitError && (
+          <Notification header={submitError} type={NotificationType.ERROR} />
+        )}
+        <div className={styles.section}>
+          <h4 className={styles.sidebar}>Resource History</h4>
+          <div className={styles.content}>
+            <div className={styles.editor}>
+              <CodeEditor
+                height="100%"
+                defaultLanguage="yaml"
+                value={data?.raw_template_yaml}
+                onChange={handleEditorChange}
+                onMount={(editor, monaco) =>
+                  configureYAMLSchema(editor, monaco, data?.raw_template_yaml)
+                }
+              />
+            </div>
+            <LineBreak />
+            <Button
+              onClick={handleOnUpdate}
+              disabled={!isModified || isSubmitting}
+              size="small"
+            >
+              Submit Request
+            </Button>
           </div>
-          <LineBreak />
-          <Button
-            onClick={() => alert('Submitting request')}
-            disabled={!isModified}
-            size="small"
-          >
-            Submit Request
-          </Button>
         </div>
       </div>
     </div>
