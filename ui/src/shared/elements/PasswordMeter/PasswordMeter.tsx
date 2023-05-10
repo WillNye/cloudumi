@@ -1,10 +1,12 @@
 import { FC, Fragment, useEffect, useMemo, useState } from 'react';
-import css from './PasswordMeter.module.css';
 import { useMutation } from '@tanstack/react-query';
 import { checkPasswordComplexity } from 'core/API/auth';
+import classNames from 'classnames';
+import css from './PasswordMeter.module.css';
 
 export interface PasswordMeterProps {
   value: string;
+  fullWidth?: boolean;
 }
 
 const requirementHasError = (requirement, errors) => {
@@ -14,7 +16,10 @@ const requirementHasError = (requirement, errors) => {
   return errors.map(e => e.toLowerCase()).includes(errorKey);
 };
 
-export const PasswordMeter: FC<PasswordMeterProps> = ({ value }) => {
+export const PasswordMeter: FC<PasswordMeterProps> = ({
+  value,
+  fullWidth = false
+}) => {
   const [passwordDetails, setPasswordDetails] = useState(null);
 
   const checkPasswordMutation = useMutation({
@@ -52,7 +57,7 @@ export const PasswordMeter: FC<PasswordMeterProps> = ({ value }) => {
   }
 
   return (
-    <div className={css.meter}>
+    <div className={classNames(css.meter, { [css.fullWidth]: fullWidth })}>
       {Object.entries(requirements).map(([key, value]) => (
         <div
           key={key}

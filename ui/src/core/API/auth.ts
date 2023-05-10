@@ -6,7 +6,7 @@ type LoginParams = {
   password: string;
 };
 
-type CompletePasswordParams = {
+export type CompletePasswordParams = {
   new_password: string;
   current_password: string;
 };
