@@ -59,9 +59,7 @@ from common.aws.service_config.utils import execute_query
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
-from common.iambic.config.dynamic_config import load_iambic_config
 from common.iambic.config.utils import update_tenant_providers_and_definitions
-from common.iambic.utils import get_iambic_repo
 from common.lib import noq_json as ujson
 from common.lib.account_indexers import (
     cache_cloud_accounts,
@@ -110,7 +108,6 @@ from common.lib.timeout import Timeout
 from common.lib.v2.notifications import cache_notifications_to_redis_s3
 from common.lib.workos import WorkOS
 from common.models import SpokeAccount
-from common.tenants.models import Tenant
 from identity.lib.groups.groups import (
     cache_identity_groups_for_tenant,
     cache_identity_requests_for_tenant,
@@ -2811,21 +2808,10 @@ def remove_expired_requests_for_all_tenants() -> Dict:
 
 
 @app.task(soft_time_limit=2700, **default_retry_kwargs)
-def update_providers_and_provider_definitions_for_tenant(tenant_id: str = None):
-    if not tenant_id:
-        raise Exception("`tenant_id` must be passed to this task.")
-
-    try:
-        repo_dir = async_to_sync(get_iambic_repo)(tenant_id)
-    except KeyError as err:
-        log.error(f"{tenant_id} - {err}")
-        return
-
-    tenant = async_to_sync(Tenant.get_by_id)(tenant_id)
-    tenant_config = async_to_sync(load_iambic_config)(repo_dir)
-    async_to_sync(update_tenant_providers_and_definitions)(
-        tenant, tenant_config, repo_dir
-    )
+def update_providers_and_provider_definitions_for_tenant(tenant: str = None):
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
+    async_to_sync(update_tenant_providers_and_definitions)(tenant)
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
@@ -2838,8 +2824,8 @@ def update_providers_and_provider_definitions_all_tenants() -> Dict:
         "num_tenants": len(tenants),
     }
     log.debug(log_data)
-    for tenant_id in tenants:
-        update_providers_and_provider_definitions_for_tenant.apply_async((tenant_id,))
+    for tenant in tenants:
+        update_providers_and_provider_definitions_for_tenant.apply_async((tenant,))
 
     return log_data
 
