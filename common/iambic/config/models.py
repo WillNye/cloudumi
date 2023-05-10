@@ -1,5 +1,4 @@
 import uuid
-from pathlib import Path
 
 from sqlalchemy import (
     JSON,
@@ -16,10 +15,6 @@ from sqlalchemy.orm import relationship
 from common.config import config
 from common.pg_core.models import Base
 from common.tenants.models import Tenant
-
-TENANT_REPO_DIR = Path(config.get("_global_.tenant_storage.base_path")).expanduser()
-if not TENANT_REPO_DIR:
-    raise EnvironmentError("_global_.tenant_storage.base_path must be set")
 
 log = config.get_logger(__name__)
 
