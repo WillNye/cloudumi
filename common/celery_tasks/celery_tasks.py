@@ -3065,7 +3065,7 @@ app.conf.timezone = "UTC"
 # print("here")
 
 
-# cache_iambic_data_for_all_tenants()
+cache_iambic_data_for_all_tenants()
 
 # TODO: Message user with information about this being reviewed
 # TODO: Determine how to map IdP groups to Slack channels
