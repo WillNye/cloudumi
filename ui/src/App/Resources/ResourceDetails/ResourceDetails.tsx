@@ -14,8 +14,14 @@ import { NotFound } from 'App/NotFound/NotFound';
 import { Loader } from 'shared/elements/Loader';
 import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
-import styles from './ResourceDetails.module.css';
 import { Notification, NotificationType } from 'shared/elements/Notification';
+import { Dialog } from 'shared/layers/Dialog';
+import { Textarea } from '@noqdev/cloudscape';
+import { Block } from 'shared/layout/Block';
+import { Segment } from 'shared/layout/Segment';
+import { Divider } from 'shared/elements/Divider';
+
+import styles from './ResourceDetails.module.css';
 
 type UpdateResourceparams = {
   justification: string;
@@ -56,6 +62,8 @@ const ResourcesDetails = () => {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [modifiedTemplate, setModifiedTemplate] = useState<string | null>(null);
   const [isModified, setIsModified] = useState<boolean>(false);
+  const [justification, setJustification] = useState('');
+  const [showDialog, setShowDialog] = useState(false);
 
   const { provider, '*': fullPath } = useParams<{
     provider: string;
@@ -79,7 +87,8 @@ const ResourcesDetails = () => {
     useMutation({
       mutationFn: (newTemplate: UpdateResourceparams) =>
         updateResource(newTemplate),
-      mutationKey: ['updateResource']
+      mutationKey: ['updateResource'],
+      onSettled: () => setJustification('')
     });
 
   const handleEditorChange = (value: string) => {
@@ -89,9 +98,10 @@ const ResourcesDetails = () => {
 
   const handleOnUpdate = useCallback(() => {
     setSubmitError(null);
+    setShowDialog(false);
     try {
       updateResourceMutation({
-        justification: '',
+        justification,
         changes: [
           {
             path: data?.file_path,
@@ -105,7 +115,7 @@ const ResourcesDetails = () => {
       const errorMsg = extractErrorMessage(errorRes?.data);
       setSubmitError(errorMsg || 'An error occurred while updating resource');
     }
-  }, [modifiedTemplate, updateResourceMutation, data]);
+  }, [modifiedTemplate, updateResourceMutation, data, justification]);
 
   if (isLoading) {
     return <Loader />;
@@ -128,69 +138,110 @@ const ResourcesDetails = () => {
         />
       </div>
 
-      <div className={styles.wrapper}>
-        <div className={styles.details}>
-          <table className={styles.table}>
-            <tbody>
-              <tr>
-                <td>Template Type</td>
-                <td>{data?.template_type}</td>
-              </tr>
-              <tr>
-                <td>Identifier</td>
-                <td>{data?.identifier}</td>
-              </tr>
-              <tr>
-                <td>Description</td>
-                <td>{data?.description}</td>
-              </tr>
-              <tr>
-                <td>File path</td>
-                <td>{data?.file_path}</td>
-              </tr>
-              <tr>
-                <td>External Link</td>
-                <td>
-                  <Link to={data?.external_link} target="_blank">
-                    Click here
-                  </Link>
-                </td>
-              </tr>
-              <tr>
-                <td>Last Updated</td>
-                <td>{new Date(data?.last_updated).toUTCString()}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        {submitError && (
-          <Notification header={submitError} type={NotificationType.ERROR} />
-        )}
-        <div className={styles.section}>
-          <h4 className={styles.sidebar}>Resource History</h4>
-          <div className={styles.content}>
-            <div className={styles.editor}>
-              <CodeEditor
-                height="100%"
-                defaultLanguage="yaml"
-                value={data?.raw_template_yaml}
-                onChange={handleEditorChange}
-                onMount={(editor, monaco) =>
-                  configureYAMLSchema(editor, monaco, data?.raw_template_yaml)
-                }
-              />
-            </div>
-            <LineBreak />
-            <Button
-              onClick={handleOnUpdate}
-              disabled={!isModified || isSubmitting}
-              size="small"
-            >
-              Submit Request
-            </Button>
+      <div className={styles.details}>
+        <table className={styles.table}>
+          <tbody>
+            <tr>
+              <td>Template Type</td>
+              <td>{data?.template_type}</td>
+            </tr>
+            <tr>
+              <td>Identifier</td>
+              <td>{data?.identifier}</td>
+            </tr>
+            <tr>
+              <td>Description</td>
+              <td>{data?.description}</td>
+            </tr>
+            <tr>
+              <td>File path</td>
+              <td>{data?.file_path}</td>
+            </tr>
+            <tr>
+              <td>External Link</td>
+              <td>
+                <Link to={data?.external_link} target="_blank">
+                  Click here
+                </Link>
+              </td>
+            </tr>
+            <tr>
+              <td>Last Updated</td>
+              <td>{new Date(data?.last_updated).toUTCString()}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      {submitError && (
+        <Notification header={submitError} type={NotificationType.ERROR} />
+      )}
+      <div className={styles.section}>
+        <h4 className={styles.sidebar}>Resource History</h4>
+        <div className={styles.content}>
+          <div className={styles.editor}>
+            <CodeEditor
+              height="100%"
+              defaultLanguage="yaml"
+              value={data?.raw_template_yaml}
+              onChange={handleEditorChange}
+              onMount={(editor, monaco) =>
+                configureYAMLSchema(editor, monaco, data?.raw_template_yaml)
+              }
+            />
           </div>
+          <LineBreak />
+          <Button
+            onClick={() => setShowDialog(true)}
+            disabled={!isModified || isSubmitting}
+            size="small"
+          >
+            Submit Request
+          </Button>
         </div>
       </div>
+
+      <Dialog
+        header="Resource"
+        size="medium"
+        showDialog={showDialog}
+        setShowDialog={setShowDialog}
+      >
+        <Segment>
+          <p>
+            Enter the a justification of the updating{' '}
+            <Link to={data?.external_link}>{data?.file_path}</Link>
+          </p>
+          <LineBreak />
+          <form>
+            <Block disableLabelPadding label="Justification" />
+            <Textarea
+              value={justification}
+              onChange={({ detail: { value } }) => setJustification(value)}
+            />
+            <LineBreak size="large" />
+            <div className={styles.actions}>
+              <Button
+                size="small"
+                fullWidth
+                color="secondary"
+                variant="outline"
+                onClick={() => setShowDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Divider orientation="vertical" />
+              <Button
+                size="small"
+                fullWidth
+                disabled={!justification}
+                onClick={handleOnUpdate}
+              >
+                Submit
+              </Button>
+            </div>
+          </form>
+        </Segment>
+      </Dialog>
     </div>
   );
 };
