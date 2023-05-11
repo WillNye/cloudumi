@@ -11,6 +11,7 @@ const NotFound = lazy(() => import('./NotFound'));
 const Access = lazy(() => import('./Access'));
 const Dashboard = lazy(() => import('./Dashboard'));
 const EULA = lazy(() => import('./EULA'));
+const Logout = lazy(() => import('./Logout'));
 const Resources = lazy(() => import('./Resources'));
 
 export const App: FC = () => (
@@ -19,6 +20,7 @@ export const App: FC = () => (
     <Routes>
       {/** Wrap all Route under ProtectedRoutes element */}
       <Route path="/eula" element={<EULA />} />
+      <Route path="/logout" element={<Logout />} />
       <Route path="/" element={<AuthRoute />}>
         <Route path="/" element={<Dashboard />}>
           <Route path="/" element={<Access />} />
