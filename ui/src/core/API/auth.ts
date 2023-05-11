@@ -33,8 +33,8 @@ export const login = (data: LoginParams) => {
 };
 
 export const logout = () => {
-  const url = `${V2_API_URL}/logout`;
-  return axios.post(url);
+  const url = `${V4_API_URL}/logout`;
+  return axios.get(url);
 };
 
 export const setupMFA = (data: SetupMFAParams) => {
