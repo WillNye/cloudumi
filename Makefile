@@ -56,6 +56,22 @@ clean:
 	find . -name '*.pyo' -delete
 	find . -name '*.egg-link' -delete
 
+.PHONY: docker_clean
+docker_clean:
+	docker-compose -f deploy/docker-compose-dependencies.yaml down -v
+	@containers=$$(docker ps -aq --filter "name=.*cloudumi.*"); \
+	if [ -z "$$containers" ]; then \
+		echo "No CloudUmi Docker Containers to Delete"; \
+	else \
+		docker rm $$containers; \
+	fi
+	@volumes=$$(docker volume ls -q --filter "name=.*cloudumi.*"); \
+    if [ -z "$$volumes" ]; then \
+        echo "No CloudUmi Docker Volumes to Delete"; \
+    else \
+        docker volume rm $$volumes; \
+    fi
+
 .PHONY: test
 test: clean
 	ASYNC_TEST_TIMEOUT=1600 $(pytest)
@@ -86,7 +102,7 @@ docker_down:
 
 .PHONY: docker_deps_up
 docker_deps_up:
-	docker-compose -f deploy/docker-compose-dependencies.yaml up -d
+	docker-compose -f deploy/docker-compose-dependencies.yaml up -d --force-recreate
 
 .PHONY: docker_deps_down
 docker_deps_down:

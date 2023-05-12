@@ -5,25 +5,15 @@ os.environ.setdefault(
 )
 os.environ.setdefault("AWS_PROFILE", "development/NoqSaasRoleLocalDev")
 
-from sqlalchemy import text  # noqa: E402
-
 from common.config.globals import ASYNC_PG_ENGINE  # noqa: E402
 from common.group_memberships.models import GroupMembership  # noqa: E402
 from common.groups.models import Group  # noqa: E402
-from common.pg_core.models import Base  # noqa: E402
 from common.tenants.models import Tenant  # noqa: E402
 from common.users.models import User  # noqa: E402
 
 
 async def rebuild_tables():
-    async with ASYNC_PG_ENGINE.begin() as conn:
-        # await conn.run_sync(Base.metadata.drop_all, checkfirst=False)
-        tables = Base.metadata.sorted_tables
-        for table in tables:
-            await conn.execute(text(f"drop table if exists {table.name} cascade;"))
-    async with ASYNC_PG_ENGINE.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    async with ASYNC_PG_ENGINE.begin() as conn:
+    async with ASYNC_PG_ENGINE.begin():
         tenant = await Tenant.create(
             name="localhost",
             organization_id="localhost",
