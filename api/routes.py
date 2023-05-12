@@ -77,6 +77,7 @@ from api.handlers.v2.index import (
     FrontendHandler,
     UnauthenticatedFileHandler,
 )
+from api.handlers.v2.logout import LogOutHandler
 from api.handlers.v2.managed_policies import (
     ManagedPoliciesForAccountHandler,
     ManagedPoliciesHandler,
@@ -476,6 +477,7 @@ def make_app(jwt_validator=None):
         (r"/api/v4/roles/access/?", ManageRoleAccessHandler),
         (r"/api/v4/roles", RolesHandlerV4),
         (r"/api/v4/resources/datatable/?", ResourcesDataTableHandler),
+        (r"/api/v4/logout/?", LogOutHandler),
     ]
 
     router = RuleRouter(routes)
