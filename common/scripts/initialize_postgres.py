@@ -22,6 +22,10 @@ async def rebuild_tables():
             name="cloudumidev_com",
             organization_id="cloudumidev_com",
         )
+        tenant_cloudumisamldev = await Tenant.create(
+            name="cloudumisamldev_com",
+            organization_id="cloudumisamldev_com",
+        )
         user = await User.create(
             tenant,
             "admin_user@noq.dev",
@@ -52,3 +56,18 @@ async def rebuild_tables():
             description="test",
         )
         await GroupMembership.create(user2, group2)
+
+        user3 = await User.create(
+            tenant_cloudumisamldev,
+            "admin_user@noq.dev",
+            "admin_user@noq.dev",
+            "Password!1",
+            email_verified=True,
+        )
+        group3 = await Group.create(
+            tenant=tenant_cloudumisamldev,
+            name="noq_admins",
+            email="noq_admins@noq.dev",
+            description="test",
+        )
+        await GroupMembership.create(user3, group3)

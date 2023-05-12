@@ -131,10 +131,15 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
             )
 
         # Collect provider definitions from the template repo
-        azure_ad_templates = load_templates(await gather_templates(repo_dir, "AzureAD"))
-        okta_templates = load_templates(await gather_templates(repo_dir, "Okta"))
+        azure_ad_templates = load_templates(
+            await gather_templates(repo_dir, "AzureAD"), use_multiprocessing=False
+        )
+        okta_templates = load_templates(
+            await gather_templates(repo_dir, "Okta"), use_multiprocessing=False
+        )
         google_workspace_templates = load_templates(
-            await gather_templates(repo_dir, "GoogleWorkspace")
+            await gather_templates(repo_dir, "GoogleWorkspace"),
+            use_multiprocessing=False,
         )
 
         # Handling Azure AD and Okta

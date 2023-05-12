@@ -201,13 +201,6 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 REDIS_IAM_COUNT = 1000
 
 
-@app.task()
-def ping() -> str:
-    log_data = {"task": "pong"}
-    log.info(log_data)
-    return "pong"
-
-
 @app.task(soft_time_limit=20)
 def report_celery_last_success_metrics() -> bool:
     """
