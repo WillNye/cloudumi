@@ -6,7 +6,7 @@ type LoginParams = {
   password: string;
 };
 
-type CompletePasswordParams = {
+export type CompletePasswordParams = {
   new_password: string;
   current_password: string;
 };
@@ -32,10 +32,9 @@ export const login = (data: LoginParams) => {
   return axios.post(url, data);
 };
 
-// Not yet implemented in the backend
 export const logout = () => {
-  const url = `${V2_API_URL}/logout`;
-  return axios.post(url);
+  const url = `${V4_API_URL}/logout`;
+  return axios.get(url);
 };
 
 export const setupMFA = (data: SetupMFAParams) => {
@@ -84,4 +83,10 @@ export const getEndUserAgreement = () => {
 export const acceptEndUserAgreement = () => {
   const url = `${V3_API_URL}/tenant/details/eula`;
   return axios.post(url);
+};
+
+export const checkPasswordComplexity = async data => {
+  const url = `${V4_API_URL}/users/password/complexity`;
+  const response = await axios.post(url, data);
+  return response.data;
 };
