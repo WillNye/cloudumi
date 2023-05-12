@@ -1,4 +1,5 @@
 from io import StringIO
+from multiprocessing import Pool
 from uuid import UUID
 
 from ruamel.yaml import YAML
@@ -28,3 +29,9 @@ yaml.representer.ignore_aliases = lambda *data: True
 yaml.register_class(UUID)
 
 yaml.width = 4096
+
+
+def safe_yaml_load(file_path) -> dict:
+    # It isn't pretty to look at but works around the memory leak in ruamel.yaml
+    with Pool(1) as p:
+        return p.map(yaml_safe.load, [open(file_path)])[0]

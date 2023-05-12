@@ -474,6 +474,33 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WebResponse"
+  /api/v4/providers/:
+    get:
+      summary: Get a list of all supported providers
+      tags:
+        - policies
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IambicProvider"
+  /api/v4/providers/definitions/:
+    get:
+      summary: Get a list of all supported provider definitions
+      tags:
+        - iambic
+      parameters:
+        - $ref: "#/components/parameters/ProviderQueryString"
+        - $ref: "#/components/parameters/ProviderDefinitionNameQueryString"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IambicProviderDefinition"
   /api/v4/requests/:
     get:
       summary: get a list of IAMbic requests
@@ -832,6 +859,16 @@ components:
         type: string
     PolicyRequestId:
       name: policy_request_id
+      in: query
+      schema:
+        type: string
+    ProviderQueryString:
+      name: provider
+      in: query
+      schema:
+        type: string
+    ProviderDefinitionNameQueryString:
+      name: name
       in: query
       schema:
         type: string
@@ -2611,8 +2648,8 @@ components:
           type: integer
         data:
           oneOf:
-            - type: object
             - type: array
+            - type: object
     DataTableResponse:
       type: object
       required:
@@ -3354,6 +3391,33 @@ components:
             - applied_and_success
             - applied_and_failure
 
+    IambicProvider:
+      type: object
+      required:
+        - provider
+      properties:
+        provider:
+          type: string
+          description: The name of the provider e.g. aws
+    IambicProviderDefinition:
+      type: object
+      required:
+        - id
+        - provider
+        - name
+      properties:
+        id:
+          type: string
+          description: The provider definition id
+        name:
+          type: string
+          description: A unique, human readable name for the provider definition
+        provider:
+          type: string
+          description: The name of the provider e.g. aws
+        definition:
+          type: object
+          description: An object containing template relevant information for the provider definition
     IambicTemplateChange:
       type: object
       required:

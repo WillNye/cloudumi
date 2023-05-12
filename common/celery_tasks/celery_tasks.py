@@ -59,6 +59,7 @@ from common.aws.service_config.utils import execute_query
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
+from common.iambic.config.utils import update_tenant_providers_and_definitions
 from common.lib import noq_json as ujson
 from common.lib.account_indexers import (
     cache_cloud_accounts,
@@ -2806,6 +2807,29 @@ def remove_expired_requests_for_all_tenants() -> Dict:
     return log_data
 
 
+@app.task(soft_time_limit=2700, **default_retry_kwargs)
+def update_providers_and_provider_definitions_for_tenant(tenant: str = None):
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
+    async_to_sync(update_tenant_providers_and_definitions)(tenant)
+
+
+@app.task(soft_time_limit=600, **default_retry_kwargs)
+def update_providers_and_provider_definitions_all_tenants() -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    tenants = get_all_tenants()
+    log_data = {
+        "function": function,
+        "message": "Spawning tasks",
+        "num_tenants": len(tenants),
+    }
+    log.debug(log_data)
+    for tenant in tenants:
+        update_providers_and_provider_definitions_for_tenant.apply_async((tenant,))
+
+    return log_data
+
+
 @app.task(soft_time_limit=600, **default_retry_kwargs)
 def workos_cache_users_from_directory() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -3026,6 +3050,11 @@ schedule = {
         "task": "common.celery_tasks.celery_tasks.cache_iambic_data_for_all_tenants",
         "options": {"expires": 180},
         "schedule": get_schedule(60 * 6),
+    },
+    "update_providers_and_provider_definitions_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.update_providers_and_provider_definitions_all_tenants",
+        "options": {"expires": 180},
+        "schedule": get_schedule(30),
     },
 }
 

@@ -10,8 +10,8 @@ from common.config.tenant_config import TenantConfig
 
 
 class TenantFileStorageHandler:
-    def __init__(self, tenant):
-        self.tenant = tenant
+    def __init__(self, tenant: str):
+        self.tenant: str = tenant
         self.tenant_config = TenantConfig(tenant)
 
     async def get_tenant_file_path(self, file_path: Union[str, Path]) -> str:
