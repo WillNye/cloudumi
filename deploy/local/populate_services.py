@@ -1,7 +1,9 @@
 import asyncio
 import multiprocessing
 import os
+import sys
 import time
+import traceback
 from secrets import token_urlsafe
 
 from asgiref.sync import async_to_sync
@@ -601,8 +603,14 @@ def create_tables():
     from common.scripts.alembic import run_alembic_migrations
     from common.scripts.initialize_postgres import rebuild_tables  # noqa: F401,E402
 
-    asyncio.run(rebuild_tables())
-    run_alembic_migrations()
+    try:
+        run_alembic_migrations()
+        asyncio.run(rebuild_tables())
+
+    except Exception as e:
+        print("Failed to create tables:", str(e))
+        traceback.print_exc()
+        sys.exit(1)
 
 
 if __name__ == "__main__":
@@ -610,5 +618,8 @@ if __name__ == "__main__":
     # Force rebuild SQL tables, deleting all existing data.
     p.start()
     p.join()
+
+    if p.exitcode != 0:
+        sys.exit(1)
     # Force a re-cache of cloud resources with updated configuration
     import common.scripts.initialize_redis  # noqa: F401,E402

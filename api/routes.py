@@ -16,6 +16,10 @@ from api.handlers.v4.aws.roles import RolesHandlerV4
 from api.handlers.v4.groups.manage_group_memberships import (
     ManageGroupMembershipsHandler,
 )
+from api.handlers.v4.iambic_providers import (
+    IambicProviderDefinitionHandler,
+    IambicProviderHandler,
+)
 from api.handlers.v4.resources.datatable import ResourcesDataTableHandler
 from api.handlers.v4.scim.groups import ScimV2GroupHandler, ScimV2GroupsHandler
 from api.handlers.v4.scim.users import ScimV2UserHandler, ScimV2UsersHandler
@@ -73,6 +77,7 @@ from api.handlers.v2.index import (
     FrontendHandler,
     UnauthenticatedFileHandler,
 )
+from api.handlers.v2.logout import LogOutHandler
 from api.handlers.v2.managed_policies import (
     ManagedPoliciesForAccountHandler,
     ManagedPoliciesHandler,
@@ -445,6 +450,8 @@ def make_app(jwt_validator=None):
             IambicRequestCommentHandler,
         ),
         (rf"/api/v4/requests/(?P<request_id>{UUID_REGEX})", IambicRequestHandler),
+        (r"/api/v4/providers/?", IambicProviderHandler),
+        (r"/api/v4/providers/definitions/?", IambicProviderDefinitionHandler),
         (r"/api/v4/groups/?", ManageGroupsHandler),
         (r"/api/v4/list_groups/?", ManageListGroupsHandler),
         (r"/api/v4/group_memberships/?", ManageGroupMembershipsHandler),
@@ -470,6 +477,7 @@ def make_app(jwt_validator=None):
         (r"/api/v4/roles/access/?", ManageRoleAccessHandler),
         (r"/api/v4/roles", RolesHandlerV4),
         (r"/api/v4/resources/datatable/?", ResourcesDataTableHandler),
+        (r"/api/v4/logout/?", LogOutHandler),
     ]
 
     router = RuleRouter(routes)

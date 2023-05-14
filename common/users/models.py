@@ -331,7 +331,7 @@ class User(SoftDeleteMixin, Base):
                 if get_groups:
                     stmt = stmt.options(selectinload(User.groups))
                 users = await session.execute(stmt)
-                return users.scalars().all()
+                return users.scalars().unique().all()
 
     @classmethod
     async def get_by_attr(cls, attribute, value):

@@ -8,8 +8,6 @@ import ujson as json
 from git import Repo
 from git.exc import GitCommandError
 from github import Github
-from iambic.config.dynamic_config import load_config as load_config_template
-from iambic.config.utils import resolve_config_template_path
 from iambic.core.models import BaseTemplate
 from iambic.core.parser import load_templates
 
@@ -33,6 +31,7 @@ from jinja2.loaders import BaseLoader
 from common.config import models
 from common.config.globals import TENANT_STORAGE_BASE_PATH
 from common.config.tenant_config import TenantConfig
+from common.iambic.config.dynamic_config import load_iambic_config
 from common.lib.cache import store_json_results_in_redis_and_s3
 from common.lib.yaml import yaml
 from common.models import IambicRepoDetails
@@ -117,14 +116,9 @@ class IambicGit:
         for repository in self.git_repositories:
             repo_name = repository.repo_name
             repo_path = get_iambic_repo_path(self.tenant, repository.repo_name)
-            config_template_path = await resolve_config_template_path(repo_path)
             # TODO: Need to have assume role access and ability to read secret
             # for Iambic config and templates to load
-            config_template = await load_config_template(
-                config_template_path,
-                configure_plugins=False,
-                approved_plugins_only=True,
-            )
+            config_template = await load_iambic_config(repo_path)
             template_paths = await gather_templates(repo_path)
             self.templates = load_templates(template_paths)
             template_dicts = []
@@ -289,13 +283,9 @@ class IambicGit:
             full_path = os.path.join(repo_path, template_path)
             if not os.path.exists(full_path):
                 continue
-            config_template_path = await resolve_config_template_path(repo_path)
-            await load_config_template(
-                config_template_path,
-                configure_plugins=False,
-                approved_plugins_only=True,
-            )
-            return load_templates([full_path])
+
+            await load_iambic_config(repo_path)
+            return load_templates([full_path], use_multiprocessing=False)
         raise Exception("Template not found")
 
     async def okta_add_user_to_app(
