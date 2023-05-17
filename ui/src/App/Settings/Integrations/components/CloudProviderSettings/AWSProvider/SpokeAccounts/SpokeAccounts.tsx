@@ -1,7 +1,7 @@
 import { Table } from 'shared/elements/Table';
 import { SpokeAccountsColumns } from './constants';
 import { Button } from 'shared/elements/Button';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { deleteSpokeAccount, getSpokeAccounts } from 'core/API/awsConfig';
 import { SpokeAccount } from './types';
 import { AxiosError } from 'axios';
@@ -10,44 +10,34 @@ import { Dialog } from 'shared/layers/Dialog';
 import { SpokeAccountModal } from './SpokeAccountModal';
 import styles from '../AWSProvider.module.css';
 import DeleteModal from '../DeleteModal';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 const SpokeAccounts = ({ aws }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [spokeAccounts, setSpokeAccounts] = useState<SpokeAccount[]>([]);
   const [showDialog, setShowDialog] = useState(false);
   const [defaultData, setDefaultData] = useState<SpokeAccount>(null);
 
-  useEffect(function onMount() {
-    getAllSpokeAccounts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const getAllSpokeAccounts = useCallback(async () => {
-    setErrorMessage(null);
-    setIsLoading(true);
-    try {
-      const res = await getSpokeAccounts();
-      const resData = res?.data?.data;
-      setSpokeAccounts(resData);
-      setIsLoading(false);
-    } catch (error) {
-      const err = error as AxiosError;
+  const { isLoading, refetch } = useQuery({
+    queryFn: getSpokeAccounts,
+    queryKey: ['getSpokeAccounts'],
+    onSuccess: ({ data }) => {
+      setSpokeAccounts(data);
+    },
+    onError: (err: AxiosError) => {
       const errorRes = err?.response;
       const errorMsg = extractErrorMessage(errorRes?.data);
       setErrorMessage(
         errorMsg || 'An error occurred while getting spoke accounts'
       );
-      setIsLoading(false);
     }
-  }, []);
+  });
 
-  const handleDeleteSpokeAccount = useCallback(
-    async (spokeAccount: SpokeAccount) => {
-      return deleteSpokeAccount(spokeAccount);
-    },
-    []
-  );
+  const { mutateAsync: deleteSpokeAccountMutation } = useMutation({
+    mutationFn: (spokeAccount: SpokeAccount) =>
+      deleteSpokeAccount(spokeAccount),
+    mutationKey: ['deleteSpokeAccount']
+  });
 
   const openEditSpokeModal = useCallback((data: SpokeAccount) => {
     setDefaultData(data);
@@ -76,26 +66,21 @@ const SpokeAccounts = ({ aws }) => {
             title="Delete Spoke Account"
             warningMessage="Are you sure you want to delete this item? This action cannot be undone and all
              associated data will be permanently removed."
-            refreshData={getAllSpokeAccounts}
-            onDelete={handleDeleteSpokeAccount}
+            refreshData={refetch}
+            onDelete={deleteSpokeAccountMutation}
             data={item}
           />
         </div>
       )
     }));
-  }, [
-    spokeAccounts,
-    getAllSpokeAccounts,
-    handleDeleteSpokeAccount,
-    openEditSpokeModal
-  ]);
+  }, [spokeAccounts, refetch, deleteSpokeAccountMutation, openEditSpokeModal]);
 
   return (
     <div className={styles.section}>
       <h3 className={styles.header}>Spoke Accounts</h3>
       <div className={styles.content}>
         <div className={styles.headerActions}>
-          <Button icon="refresh" onClick={getAllSpokeAccounts}></Button>
+          <Button icon="refresh" onClick={() => refetch()}></Button>
           <Button size="small" onClick={openNewSpokeModal}>
             New
           </Button>

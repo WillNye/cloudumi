@@ -7,6 +7,7 @@ import { extractErrorMessage } from 'core/API/utils';
 import { Segment } from 'shared/layout/Segment';
 import { toast } from 'react-toastify';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 interface SlackIntegrationModalProps {
   showDialog: boolean;
@@ -25,7 +26,9 @@ const SlackIntegrationModal: FC<SlackIntegrationModalProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   0;
-  const deleteMutation = useMutation({ mutationFn: deleteNoqSlackApp });
+  const { mutateAsync: deleteMutation } = useMutation({
+    mutationFn: deleteNoqSlackApp
+  });
   const { refetch } = useQuery({
     queryFn: addNoqSlackApp,
     queryKey: ['installSlackLink'],
@@ -47,7 +50,7 @@ const SlackIntegrationModal: FC<SlackIntegrationModalProps> = ({
   const handleOnDelete = useCallback(async () => {
     setIsLoading(true);
     try {
-      await deleteMutation.mutateAsync();
+      await deleteMutation();
       toast.success(`Successfully remove Slack App`);
       setIsLoading(false);
       setShowDialog(false);
@@ -91,8 +94,7 @@ const SlackIntegrationModal: FC<SlackIntegrationModalProps> = ({
           real-time notifications, and collaboration to help you work more
           efficiently with your team.
         </div>
-        <br />
-        <br />
+        <LineBreak size="large" />
         {isSlackConnected ? (
           <Button
             color="error"

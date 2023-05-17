@@ -12,6 +12,7 @@ import { SpokeAccount } from '../SpokeAccounts/types';
 import { Select, SelectOption } from 'shared/form/Select';
 import { Notification, NotificationType } from 'shared/elements/Notification';
 import styles from '../AWSProvider.module.css';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 export const SelectAccount = ({
   register,
@@ -33,7 +34,7 @@ export const SelectAccount = ({
     setIsLoading(true);
     try {
       const res = await getSpokeAccounts();
-      const resData = res?.data?.data;
+      const resData = res?.data;
       setSpokeAccounts(resData);
       setIsLoading(false);
       onOptionsLoad && onOptionsLoad();
@@ -143,24 +144,24 @@ export const AWSOrganizationModal = ({ defaultValues }) => {
           fullWidth
         />
       )}
-      <br />
+      <LineBreak />
       <form onSubmit={handleSubmit(onSubmit)}>
         <div>
           <Block disableLabelPadding>Organization Id</Block>
           <Input {...register('org_id', { required: true })} />
         </div>
-        <br />
+        <LineBreak />
         <SelectAccount
           label="Spoke Account Name and Id"
           register={{ ...register('account_name', { required: true }) }}
           onOptionsLoad={onOptionsLoad}
         />
-        <br />
+        <LineBreak />
         <div>
           <Block disableLabelPadding>Owner</Block>
           <Input {...register('owner', { required: true })} />
         </div>
-        <br />
+        <LineBreak />
         <div className={styles.customCheckbox}>
           <Checkbox
             {...register('automatically_onboard_accounts', { required: false })}

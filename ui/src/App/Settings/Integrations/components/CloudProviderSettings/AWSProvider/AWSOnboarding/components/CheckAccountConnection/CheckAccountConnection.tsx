@@ -4,6 +4,7 @@ import { TIME_PER_INTERVAL } from '../../constants';
 import AWSMxNetImg from 'assets/vendor/mx-net.svg';
 import AWSCacheImg from 'assets/vendor/connect.svg';
 import styles from './CheckAccountConnection.module.css';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 const CheckAccountConnection = ({
   setIsConnected,
@@ -40,8 +41,7 @@ const CheckAccountConnection = ({
   return (
     <div className={styles.connectingAccount}>
       <div>
-        <br />
-        <br />
+        <LineBreak size="large" />
 
         <div className={styles.loaderActions}>
           <img
@@ -53,8 +53,7 @@ const CheckAccountConnection = ({
             <p> Waiting for CloudFormation response.</p>
           </div>
         </div>
-        <br />
-        <br />
+        <LineBreak size="large" />
         <div className={styles.loaderActions}>
           <img src={AWSCacheImg} className={styles.icon} />
           <div>

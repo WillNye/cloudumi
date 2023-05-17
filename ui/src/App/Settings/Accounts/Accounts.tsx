@@ -3,6 +3,7 @@ import { ACCOUNT_SETTINGS_TABS } from './constants';
 import Groups from './components/GroupsManagement';
 import Users from './components/UsersManagement';
 import css from './Accounts.module.css';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 export const AccountSettings: FC = () => {
   const [currentTab, setCurrentTab] = useState<ACCOUNT_SETTINGS_TABS>(
@@ -19,7 +20,7 @@ export const AccountSettings: FC = () => {
 
   return (
     <div className={css.container}>
-      <br />
+      <LineBreak />
       <div>
         <nav className={css.nav}>
           <ul className={css.navList}>

@@ -21,6 +21,7 @@ import { Search } from 'shared/form/Search';
 import { Divider } from 'shared/elements/Divider';
 import { Chip } from 'reablocks';
 import { useMutation } from '@tanstack/react-query';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 type EditGroupsModalProps = {
   canEdit: boolean;
@@ -53,15 +54,15 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [searchValue, setSearchValue] = useState('');
 
-  const updateGroupMutation = useMutation({
+  const { mutateAsync: updateGroupMutation } = useMutation({
     mutationFn: (groupData: UpdateGroupParams) => updateGroup(groupData)
   });
 
-  const createGroupUsersMutation = useMutation({
+  const { mutateAsync: createGroupUsersMutation } = useMutation({
     mutationFn: (data: CreateGroupUserParams) => createGroupMemberships(data)
   });
 
-  const searchMutation = useMutation({
+  const { mutateAsync: searchMutation } = useMutation({
     mutationFn: (search: string) => {
       const query = {
         filter: {
@@ -105,7 +106,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
     async ({ name, description }) => {
       reseActions();
       try {
-        await updateGroupMutation.mutateAsync({
+        await updateGroupMutation({
           id: group.id,
           name,
           description
@@ -135,7 +136,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
 
       setIsSearching(true);
       try {
-        const res = await searchMutation.mutateAsync(value);
+        const res = await searchMutation(value);
         setSearchResults(res.data.data);
       } catch (error) {
         // TODO: Properly handle error
@@ -150,7 +151,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
     reseActions();
     setIsUpdatingGroups(true);
     try {
-      await createGroupUsersMutation.mutateAsync({
+      await createGroupUsersMutation({
         users: groupUsers,
         groups: [group.name]
       });
@@ -201,7 +202,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
               fullWidth
             />
           )}
-          <br />
+          <LineBreak />
           <form onSubmit={handleSubmit(onSubmit)}>
             <Block disableLabelPadding label="Name" required></Block>
             <Input
@@ -212,7 +213,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
               {...register('name')}
             />
             {errors?.name && touchedFields.name && <p>{errors.name.message}</p>}
-            <br />
+            <LineBreak />
             <Block disableLabelPadding label="Description" required></Block>
             <Input
               fullWidth
@@ -224,7 +225,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
             {errors?.description && touchedFields.description && (
               <p>{errors.description.message}</p>
             )}
-            <br />
+            <LineBreak />
             <Button type="submit" disabled={isSubmitting || !isValid} fullWidth>
               {isSubmitting ? 'Updating Group...' : 'Update Group'}
             </Button>

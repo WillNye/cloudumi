@@ -22,7 +22,7 @@ export const PasswordMeter: FC<PasswordMeterProps> = ({
 }) => {
   const [passwordDetails, setPasswordDetails] = useState(null);
 
-  const checkPasswordMutation = useMutation({
+  const { mutateAsync: checkPasswordMutation } = useMutation({
     mutationFn: (password: string) => checkPasswordComplexity({ password }),
     mutationKey: ['checkPassword']
   });
@@ -42,7 +42,7 @@ export const PasswordMeter: FC<PasswordMeterProps> = ({
         setPasswordDetails(null);
         return;
       }
-      const data = await checkPasswordMutation.mutateAsync(value || ' ');
+      const data = await checkPasswordMutation(value || ' ');
       setPasswordDetails(data?.data || null);
     }, 500);
 

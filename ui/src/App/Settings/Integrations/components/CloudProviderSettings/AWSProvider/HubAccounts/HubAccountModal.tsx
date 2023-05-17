@@ -10,6 +10,8 @@ import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
 import useCopyToClipboard from 'core/hooks/useCopyToClipboard';
 import { Notification, NotificationType } from 'shared/elements/Notification';
+import { LineBreak } from 'shared/elements/LineBreak';
+import { useMutation } from '@tanstack/react-query';
 
 export const HubAccountModal = ({ onClose, defaultValues, aws }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -18,6 +20,11 @@ export const HubAccountModal = ({ onClose, defaultValues, aws }) => {
   const [copiedText, setCopyText] = useCopyToClipboard();
 
   const { register, handleSubmit, watch } = useForm({ defaultValues });
+
+  const { mutateAsync: updateHubAccountMutation } = useMutation({
+    mutationFn: formData => updateHubAccount(formData),
+    mutationKey: ['updateHubAccount']
+  });
 
   const fields = watch();
 
@@ -28,24 +35,27 @@ export const HubAccountModal = ({ onClose, defaultValues, aws }) => {
 
   const isReady = useMemo(() => fields.name !== '', [fields]);
 
-  const onSubmit = useCallback(async data => {
-    setErrorMessage(null);
-    setSuccessMessage(null);
-    setIsLoading(true);
-    try {
-      await updateHubAccount(data);
-      setSuccessMessage('Successfully updated hub account');
-      setIsLoading(false);
-    } catch (error) {
-      const err = error as AxiosError;
-      const errorRes = err?.response;
-      const errorMsg = extractErrorMessage(errorRes?.data);
-      setErrorMessage(
-        errorMsg || 'An error occurred while updating hub account'
-      );
-      setIsLoading(false);
-    }
-  }, []);
+  const onSubmit = useCallback(
+    async data => {
+      setErrorMessage(null);
+      setSuccessMessage(null);
+      setIsLoading(true);
+      try {
+        await updateHubAccountMutation(data);
+        setSuccessMessage('Successfully updated hub account');
+        setIsLoading(false);
+      } catch (error) {
+        const err = error as AxiosError;
+        const errorRes = err?.response;
+        const errorMsg = extractErrorMessage(errorRes?.data);
+        setErrorMessage(
+          errorMsg || 'An error occurred while updating hub account'
+        );
+        setIsLoading(false);
+      }
+    },
+    [updateHubAccountMutation]
+  );
 
   const handleClick = useCallback(() => {
     window.open(
@@ -74,13 +84,13 @@ export const HubAccountModal = ({ onClose, defaultValues, aws }) => {
             fullWidth
           />
         )}
-        <br />
+        <LineBreak />
         <form onSubmit={handleSubmit(onSubmit)}>
           <div>
             <Block disableLabelPadding>Role Name</Block>
             <Input {...register('name', { required: true })} />
           </div>
-          <br />
+          <LineBreak />
           <Button type="submit" disabled={!isReady || isLoading}>
             Submit
           </Button>
@@ -127,7 +137,7 @@ export const HubAccountModal = ({ onClose, defaultValues, aws }) => {
           <Button onClick={handleClick} fullWidth>
             Execute CloudFormation
           </Button>
-          <br />
+          <LineBreak />
           <Button
             fullWidth
             color={copiedText ? 'secondary' : 'primary'}

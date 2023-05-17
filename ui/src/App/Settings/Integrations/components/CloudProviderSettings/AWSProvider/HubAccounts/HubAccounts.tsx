@@ -3,52 +3,43 @@ import { HubAccountsColumns } from './constants';
 import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
 import { deleteHubAccount, getHubAccounts } from 'core/API/awsConfig';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { HubAccount } from './types';
 import { Button } from 'shared/elements/Button';
 import { Dialog } from 'shared/layers/Dialog';
 import { HubAccountModal } from './HubAccountModal';
-import styles from '../AWSProvider.module.css';
 import DeleteModal from '../DeleteModal';
+import { useMutation, useQuery } from '@tanstack/react-query';
+
+import styles from '../AWSProvider.module.css';
 
 const HubAccounts = ({ aws }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [hubAccounts, setHubAccounts] = useState<HubAccount[]>([]);
   const [defaultData, setDefaultData] = useState<HubAccount | null>(null);
 
-  useEffect(function onMount() {
-    getAllHubAccounts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const getAllHubAccounts = useCallback(async () => {
-    setErrorMessage(null);
-    setIsLoading(true);
-    try {
-      const res = await getHubAccounts();
-      const resData = res?.data?.data;
-      setHubAccounts([resData]);
-      setDefaultData(resData);
-      setIsLoading(false);
-    } catch (error) {
-      const err = error as AxiosError;
+  const { refetch, isLoading } = useQuery({
+    queryFn: getHubAccounts,
+    queryKey: ['getHubAccounts'],
+    onSuccess: ({ data }) => {
+      setHubAccounts([data]);
+      setDefaultData(data);
+    },
+    onError: (err: AxiosError) => {
       const errorRes = err?.response;
       const errorMsg = extractErrorMessage(errorRes?.data);
       setErrorMessage(
         errorMsg || 'An error occurred while getting hub account'
       );
-      setIsLoading(false);
     }
-  }, []);
+  });
 
-  const handleDeleteHubAccount = useCallback(
-    async (awsOrganization: HubAccount) => {
-      return deleteHubAccount(awsOrganization);
-    },
-    []
-  );
+  const { mutateAsync: deleteHubAccountMutation } = useMutation({
+    mutationFn: (awsOrganization: HubAccount) =>
+      deleteHubAccount(awsOrganization),
+    mutationKey: ['deleteHubAccount']
+  });
 
   const tableRows = useMemo(() => {
     return hubAccounts.map(item => ({
@@ -59,21 +50,21 @@ const HubAccounts = ({ aws }) => {
             title="Delete Hub Account"
             warningMessage="Are you sure you want to delete this item? This action cannot be undone and all
              associated data will be permanently removed."
-            refreshData={getAllHubAccounts}
-            onDelete={handleDeleteHubAccount}
+            refreshData={refetch}
+            onDelete={deleteHubAccountMutation}
             data={item}
           />
         </div>
       )
     }));
-  }, [hubAccounts, getAllHubAccounts, handleDeleteHubAccount]);
+  }, [hubAccounts, refetch, deleteHubAccountMutation]);
 
   return (
     <div className={styles.section}>
       <h3 className={styles.header}>Hub Account</h3>
       <div className={styles.content}>
         <div className={styles.headerActions}>
-          <Button icon="refresh" onClick={getAllHubAccounts}></Button>
+          <Button icon="refresh" onClick={() => refetch()}></Button>
           {!tableRows.length && (
             <Button size="small" onClick={() => setShowDialog(true)}>
               New

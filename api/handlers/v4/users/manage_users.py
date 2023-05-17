@@ -15,6 +15,7 @@ from common.lib.password import check_password_strength, generate_random_passwor
 from common.lib.tenant.models import TenantDetails
 from common.lib.web import handle_generic_error_response
 from common.models import WebResponse
+from common.tenants.models import Tenant
 from common.users.models import User
 
 
@@ -479,7 +480,7 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
                 # enumeration attacks.
                 self.write(success_response)
                 raise tornado.web.Finish()
-            await user.send_password_reset_email(tenant_url)
+            await user.send_password_reset_email(tenant, tenant_url)
             self.write(success_response)
             raise tornado.web.Finish()
         elif command == "reset":
@@ -741,7 +742,9 @@ class UnauthenticatedEmailVerificationHandler(tornado.web.RequestHandler):
             )
             raise tornado.web.Finish()
 
-        verified = await User.verify_email(tenant, email, email_verify_token)
+        db_tenant = await Tenant.get_by_name(tenant)
+
+        verified = await User.verify_email(db_tenant, email, email_verify_token)
 
         if not verified:
             self.set_status(400)

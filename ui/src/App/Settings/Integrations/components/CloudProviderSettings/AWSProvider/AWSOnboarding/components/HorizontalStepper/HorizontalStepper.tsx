@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import classNames from 'classnames';
 import styles from './HorizontalStepper.module.css';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 const Step = ({ id, header, subHeader, activeId }) => {
   const classes = useMemo(
@@ -29,7 +30,7 @@ const HorizontalStepper = ({ steps, activeId }) => {
           <Step {...step} activeId={activeId} key={index} />
         ))}
       </ol>
-      <br />
+      <LineBreak />
     </div>
   );
 };

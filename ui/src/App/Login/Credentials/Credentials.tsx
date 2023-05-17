@@ -9,13 +9,15 @@ import css from './Credentials.module.css';
 import { Navigate } from 'react-router-dom';
 import { MotionGroup, MotionItem } from 'reablocks';
 import { ReactComponent as Logo } from 'assets/brand/logo-bw.svg';
-import { login, signinWithSSO } from 'core/API/auth';
+import { LoginParams, login, signinWithSSO } from 'core/API/auth';
 import { Button } from 'shared/elements/Button';
 import { Input } from 'shared/form/Input';
 import { Block } from 'shared/layout/Block';
 import { Notification, NotificationType } from 'shared/elements/Notification';
 import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
+import { useMutation } from '@tanstack/react-query';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 const credentialsSchema = Yup.object().shape({
   email: Yup.string().required('Required'),
@@ -28,6 +30,16 @@ export const Credentials: FC = () => {
   const [isGeneratingSSOLink, setIsGeneratingSSOLink] = useState(false);
 
   const { user, getUser } = useAuth();
+
+  const { mutateAsync: signinWithSSOMutation } = useMutation({
+    mutationFn: signinWithSSO,
+    mutationKey: ['signinWithSSO']
+  });
+
+  const { mutateAsync: loginMutation } = useMutation({
+    mutationFn: (formData: LoginParams) => login(formData),
+    mutationKey: ['login']
+  });
 
   const resetState = useCallback(() => {
     setLoginError(null);
@@ -52,7 +64,7 @@ export const Credentials: FC = () => {
     async data => {
       resetState();
       try {
-        await login(data);
+        await loginMutation(data);
         await getUser();
       } catch (error) {
         const err = error as AxiosError;
@@ -61,14 +73,14 @@ export const Credentials: FC = () => {
         setLoginError(errorMsg || 'An error occurred while logging in');
       }
     },
-    [getUser, resetState]
+    [getUser, resetState, loginMutation]
   );
 
   const handleSSOLoginIn = useCallback(async () => {
     setIsGeneratingSSOLink(true);
     resetState();
     try {
-      const res = await signinWithSSO();
+      const res = await signinWithSSOMutation();
       const data = res?.data;
       setIsGeneratingSSOLink(false);
       if (data.redirect_url) {
@@ -81,7 +93,7 @@ export const Credentials: FC = () => {
       setSSOError(errorMsg || 'Unable to login with SSO');
       setIsGeneratingSSOLink(false);
     }
-  }, [resetState]);
+  }, [resetState, signinWithSSOMutation]);
 
   if (user) {
     return <Navigate to="/" />;
@@ -95,7 +107,7 @@ export const Credentials: FC = () => {
       <MotionGroup className={css.container}>
         <MotionItem className={css.box}>
           <Logo />
-          <br />
+          <LineBreak />
           <form className={css.form} onSubmit={handleSubmit(onSubmit)}>
             <Block label="Email" disableLabelPadding>
               <Input
@@ -126,7 +138,7 @@ export const Credentials: FC = () => {
                 showCloseIcon={false}
               />
             )}
-            <br />
+            <LineBreak />
 
             <Button fullWidth type="submit" disabled={isSubmitting || !isValid}>
               {isSubmitting ? 'Logging in...' : 'Login'}
@@ -145,7 +157,7 @@ export const Credentials: FC = () => {
               showCloseIcon={false}
             />
           )}
-          <br />
+          <LineBreak />
           <Link to="password-reset">Forgot your password?</Link>
         </MotionItem>
       </MotionGroup>
