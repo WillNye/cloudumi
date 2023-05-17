@@ -13,6 +13,7 @@ import { Notification, NotificationType } from 'shared/elements/Notification';
 import css from './EligibleRoles.module.css';
 import { useQuery } from '@tanstack/react-query';
 import { getEligibleRoles } from 'core/API/roles';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 const EligibleRoles = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -145,7 +146,7 @@ const EligibleRoles = () => {
               fullWidth
               onClose={() => setErrorMessage(null)}
             />
-            <br />
+            <LineBreak />
           </>
         )}
         <div className={css.table}>

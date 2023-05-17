@@ -9,12 +9,13 @@ import { Navigate } from 'react-router-dom';
 import { Input } from 'shared/form/Input';
 import { Button } from 'shared/elements/Button';
 import { Block } from 'shared/layout/Block';
-import { completePassword } from 'core/API/auth';
+import { CompletePasswordParams, completePassword } from 'core/API/auth';
 import { AxiosError } from 'axios';
 import { ReactComponent as Logo } from 'assets/brand/mark.svg';
 import { extractErrorMessage } from 'core/API/utils';
 import { Notification, NotificationType } from 'shared/elements/Notification';
 import { LineBreak } from 'shared/elements/LineBreak';
+import { useMutation } from '@tanstack/react-query';
 import styles from './CompletePassword.module.css';
 
 const completePasswordSchema = Yup.object().shape({
@@ -29,6 +30,11 @@ export const CompleteNewPassword: FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { user, getUser } = useAuth();
+
+  const { mutateAsync: completePasswordMutation } = useMutation({
+    mutationFn: (data: CompletePasswordParams) => completePassword(data),
+    mutationKey: ['loginResetPassword']
+  });
 
   const {
     register,
@@ -51,7 +57,7 @@ export const CompleteNewPassword: FC = () => {
   const onSubmit = useCallback(
     async ({ newPassword, currentPassword }) => {
       try {
-        await completePassword({
+        await completePasswordMutation({
           new_password: newPassword,
           current_password: currentPassword
         });
@@ -65,7 +71,7 @@ export const CompleteNewPassword: FC = () => {
         );
       }
     },
-    [getUser]
+    [getUser, completePasswordMutation]
   );
 
   if (!user?.password_reset_required) {

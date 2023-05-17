@@ -8,9 +8,10 @@ import { Notification, NotificationType } from 'shared/elements/Notification';
 import { Block } from 'shared/layout/Block';
 import { Button } from 'shared/elements/Button';
 import { Input } from 'shared/form/Input';
-import { resetPassword } from 'core/API/auth';
+import { ForgotPasswordParams, resetPassword } from 'core/API/auth';
 import { LineBreak } from 'shared/elements/LineBreak';
 import styles from '../PasswordReset.module.css';
+import { useMutation } from '@tanstack/react-query';
 
 const DEFAULT_SUCCESS_MSG =
   // eslint-disable-next-line max-len
@@ -23,6 +24,11 @@ const emailSchema = Yup.object().shape({
 export const ForgotPassword = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const { mutateAsync: resetPasswordMutation } = useMutation({
+    mutationFn: (formData: ForgotPasswordParams) => resetPassword(formData),
+    mutationKey: ['resetPasswordRequest']
+  });
 
   const {
     register,
@@ -37,24 +43,29 @@ export const ForgotPassword = () => {
     }
   });
 
-  const onSubmit = useCallback(async ({ email }) => {
-    setSuccessMessage(null);
-    setErrorMessage(null);
-    try {
-      const res = await resetPassword({
-        command: 'request',
-        email
-      });
-      const resData = res?.data?.data;
-      const successMg = resData?.message || DEFAULT_SUCCESS_MSG;
-      setSuccessMessage(successMg);
-    } catch (error) {
-      const err = error as AxiosError;
-      const errorRes = err?.response;
-      const errorMsg = extractErrorMessage(errorRes?.data);
-      setErrorMessage(errorMsg || 'An error occurred while resetting Password');
-    }
-  }, []);
+  const onSubmit = useCallback(
+    async ({ email }) => {
+      setSuccessMessage(null);
+      setErrorMessage(null);
+      try {
+        const res = await resetPasswordMutation({
+          command: 'request',
+          email
+        });
+        const resData = res?.data?.data;
+        const successMg = resData?.message || DEFAULT_SUCCESS_MSG;
+        setSuccessMessage(successMg);
+      } catch (error) {
+        const err = error as AxiosError;
+        const errorRes = err?.response;
+        const errorMsg = extractErrorMessage(errorRes?.data);
+        setErrorMessage(
+          errorMsg || 'An error occurred while resetting Password'
+        );
+      }
+    },
+    [resetPasswordMutation]
+  );
 
   return (
     <>

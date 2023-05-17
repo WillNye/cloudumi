@@ -13,6 +13,7 @@ import { createGroup } from 'core/API/settings';
 import { Notification, NotificationType } from 'shared/elements/Notification';
 import { useMutation } from '@tanstack/react-query';
 import styles from './AddGroupModal.module.css';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 type CreateGroupParams = { name: string; description: string };
 
@@ -26,7 +27,7 @@ export const AddGroupModal = ({ refreshData }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const createGroupMutation = useMutation({
+  const { mutateAsync: createGroupMutation } = useMutation({
     mutationFn: (data: CreateGroupParams) => createGroup(data)
   });
 
@@ -49,7 +50,7 @@ export const AddGroupModal = ({ refreshData }) => {
       setErrorMessage(null);
       setSuccessMessage(null);
       try {
-        await createGroupMutation.mutateAsync({
+        await createGroupMutation({
           name,
           description
         });
@@ -87,7 +88,7 @@ export const AddGroupModal = ({ refreshData }) => {
               {...register('name')}
             />
             {errors?.name && touchedFields.name && <p>{errors.name.message}</p>}
-            <br />
+            <LineBreak />
             <Block disableLabelPadding label="Description" required></Block>
             <Input
               fullWidth
@@ -99,7 +100,7 @@ export const AddGroupModal = ({ refreshData }) => {
             {errors?.description && touchedFields.description && (
               <p>{errors.description.message}</p>
             )}
-            <br />
+            <LineBreak />
             {errorMessage && (
               <Notification
                 type={NotificationType.ERROR}
@@ -116,7 +117,7 @@ export const AddGroupModal = ({ refreshData }) => {
                 fullWidth
               />
             )}
-            <br />
+            <LineBreak />
             <Button type="submit" disabled={isSubmitting || !isValid}>
               {isSubmitting ? 'Adding Group...' : 'Add Group'}
             </Button>

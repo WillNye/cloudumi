@@ -9,6 +9,7 @@ import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
 import { Notification, NotificationType } from 'shared/elements/Notification';
 import { useMutation } from '@tanstack/react-query';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 interface DeleteProps {
   canEdit: boolean;
@@ -36,10 +37,10 @@ const Delete: FC<DeleteProps> = ({
 
   const isUser = useMemo(() => dataType === DELETE_DATA_TYPE.USER, [dataType]);
 
-  const deleteUserMutation = useMutation({
+  const { mutateAsync: deleteUserMutation } = useMutation({
     mutationFn: (data: DeleteUserGroupParams) => deleteUser(data)
   });
-  const deleteGroupMutation = useMutation({
+  const { mutateAsync: deleteGroupMutation } = useMutation({
     mutationFn: (data: DeleteUserGroupParams) => deleteGroup(data)
   });
 
@@ -50,7 +51,7 @@ const Delete: FC<DeleteProps> = ({
     try {
       const deleteAction = isUser ? deleteUserMutation : deleteGroupMutation;
       const deleteKey = isUser ? 'email' : 'name';
-      await deleteAction.mutateAsync({
+      await deleteAction({
         [deleteKey]: dataId
       });
       setSuccessMessage(`Successfully deleted ${dataType}: ${dataId}`);
@@ -96,7 +97,7 @@ const Delete: FC<DeleteProps> = ({
             {`Are you sure you want to delete this ${dataType}: `}{' '}
             <strong>{dataId}?</strong>
           </div>
-          <br />
+          <LineBreak />
           {errorMessage && (
             <Notification
               type={NotificationType.ERROR}
@@ -113,7 +114,7 @@ const Delete: FC<DeleteProps> = ({
               fullWidth
             />
           )}
-          <br />
+          <LineBreak />
           <div className={styles.deleteActions}>
             <Button
               className={styles.btn}
