@@ -157,29 +157,17 @@ describe('Tenant registration and login', () => {
             });
           };
 
-          // Function to generate a TOTP key and start filling in the TOTP key input
           const generateAndFillTotpCode = () => {
-            // Generate a valid TOTP key using the manual code
-            const totpKey = authenticator.generate(manualCode);
+            // Run Python script to generate a valid TOTP key using the manual code
+            cy.exec(
+              `python3 -c 'import pyotp; print(pyotp.TOTP("${manualCode}").now())'`
+            ).then(result => {
+              const totpKey = result.stdout.trim();
+              cy.task('log', `Generated Python TOTP Key: ${totpKey}`);
 
-            cy.task('log', `Generated TOTP Key: ${totpKey}`);
-
-            // Check the remaining time for the current TOTP token
-            const remainingTime = authenticator.timeRemaining();
-
-            if (remainingTime < 5) {
-              // If less than 5 seconds remaining, wait for the next period and generate a new TOTP token
-              cy.wait((remainingTime + 1) * 1000).then(() => {
-                generateAndFillTotpCode();
-              });
-            } else {
               // Start filling in the TOTP key input
               fillTotpCode(0, totpKey);
-              // // Check for "Invalid MFA token" message after filling the TOTP key
-              // cy.wait(1000).then(() => {
-              //   checkAndRetry();
-              // });
-            }
+            });
           };
 
           // Generate and fill TOTP code

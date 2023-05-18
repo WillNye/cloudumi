@@ -135,7 +135,8 @@ resource "aws_iam_role" "ecs_task_role" {
           "Effect" : "Allow",
           "Action" : [
             "s3:ListBucket",
-            "s3:GetObject"
+            "s3:GetObject",
+            "s3:GetBucketLocation",
           ],
           "Resource" : [
             "arn:aws:s3:::${var.tenant_configuration_bucket_name}",

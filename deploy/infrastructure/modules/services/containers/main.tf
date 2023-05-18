@@ -257,7 +257,8 @@ resource "aws_iam_role" "ecs_task_role" {
           "Effect" : "Allow",
           "Action" : [
             "s3:ListBucket",
-            "s3:GetObject"
+            "s3:GetObject",
+            "s3:GetBucketLocation",
           ],
           "Resource" : [
             "arn:aws:s3:::${var.tenant_configuration_bucket_name}",
@@ -269,12 +270,15 @@ resource "aws_iam_role" "ecs_task_role" {
             "s3:ListBucket",
             "s3:GetObject",
             "s3:PutObject",
-            "s3:DeleteObject"
+            "s3:DeleteObject",
+            "s3:GetBucketLocation",
           ],
           "Effect" : "Allow",
           "Resource" : [
             "arn:aws:s3:::${var.cloudumi_files_bucket}",
-            "arn:aws:s3:::${var.cloudumi_files_bucket}/*"
+            "arn:aws:s3:::${var.cloudumi_files_bucket}/*",
+            "arn:aws:s3:::${var.cloudumi_temp_files_bucket}",
+            "arn:aws:s3:::${var.cloudumi_temp_files_bucket}/*"
           ]
         },
         {

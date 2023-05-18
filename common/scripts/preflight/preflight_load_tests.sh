@@ -1,19 +1,45 @@
 #!/bin/bash
 
+# Show commands
+set -x
+
+# Activate virtualenv
+source /app/env/bin/activate
+
+temp_files_bucket=$(python -c 'from common.config import config; print(config.get("_global_.s3_buckets.temp_files"))')
+[ "$temp_files_bucket" ] && [ "$temp_files_bucket" != "None" ] || { echo "Configuration not found for _global_.s3_buckets.temp_files"; exit 1; }
+timestamp=$(date +%Y%m%d-%H%M%S)
+bucket_path="${timestamp}-load_tests"
+# Get the bucket region
+bucket_region=$(/usr/local/bin/aws s3api get-bucket-location --bucket "$temp_files_bucket" --query "LocationConstraint" --output text)
+
+# Check if the bucket region is empty (indicating the bucket is in the default region)
+if [ -z "$bucket_region" ]; then
+  bucket_region="us-east-1"  # Set the default region
+fi
+
 # Function to send messages to Slack webhook
 send_to_slack() {
-  # #alerts slack channel
   webhook_url="A_SECRET"
   message=$1
-  curl -X POST -H 'Content-type: application/json' --data "{'text': '${message}'}" ${webhook_url}
+  payload_file="payload.json"
+
+  # Create a payload file
+  echo "${message}" > "${payload_file}"
+
+  # Send the payload using curl
+  curl -X POST -H 'Content-type: application/json' --data "@${payload_file}" ${webhook_url}
+
+  # Remove the payload file
+  rm "${payload_file}"
 }
 
-# Function to upload a file to transfer.sh and return the download URL
-upload_to_transfer_sh() {
+# Function to generate a presigned URL for a file in S3
+generate_presigned_url() {
   filepath=$1
   filename=$(basename "${filepath}")
-  transfer_url=$(curl --progress-bar --upload-file "${filepath}" "https://transfer.sh/${filename}")
-  echo "${transfer_url}"
+  /usr/local/bin/aws s3 cp "${filepath}" "s3://${temp_files_bucket}/${bucket_path}/${filename}" > /dev/null
+  /usr/local/bin/aws s3 presign --expires-in 600000 --region ${bucket_region} "s3://${temp_files_bucket}/${bucket_path}/${filename}"
 }
 
 # Start API server in the background, save its process ID to a file, and redirect its output to a log file
@@ -41,19 +67,45 @@ kill $(cat /tmp/tail_pid.txt) || true
 # Kill the API server process
 kill $(cat /tmp/api_pid.txt) || true
 
-# Print locust output and upload it to transfer.sh
+# Print locust output and upload it to s3
 echo "Printing locust output:"
 cat /tmp/locust_output.log
-transfer_url=$(upload_to_transfer_sh "/tmp/locust_output.log")
-echo "Uploaded locust output to transfer.sh: ${transfer_url}"
+s3_url=$(generate_presigned_url /tmp/locust_output.log)
+echo "Uploaded locust output to s3: ${s3_url}"
 
+# Check the locust exit code and send the summary to the Slack webhook
 # Check the locust exit code and send the summary to the Slack webhook
 if [ $locust_exit_code -ne 0 ]; then
   echo "Locust load tests failed with exit code: $locust_exit_code"
-  send_to_slack "Locust load tests failed with exit code: $locust_exit_code. Check the logs for more information. Locust output: ${transfer_url}"
+
+  send_to_slack '{
+    "text": "Locust load tests failed with exit code: '"$locust_exit_code"'",
+    "blocks": [
+      {
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": "*Locust load tests failed with exit code: '"$locust_exit_code"'*\nCheck the logs for more information. Locust output: <'"$s3_url"'|link>"
+        }
+      }
+    ]
+  }'
   exit $locust_exit_code
 else
   echo "Locust load tests finished successfully"
-  send_to_slack "Locust load tests finished successfully. Locust output: ${transfer_url}"
+
+  send_to_slack '{
+    "text": "Locust load tests finished successfully",
+    "blocks": [
+      {
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": "*Locust load tests finished successfully*\nLocust output: <'"$s3_url"'|link>"
+        }
+      }
+    ]
+  }'
   exit 0
 fi
+

@@ -37,7 +37,7 @@ RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata software-properties-common gcc && \
     add-apt-repository -y ppa:deadsnakes/ppa && \
     apt-get update && \
-    apt-get install -y ncat openssh-server python3.11 python3.11-distutils python3-apt python3.11-dev python-is-python3 pkg-config awscli libpq-dev git-all python3.11-venv curl telnet iputils-ping sudo systemctl apt-transport-https libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb build-essential libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev && \
+    apt-get install -y ncat openssh-server python3.11 python3.11-distutils python3-apt python3.11-dev python-is-python3 pkg-config awscli libpq-dev git-all python3.11-venv curl telnet iputils-ping sudo systemctl apt-transport-https libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb build-essential libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev unzip && \
     curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 && \
     curl -sL https://deb.nodesource.com/setup_18.x | bash && \
     apt-get install -y nodejs && \
@@ -59,6 +59,19 @@ RUN apt-get update && \
     apt-get clean && \
     apt-get -y autoremove && \
     apt-get dist-upgrade -y
+
+# Install AWS CLI
+RUN if [ "$(uname -m)" = "x86_64" ]; then \
+        export ARCH="x86_64" ; \
+    elif [ "$(uname -m)" = "aarch64" ]; then \
+        export ARCH="aarch64" ; \
+    else \
+        echo "Unsupported architecture" && exit 1 ; \
+    fi && \
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-$ARCH.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && \
+    sudo ./aws/install && \
+    rm -rf awscliv2.zip aws
 
 COPY configs/fluent-bit/fluent-bit.conf /etc/fluent-bit/fluent-bit.conf
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"

@@ -58,6 +58,7 @@ _global_:
       region: us-west-2
   s3_buckets:
     legal_docs: noq-development-2-test-bucket
+    temp_files: cloudumi-temp-bucket-testing
   integrations:
     aws:
       account_id: "759357822767"
@@ -138,6 +139,7 @@ _global_:
     database: "noq"
   tenant_storage:
     base_path: ~/.config/noq/tenant_storage_dev/
+  slack_webhook_url: A_SECRET
 # Localhost configuration
 #  redis:
 #    cluster_mode:

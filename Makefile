@@ -214,3 +214,11 @@ update-config-prod:
 	terraform workspace select shared-prod-1 && \
 	terraform output -json | python ../../util/terraform_config_parser/terraform_config_parser.py $(BASE_DIR)
 	@echo "SaaS configuration for production environment updated."
+
+.PHONY: generate_pydantic_models_from_swagger_spec
+generate_pydantic_models_from_swagger_spec:
+	@echo "Generating pydantic models from swagger spec..."
+	@cd common/util && \
+	datamodel-codegen --input swagger.yaml  --output ../models.py --base-class common.lib.pydantic.BaseModel --field-extra-keys 'is_secret' && \
+	black ../models.py
+	@echo "Pydantic models generated."
