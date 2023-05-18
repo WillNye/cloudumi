@@ -119,6 +119,8 @@ describe('Tenant registration and login', () => {
       cy.get('button[type="submit"]').click();
       cy.task('log', `Date: ${date}`);
 
+      cy.wait(5000);
+
       // Get the manual TOTP code
       cy.get('[data-testid="manual-code"] pre')
         .invoke('text')
