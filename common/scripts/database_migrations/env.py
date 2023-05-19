@@ -6,32 +6,12 @@ from sqlalchemy import engine_from_config, pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from common.aws.accounts.models import AWSAccount  # noqa: F401,E402
 from common.config.globals import ASYNC_PG_CONN_STR
-from common.group_memberships.models import GroupMembership  # noqa: F401,E402
-from common.groups.models import Group  # noqa: F401,E402
 
-# We must import  models here for them to be recognized
-from common.iambic.config.models import (  # noqa: F401,E402
-    TenantProvider,
-    TenantProviderDefinition,
-)
-from common.iambic.templates.models import (  # noqa: F401,E402
-    IambicTemplate,
-    IambicTemplateContent,
-    IambicTemplateProviderDefinition,
-)
-from common.iambic_request.models import Request, RequestComment  # noqa: F401,E402
-from common.identity.models import AwsIdentityRole  # noqa: F401,E402
-from common.lib.slack.models import (  # noqa: F401,E402
-    BOTS_TABLE,
-    INSTALLATIONS_TABLE,
-    OAUTH_STATES_TABLE,
-)
+# Imports all DB models in the proper order to prevent race conditions in the models
+# Must be imported before any models are imported
+from common.pg_core.db_schema_loader import *  # noqa: F401,F403
 from common.pg_core.models import Base
-from common.role_access.models import RoleAccess, RoleAccessTypes  # noqa: F401,E402
-from common.tenants.models import Tenant  # noqa: F401,E402
-from common.users.models import User  # noqa: F401,E402
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

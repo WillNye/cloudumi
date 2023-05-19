@@ -45,11 +45,24 @@ async def create_tenant_templates_and_definitions(
     provider_definition_map: dict[dict[str, TenantProviderDefinition]],
     template_paths: list[str] = None,
 ):
+    """
+    Create templates and template provider definitions for a tenant.
+
+    Args:
+        tenant (Tenant): The Tenant object for which templates and definitions are to be created.
+        iambic_config: The tenant repo's IAMbic config instance.
+        repo (IambicRepoDetails): The details of the iambic repository.
+        repo_dir (str): The directory of the repository.
+        provider_definition_map (dict[dict[str, TenantProviderDefinition]]): A map of provider definitions.
+        template_paths (list[str], optional): A list of template paths. Defaults to None.
+    """
+
     template_type_provider_map = {}
     iambic_templates = []
     iambic_template_content_list = []
     iambic_template_provider_definitions = []
 
+    # If no template paths provided, gather all templates from the repository directory
     if not template_paths:
         template_paths = await gather_templates(repo_dir)
 
@@ -65,6 +78,8 @@ async def create_tenant_templates_and_definitions(
     # Collect provider definitions from the template repo
     for raw_iambic_template in load_templates(template_paths):
         provider = template_type_provider_map.get(raw_iambic_template.template_type)
+
+        # If provider not already mapped, find and map the provider
         if not provider:
             for (
                 trusted_provider,
@@ -91,6 +106,7 @@ async def create_tenant_templates_and_definitions(
             )
             continue
 
+        # Create a new IambicTemplate instance and append to list
         iambic_template = IambicTemplate(
             tenant=tenant,
             repo_name=repo.repo_name,
@@ -102,6 +118,7 @@ async def create_tenant_templates_and_definitions(
         )
         iambic_templates.append(iambic_template)
 
+        # Create a new IambicTemplateContent instance and append to list
         iambic_template_content = IambicTemplateContent(
             tenant=tenant,
             iambic_template=iambic_template,
@@ -111,9 +128,12 @@ async def create_tenant_templates_and_definitions(
 
         provider_resolver = TRUSTED_PROVIDER_RESOLVER_MAP.get(provider)
         if provider_resolver.provider_defined_in_template:
+            # Provider definition can be resolved from the template itself
+            # Use the provider resolver to get the provider definition name from the template
             pd_name = provider_resolver.get_name_from_iambic_template(
                 raw_iambic_template
             )
+            # Get the tenant provider definition instance using the provider definition name
             tpd = provider_definition_map[provider].get(pd_name)
             iambic_template_provider_definitions.append(
                 IambicTemplateProviderDefinition(
@@ -123,6 +143,8 @@ async def create_tenant_templates_and_definitions(
                 )
             )
         else:
+            # The provider definition is defined via rules in the template
+            # Iterate each provider definition in the config and check the template resource is on the provider
             provider_defs = provider_resolver.get_provider_definitions_from_config(
                 iambic_config
             )
@@ -131,6 +153,7 @@ async def create_tenant_templates_and_definitions(
                     pd_name = provider_resolver.get_name_from_iambic_provider_config(
                         provider_def
                     )
+                    # Get the tenant provider definition instance using the provider definition name
                     tpd = provider_definition_map[provider].get(pd_name)
                     iambic_template_provider_definitions.append(
                         IambicTemplateProviderDefinition(
@@ -157,6 +180,22 @@ async def update_tenant_template(
     raw_iambic_template: IambicTemplate,
     provider: TrustedProvider,
 ) -> tuple[Union[str, None], list[IambicTemplateProviderDefinition]]:
+    """
+    Updates a single tenant template
+
+    Args:
+        tenant (Tenant): The Tenant object for which templates and definitions are to be created.
+        iambic_config: The tenant repo's IAMbic config instance.
+        repo (IambicRepoDetails): The details of the iambic repository.
+        repo_dir (str): The directory of the repository.
+        provider_definition_map (dict[dict[str, TenantProviderDefinition]]): A map of provider definitions.
+        raw_iambic_template (IambicTemplate): The IAMbic template to be updated.
+        provider (TrustedProvider): The raw_iambic_template's provider TrustedProvider instance.
+
+    Returns: tuple with 2 elements that are an XOR.
+        The first element is the template's file path which is used if the template is not in the DB
+        The second element is a list of IambicTemplateProviderDefinition instances to be created
+    """
     iambic_template_provider_definitions = []
 
     # Get the existing template with its provider definition references
@@ -266,6 +305,22 @@ async def upsert_tenant_templates_and_definitions(
     provider_definition_map: dict[dict[str, TenantProviderDefinition]],
     template_paths: list[str],
 ):
+    """
+    Creates and updates templates and template provider definitions for a tenant.
+
+    It works by processing the provided template paths in a semaphore that calls the update_tenant_template.
+    This function then handles response from update_tenant_template by
+        Creating templates that don't exist by calling create_tenant_templates_and_definitions
+        Creating template provider definitions for templates that do exist with missing definitions
+
+    Args:
+        tenant (Tenant): The Tenant object for which templates and definitions are to be created.
+        iambic_config: The tenant repo's IAMbic config instance.
+        repo (IambicRepoDetails): The details of the iambic repository.
+        repo_dir (str): The directory of the repository.
+        provider_definition_map (dict[dict[str, TenantProviderDefinition]]): A map of provider definitions.
+        template_paths (list[str], optional): A list of template paths. Defaults to None.
+    """
     template_type_provider_map = {}
     update_tenant_template_semaphore = NoqSemaphore(update_tenant_template, 30)
 
@@ -282,6 +337,8 @@ async def upsert_tenant_templates_and_definitions(
     messages = []
     for raw_iambic_template in load_templates(template_paths):
         provider = template_type_provider_map.get(raw_iambic_template.template_type)
+
+        # If provider not already mapped, find and map the provider
         if not provider:
             for (
                 trusted_provider,
@@ -356,6 +413,15 @@ async def delete_tenant_templates_and_definitions(
     repo_dir: str,
     template_paths: list[str],
 ):
+    """
+    Removes deleted templates from the DB in chunks
+
+    Args:
+        tenant (Tenant): The Tenant object for which templates and definitions are to be created.
+        repo (IambicRepoDetails): The details of the iambic repository.
+        repo_dir (str): The directory of the repository.
+        template_paths (list[str], optional): A list of template paths. Defaults to None.
+    """
     log.info(
         {
             "message": "Deleting templates",
@@ -391,6 +457,15 @@ async def delete_tenant_templates_and_definitions(
 async def full_create_tenant_templates_and_definitions(
     tenant: Tenant, provider_definition_map: dict[dict[str, TenantProviderDefinition]]
 ):
+    """
+    Creates the templates and template provider definitions for a tenant.
+
+    Only used if the tenant is new and is determined by checking Tenant.iambic_templates_last_parsed
+
+    Args:
+        tenant (Tenant): The Tenant object for which templates and definitions are to be created.
+        provider_definition_map (dict[dict[str, TenantProviderDefinition]]): A map of provider definitions.
+    """
     try:
         # At some point we will support multiple repos and this is a way to futureproof
         iambic_repos = await get_iambic_repo(tenant.name)
@@ -406,6 +481,7 @@ async def full_create_tenant_templates_and_definitions(
         )
         return
 
+    # Iterate the tenants iambic repos
     for repo in iambic_repos:
         repo_dir = get_iambic_repo_path(tenant.name, repo.repo_name)
         try:
@@ -421,6 +497,7 @@ async def full_create_tenant_templates_and_definitions(
             )
             continue
 
+        # Create the templates and definitions
         await create_tenant_templates_and_definitions(
             tenant,
             iambic_config,
@@ -431,10 +508,18 @@ async def full_create_tenant_templates_and_definitions(
 
 
 async def sync_tenant_templates_and_definitions(tenant_name: str):
+    """
+    Sync the IAMbic templates and template provider definitions for a tenant.
+
+    Args:
+        tenant_name (str): The name of the tenant.
+    """
     tenant = await Tenant.get_by_name(tenant_name)
     provider_definition_map = defaultdict(dict)
     iambic_templates_last_parsed = datetime.utcnow()
 
+    # Populate the provider definition map where
+    # k1 is the provider name, k2 is the provider definition str repr and the value is the provider definition
     raw_existing_definitions = await list_tenant_provider_definitions(tenant.id)
     if not raw_existing_definitions:
         log.warning(
@@ -450,6 +535,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
             existing_definition.name
         ] = existing_definition
 
+    # New tenant so perform a full create
     if not tenant.iambic_templates_last_parsed:
         try:
             await full_create_tenant_templates_and_definitions(
@@ -469,7 +555,6 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
 
         return
 
-    # Return if not provider definitions
     templates_last_parsed = pytz.UTC.localize(tenant.iambic_templates_last_parsed)
     iambic_templates_last_parsed = datetime.utcnow()
 
@@ -488,6 +573,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
         )
         return
 
+    # Iterate the tenants iambic repos
     for repo in iambic_repos:
         repo_dir = get_iambic_repo_path(tenant.name, repo.repo_name)
 
