@@ -22,7 +22,7 @@
     height: 64px;
 
     .text {
-      font-size: var(--font-size-lg);
+      font-size: var(--font-size-xxl);
     }
   }
 

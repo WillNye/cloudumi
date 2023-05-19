@@ -232,33 +232,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
               fullWidth
             />
           )}
-          <LineBreak />
-          <div className={styles.actions}>
-            <Button
-              color="secondary"
-              variant="outline"
-              size="small"
-              disabled={isLoading}
-              onClick={() =>
-                resetUserCredentials(UPDATE_USER_ACTIONS.RESET_PASSWORD)
-              }
-              fullWidth
-            >
-              Reset Password
-            </Button>
-            <Button
-              color="secondary"
-              variant="outline"
-              size="small"
-              disabled={isLoading}
-              onClick={() =>
-                resetUserCredentials(UPDATE_USER_ACTIONS.RESET_MFA)
-              }
-              fullWidth
-            >
-              Reset MFA
-            </Button>
-          </div>
+          <LineBreak size="small" />
           <form onSubmit={handleSubmit(onSubmit)}>
             <Block disableLabelPadding label="Username" required></Block>
             <Input
@@ -293,7 +267,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
               {isSubmitting ? 'Updating User...' : 'Update User'}
             </Button>
           </form>
-
+          <LineBreak />
           <div className={styles.userGroups}>
             <Block disableLabelPadding label="Add Groups" required></Block>
             <Search
@@ -327,6 +301,34 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
               onClick={updateGroupMemberships}
             >
               Update Group Memberships
+            </Button>
+          </div>
+          <LineBreak />
+          <div className={styles.actions}>
+            <Button
+              color="secondary"
+              variant="outline"
+              size="small"
+              disabled={isLoading}
+              onClick={() =>
+                resetUserCredentials(UPDATE_USER_ACTIONS.RESET_PASSWORD)
+              }
+              fullWidth
+            >
+              Reset Password
+            </Button>
+            <Divider orientation="vertical" />
+            <Button
+              color="secondary"
+              variant="outline"
+              size="small"
+              disabled={isLoading}
+              onClick={() =>
+                resetUserCredentials(UPDATE_USER_ACTIONS.RESET_MFA)
+              }
+              fullWidth
+            >
+              Reset MFA
             </Button>
           </div>
         </div>
