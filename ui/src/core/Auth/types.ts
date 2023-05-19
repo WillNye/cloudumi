@@ -6,4 +6,5 @@ export interface User {
   password_reset_required: boolean;
   mfa_verification_required: boolean;
   needs_to_sign_eula: boolean;
+  is_admin: boolean;
 }
