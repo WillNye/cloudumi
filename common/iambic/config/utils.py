@@ -15,6 +15,7 @@ from common.iambic.config.models import (
     TenantProviderDefinition,
     TrustedProvider,
 )
+from common.iambic.templates.models import IambicTemplateProviderDefinition
 from common.iambic.utils import get_iambic_repo
 from common.lib.iambic.git import get_iambic_repo_path
 from common.pg_core.utils import bulk_add, bulk_delete
@@ -36,13 +37,25 @@ async def list_tenant_providers(tenant_id: int) -> list[TenantProvider]:
 
 
 async def list_tenant_provider_definitions(
-    tenant_id: int, provider: str = None, name: str = None, exclude_aws_org: bool = True
+    tenant_id: int,
+    provider: str = None,
+    name: str = None,
+    template_id: str = None,
+    exclude_aws_org: bool = True,
+    page_size: int = None,
+    page: int = 1,
 ) -> list[TenantProviderDefinition]:
     async with ASYNC_PG_SESSION() as session:
         stmt = select(TenantProviderDefinition).filter(
             TenantProviderDefinition.tenant_id == tenant_id
         )  # noqa: E712
-        if exclude_aws_org and (not name or name == "aws"):
+        if template_id:
+            stmt = stmt.join(
+                IambicTemplateProviderDefinition,
+                TenantProviderDefinition.id
+                == IambicTemplateProviderDefinition.tenant_provider_definition_id,
+            ).filter(IambicTemplateProviderDefinition.iambic_template_id == template_id)
+        if not template_id and exclude_aws_org and (not name or name == "aws"):
             if not name:
                 stmt = stmt.filter(
                     not_(
@@ -70,6 +83,10 @@ async def list_tenant_provider_definitions(
             stmt = stmt.order_by(
                 TenantProviderDefinition.provider, TenantProviderDefinition.name
             )
+
+        if page_size:
+            stmt = stmt.slice((page - 1) * page_size, page * page_size)
+
         items = await session.execute(stmt)
     return items.scalars().all()
 

@@ -2644,12 +2644,28 @@ components:
           type: integer
         page:
           type: integer
+        page_size:
+          type: integer
+        next_page:
+          type: integer
         last_page:
           type: integer
         data:
           oneOf:
             - type: array
             - type: object
+    PaginatedRequestQueryParams:
+      type: object
+      properties:
+        page:
+          type: integer
+          default: 1
+          minimum: 1
+        page_size:
+          type: integer
+          default: 50
+          minimum: 1
+          maximum: 100
     DataTableResponse:
       type: object
       required:

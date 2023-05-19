@@ -16,6 +16,11 @@ from common.iambic.config.models import (  # noqa: F401,E402
     TenantProvider,
     TenantProviderDefinition,
 )
+from common.iambic.templates.models import (  # noqa: F401,E402
+    IambicTemplate,
+    IambicTemplateContent,
+    IambicTemplateProviderDefinition,
+)
 from common.iambic_request.models import Request, RequestComment  # noqa: F401,E402
 from common.identity.models import AwsIdentityRole  # noqa: F401,E402
 from common.lib.slack.models import (  # noqa: F401,E402
