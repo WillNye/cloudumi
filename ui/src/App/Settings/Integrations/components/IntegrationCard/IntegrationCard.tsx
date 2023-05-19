@@ -1,6 +1,7 @@
 import { Button } from 'shared/elements/Button';
 import { Segment } from 'shared/layout/Segment';
 import styles from './IntegrationCard.module.css';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 interface IntegrationCardProps {
   icon: string;
@@ -26,7 +27,7 @@ const IntegrationCard = ({
       <div className={styles.slackIntegration}>
         <img src={icon} alt="Slack Icon" className={styles.icon} />
         <h3 className={styles.title}>{title}</h3>
-        <br />
+        <LineBreak />
         {/* <p className={styles.description}>{description}</p> */}
         <Button
           onClick={handleConnect}

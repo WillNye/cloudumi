@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router';
-import { Navbar } from 'shared/elements/Navbar';
+import { Navbar } from './components/Navbar';
 import styles from './Dashboard.module.css';
 
 export const Dashboard = () => {

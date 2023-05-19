@@ -39,7 +39,7 @@ const ChangePassword = () => {
     }
   });
 
-  const completePasswordMutation = useMutation({
+  const { mutateAsync: completePasswordMutation } = useMutation({
     mutationFn: (data: CompletePasswordParams) => completePassword(data)
   });
 
@@ -48,7 +48,7 @@ const ChangePassword = () => {
   const onSubmit = useCallback(
     async ({ newPassword, currentPassword }) => {
       try {
-        await completePasswordMutation.mutateAsync({
+        await completePasswordMutation({
           new_password: newPassword,
           current_password: currentPassword
         });

@@ -5,6 +5,7 @@ import styles from './DeleteModal.module.css';
 import { AxiosError, AxiosResponse } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
 import { Notification, NotificationType } from 'shared/elements/Notification';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 interface DeleteProps {
   showDeleteButton?: boolean;
@@ -71,7 +72,7 @@ const Delete: FC<DeleteProps> = ({
         >
           <div className={styles.content}>
             <div>{warningMessage}</div>
-            <br />
+            <LineBreak />
             {errorMessage && (
               <Notification
                 type={NotificationType.ERROR}
@@ -88,7 +89,7 @@ const Delete: FC<DeleteProps> = ({
                 fullWidth
               />
             )}
-            <br />
+            <LineBreak />
             <div className={styles.deleteActions}>
               <Button
                 className={styles.btn}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, Dispatch, FC } from 'react';
+import { useState, useEffect, Dispatch, FC } from 'react';
 import { getCloudFormationUrl } from '../../utils';
 import { Button } from 'shared/elements/Button';
 import { generateAWSLoginLink } from 'core/API/awsConfig';
@@ -8,6 +8,8 @@ import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
 import { MODES } from '../../constants';
 import useCopyToClipboard from 'core/hooks/useCopyToClipboard';
+import { LineBreak } from 'shared/elements/LineBreak';
+import { useQuery } from '@tanstack/react-query';
 
 interface CreateAWSStackProps {
   accountName: string;
@@ -26,30 +28,34 @@ const CreateAWSStack: FC<CreateAWSStackProps> = ({
   const [cloudFormationUrl, setCloudFormationUrl] = useState('');
   const [copiedText, setCopyText] = useCopyToClipboard();
 
-  useEffect(function onMount() {
-    setGenerateLinkError(null);
-    getAWSLoginLink();
-    return () => {
-      setGenerateLinkError(null);
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const getAWSLoginLink = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await generateAWSLoginLink(accountName);
-      const data = res.data;
+  useQuery({
+    queryFn: generateAWSLoginLink,
+    queryKey: ['generateAWSLoginLink', accountName],
+    onSuccess: data => {
       const url = getCloudFormationUrl(data.data, selectedMode, isHubAccount);
       setCloudFormationUrl(url);
-      setIsLoading(false);
-    } catch (error) {
-      const err = error as AxiosError;
+    },
+    onError: (err: AxiosError) => {
       const errorRes = err?.response;
       const errorMsg = extractErrorMessage(errorRes?.data);
       setGenerateLinkError(errorMsg || 'Unable to generate AWS Login Link');
       setIsLoading(false);
+    },
+    onSettled: () => {
+      setIsLoading(false);
     }
-  }, [accountName, isHubAccount, selectedMode, setIsLoading]);
+  });
+
+  useEffect(
+    function onMount() {
+      setGenerateLinkError(null);
+      setIsLoading(true);
+      return () => {
+        setGenerateLinkError(null);
+      };
+    },
+    [setIsLoading]
+  );
 
   const handleClick = () => {
     window.open(cloudFormationUrl, '_blank');
@@ -64,7 +70,7 @@ const CreateAWSStack: FC<CreateAWSStackProps> = ({
 
       <div className={styles.awsActions}>
         <Button color="primary" onClick={handleClick}>
-          Login to {accountName}
+          Open URL for {accountName}
         </Button>
         <Button
           color={copiedText ? 'secondary' : 'primary'}
@@ -82,8 +88,7 @@ const CreateAWSStack: FC<CreateAWSStackProps> = ({
           {generateLinkError}
         </Notification>
       )}
-
-      <br />
+      <LineBreak />
       <h4>2. ‘CREATE STACK’ in that account</h4>
 
       <div className={styles.header}>

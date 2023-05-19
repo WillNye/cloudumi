@@ -44,3 +44,35 @@
   align-items: center;
   justify-content: center;
 }
+
+.cursorPointer {
+  cursor: pointer;
+}
+
+.dropdownContent {
+  padding: var(--spacing-sm);
+  min-width: 180px;
+}
+
+.dropdownItem {
+  padding: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  font-size: var(--font-size-sm);
+
+  .dropdownText {
+    padding-left: var(--spacing-sm);
+  }
+}
+
+.btnContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+
+  .btnText {
+    padding-left: var(--spacing-xs);
+  }
+}

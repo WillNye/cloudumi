@@ -391,7 +391,7 @@ class User(SoftDeleteMixin, Base):
                 else:
                     return False
 
-    async def send_verification_email(self, tenant_url):
+    async def send_verification_email(self, tenant, tenant_url):
         """Sends an email to the given address with a URL to click on to verify their email.
 
         Args:
@@ -407,7 +407,7 @@ class User(SoftDeleteMixin, Base):
         email_verify_token = str(uuid.uuid4())
         email_verify_blob = {
             "email": self.email,
-            "tenant": self.tenant,
+            "tenant": tenant,
             "email_verify_token": email_verify_token,
         }
         email_verify_blob_j = json.dumps(email_verify_blob)
@@ -469,7 +469,7 @@ class User(SoftDeleteMixin, Base):
                 else:
                     return False
 
-    async def send_password_reset_email(self, tenant_url):
+    async def send_password_reset_email(self, tenant, tenant_url):
         # There's already a password reset token, and it hasn't expired yet.
         if (
             self.password_reset_token_expiration
@@ -480,7 +480,7 @@ class User(SoftDeleteMixin, Base):
         password_reset_token = str(uuid.uuid4())
         password_reset_blob = {
             "email": self.email,
-            "tenant": self.tenant,
+            "tenant": tenant,
             "password_reset_token": password_reset_token,
         }
         password_reset_blob_j = json.dumps(password_reset_blob)

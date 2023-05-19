@@ -3,6 +3,7 @@ import { PROFILE_SETTINGS_TABS } from './constants';
 import ChangePassword from './components/ChangePassword';
 import UserDetails from './components/UserDetails';
 import css from './ProfileSettings.module.css';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 export const ProfileSettings: FC = () => {
   const [currentTab, setCurrentTab] = useState<PROFILE_SETTINGS_TABS>(
@@ -24,7 +25,7 @@ export const ProfileSettings: FC = () => {
         profile details, change your password, set notifications preferences,
         and and manage your privacy preferences.
       </p>
-      <br />
+      <LineBreak />
       <div>
         <nav className={css.nav}>
           <ul className={css.navList}>

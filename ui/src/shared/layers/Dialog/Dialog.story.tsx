@@ -1,6 +1,7 @@
 import { Dialog } from './Dialog';
 import { Button } from '../../elements/Button';
 import { useState } from 'react';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 export default {
   title: 'Layers/Dialog',
@@ -43,8 +44,7 @@ export const Sizes = () => {
       >
         Hello Small
       </Dialog>
-      <br />
-      <br />
+      <LineBreak size="large" />
       <Button onClick={() => setShowDialogMedium(!showDialogMeduim)}>
         Open Meduim
       </Button>
@@ -56,8 +56,7 @@ export const Sizes = () => {
       >
         Hello Meduim
       </Dialog>
-      <br />
-      <br />
+      <LineBreak size="large" />
       <Button onClick={() => setShowDialogLarge(!showDialogLarge)}>
         Open Large
       </Button>

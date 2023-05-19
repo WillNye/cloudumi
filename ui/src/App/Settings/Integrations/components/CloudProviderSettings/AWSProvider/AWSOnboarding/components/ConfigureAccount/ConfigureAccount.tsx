@@ -4,6 +4,7 @@ import { Icon } from 'shared/elements/Icon';
 import { MODES } from '../../constants';
 import styles from '../../AWSOnBoarding.module.css';
 import { Radio } from 'shared/form/Radio';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 const ConfigureAccount = ({
   handleAccNameChange,
@@ -22,11 +23,8 @@ const ConfigureAccount = ({
           minLength={1}
           value={accountName}
         />
-
-        <br />
-
+        <LineBreak />
         <Block disableLabelPadding>2. Select Installation Mode:</Block>
-
         <div className={styles.container}>
           <div className={styles.permissionsBlock}>
             <div className={styles.radioInput}>
