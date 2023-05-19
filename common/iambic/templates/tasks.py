@@ -3,7 +3,7 @@ import sys
 from collections import defaultdict
 from datetime import datetime
 from itertools import chain
-from typing import Union
+from typing import Optional, Union
 
 import pytz
 from git import Repo
@@ -43,7 +43,7 @@ async def create_tenant_templates_and_definitions(
     repo: IambicRepoDetails,
     repo_dir: str,
     provider_definition_map: dict[dict[str, TenantProviderDefinition]],
-    template_paths: list[str] = None,
+    template_paths: Optional[list[str]] = None,
 ):
     """
     Create templates and template provider definitions for a tenant.

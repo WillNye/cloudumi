@@ -1,5 +1,6 @@
 import uuid
 from dataclasses import dataclass
+from typing import Optional
 
 from sqlalchemy import JSON, Column, ForeignKey, Index, Integer, String
 from sqlalchemy.dialects.postgresql import ENUM, UUID
@@ -16,8 +17,8 @@ log = config.get_logger(__name__)
 class TrustedProviderResolver:
     provider: str
     template_type_prefix: str
-    template_provider_attribute: str = None
-    provider_config_definition_attribute: str = None
+    template_provider_attribute: Optional[str] = None
+    provider_config_definition_attribute: Optional[str] = None
 
     @property
     def provider_defined_in_template(self) -> bool:

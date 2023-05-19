@@ -15,7 +15,7 @@ class ProviderDefinitionQueryParams(PaginatedRequestQueryParams):
 class IambicProviderHandler(BaseHandler):
     async def get(self):
         """
-        LIST /api/v4/providers - List all providers that are enabled on the tenant’s IAMbic template repo.
+        GET /api/v4/providers - List all providers that are enabled on the tenant’s IAMbic template repo.
         """
         tenant_id = self.ctx.db_tenant.id
         self.write(
@@ -33,7 +33,7 @@ class IambicProviderHandler(BaseHandler):
 class IambicProviderDefinitionHandler(BaseHandler):
     async def get(self):
         """
-        LIST /api/v4/providers/definitions - List all provider definitions configured for the tenant
+        GET /api/v4/providers/definitions - List all provider definitions configured for the tenant
         """
         tenant_id = self.ctx.db_tenant.id
         query_params = ProviderDefinitionQueryParams(

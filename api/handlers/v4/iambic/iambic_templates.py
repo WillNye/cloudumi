@@ -12,7 +12,7 @@ class IambicTemplateQueryParams(PaginatedRequestQueryParams):
 class IambicTemplateHandler(BaseHandler):
     async def get(self):
         """
-        LIST /api/v4/templates - Provide a summary of all IAMbic templates for the tenant.
+        GET /api/v4/templates - Provide a summary of all IAMbic templates for the tenant.
         """
         tenant_id = self.ctx.db_tenant.id
         query_params = IambicTemplateQueryParams(

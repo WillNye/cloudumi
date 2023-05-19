@@ -148,6 +148,8 @@ else:
             celery.cache_credential_authorization_mapping,
             celery.cache_organization_structure,
             celery.cache_scps_across_organizations,
+            celery.sync_iambic_templates_for_tenant,
+            celery.update_providers_and_provider_definitions_all_tenants,
         ]
 
         for post_task in post_tasks:

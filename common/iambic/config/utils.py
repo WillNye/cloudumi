@@ -2,6 +2,7 @@ import asyncio
 import json
 import sys
 from collections import defaultdict
+from typing import Optional
 
 from iambic.core.parser import load_templates
 from iambic.core.utils import gather_templates
@@ -38,12 +39,12 @@ async def list_tenant_providers(tenant_id: int) -> list[TenantProvider]:
 
 async def list_tenant_provider_definitions(
     tenant_id: int,
-    provider: str = None,
-    name: str = None,
-    template_id: str = None,
-    exclude_aws_org: bool = True,
-    page_size: int = None,
-    page: int = 1,
+    provider: Optional[str] = None,
+    name: Optional[str] = None,
+    template_id: Optional[str] = None,
+    exclude_aws_org: Optional[bool] = True,
+    page_size: Optional[int] = None,
+    page: Optional[int] = 1,
 ) -> list[TenantProviderDefinition]:
     async with ASYNC_PG_SESSION() as session:
         stmt = select(TenantProviderDefinition).filter(

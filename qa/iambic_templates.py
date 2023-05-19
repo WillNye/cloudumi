@@ -16,9 +16,10 @@ from common.tenants.models import Tenant
 from qa import COOKIES, TENANT_API, TENANT_NAME
 
 """Example script
+import asyncio
 
-from qa import COOKIES, setup, TENANT_NAME
-setup()
+from qa import setup, TENANT_NAME
+asyncio.run(setup())
 
 # Change in validation script because it's still done globally and it isn't accidentally versioned.
 COOKIES["noq_auth"] = "my_token"
