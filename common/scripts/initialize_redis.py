@@ -56,6 +56,8 @@ if args.use_celery:
         celery.cache_managed_policies_across_accounts_for_all_tenants,
         celery.cache_resources_from_aws_config_across_accounts_for_all_tenants,
         celery.cache_access_advisor_across_accounts_for_all_tenants,
+        celery.sync_iambic_templates_for_tenant,
+        celery.update_providers_and_provider_definitions_all_tenants,
     ]
     async_tasks = [
         celery.cache_policies_table_details_for_all_tenants,
@@ -79,18 +81,21 @@ else:
         accounts_d = async_to_sync(get_account_id_to_name_mapping)(
             tenant, force_sync=True
         )
+        tasks = [
+            celery.cache_iam_resources_for_account,
+            celery.cache_s3_buckets_for_account,
+            celery.cache_sns_topics_for_account,
+            celery.cache_sqs_queues_for_account,
+            celery.cache_managed_policies_for_account,
+            celery.cache_access_advisor_for_account,
+            celery.cache_resources_from_aws_config_for_account,
+            celery.sync_iambic_templates_for_tenant,
+            celery.update_providers_and_provider_definitions_all_tenants,
+        ]
         if parallel:
             executor = ThreadPoolExecutor(max_workers=os.cpu_count())
             futures = []
-            tasks = [
-                celery.cache_iam_resources_for_account,
-                celery.cache_s3_buckets_for_account,
-                celery.cache_sns_topics_for_account,
-                celery.cache_sqs_queues_for_account,
-                celery.cache_managed_policies_for_account,
-                celery.cache_access_advisor_for_account,
-                celery.cache_resources_from_aws_config_for_account,
-            ]
+
             for account_id in accounts_d.keys():
                 for task in tasks:
                     log_start(f"{task.__name__} for account {account_id}")
@@ -101,15 +106,6 @@ else:
                 except Exception as exc:
                     print("%r generated an exception: %s" % (future, exc))
         else:
-            tasks = [
-                celery.cache_iam_resources_for_account,
-                celery.cache_s3_buckets_for_account,
-                celery.cache_sns_topics_for_account,
-                celery.cache_sqs_queues_for_account,
-                celery.cache_managed_policies_for_account,
-                celery.cache_access_advisor_for_account,
-                celery.cache_resources_from_aws_config_for_account,
-            ]
             for account_id in accounts_d.keys():
                 for task in tasks:
                     start_time = log_start(f"{task.__name__} for account {account_id}")
