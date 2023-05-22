@@ -154,7 +154,11 @@ else:
                 if isinstance(post_task, partial)
                 else post_task.__name__
             )
-            post_task(tenant)
+            sig = inspect.signature(post_task)
+            fn_args = {}
+            if "tenant" in sig.parameters:
+                fn_args["tenant"] = tenant
+            post_task(**fn_args)
             log_end(
                 post_task.func.__name__
                 if isinstance(post_task, partial)
