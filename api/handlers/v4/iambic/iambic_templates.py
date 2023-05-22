@@ -1,4 +1,4 @@
-from api.handlers.utils import get_paginated_response
+from api.handlers.utils import get_paginated_typeahead_response
 from common.handlers.base import BaseHandler
 from common.iambic.templates.utils import list_tenant_templates
 from common.models import PaginatedRequestQueryParams, WebResponse
@@ -22,7 +22,7 @@ class IambicTemplateHandler(BaseHandler):
             WebResponse(
                 success="success",
                 status_code=200,
-                **get_paginated_response(
+                **get_paginated_typeahead_response(
                     [
                         {
                             "id": item.id,

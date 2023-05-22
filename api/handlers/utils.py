@@ -1,7 +1,7 @@
 from common.models import PaginatedRequestQueryParams
 
 
-def get_paginated_response(
+def get_paginated_typeahead_response(
     response_data: list, query_params: PaginatedRequestQueryParams
 ) -> dict:
     response = {
