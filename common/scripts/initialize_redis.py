@@ -89,8 +89,6 @@ else:
             celery.cache_managed_policies_for_account,
             celery.cache_access_advisor_for_account,
             celery.cache_resources_from_aws_config_for_account,
-            celery.sync_iambic_templates_for_tenant,
-            celery.update_providers_and_provider_definitions_for_tenant,
         ]
         if parallel:
             executor = ThreadPoolExecutor(max_workers=os.cpu_count())
