@@ -167,6 +167,7 @@
       "type": "python",
       "request": "launch",
       "program": "${workspaceFolder}/deploy/local/populate_services.py",
+      "args": ["--raise-exceptions"],
       "justMyCode": false,
       "console": "integratedTerminal",
       "env": {

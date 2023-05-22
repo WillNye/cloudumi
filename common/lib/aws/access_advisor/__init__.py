@@ -103,16 +103,24 @@ class AccessAdvisor:
         :param user: User making the request
         :return: Access Advisor data for identities across a single AWS account
         """
+
+        try:
+            assume_role = (
+                ModelAdapter(SpokeAccount)
+                .load_config("spoke_accounts", tenant)
+                .with_query({"account_id": account_id})
+                .first.name
+            )
+        except ValueError:
+            return
+
         client = await get_boto3_instance(
             "iam",
             tenant,
             account_id,
             user=user,
             session_name="noq_cache_access_advisor",
-            assume_role=ModelAdapter(SpokeAccount)
-            .load_config("spoke_accounts", tenant)
-            .with_query({"account_id": account_id})
-            .first.name,
+            assume_role=assume_role,
         )
         arns = await get_identity_arns_for_account(tenant, account_id)
         jobs = self._generate_job_ids(client, arns)
