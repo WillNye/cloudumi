@@ -1,4 +1,4 @@
-from api.handlers.utils import get_paginated_response
+from api.handlers.utils import get_paginated_typeahead_response
 from common.handlers.base import BaseHandler
 from common.iambic.config.utils import (
     list_tenant_provider_definitions,
@@ -43,7 +43,7 @@ class IambicProviderDefinitionHandler(BaseHandler):
             WebResponse(
                 success="success",
                 status_code=200,
-                **get_paginated_response(
+                **get_paginated_typeahead_response(
                     [
                         {
                             "id": item.id,

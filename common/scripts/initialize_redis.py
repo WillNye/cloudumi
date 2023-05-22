@@ -56,7 +56,7 @@ if args.use_celery:
         celery.cache_managed_policies_across_accounts_for_all_tenants,
         celery.cache_resources_from_aws_config_across_accounts_for_all_tenants,
         celery.cache_access_advisor_across_accounts_for_all_tenants,
-        celery.sync_iambic_templates_for_tenant,
+        celery.sync_iambic_templates_all_tenants,
         celery.update_providers_and_provider_definitions_all_tenants,
     ]
     async_tasks = [
@@ -90,7 +90,7 @@ else:
             celery.cache_access_advisor_for_account,
             celery.cache_resources_from_aws_config_for_account,
             celery.sync_iambic_templates_for_tenant,
-            celery.update_providers_and_provider_definitions_all_tenants,
+            celery.update_providers_and_provider_definitions_for_tenant,
         ]
         if parallel:
             executor = ThreadPoolExecutor(max_workers=os.cpu_count())
@@ -145,7 +145,7 @@ else:
             celery.cache_organization_structure,
             celery.cache_scps_across_organizations,
             celery.sync_iambic_templates_for_tenant,
-            celery.update_providers_and_provider_definitions_all_tenants,
+            celery.update_providers_and_provider_definitions_for_tenant,
         ]
 
         for post_task in post_tasks:
