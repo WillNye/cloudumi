@@ -65,7 +65,6 @@ const ChangePassword = () => {
 
   return (
     <Segment>
-      <h4>Change Password</h4>
       <LineBreak size="large" />
 
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -100,7 +99,7 @@ const ChangePassword = () => {
           <p>{errors.confirmNewPassword.message}</p>
         )}
         <LineBreak />
-        <Button type="submit" disabled={isSubmitting || !isValid}>
+        <Button type="submit" disabled={isSubmitting || !isValid} size="small">
           {isSubmitting ? 'Resetting Password...' : 'Reset Password'}
         </Button>
       </form>

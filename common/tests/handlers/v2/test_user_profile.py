@@ -62,6 +62,7 @@ class TestUserProfile(NOQAsyncHTTPTestCase):
                 "password_reset_required": False,
                 "employee_photo_url": "",
                 "employee_info_url": "",
+                "is_admin": False,
                 "authorization": {
                     "can_edit_policies": False,
                     "can_create_roles": False,
