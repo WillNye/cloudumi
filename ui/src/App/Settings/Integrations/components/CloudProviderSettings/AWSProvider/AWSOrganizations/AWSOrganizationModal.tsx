@@ -12,7 +12,15 @@ import { SpokeAccount } from '../SpokeAccounts/types';
 import { Select, SelectOption } from 'shared/form/Select';
 import { Notification, NotificationType } from 'shared/elements/Notification';
 import { LineBreak } from 'shared/elements/LineBreak';
+import { useQuery } from '@tanstack/react-query';
 import styles from '../AWSProvider.module.css';
+
+const formatSpokeAccount = data => {
+  if (data?.account_id) {
+    return `${data.account_name || ''} - ${data.account_id}`;
+  }
+  return '';
+};
 
 export const SelectAccount = ({
   label,
@@ -22,37 +30,28 @@ export const SelectAccount = ({
   value
 }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [spokeAccounts, setSpokeAccounts] = useState<SpokeAccount[]>([]);
 
-  useEffect(() => {
-    getAllSpokeAccounts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const getAllSpokeAccounts = useCallback(async () => {
-    setErrorMessage(null);
-    setIsLoading(true);
-    try {
-      const res = await getSpokeAccounts();
-      const resData = res?.data;
+  const { isLoading } = useQuery({
+    queryFn: getSpokeAccounts,
+    queryKey: ['getSpokeAccounts'],
+    onSuccess: response => {
+      const resData = response?.data;
       setSpokeAccounts(resData);
-      setIsLoading(false);
-      onOptionsLoad && onOptionsLoad();
-    } catch (error) {
-      const err = error as AxiosError;
+      onOptionsLoad?.();
+    },
+    onError: (err: AxiosError) => {
       const errorRes = err?.response;
       const errorMsg = extractErrorMessage(errorRes?.data);
       setErrorMessage(
         errorMsg || 'An error occurred while getting spoke accounts'
       );
-      setIsLoading(false);
     }
-  }, [onOptionsLoad]);
+  });
 
   const handleOptions = (data: SpokeAccount[]) => {
     if (data) {
-      return data.map(i => `${i.account_name || ''} - ${i.account_id}`);
+      return data.map(account => formatSpokeAccount(account));
     }
     return options;
   };
@@ -94,7 +93,9 @@ export const AWSOrganizationModal = ({ defaultValues }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [accountName, setAccountName] = useState('');
+  const [accountName, setAccountName] = useState(
+    formatSpokeAccount(defaultValues)
+  );
 
   const { register, handleSubmit, watch, setValue } = useForm({
     defaultValues
@@ -136,7 +137,7 @@ export const AWSOrganizationModal = ({ defaultValues }) => {
   );
 
   const onOptionsLoad = useCallback(() => {
-    if (defaultValues.account_name) {
+    if (defaultValues?.account_name) {
       setValue('account_name', defaultValues.account_name);
       setValue('ord_id', defaultValues.org_id);
     }
