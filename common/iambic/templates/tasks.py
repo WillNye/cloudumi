@@ -29,7 +29,7 @@ from common.iambic.templates.models import (
 )
 from common.iambic.utils import get_iambic_repo
 from common.lib.asyncio import NoqSemaphore
-from common.lib.iambic.git import get_iambic_repo_path
+from common.lib.iambic.git import IambicGit
 from common.models import IambicRepoDetails
 from common.pg_core.utils import bulk_add, bulk_delete
 from common.tenants.models import Tenant
@@ -466,6 +466,7 @@ async def full_create_tenant_templates_and_definitions(
         tenant (Tenant): The Tenant object for which templates and definitions are to be created.
         provider_definition_map (dict[dict[str, TenantProviderDefinition]]): A map of provider definitions.
     """
+    iambic_git = IambicGit(tenant.name)
     try:
         # At some point we will support multiple repos and this is a way to futureproof
         iambic_repos = await get_iambic_repo(tenant.name)
@@ -483,7 +484,7 @@ async def full_create_tenant_templates_and_definitions(
 
     # Iterate the tenants iambic repos
     for repo in iambic_repos:
-        repo_dir = get_iambic_repo_path(tenant.name, repo.repo_name)
+        repo_dir = iambic_git.get_iambic_repo_path(repo.repo_name)
         try:
             iambic_config = await load_iambic_config(repo_dir)
         except ValueError as err:
@@ -515,6 +516,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
         tenant_name (str): The name of the tenant.
     """
     tenant = await Tenant.get_by_name(tenant_name)
+    iambic_git = IambicGit(tenant_name)
     provider_definition_map = defaultdict(dict)
     iambic_templates_last_parsed = datetime.utcnow()
 
@@ -575,7 +577,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
 
     # Iterate the tenants iambic repos
     for repo in iambic_repos:
-        repo_dir = get_iambic_repo_path(tenant.name, repo.repo_name)
+        repo_dir = iambic_git.get_iambic_repo_path(repo.repo_name)
 
         # Get all changes since last parsed
         git_repo = Repo(repo_dir)

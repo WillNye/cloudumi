@@ -39,12 +39,6 @@ from common.models import IambicRepoDetails
 IAMBIC_REPOS_BASE_KEY = "iambic_repos"
 
 
-def get_iambic_repo_path(tenant, repo_name):
-    return os.path.join(
-        TENANT_STORAGE_BASE_PATH, f"{tenant}/iambic_template_repos/{repo_name}"
-    )
-
-
 class IambicGit:
     def __init__(self, tenant: str) -> None:
         self.tenant: str = tenant
@@ -54,6 +48,9 @@ class IambicGit:
         )
         os.makedirs(os.path.dirname(self.tenant_repo_base_path), exist_ok=True)
         self.repos = {}
+
+    def get_iambic_repo_path(self, repo_name):
+        return os.path.join(self.tenant_repo_base_path, repo_name)
 
     async def set_git_repositories(self) -> None:
         self.git_repositories: list[IambicRepoDetails] = (
@@ -73,7 +70,7 @@ class IambicGit:
         for repository in self.git_repositories:
             repo_name = repository.repo_name
             access_token = repository.access_token
-            repo_path = get_iambic_repo_path(self.tenant, repository.repo_name)
+            repo_path = self.get_iambic_repo_path(repository.repo_name)
             git_uri = f"https://oauth:{access_token}@github.com/{repo_name}"
             try:
                 # TODO: async
@@ -115,7 +112,7 @@ class IambicGit:
         await self.set_git_repositories()
         for repository in self.git_repositories:
             repo_name = repository.repo_name
-            repo_path = get_iambic_repo_path(self.tenant, repository.repo_name)
+            repo_path = self.get_iambic_repo_path(repository.repo_name)
             # TODO: Need to have assume role access and ability to read secret
             # for Iambic config and templates to load
             config_template = await load_iambic_config(repo_path)

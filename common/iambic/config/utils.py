@@ -18,7 +18,7 @@ from common.iambic.config.models import (
 )
 from common.iambic.templates.models import IambicTemplateProviderDefinition
 from common.iambic.utils import get_iambic_repo
-from common.lib.iambic.git import get_iambic_repo_path
+from common.lib.iambic.git import IambicGit
 from common.pg_core.utils import bulk_add, bulk_delete
 from common.tenants.models import Tenant
 
@@ -96,6 +96,7 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
     # This is super hacky, and we should be using the config object to do all of this
     # Unfortunately, we don't currently have a way to get providers that are stored in a secret
     tenant = await Tenant.get_by_name(tenant_name)
+    iambic_git = IambicGit(tenant_name)
     new_definitions = []
     deleted_definitions = []
     new_providers = []
@@ -135,7 +136,7 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
         return
 
     for repo in iambic_repos:
-        repo_dir = get_iambic_repo_path(tenant_name, repo.repo_name)
+        repo_dir = iambic_git.get_iambic_repo_path(repo.repo_name)
         try:
             config = await load_iambic_config(repo_dir)
         except ValueError as err:
