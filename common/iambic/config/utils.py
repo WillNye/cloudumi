@@ -4,13 +4,10 @@ import sys
 from collections import defaultdict
 from typing import Optional
 
-from iambic.core.parser import load_templates
-from iambic.core.utils import gather_templates
 from sqlalchemy import and_, cast, not_, select
 
 from common.config import config as saas_config
 from common.config.globals import ASYNC_PG_SESSION
-from common.iambic.config.dynamic_config import load_iambic_config
 from common.iambic.config.models import (
     TenantProvider,
     TenantProviderDefinition,
@@ -138,7 +135,7 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
     for repo in iambic_repos:
         repo_dir = iambic_git.get_iambic_repo_path(repo.repo_name)
         try:
-            config = await load_iambic_config(repo_dir)
+            config = await iambic_git.load_iambic_config(repo.repo_name)
         except ValueError as err:
             log.error(
                 {
@@ -150,14 +147,16 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
             )
 
         # Collect provider definitions from the template repo
-        azure_ad_templates = load_templates(
-            await gather_templates(repo_dir, "AzureAD"), use_multiprocessing=False
+        azure_ad_templates = iambic_git.load_templates(
+            await iambic_git.gather_templates(repo_dir, "AzureAD"),
+            use_multiprocessing=False,
         )
-        okta_templates = load_templates(
-            await gather_templates(repo_dir, "Okta"), use_multiprocessing=False
+        okta_templates = iambic_git.load_templates(
+            await iambic_git.gather_templates(repo_dir, "Okta"),
+            use_multiprocessing=False,
         )
-        google_workspace_templates = load_templates(
-            await gather_templates(repo_dir, "GoogleWorkspace"),
+        google_workspace_templates = iambic_git.load_templates(
+            await iambic_git.gather_templates(repo_dir, "GoogleWorkspace"),
             use_multiprocessing=False,
         )
 

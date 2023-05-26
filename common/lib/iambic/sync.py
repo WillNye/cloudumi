@@ -5,8 +5,6 @@ from iambic.config.dynamic_config import Config
 from iambic.config.dynamic_config import load_config as load_config_template
 from iambic.config.utils import resolve_config_template_path
 from iambic.core.models import BaseTemplate
-from iambic.core.parser import load_templates
-from iambic.core.utils import gather_templates
 from iambic.plugins.v0_1_0.aws.iam.role.models import AwsIamRoleTemplate
 
 from common.aws.accounts.models import AWSAccount
@@ -15,6 +13,7 @@ from common.config.models import ModelAdapter
 from common.groups.models import Group
 from common.iambic_request.models import IambicRepo
 from common.identity.models import AwsIdentityRole
+from common.lib.iambic.git import IambicGit
 from common.lib.iambic.util import effective_accounts
 from common.models import IambicRepoDetails
 from common.role_access.models import RoleAccess, RoleAccessTypes
@@ -27,18 +26,20 @@ log = config.get_logger()
 async def get_data_for_template_type(
     tenant: str, template_type: str
 ) -> List[BaseTemplate]:
+    iambic_git = IambicGit(tenant)
     iambic_repo_config = (
         ModelAdapter(IambicRepoDetails).load_config("iambic_repos", tenant).model
     )
     if not iambic_repo_config:
         return []
+    repo_name = iambic_repo_config.repo_name
     iambic_repo = IambicRepo(
         tenant=tenant,
-        repo_name=iambic_repo_config.repo_name,
+        repo_name=repo_name,
         repo_uri=f"https://oauth:{iambic_repo_config.access_token}@github.com/{iambic_repo_config.repo_name}",
     )
     await iambic_repo.set_repo()
-    return load_templates(await gather_templates(iambic_repo.file_path, template_type))
+    return iambic_git.load_templates(await iambic_git.gather_templates(repo_name))
 
 
 async def get_config_data_for_repo(tenant: Tenant):

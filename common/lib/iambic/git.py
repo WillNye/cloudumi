@@ -2,17 +2,22 @@ import datetime
 import hashlib
 import os
 import time
+from pathlib import Path
 from typing import Optional
 
 import ujson as json
 from git import Repo
 from git.exc import GitCommandError
 from github import Github
+from iambic.config.dynamic_config import load_config as load_config_template
+from iambic.config.utils import resolve_config_template_path
+from iambic.core.git import retrieve_git_changes as iambic_retrieve_git_changes
 from iambic.core.models import BaseTemplate
-from iambic.core.parser import load_templates
+from iambic.core.parser import load_templates as iambic_load_templates
 
 # TODO: Still need to get Iambic installed in the SaaS. This is a localhost hack.
-from iambic.core.utils import gather_templates
+from iambic.core.utils import evaluate_on_provider as iambic_evaluate_on_provider
+from iambic.core.utils import gather_templates as iambic_gather_templates
 from iambic.plugins.v0_1_0.aws.iam.policy.models import (
     ManagedPolicyDocument,
     PolicyDocument,
@@ -31,7 +36,6 @@ from jinja2.loaders import BaseLoader
 from common.config import models
 from common.config.globals import TENANT_STORAGE_BASE_PATH
 from common.config.tenant_config import TenantConfig
-from common.iambic.config.dynamic_config import load_iambic_config
 from common.lib.cache import store_json_results_in_redis_and_s3
 from common.lib.yaml import yaml
 from common.models import IambicRepoDetails
@@ -52,12 +56,47 @@ class IambicGit:
     def get_iambic_repo_path(self, repo_name):
         return os.path.join(self.tenant_repo_base_path, repo_name)
 
+    async def load_iambic_config(self, repo_name: str):
+        repo_path = self.get_iambic_repo_path(repo_name)
+        config_template_path = await resolve_config_template_path(str(repo_path))
+        return await load_config_template(
+            config_template_path,
+            configure_plugins=False,
+            approved_plugins_only=True,
+        )
+
+    async def gather_templates(self, repo_name: str, *args, **kwargs):
+        repo_path = self.get_iambic_repo_path(repo_name)
+        return await iambic_gather_templates(repo_path, *args, **kwargs)
+
+    def load_templates(self, template_paths, *args, **kwargs):
+        tenant_repo_base_path_posix = Path(self.tenant_repo_base_path)
+        for template_path in template_paths:
+            if tenant_repo_base_path_posix not in template_path.parents:
+                raise Exception(
+                    f"Template path {template_path} is not valid for this tenant."
+                )
+        return iambic_load_templates(template_paths, *args, **kwargs)
+
     async def set_git_repositories(self) -> None:
         self.git_repositories: list[IambicRepoDetails] = (
             models.ModelAdapter(IambicRepoDetails)
             .load_config(IAMBIC_REPOS_BASE_KEY, self.tenant)
             .models
         )
+
+    async def retrieve_git_changes(
+        self, repo_name: str, from_sha=None, to_sha=None
+    ) -> None:
+        repo_path = self.get_iambic_repo_path(repo_name)
+        return await iambic_retrieve_git_changes(
+            repo_path, from_sha=from_sha, to_sha=to_sha
+        )
+
+    def evaluate_on_provider(
+        self, template: str, provider_def, exclude_import_only: bool = True
+    ):
+        return iambic_evaluate_on_provider(template, provider_def, exclude_import_only)
 
     async def get_default_branch(self, repo) -> str:
         return next(
@@ -115,9 +154,9 @@ class IambicGit:
             repo_path = self.get_iambic_repo_path(repository.repo_name)
             # TODO: Need to have assume role access and ability to read secret
             # for Iambic config and templates to load
-            config_template = await load_iambic_config(repo_path)
-            template_paths = await gather_templates(repo_path)
-            self.templates = load_templates(template_paths)
+            config_template = await self.load_iambic_config(repository.repo_name)
+            template_paths = await iambic_gather_templates(repo_path)
+            self.templates = iambic_load_templates(template_paths)
             template_dicts = []
 
             aws_account_specific_template_types = {
@@ -280,9 +319,8 @@ class IambicGit:
             full_path = os.path.join(repo_path, template_path)
             if not os.path.exists(full_path):
                 continue
-
-            await load_iambic_config(repo_path)
-            return load_templates([full_path], use_multiprocessing=False)
+            await self.load_iambic_config(repository.repo_name)
+            return iambic_load_templates([full_path], use_multiprocessing=False)
         raise Exception("Template not found")
 
     async def okta_add_user_to_app(
