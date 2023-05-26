@@ -81,6 +81,23 @@ export const themeColors: ThemeColors = {
   }
 };
 
+export const spacings = {
+  xs: '2px',
+  sm: '5px',
+  md: '10px',
+  lg: '20px',
+  xl: '24px',
+  xxl: '30px'
+};
+
+export const borders = {
+  radius: {
+    sm: '2px',
+    md: '5px',
+    lg: '10px'
+  }
+};
+
 export const theme: DesignTokens = {
   colors: themeColors,
   typography: {
@@ -97,21 +114,8 @@ export const theme: DesignTokens = {
       xxl: '32px'
     }
   },
-  spacings: {
-    xs: '2px',
-    sm: '5px',
-    md: '10px',
-    lg: '20px',
-    xl: '24px',
-    xxl: '30px'
-  },
-  borders: {
-    radius: {
-      sm: '2px',
-      md: '5px',
-      lg: '10px'
-    }
-  },
+  spacings,
+  borders,
   gradients: {
     blue: {
       '100': 'linear-gradient(204deg, #19D4EE 10%, #4B5CFA 100%)',
@@ -183,6 +187,34 @@ export const theme: DesignTokens = {
     dialog: {
       'dialog-background': themeColors.gray['700'],
       'dialog-color': themeColors.gray['100']
+    },
+    select: {
+      'select-input-border-radius': borders.radius.lg,
+      'select-input-background': themeColors.gray['900'],
+      'select-input-border': `solid 2px ${themeColors.blue['900']}`,
+      'select-input-color': themeColors.white,
+      'select-input-spacing': `${spacings.sm} ${spacings.md}`,
+      'select-input-error': themeColors.red['100'],
+      'select-input-placeholder-color': themeColors.gray['100'],
+      'select-input-disabled-color': themeColors.gray['100'],
+      'select-input-icon-color': themeColors.gray['100'],
+
+      'select-menu-background': themeColors.gray['900'],
+      'select-menu-border': `solid 2px ${themeColors.blue['900']}`,
+      'select-menu-border-radius': `0 0 ${borders.radius.lg} ${borders.radius.lg}`,
+      'select-menu-item-color': themeColors.white,
+      'select-menu-group-color': themeColors.gray['100'],
+      'select-menu-item-spacing': `${spacings.md} ${spacings.md}`,
+      'select-menu-item-active-background': themeColors.gray['500'],
+      'select-menu-item-active-color': themeColors.white,
+      'select-menu-item-selected-color': themeColors.white,
+      'select-menu-item-selected-background': themeColors.gray['500'],
+
+      'select-chip-background': themeColors.gray['300'],
+      'select-chip-border': `solid 1px ${themeColors.blue['900']}`,
+      'select-chip-border-radius': 'var(--chip-border-radius)',
+      'select-chip-color': themeColors.white,
+      'select-chip-icon-color': themeColors.gray['100']
     }
   }
 };
