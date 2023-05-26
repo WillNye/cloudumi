@@ -45,10 +45,10 @@ preflight_task_definition_map = [
         "task": "preflight_load_tests",
         "task_definition": f"{current_path}/task_definition_preflight_load_tests.yaml",
     },
-    # {
-    #     "task": "preflight_functional_tests",
-    #     "task_definition": f"{current_path}/task_definition_preflight_functional_tests.yaml",
-    # },
+    {
+        "task": "preflight_functional_tests",
+        "task_definition": f"{current_path}/task_definition_preflight_functional_tests.yaml",
+    },
     {
         "task": "preflight_cypress",
         "task_definition": f"{current_path}/task_definition_preflight_cypress.yaml",
