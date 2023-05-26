@@ -75,6 +75,8 @@
   font-family: var(--font-family);
 
   &[disabled] {
+    cursor: not-allowed;
+    background: var(--gray-600);
   }
 
   &::placeholder {
@@ -83,11 +85,6 @@
 
   &:focus {
     outline: none;
-  }
-
-  &:read-only {
-    cursor: not-allowed;
-    background: var(--gray-600);
   }
 
   &.showBorder {
