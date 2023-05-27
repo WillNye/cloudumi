@@ -4,13 +4,10 @@ import sys
 from collections import defaultdict
 from typing import Optional
 
-from iambic.core.parser import load_templates
-from iambic.core.utils import gather_templates
 from sqlalchemy import and_, cast, not_, select
 
 from common.config import config as saas_config
 from common.config.globals import ASYNC_PG_SESSION
-from common.iambic.config.dynamic_config import load_iambic_config
 from common.iambic.config.models import (
     TenantProvider,
     TenantProviderDefinition,
@@ -18,7 +15,7 @@ from common.iambic.config.models import (
 )
 from common.iambic.templates.models import IambicTemplateProviderDefinition
 from common.iambic.utils import get_iambic_repo
-from common.lib.iambic.git import get_iambic_repo_path
+from common.lib.iambic.git import IambicGit
 from common.pg_core.utils import bulk_add, bulk_delete
 from common.tenants.models import Tenant
 
@@ -96,6 +93,7 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
     # This is super hacky, and we should be using the config object to do all of this
     # Unfortunately, we don't currently have a way to get providers that are stored in a secret
     tenant = await Tenant.get_by_name(tenant_name)
+    iambic_git = IambicGit(tenant_name)
     new_definitions = []
     deleted_definitions = []
     new_providers = []
@@ -135,9 +133,9 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
         return
 
     for repo in iambic_repos:
-        repo_dir = get_iambic_repo_path(tenant_name, repo.repo_name)
+        repo_dir = iambic_git.get_iambic_repo_path(repo.repo_name)
         try:
-            config = await load_iambic_config(repo_dir)
+            config = await iambic_git.load_iambic_config(repo.repo_name)
         except ValueError as err:
             log.error(
                 {
@@ -149,14 +147,16 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
             )
 
         # Collect provider definitions from the template repo
-        azure_ad_templates = load_templates(
-            await gather_templates(repo_dir, "AzureAD"), use_multiprocessing=False
+        azure_ad_templates = iambic_git.load_templates(
+            await iambic_git.gather_templates(repo_dir, "AzureAD"),
+            use_multiprocessing=False,
         )
-        okta_templates = load_templates(
-            await gather_templates(repo_dir, "Okta"), use_multiprocessing=False
+        okta_templates = iambic_git.load_templates(
+            await iambic_git.gather_templates(repo_dir, "Okta"),
+            use_multiprocessing=False,
         )
-        google_workspace_templates = load_templates(
-            await gather_templates(repo_dir, "GoogleWorkspace"),
+        google_workspace_templates = iambic_git.load_templates(
+            await iambic_git.gather_templates(repo_dir, "GoogleWorkspace"),
             use_multiprocessing=False,
         )
 

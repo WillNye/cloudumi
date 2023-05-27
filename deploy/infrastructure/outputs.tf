@@ -28,6 +28,11 @@ output "bucket_name" {
   value       = module.tenant_s3_service.cloudumi_bucket_name
 }
 
+output "temp_files_bucket_name" {
+  description = "The bucket used for temporary files (unit/functional test results)"
+  value       = module.tenant_s3_service.cloudumi_temp_files_bucket_name
+}
+
 output "cluster_id" {
   description = "The configured cluster id (for automation)"
   value       = local.cluster_id

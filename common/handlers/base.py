@@ -701,6 +701,7 @@ class BaseHandler(TornadoRequestHandler):
                 refreshed_user_roles_from_cache = True
         if not refreshed_user_roles_from_cache:
             await self.set_groups()
+        self.is_admin = is_tenant_admin(self.user, self.groups, tenant)
         self.console_only = console_only
 
         if (
@@ -751,8 +752,6 @@ class BaseHandler(TornadoRequestHandler):
 
         if hasattr(self, "tracer") and self.tracer:
             await self.tracer.set_additional_tags({"USER": self.user})
-
-        self.is_admin = is_tenant_admin(self.user, self.groups, tenant)
         stats.timer(
             "base_handler.incoming_request",
             {
@@ -835,6 +834,7 @@ class BaseHandler(TornadoRequestHandler):
                 "TenantEulaHandler",
                 "AuthenticatedStaticFileHandler",
                 "MfaHandler",
+                "UserMFASelfServiceHandler",
             ]:
                 # Force them to the eula page if they're an admin, return a 403 otherwise
                 if self.is_admin:
@@ -1237,6 +1237,15 @@ class StaticFileHandler(tornado.web.StaticFileHandler):
     def initialize(self, **kwargs) -> None:
         tenant = self.get_tenant_name()
         if not config.is_tenant_configured(tenant):
+            function: str = (
+                f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}"
+            )
+            log_data = {
+                "function": function,
+                "message": "Invalid tenant specified. Redirecting to main page",
+                "tenant": tenant,
+            }
+            log.debug(log_data)
             self.set_status(418)
             raise tornado.web.Finish()
         self.ctx = RequestContext(

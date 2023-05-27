@@ -674,7 +674,7 @@ class UserMFASelfServiceHandler(BaseHandler):
                     self.ctx.tenant,
                     mfa_setup_required=not user.mfa_enabled,
                     mfa_verification_required=False,
-                    eula_signed=self.ctx.needs_to_sign_eula,
+                    eula_signed=not self.ctx.needs_to_sign_eula,
                     password_reset_required=user.password_reset_required,
                 )
                 self.set_cookie(

@@ -23,6 +23,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, selectinload
 from sqlalchemy.sql import select
 
+from common.config import config
 from common.config.globals import ASYNC_PG_SESSION
 from common.group_memberships.models import GroupMembership  # noqa
 from common.lib.notifications import send_email_via_sendgrid
@@ -36,6 +37,8 @@ from common.templates import (
     generic_email_template,
     new_user_with_password_email_template,
 )
+
+log = config.get_logger()
 
 
 class User(SoftDeleteMixin, Base):
@@ -230,17 +233,22 @@ class User(SoftDeleteMixin, Base):
         # Prevent token re-use
         if token == self.last_successful_mfa_code:
             return False
-        verified = totp.verify(token)
+        verified = totp.verify(token, valid_window=1)
         if verified:
             self.last_successful_mfa_code = token
             await self.write()
+        else:
+            log.warning(f"Failed to verify token. Expected {totp.now()} got {token}")
 
         return verified
 
     async def check_temp_mfa(self, token):
         """Check if the given MFA token is valid."""
         totp = pyotp.TOTP(self.mfa_secret_temp)
-        return totp.verify(token)
+        verify = totp.verify(token, valid_window=1)
+        if not verify:
+            log.warning(f"Failed to verify token. Expected {totp.now()} got {token}")
+        return verify
 
     async def update(self, user, **kwargs):
         for key, value in kwargs.items():

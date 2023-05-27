@@ -1238,6 +1238,9 @@ class IambicTemplateChange(BaseModel):
         ..., description="The path of the template including the filename"
     )
     body: Optional[str] = Field(None, description="The template's content")
+    template: Optional[Any] = Field(
+        None, description="An ephemeral template object (for Slack self-service V1)"
+    )
 
 
 class IambicRequest(BaseModel):
