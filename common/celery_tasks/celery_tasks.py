@@ -60,6 +60,7 @@ from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.iambic.config.utils import update_tenant_providers_and_definitions
+from common.iambic.templates.tasks import sync_tenant_templates_and_definitions
 from common.lib import noq_json as ujson
 from common.lib.account_indexers import (
     cache_cloud_accounts,
@@ -2851,6 +2852,7 @@ def sync_iambic_templates_for_tenant(tenant: str) -> Dict:
     iambic = IambicGit(tenant)
     async_to_sync(iambic.clone_or_pull_git_repos)()
     async_to_sync(iambic.gather_templates_for_tenant)()
+    async_to_sync(sync_tenant_templates_and_definitions)(tenant)
     return log_data
 
 

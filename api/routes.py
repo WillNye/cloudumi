@@ -16,10 +16,11 @@ from api.handlers.v4.aws.roles import RolesHandlerV4
 from api.handlers.v4.groups.manage_group_memberships import (
     ManageGroupMembershipsHandler,
 )
-from api.handlers.v4.iambic_providers import (
+from api.handlers.v4.iambic.iambic_providers import (
     IambicProviderDefinitionHandler,
     IambicProviderHandler,
 )
+from api.handlers.v4.iambic.iambic_templates import IambicTemplateHandler
 from api.handlers.v4.resources.datatable import ResourcesDataTableHandler
 from api.handlers.v4.scim.groups import ScimV2GroupHandler, ScimV2GroupsHandler
 from api.handlers.v4.scim.users import ScimV2UserHandler, ScimV2UsersHandler
@@ -452,6 +453,7 @@ def make_app(jwt_validator=None):
         (rf"/api/v4/requests/(?P<request_id>{UUID_REGEX})", IambicRequestHandler),
         (r"/api/v4/providers/?", IambicProviderHandler),
         (r"/api/v4/providers/definitions/?", IambicProviderDefinitionHandler),
+        (r"/api/v4/templates/?", IambicTemplateHandler),
         (r"/api/v4/groups/?", ManageGroupsHandler),
         (r"/api/v4/list_groups/?", ManageListGroupsHandler),
         (r"/api/v4/group_memberships/?", ManageGroupMembershipsHandler),

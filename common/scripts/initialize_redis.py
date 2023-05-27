@@ -1,5 +1,6 @@
 import argparse
 import concurrent.futures
+import inspect
 import os
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
@@ -16,23 +17,16 @@ start_time = int(time.time())
 parallel = True
 
 
-def str2bool(v):
-    if isinstance(v, bool):
-        return v
-    if v.lower() in ("yes", "true", "t", "y", "1"):
-        return True
-    elif v.lower() in ("no", "false", "f", "n", "0"):
-        return False
-    else:
-        raise argparse.ArgumentTypeError("Boolean value expected.")
-
-
 parser = argparse.ArgumentParser(description="Populate cloudumi's Redis Cache")
 parser.add_argument(
-    "--use_celery",
-    default=False,
-    type=str2bool,
+    "--use-celery",
+    action="store_true",
     help="Invoke celery tasks instead of running synchronously",
+)
+parser.add_argument(
+    "--raise-exceptions",
+    action="store_true",
+    help="Raise Exceptions instead of ignoring them",
 )
 args = parser.parse_args()
 
@@ -56,6 +50,8 @@ if args.use_celery:
         celery.cache_managed_policies_across_accounts_for_all_tenants,
         celery.cache_resources_from_aws_config_across_accounts_for_all_tenants,
         celery.cache_access_advisor_across_accounts_for_all_tenants,
+        celery.sync_iambic_templates_all_tenants,
+        celery.update_providers_and_provider_definitions_all_tenants,
     ]
     async_tasks = [
         celery.cache_policies_table_details_for_all_tenants,
@@ -79,37 +75,37 @@ else:
         accounts_d = async_to_sync(get_account_id_to_name_mapping)(
             tenant, force_sync=True
         )
+        tasks = [
+            celery.cache_iam_resources_for_account,
+            celery.cache_s3_buckets_for_account,
+            celery.cache_sns_topics_for_account,
+            celery.cache_sqs_queues_for_account,
+            celery.cache_managed_policies_for_account,
+            celery.cache_access_advisor_for_account,
+            celery.cache_resources_from_aws_config_for_account,
+        ]
         if parallel:
             executor = ThreadPoolExecutor(max_workers=os.cpu_count())
             futures = []
-            tasks = [
-                celery.cache_iam_resources_for_account,
-                celery.cache_s3_buckets_for_account,
-                celery.cache_sns_topics_for_account,
-                celery.cache_sqs_queues_for_account,
-                celery.cache_managed_policies_for_account,
-                celery.cache_access_advisor_for_account,
-                celery.cache_resources_from_aws_config_for_account,
-            ]
+
             for account_id in accounts_d.keys():
                 for task in tasks:
+                    sig = inspect.signature(task)
+                    fn_args = {}
+                    if "account_id" in sig.parameters:
+                        fn_args["account_id"] = account_id
+                    if "tenant" in sig.parameters:
+                        fn_args["tenant"] = tenant
                     log_start(f"{task.__name__} for account {account_id}")
-                    futures.append(executor.submit(task, account_id, tenant))
+                    futures.append(executor.submit(task, **fn_args))
             for future in concurrent.futures.as_completed(futures):
                 try:
                     data = future.result()
                 except Exception as exc:
                     print("%r generated an exception: %s" % (future, exc))
+                    if args.raise_exceptions:
+                        raise exc
         else:
-            tasks = [
-                celery.cache_iam_resources_for_account,
-                celery.cache_s3_buckets_for_account,
-                celery.cache_sns_topics_for_account,
-                celery.cache_sqs_queues_for_account,
-                celery.cache_managed_policies_for_account,
-                celery.cache_access_advisor_for_account,
-                celery.cache_resources_from_aws_config_for_account,
-            ]
             for account_id in accounts_d.keys():
                 for task in tasks:
                     start_time = log_start(f"{task.__name__} for account {account_id}")
@@ -148,6 +144,10 @@ else:
             celery.cache_credential_authorization_mapping,
             celery.cache_organization_structure,
             celery.cache_scps_across_organizations,
+            celery.sync_iambic_templates_for_tenant,
+            celery.update_providers_and_provider_definitions_for_tenant,
+            # This is on purpose.
+            celery.sync_iambic_templates_for_tenant,
         ]
 
         for post_task in post_tasks:
@@ -156,7 +156,11 @@ else:
                 if isinstance(post_task, partial)
                 else post_task.__name__
             )
-            post_task(tenant)
+            sig = inspect.signature(post_task)
+            fn_args = {}
+            if "tenant" in sig.parameters:
+                fn_args["tenant"] = tenant
+            post_task(**fn_args)
             log_end(
                 post_task.func.__name__
                 if isinstance(post_task, partial)
