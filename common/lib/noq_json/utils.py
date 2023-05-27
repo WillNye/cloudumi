@@ -35,7 +35,9 @@ def dumps(
 ) -> str:
     try:
         # Try orjson first
-        result = orjson.dumps(obj, option=orjson.OPT_NON_STR_KEYS).decode()
+        result = orjson.dumps(
+            obj, indent=indent, option=orjson.OPT_NON_STR_KEYS
+        ).decode()
     except TypeError:
         try:
             # Try ujson next

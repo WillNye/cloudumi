@@ -5,11 +5,7 @@ import tornado.web
 import common.lib.noq_json as json
 from common.aws.utils import ResourceAccountCache
 from common.config import config
-from common.handlers.base import (
-    AuthenticatedStaticFileHandler,
-    BaseHandler,
-    StaticFileHandler,
-)
+from common.handlers.base import BaseHandler, StaticFileHandler
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.aws.cached_resources.iam import (
     get_tra_supported_roles_by_tag,
@@ -300,7 +296,7 @@ class EligibleRolePageConfigHandler(BaseHandler):
         self.write(table_configuration)
 
 
-class FrontendHandler(AuthenticatedStaticFileHandler):
+class FrontendHandler(StaticFileHandler):
     def set_extra_headers(self, path):
         # Disable cache for index.html
         if self.request.path in ["/", "/index.html"]:

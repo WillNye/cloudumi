@@ -16,9 +16,9 @@ service_task_definition_map = [
         "desiredCount": {{ api_count }},
         "loadBalancers": [
             {
-                'containerName': "{{ ecs_cluster_name }}-api",
-                'containerPort': 8092,
-                'targetGroupArn': '{{ target_group_arn }}',
+                "containerName": "{{ ecs_cluster_name }}-api",
+                "containerPort": 8092,
+                "targetGroupArn": "{{ target_group_arn }}",
             },
         ]
     },
@@ -48,6 +48,10 @@ preflight_task_definition_map = [
     {
         "task": "preflight_functional_tests",
         "task_definition": f"{current_path}/task_definition_preflight_functional_tests.yaml",
+    },
+    {
+        "task": "preflight_cypress",
+        "task_definition": f"{current_path}/task_definition_preflight_cypress.yaml",
     }
 ]
 

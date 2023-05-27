@@ -108,14 +108,6 @@ docker_deps_up:
 docker_deps_down:
 	docker-compose -f deploy/docker-compose-dependencies.yaml down
 
-.PHONY: ssm_prod
-ssm_prod:
-	AWS_REGION=us-west-2 AWS_DEFAULT_REGION=us-west-2 AWS_PROFILE=prod/prod_admin ecsgo
-
-.PHONY: ssm_staging
-ssm_staging:
-	AWS_REGION=us-west-2 AWS_DEFAULT_REGION=us-west-2 AWS_PROFILE=staging/staging_admin ecsgo
-
 .PHONY: ecs-tunnel-staging-celery-flower
 ecs-tunnel-staging-celery-flower:
 	export AWS_PROFILE=staging/staging_admin
@@ -222,3 +214,11 @@ update-config-prod:
 	terraform workspace select shared-prod-1 && \
 	terraform output -json | python ../../util/terraform_config_parser/terraform_config_parser.py $(BASE_DIR)
 	@echo "SaaS configuration for production environment updated."
+
+.PHONY: generate_pydantic_models_from_swagger_spec
+generate_pydantic_models_from_swagger_spec:
+	@echo "Generating pydantic models from swagger spec..."
+	@cd common/util && \
+	datamodel-codegen --input swagger.yaml  --output ../models.py --base-class common.lib.pydantic.BaseModel --field-extra-keys 'is_secret' && \
+	black ../models.py
+	@echo "Pydantic models generated."

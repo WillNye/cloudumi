@@ -360,6 +360,12 @@ if __name__ == "__main__":
         config_output_path,
     )
     write_file(
+        "task_definition_preflight_cypress.jinja2",
+        "task_definition_preflight_cypress.yaml",
+        terraform_config,
+        config_output_path,
+    )
+    write_file(
         "ecs_deployer.py.jinja2",
         "ecs_deployer.py",
         terraform_config,

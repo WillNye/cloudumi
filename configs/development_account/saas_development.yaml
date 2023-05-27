@@ -1,5 +1,5 @@
 # When running this locally, ensure your /etc/hosts file has the following configuration:
-# 127.0.0.1 localhost redis-cluster cloudumi-dynamodb cloudumi-redis localstack1 localstack2 localstack3 cloudumidev.com cloudumisamldev.com
+# 127.0.0.1 localhost cloudumi-pg redis-cluster cloudumi-dynamodb cloudumi-redis localstack1 localstack2 localstack3 cloudumidev.com cloudumisamldev.com
 # TODO: Extends must NOT modify _global_. It must ONLY exist in the site_config specific namespace
 
 # AWS_PROFILE=development/development_admin aws s3 cp saas_development.yaml s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml
@@ -58,6 +58,7 @@ _global_:
       region: us-west-2
   s3_buckets:
     legal_docs: noq-development-2-test-bucket
+    temp_files: cloudumi-temp-bucket-testing
   integrations:
     aws:
       account_id: "759357822767"
@@ -133,14 +134,12 @@ _global_:
       password: local_dev
     jwt_secret: T3sts3cr3t
   noq_db:
-    endpoint: "localhost"
+    endpoint: "cloudumi-pg"
     port: 5432
     database: "noq"
-  tenant_registration:
-    set_login_page_ui:
-      logo_location: frontend/src/assets/NoqLogo.png
   tenant_storage:
     base_path: ~/.config/noq/tenant_storage_dev/
+  slack_webhook_url: A_SECRET
 # Localhost configuration
 #  redis:
 #    cluster_mode:

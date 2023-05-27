@@ -353,14 +353,21 @@ class Configuration(metaclass=Singleton):
                 Key={"tenant": tenant, "id": "master"}
             )
         except botocore.exceptions.ClientError as e:
-            if e.response["Error"]["Code"] == "ResourceNotFoundException":
-                return {}
             sentry_sdk.capture_exception()
+            if e.response["Error"]["Code"] == "ResourceNotFoundException":
+                self.get_logger("config").error(
+                    {
+                        **log_data,
+                        "error": str(e),
+                        "message": "Unable to find tenant in Dynamo",
+                    }
+                )
+                return {}
             self.get_logger("config").error(
                 {
                     **log_data,
                     "error": str(e),
-                    "message": "Unable to find tenant in Dynamo",
+                    "message": "Unknown error. Unable to find tenant in Dynamo.",
                 }
             )
         c = {}
