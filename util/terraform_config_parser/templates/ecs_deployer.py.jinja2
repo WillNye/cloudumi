@@ -41,6 +41,7 @@ service_task_definition_map = [
 ]
 
 preflight_task_definition_map = [
+{% if stage != "prod" %}
     {
         "task": "preflight_load_tests",
         "task_definition": f"{current_path}/task_definition_preflight_load_tests.yaml",
@@ -53,6 +54,7 @@ preflight_task_definition_map = [
         "task": "preflight_cypress",
         "task_definition": f"{current_path}/task_definition_preflight_cypress.yaml",
     }
+{% endif %}
 ]
 
 cluster_name = "{{ ecs_cluster_name }}"
