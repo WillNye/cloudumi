@@ -36,7 +36,6 @@
     "axios": "^1.2.1",
     "classnames": "^2.3.2",
     "date-fns": "^2.29.3",
-    "faker": "^6.6.6",
     "framer-motion": "^7.6.9",
     "graphql": "^16.6.0",
     "graphql-tag": "^2.12.6",
@@ -58,6 +57,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.19.3",
+    "@faker-js/faker": "^8.0.1",
     "@storybook/addon-actions": "6.5.12",
     "@storybook/addon-docs": "6.5.12",
     "@storybook/addon-essentials": "6.5.12",
