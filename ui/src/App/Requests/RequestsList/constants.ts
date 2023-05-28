@@ -15,7 +15,7 @@ export const requestsColumns = [
     sortable: false
   },
   {
-    Header: 'STATUS',
+    Header: 'Status',
     accessor: 'status',
     sortable: false
   },
