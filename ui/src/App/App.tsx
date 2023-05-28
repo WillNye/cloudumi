@@ -7,6 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const Login = lazy(() => import('./Login'));
 const Settings = lazy(() => import('./Settings'));
+const Requests = lazy(() => import('./Requests'));
 const NotFound = lazy(() => import('./NotFound'));
 const Access = lazy(() => import('./Access'));
 const Dashboard = lazy(() => import('./Dashboard'));
@@ -24,6 +25,7 @@ export const App: FC = () => (
         <Route path="/" element={<Dashboard />}>
           <Route path="/" element={<Access />} />
           <Route path="/settings/*" element={<Settings />} />
+          <Route path="/requests/*" element={<Requests />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Route>

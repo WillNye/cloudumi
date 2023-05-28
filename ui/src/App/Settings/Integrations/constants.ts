@@ -1,16 +1,13 @@
 /* eslint-disable max-len */
-export const GOOGLE_CARD_DESCRIPTION =
-  'Google Cloud Platform (GCP) is a cloud-based platform that provides a range of services, including computing, storage, and networking, to help businesses build, deploy, and scale applications.';
+export const GOOGLE_CARD_DESCRIPTION = 'Google Cloud Platform (GCP)';
 export const AZURE_CARD_DESCRIPTION =
-  'Microsoft Azure is a cloud computing platform that provides a range of services, including virtual machines, databases, and developer tools, to help businesses build and deploy applications.';
-export const AWS_CARD_DESCRIPTION =
-  'Amazon Web Services (AWS) is a cloud-based platform that provides a range of services, including compute, storage, and databases, to help businesses scale and grow.';
+  'Microsoft Azure cloud computing platform';
+export const AWS_CARD_DESCRIPTION = 'Amazon Web Services (AWS)';
 export const SLACK_CARD_DESCRIPTION =
-  'Collaborate efficiently with Slack. Receive real-time notifications when new code is pushed, pull requests are created, or issues are opened or closed.';
-export const GITHUB_CARD_DESCRIPTION =
-  'Streamline your workflow with GitHub. Automate tasks such as creating pull requests, and receive notifications when new code is pushed, pull requests are created, or issues are opened or closed.';
+  'Receive real-time notifications with every upate';
+export const GITHUB_CARD_DESCRIPTION = 'Streamline your workflow with GitHub.';
 export const OKTA_CARD_DESCRIPTION =
-  'Okta provides cloud-based identity and access management to secure your applications, data, and infrastructure. Manage user access and authentication across multiple applications from a central location, reducing the risk of data breaches.';
+  'Okta provides cloud-based identity and access management to secure your applications, data, and infrastructure.';
 export const CLOUD_PROVIDER_SECTION_DESCRIPTION =
   'Configure and connect with cloud service providers (CSPs) to take advantage of benefits such as improved manageability, greater transparency, and the implementation of robust security measures, including the principle of least privilege.';
 export const GENERAL_SECTION_DESCRPTION =
