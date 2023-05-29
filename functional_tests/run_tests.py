@@ -1,12 +1,16 @@
-# content of myinvoke.py
 import argparse
 import os
 import pathlib
 import tempfile
+from datetime import datetime
+
+import boto3
 
 # import gevent
 import pytest
 import requests
+from botocore.config import Config
+from botocore.exceptions import NoCredentialsError
 
 # from locust import events
 # from locust.env import Environment
@@ -20,6 +24,7 @@ from common.config import config
 # locust_env = Environment(user_classes=[LoadTest], events=events)
 
 logger = config.get_logger()
+timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
 parser = argparse.ArgumentParser(description="Stage")
 parser.add_argument(
@@ -31,7 +36,6 @@ parser.add_argument("--loc", help="Location of functional tests")
 args = parser.parse_args()
 stage = args.stage
 loc = args.loc
-
 if stage is None:
     stage = os.getenv("STAGE")
 if loc is None:
@@ -48,13 +52,29 @@ def send_to_slack(message):
     requests.post(SLACK_WEBHOOK_URL, json=payload)
 
 
-def upload_to_transfer_sh(filepath):
-    with open(filepath, "rb") as file:
-        response = requests.put(
-            f"https://transfer.sh/{os.path.basename(filepath)}",
-            data=file,
+def generate_presigned_url(filepath):
+    filename = os.path.basename(filepath)
+    temp_files_bucket = config.get("_global_.s3_buckets.temp_files")
+    bucket_path = f"{timestamp}-functional_tests"
+    s3_client = boto3.client("s3", config=Config(signature_version="s3v4"))
+
+    try:
+        s3_client.upload_file(filepath, temp_files_bucket, f"{bucket_path}/{filename}")
+        presigned_url = s3_client.generate_presigned_url(
+            "get_object",
+            Params={
+                "Bucket": temp_files_bucket,
+                "Key": f"{bucket_path}/{filename}",
+            },
+            ExpiresIn=600000,
         )
-    return response.text
+        return presigned_url
+    except NoCredentialsError:
+        print("AWS credentials not found.")
+        return None
+    except Exception as e:
+        print(f"Error occurred while generating presigned URL: {str(e)}")
+        return None
 
 
 class MyPlugin:
@@ -71,7 +91,7 @@ def run():
             prev_stdout = os.dup(1)
             os.dup2(output_file.fileno(), 1)
             exit_code = pytest.main(
-                # ["--capture=sys", "-k", "TestCredentials", loc],
+                # ["--capture=sys", "-k", "test_retrieve_items", loc],
                 ["--capture=sys", loc],
                 plugins=[conftest, MyPlugin()],
             )
@@ -79,9 +99,9 @@ def run():
             # Restore the original stdout
             os.dup2(prev_stdout, 1)
 
-            # Upload test output to transfer.sh and send to Slack
+            # Upload test output to S3 and send to Slack
             output_file.flush()
-            transfer_url = upload_to_transfer_sh(output_file.name)
+            transfer_url = generate_presigned_url(output_file.name)
             if exit_code in [ExitCode.TESTS_FAILED, ExitCode.USAGE_ERROR]:
                 send_to_slack(
                     f"Functional tests failed. Check the logs for more information: {transfer_url}"

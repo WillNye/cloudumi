@@ -3,7 +3,7 @@ import { FC, useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { AuthCode } from 'shared/form/AuthCode';
-import { verifyMFA } from 'core/API/auth';
+import { VerifyMFAParams, verifyMFA } from 'core/API/auth';
 import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
 import { Notification, NotificationType } from 'shared/elements/Notification';
@@ -11,6 +11,7 @@ import { ReactComponent as Logo } from 'assets/brand/mark.svg';
 import { LineBreak } from 'shared/elements/LineBreak';
 
 import styles from './MFA.module.css';
+import { useMutation } from '@tanstack/react-query';
 
 export const MFA: FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -19,11 +20,16 @@ export const MFA: FC = () => {
   const { user, getUser } = useAuth();
   const navigate = useNavigate();
 
+  const { mutateAsync: verifyMFAMutation } = useMutation({
+    mutationFn: (formData: VerifyMFAParams) => verifyMFA(formData),
+    mutationKey: ['verifyMFA']
+  });
+
   const verifyTOTPCode = useCallback(
     async (val: string) => {
       setIsLoading(true);
       try {
-        await verifyMFA({
+        await verifyMFAMutation({
           mfa_token: val
         });
         await getUser();
@@ -37,7 +43,7 @@ export const MFA: FC = () => {
         setIsLoading(false);
       }
     },
-    [getUser, navigate]
+    [getUser, navigate, verifyMFAMutation]
   );
 
   if (!user?.mfa_verification_required) {

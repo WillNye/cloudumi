@@ -300,6 +300,8 @@ elastic-apm==6.15.1
     # via -r ./common/util/requirements.in
 email-validator==2.0.0.post1
     # via -r ./api/util/requirements.in
+eventlet==0.33.3
+    # via -r ./common/util/requirements.in
 execnet==1.9.0
     # via pytest-xdist
 faker==18.4.0

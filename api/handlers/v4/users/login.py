@@ -40,7 +40,7 @@ class LoginHandler(TornadoRequestHandler):
 
         if not db_user.email_verified:
             self.set_status(401)
-            await db_user.send_verification_email(tenant_url)
+            await db_user.send_verification_email(tenant, tenant_url)
             self.write(
                 WebResponse(
                     success="error",

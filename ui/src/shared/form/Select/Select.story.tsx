@@ -1,5 +1,4 @@
-import { Select } from './Select';
-import { SelectOption } from './SelectOption';
+import { Select, SelectOption } from 'reablocks';
 
 export default {
   title: 'Form/Select',

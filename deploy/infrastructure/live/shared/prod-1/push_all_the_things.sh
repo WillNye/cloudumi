@@ -49,7 +49,7 @@ fi
 if [ "prod" == "prod" ]; then
   if [ "$BRANCH" != "main" ]; then
     echo "Not on main branch, not deploying to prod"
-    exit 0
+    exit 1
   fi
 fi
 

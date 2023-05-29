@@ -10,6 +10,8 @@ import { Tooltip } from 'shared/elements/Tooltip';
 import { Block } from 'shared/layout/Block';
 import { extractErrorMessage } from 'core/API/utils';
 import { useAuth } from 'core/Auth';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 const SCROLL_HEIGHT_OFFSET = 5;
 
@@ -26,37 +28,38 @@ const EULA = () => {
   const { user, getUser } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(function onMount() {
-    getEUla();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useQuery({
+    queryFn: getEndUserAgreement,
+    queryKey: ['getEula'],
+    onSettled: () => {
+      setIsLoading(false);
+    },
+    onSuccess: ({ data }) => {
+      if (data?.eula) {
+        setAgreementDocument(data.eula);
+      } else {
+        const errorMessage = extractErrorMessage(data);
+        setFetchError(errorMessage);
+      }
+    },
+    onError: error => {
+      const errorMessage = extractErrorMessage(error);
+      setFetchError(errorMessage);
+    }
+  });
+
+  const { mutateAsync: acceptEndUserAgreementMutation } = useMutation({
+    mutationFn: acceptEndUserAgreement,
+    mutationKey: ['acceptEndUserAgreement']
+  });
 
   const handleOnChange = event => {
     setAcceptAgreement(() => event.target.checked);
   };
 
-  const getEUla = useCallback(() => {
-    setIsLoading(true);
-    getEndUserAgreement()
-      .then(({ data }) => {
-        if (data?.data?.eula) {
-          setAgreementDocument(data.data.eula);
-        } else {
-          const errorMessage = extractErrorMessage(data);
-          setFetchError(errorMessage);
-        }
-      })
-      .catch(error => {
-        const errorMessage = extractErrorMessage(error);
-        setFetchError(errorMessage);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, []);
-
   const handleOnSubmit = useCallback(() => {
     setIsLoading(true);
-    acceptEndUserAgreement()
+    acceptEndUserAgreementMutation()
       .then(async () => {
         await getUser();
         navigate('/');
@@ -72,7 +75,7 @@ const EULA = () => {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [navigate, getUser]);
+  }, [navigate, getUser, acceptEndUserAgreementMutation]);
 
   const onScroll = useCallback(() => {
     if (ref.current) {
@@ -95,7 +98,7 @@ const EULA = () => {
           <div>
             <h1>An error occured</h1>
             <p>We are already informed, please try again later</p>
-            <br />
+            <LineBreak />
             <Link to="/">
               <Button color="primary">Return to Home</Button>
             </Link>
@@ -112,6 +115,7 @@ const EULA = () => {
                 className={styles.document}
                 readOnly
                 value={agreementDocument}
+                data-cy="eula-textarea"
               ></textarea>
             </Segment>
 
@@ -122,6 +126,7 @@ const EULA = () => {
                 type={NotificationType.ERROR}
                 header="Error"
                 fullWidth
+                data-cy="submit-error-notification"
               >
                 {submitError}
               </Notification>
@@ -147,12 +152,13 @@ const EULA = () => {
                     onChange={handleOnChange}
                     checked={acceptAgreement}
                     disabled={!hasViewedAgreement}
+                    data-cy="accept-eula-checkbox"
                   />
                 </div>
               </Tooltip>
             </div>
 
-            <br />
+            <LineBreak />
 
             <div className={styles.actions}>
               <Button
@@ -161,6 +167,7 @@ const EULA = () => {
                 fullWidth
                 disabled={!acceptAgreement}
                 onClick={handleOnSubmit}
+                data-cy="continue-button"
               >
                 Continue
               </Button>

@@ -21,7 +21,7 @@ class IambicRequestHandler(BaseHandler):
     async def get(self, request_id: str = None):
         """
         GET /api/v4/request/{request_id} - Get a request by ID
-        LIST /api/v4/request - List all tenant requests with optional filters
+        GET /api/v4/request - List all tenant requests with optional filters
         """
         tenant = self.ctx.tenant
 

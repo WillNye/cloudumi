@@ -14,6 +14,7 @@ import { createUser } from 'core/API/settings';
 import { Notification, NotificationType } from 'shared/elements/Notification';
 import styles from './InviteUserModal.module.css';
 import { useMutation } from '@tanstack/react-query';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 type CreateUserParams = {
   email: string;
@@ -43,7 +44,7 @@ const InviteUserModal = ({ refreshData }) => {
     }
   });
 
-  const createUserMutation = useMutation({
+  const { mutateAsync: createUserMutation } = useMutation({
     mutationFn: (data: CreateUserParams) => createUser(data)
   });
 
@@ -52,7 +53,7 @@ const InviteUserModal = ({ refreshData }) => {
       setErrorMessage(null);
       setSuccessMessage(null);
       try {
-        await createUserMutation.mutateAsync({
+        await createUserMutation({
           email,
           password
         });
@@ -104,8 +105,7 @@ const InviteUserModal = ({ refreshData }) => {
             {errors?.email && touchedFields.email && (
               <p>{errors.email.message}</p>
             )}
-            <br />
-
+            <LineBreak />
             <Block disableLabelPadding label="Password"></Block>
             <Input
               fullWidth
@@ -120,7 +120,7 @@ const InviteUserModal = ({ refreshData }) => {
             {errors?.password && touchedFields.password && (
               <p>{errors.password.message}</p>
             )}
-            <br />
+            <LineBreak />
             {errorMessage && (
               <Notification
                 type={NotificationType.ERROR}
@@ -137,7 +137,7 @@ const InviteUserModal = ({ refreshData }) => {
                 fullWidth
               />
             )}
-            <br />
+            <LineBreak />
             <Button type="submit" disabled={isSubmitting || !isValid}>
               {isSubmitting ? 'Sending Invite...' : 'Send Invite'}
             </Button>

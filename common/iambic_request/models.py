@@ -20,7 +20,7 @@ from common.config import config
 from common.config.globals import ASYNC_PG_SESSION, TENANT_STORAGE_BASE_PATH
 from common.lib import noq_json as json
 from common.lib.asyncio import aio_wrapper
-from common.lib.iambic.git import get_iambic_repo_path
+from common.lib.iambic.git import IambicGit
 from common.lib.storage import TenantFileStorageHandler
 from common.models import IambicTemplateChange
 from common.pg_core.models import Base, SoftDeleteMixin
@@ -50,7 +50,9 @@ class IambicRepo:
         self.request_id = request_id
         self.requested_by = requested_by
         self.use_request_branch = use_request_branch
-        self._default_file_path = get_iambic_repo_path(self.tenant, self.repo_name)
+        self._default_file_path = IambicGit(self.tenant).get_iambic_repo_path(
+            self.repo_name
+        )
         self.remote_name = remote_name
         self.repo = None
         self._default_branch_name = None

@@ -164,6 +164,7 @@ class UserProfileHandler(BaseAPIV1Handler):
                 },
             },
             "accounts": await get_account_id_to_name_mapping(tenant),
+            "is_admin": is_tenant_admin(self.user, self.groups, tenant),
         }
 
         self.set_header("Content-Type", "application/json")

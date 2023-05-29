@@ -59,6 +59,8 @@ from common.aws.service_config.utils import execute_query
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
+from common.iambic.config.utils import update_tenant_providers_and_definitions
+from common.iambic.templates.tasks import sync_tenant_templates_and_definitions
 from common.lib import noq_json as ujson
 from common.lib.account_indexers import (
     cache_cloud_accounts,
@@ -198,13 +200,6 @@ internal_celery_tasks = get_plugin_by_name(
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
 REDIS_IAM_COUNT = 1000
-
-
-@app.task()
-def ping() -> str:
-    log_data = {"task": "pong"}
-    log.info(log_data)
-    return "pong"
 
 
 @app.task(soft_time_limit=20)
@@ -2806,6 +2801,29 @@ def remove_expired_requests_for_all_tenants() -> Dict:
     return log_data
 
 
+@app.task(soft_time_limit=2700, **default_retry_kwargs)
+def update_providers_and_provider_definitions_for_tenant(tenant: str = None):
+    if not tenant:
+        raise Exception("`tenant` must be passed to this task.")
+    async_to_sync(update_tenant_providers_and_definitions)(tenant)
+
+
+@app.task(soft_time_limit=600, **default_retry_kwargs)
+def update_providers_and_provider_definitions_all_tenants() -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    tenants = get_all_tenants()
+    log_data = {
+        "function": function,
+        "message": "Spawning tasks",
+        "num_tenants": len(tenants),
+    }
+    log.debug(log_data)
+    for tenant in tenants:
+        update_providers_and_provider_definitions_for_tenant.apply_async((tenant,))
+
+    return log_data
+
+
 @app.task(soft_time_limit=600, **default_retry_kwargs)
 def workos_cache_users_from_directory() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -2834,6 +2852,7 @@ def sync_iambic_templates_for_tenant(tenant: str) -> Dict:
     iambic = IambicGit(tenant)
     async_to_sync(iambic.clone_or_pull_git_repos)()
     async_to_sync(iambic.gather_templates_for_tenant)()
+    async_to_sync(sync_tenant_templates_and_definitions)(tenant)
     return log_data
 
 
@@ -3027,6 +3046,11 @@ schedule = {
         "options": {"expires": 180},
         "schedule": get_schedule(60 * 6),
     },
+    "update_providers_and_provider_definitions_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.update_providers_and_provider_definitions_all_tenants",
+        "options": {"expires": 180},
+        "schedule": get_schedule(30),
+    },
 }
 
 
@@ -3050,7 +3074,7 @@ app.conf.timezone = "UTC"
 
 # TODO: Remove
 # TODO: Need a way to get signaled with files change in repo
-from multiprocessing import current_process  # noqa: E402
+# from multiprocessing import current_process  # noqa: E402
 
 # if current_process().name == "MainProcess":
 #     tenants = get_all_tenants()

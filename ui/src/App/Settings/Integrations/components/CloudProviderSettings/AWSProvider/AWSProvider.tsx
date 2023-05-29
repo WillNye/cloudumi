@@ -3,45 +3,35 @@ import SpokeAccounts from './SpokeAccounts';
 import AWSOrganizations from './AWSOrganizations';
 import styles from './AWSProvider.module.css';
 import { Segment } from 'shared/layout/Segment';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { awsIntegrations } from 'core/API/awsConfig';
 import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
+import { useQuery } from '@tanstack/react-query';
 
 const AWSProvider = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [awsData, setAWSData] = useState(null);
 
-  useEffect(function onMount() {
-    getAWSIntegrations();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const getAWSIntegrations = useCallback(async () => {
-    setErrorMessage(null);
-    setIsLoading(true);
-    try {
-      const res = await awsIntegrations();
-      const resData = res?.data;
-      setIsLoading(false);
-      setAWSData(resData);
-    } catch (error) {
-      const err = error as AxiosError;
+  const { isLoading, data } = useQuery({
+    queryFn: awsIntegrations,
+    queryKey: ['awsIntegrations'],
+    onSuccess: () => {
+      setErrorMessage(null);
+    },
+    onError: (err: AxiosError) => {
       const errorRes = err?.response;
       const errorMsg = extractErrorMessage(errorRes?.data);
       setErrorMessage(
         errorMsg || 'An error occurred while getting aws integrations'
       );
-      setIsLoading(false);
     }
-  }, []);
+  });
 
   return (
     <div className={styles.aws}>
       <Segment isLoading={isLoading} disablePadding>
-        <HubAccounts aws={awsData} />
-        <SpokeAccounts aws={awsData} />
+        <HubAccounts aws={data} />
+        <SpokeAccounts aws={data} />
         <AWSOrganizations />
       </Segment>
     </div>

@@ -39,7 +39,7 @@ const ChangePassword = () => {
     }
   });
 
-  const completePasswordMutation = useMutation({
+  const { mutateAsync: completePasswordMutation } = useMutation({
     mutationFn: (data: CompletePasswordParams) => completePassword(data)
   });
 
@@ -48,7 +48,7 @@ const ChangePassword = () => {
   const onSubmit = useCallback(
     async ({ newPassword, currentPassword }) => {
       try {
-        await completePasswordMutation.mutateAsync({
+        await completePasswordMutation({
           new_password: newPassword,
           current_password: currentPassword
         });
@@ -65,7 +65,6 @@ const ChangePassword = () => {
 
   return (
     <Segment>
-      <h4>Change Password</h4>
       <LineBreak size="large" />
 
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -100,7 +99,7 @@ const ChangePassword = () => {
           <p>{errors.confirmNewPassword.message}</p>
         )}
         <LineBreak />
-        <Button type="submit" disabled={isSubmitting || !isValid}>
+        <Button type="submit" disabled={isSubmitting || !isValid} size="small">
           {isSubmitting ? 'Resetting Password...' : 'Reset Password'}
         </Button>
       </form>

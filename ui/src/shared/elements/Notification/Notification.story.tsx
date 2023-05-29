@@ -1,4 +1,5 @@
 import { Button } from '../Button';
+import { LineBreak } from '../LineBreak';
 import { Notification, NotificationType } from './Notification';
 
 export default {
@@ -13,45 +14,45 @@ export const Basic = () => {
         header="Are you sure you want to delete this request?"
         message="This action cannot be reversed."
       />
-      <br />
+      <LineBreak />
       <Notification
         type={NotificationType.INFO}
         header="New version available"
       />
-      <br />
+      <LineBreak />
       <Notification
         type={NotificationType.INFO}
         header="New version available"
         message="An improved version of NOQ is available now, please refresh to update."
       >
-        <br />
+        <LineBreak />
         <Button size="small">Refresh Now</Button>
       </Notification>
-      <br />
+      <LineBreak />
       <Notification
         type={NotificationType.SUCCESS}
         header="Request submitted"
       />
-      <br />
+      <LineBreak />
       <Notification
         type={NotificationType.SUCCESS}
         header="Request submitted"
         message="Your access request is submitted successfully."
       />
-      <br />
+      <LineBreak />
       <Notification type={NotificationType.ERROR} header="Access declined" />
-      <br />
+      <LineBreak />
       <Notification
         type={NotificationType.ERROR}
         header="Access declined"
         message="Your access request is declined."
       />
-      <br />
+      <LineBreak />
       <Notification
         type={NotificationType.WARNING}
         header="Request not submitted"
       />
-      <br />
+      <LineBreak />
       <Notification
         type={NotificationType.WARNING}
         header="Request not submitted"

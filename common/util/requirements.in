@@ -16,6 +16,7 @@ cryptography
 deepdiff # For getting deep in nested dictionary differences
 ed25519 # For.. more signing
 elastic-apm # For Elastic Application Performance Monitoring
+eventlet # https://github.com/rthalley/dnspython/issues/885
 furl
 gitpython
 greenlet # Required for Async alembic

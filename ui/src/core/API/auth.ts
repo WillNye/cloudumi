@@ -1,7 +1,7 @@
 import axios from '../Axios';
 import { V1_API_URL, V2_API_URL, V3_API_URL, V4_API_URL } from './constants';
 
-type LoginParams = {
+export type LoginParams = {
   email: string;
   password: string;
 };
@@ -11,16 +11,16 @@ export type CompletePasswordParams = {
   current_password: string;
 };
 
-type SetupMFAParams = {
+export type SetupMFAParams = {
   command: 'setup' | 'verify';
   mfa_token?: string;
 };
 
-type VerifyMFAParams = {
+export type VerifyMFAParams = {
   mfa_token: string;
 };
 
-type ForgotPasswordParams = {
+export type ForgotPasswordParams = {
   command: 'request' | 'reset';
   email?: string;
   password?: string;
@@ -75,9 +75,10 @@ export const awsSignIn = async ({ queryKey }) => {
   return response.data;
 };
 
-export const getEndUserAgreement = () => {
+export const getEndUserAgreement = async () => {
   const url = `${V3_API_URL}/legal/agreements/eula`;
-  return axios.get(url);
+  const response = await axios.get(url);
+  return response.data;
 };
 
 export const acceptEndUserAgreement = () => {

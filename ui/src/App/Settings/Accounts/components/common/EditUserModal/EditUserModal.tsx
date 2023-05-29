@@ -22,6 +22,7 @@ import { Chip } from 'reablocks';
 import { Divider } from 'shared/elements/Divider';
 import { useMutation } from '@tanstack/react-query';
 import styles from './EditUserModal.module.css';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 type UpdateUserParams = {
   data: { id: string; email?: string; username?: string };
@@ -54,16 +55,16 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [searchValue, setSearchValue] = useState('');
 
-  const updateUserMutation = useMutation({
+  const { mutateAsync: updateUserMutation } = useMutation({
     mutationFn: (userData: UpdateUserParams) =>
       updateUser(userData.data, userData.action)
   });
 
-  const createUserGroupsMutation = useMutation({
+  const { mutateAsync: createUserGroupsMutation } = useMutation({
     mutationFn: (data: CreateUserGroupsParams) => createGroupMemberships(data)
   });
 
-  const searchMutation = useMutation({
+  const { mutateAsync: searchMutation } = useMutation({
     mutationFn: (search: string) => {
       const query = {
         filter: {
@@ -108,7 +109,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
       reseActions();
       setIsLoading(true);
       try {
-        await updateUserMutation.mutateAsync({
+        await updateUserMutation({
           data: {
             id: user.id
           },
@@ -132,7 +133,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
     async ({ email, username }) => {
       reseActions();
       try {
-        await updateUserMutation.mutateAsync({
+        await updateUserMutation({
           data: {
             id: user.id,
             email,
@@ -165,7 +166,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
       }
       setIsSearching(true);
       try {
-        const res = await searchMutation.mutateAsync(value);
+        const res = await searchMutation(value);
         setSearchResults(res.data.data);
       } catch (error) {
         // TODO: Properly handle error
@@ -180,7 +181,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
     reseActions();
     setIsUpdatingGroups(true);
     try {
-      await createUserGroupsMutation.mutateAsync({
+      await createUserGroupsMutation({
         users: [user.email],
         groups: userGroups
       });
@@ -231,33 +232,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
               fullWidth
             />
           )}
-          <br />
-          <div className={styles.actions}>
-            <Button
-              color="secondary"
-              variant="outline"
-              size="small"
-              disabled={isLoading}
-              onClick={() =>
-                resetUserCredentials(UPDATE_USER_ACTIONS.RESET_PASSWORD)
-              }
-              fullWidth
-            >
-              Reset Password
-            </Button>
-            <Button
-              color="secondary"
-              variant="outline"
-              size="small"
-              disabled={isLoading}
-              onClick={() =>
-                resetUserCredentials(UPDATE_USER_ACTIONS.RESET_MFA)
-              }
-              fullWidth
-            >
-              Reset MFA
-            </Button>
-          </div>
+          <LineBreak size="small" />
           <form onSubmit={handleSubmit(onSubmit)}>
             <Block disableLabelPadding label="Username" required></Block>
             <Input
@@ -270,7 +245,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
             {errors?.username && touchedFields.username && (
               <p>{errors.username.message}</p>
             )}
-            <br />
+            <LineBreak />
             <Block disableLabelPadding label="Email" required></Block>
             <Input
               fullWidth
@@ -282,7 +257,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
             {errors?.email && touchedFields.email && (
               <p>{errors.email.message}</p>
             )}
-            <br />
+            <LineBreak />
             <Button
               size="small"
               type="submit"
@@ -292,7 +267,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
               {isSubmitting ? 'Updating User...' : 'Update User'}
             </Button>
           </form>
-
+          <LineBreak />
           <div className={styles.userGroups}>
             <Block disableLabelPadding label="Add Groups" required></Block>
             <Search
@@ -326,6 +301,34 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
               onClick={updateGroupMemberships}
             >
               Update Group Memberships
+            </Button>
+          </div>
+          <LineBreak />
+          <div className={styles.actions}>
+            <Button
+              color="secondary"
+              variant="outline"
+              size="small"
+              disabled={isLoading}
+              onClick={() =>
+                resetUserCredentials(UPDATE_USER_ACTIONS.RESET_PASSWORD)
+              }
+              fullWidth
+            >
+              Reset Password
+            </Button>
+            <Divider orientation="vertical" />
+            <Button
+              color="secondary"
+              variant="outline"
+              size="small"
+              disabled={isLoading}
+              onClick={() =>
+                resetUserCredentials(UPDATE_USER_ACTIONS.RESET_MFA)
+              }
+              fullWidth
+            >
+              Reset MFA
             </Button>
           </div>
         </div>

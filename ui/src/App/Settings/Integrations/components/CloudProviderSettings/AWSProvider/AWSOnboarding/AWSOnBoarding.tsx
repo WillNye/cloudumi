@@ -19,6 +19,8 @@ import classNames from 'classnames';
 import AWSMxNetImg from 'assets/vendor/mx-net.svg';
 import AWSCacheImg from 'assets/vendor/cdk.svg';
 import styles from './AWSOnBoarding.module.css';
+import { LineBreak } from 'shared/elements/LineBreak';
+import { useQuery } from '@tanstack/react-query';
 
 const OnBoarding = () => {
   const { CONNECTION_METHOD, CONFIGURE, CREATE_STACK, STATUS } =
@@ -31,9 +33,15 @@ const OnBoarding = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isHubAccount, setIsHubAccount] = useState(true);
 
-  useEffect(() => {
-    getAccountDetails();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const { isLoading: isFetchingData } = useQuery({
+    queryFn: getHubAccounts,
+    queryKey: ['getHubAccounts'],
+    onSuccess: data => {
+      if (data && data.count) {
+        setIsHubAccount(false);
+      }
+    }
+  });
 
   const handleModeChange = ({ target: { value } }) => setSelectedMode(value);
 
@@ -43,16 +51,6 @@ const OnBoarding = () => {
     if (ACCOUNT_NAME_REGEX.test(value)) {
       setAccountName(value);
     }
-  };
-
-  const getAccountDetails = async () => {
-    setIsLoading(true);
-    const resJson = await getHubAccounts();
-    const data = resJson.data;
-    if (data && data.count) {
-      setIsHubAccount(false);
-    }
-    setIsLoading(false);
   };
 
   const activeSection = useMemo(() => {
@@ -88,9 +86,9 @@ const OnBoarding = () => {
   const overLayClasses = useMemo(
     () =>
       classNames(styles.loaderOverlay, {
-        [styles.disabled]: !isLoading
+        [styles.disabled]: !isLoading || !isFetchingData
       }),
-    [isLoading]
+    [isLoading, isFetchingData]
   );
 
   const isNextDisabled = useMemo(() => {
@@ -101,9 +99,7 @@ const OnBoarding = () => {
     () => (
       <div className={styles.connectingAccount}>
         <h2>Successfully Connected</h2>
-        <br />
-        <br />
-        <br />
+        <LineBreak size="large" />
         <div>
           <div className={styles.loaderActions}>
             <img src={AWSCacheImg} className={styles.icon} />
@@ -115,8 +111,7 @@ const OnBoarding = () => {
               </p>
             </div>
           </div>
-          <br />
-          <br />
+          <LineBreak size="large" />
           <div className={styles.loaderActions}>
             <img src={AWSMxNetImg} className={styles.icon} />
             <div>

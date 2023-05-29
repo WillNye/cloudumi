@@ -135,6 +135,7 @@ module "tenant_container_service" {
   attributes                         = var.attributes
   capacity_providers                 = var.capacity_providers
   cloudumi_files_bucket              = module.tenant_s3_service.cloudumi_bucket_name
+  cloudumi_temp_files_bucket         = module.tenant_s3_service.cloudumi_temp_files_bucket_name
   cluster_id                         = local.cluster_id
   container_insights                 = var.container_insights
   lb_port                            = var.lb_port

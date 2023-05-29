@@ -17,6 +17,7 @@ const iconMap = Object.keys(iconPaths).reduce((pathMap, iconPath) => {
 
 export interface IconProps extends React.SVGAttributes<HTMLOrSVGElement> {
   size?: 'small' | 'medium' | 'large';
+  disablePadding?: boolean;
 }
 
 const ICON_SIZES = {
@@ -40,6 +41,7 @@ export const Icon: React.FC<IconProps> = ({
   size,
   width,
   height,
+  disablePadding = false,
   ...rest
 }) => {
   const SVGIcon = useMemo(() => iconMap[name], [name]);
@@ -60,7 +62,11 @@ export const Icon: React.FC<IconProps> = ({
   }
 
   return (
-    <span className={classNames(className, styles.icon)}>
+    <span
+      className={classNames(className, styles.icon, {
+        [styles.disablePadding]: disablePadding
+      })}
+    >
       <Suspense fallback={null}>
         <SVGIcon {...rest} width={iconSizes.width} height={iconSizes.height} />
       </Suspense>

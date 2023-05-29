@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, and_
+from sqlalchemy import Column, DateTime, Integer, String, and_
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import select
 
@@ -16,6 +16,7 @@ class Tenant(SoftDeleteMixin, Base):
         "Group", back_populates="tenant", cascade="all, delete-orphan"
     )
     users = relationship("User", back_populates="tenant", cascade="all, delete-orphan")
+    iambic_templates_last_parsed = Column(DateTime, nullable=True)
 
     @classmethod
     async def get_by_id(cls, tenant_id):
@@ -52,6 +53,13 @@ class Tenant(SoftDeleteMixin, Base):
                 await session.delete(self)
                 await session.commit()
         return True
+
+    async def write(self):
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                session.add(self)
+                await session.commit()
+            return True
 
     @classmethod
     async def get_by_name(cls, tenant_name, session=None):

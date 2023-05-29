@@ -15,6 +15,7 @@ import { removeUserAccount } from './utils';
 import { Checkbox } from 'shared/form/Checkbox';
 import { Notification, NotificationType } from 'shared/elements/Notification';
 import styles from '../AWSProvider.module.css';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 const SpokeAccountUsers = ({ category, setValue, labels }) => (
   <div>
@@ -76,7 +77,7 @@ export const SpokeAccountModal = ({ defaultValues, aws }) => {
   }, []);
 
   const handleClick = useCallback(() => {
-    navigate('/settings/integrations/aws');
+    navigate('/settings/integrations/aws/onboarding');
   }, [navigate]);
 
   if (defaultValues) {
@@ -98,18 +99,18 @@ export const SpokeAccountModal = ({ defaultValues, aws }) => {
             fullWidth
           />
         )}
-        <br />
+        <LineBreak />
         <form onSubmit={handleSubmit(onSubmit)}>
           <div>
             <Block>Account Name</Block>
             <Input {...register('account_name', { required: true })} />
           </div>
-          <br />
+          <LineBreak />
           <div className={styles.customCheckbox}>
             <Checkbox {...register('delegate_admin_to_owner')} />
             <Block>Delegate Policy Request Administration to Owner</Block>
           </div>
-          <br />
+          <LineBreak />
           <div>
             <Block>Account Owners</Block>
             <Input
@@ -140,19 +141,19 @@ export const SpokeAccountModal = ({ defaultValues, aws }) => {
                 </Button>
               }
             />
-            <br />
+            <LineBreak />
             <SpokeAccountUsers
               category="owners"
               labels={fields.owners || []}
               setValue={setValue}
             />
           </div>
-          <br />
+          <LineBreak />
           <div className={styles.customCheckbox}>
             <Checkbox {...register('restrict_viewers_of_account_resources')} />
             <Block>Restrict Viewers of Account Resources</Block>
           </div>
-          <br />
+          <LineBreak />
           <div>
             <Block disableLabelPadding>Account Viewers</Block>
             <Input
@@ -183,14 +184,14 @@ export const SpokeAccountModal = ({ defaultValues, aws }) => {
                 </Button>
               }
             />
-            <br />
+            <LineBreak />
             <SpokeAccountUsers
               category="viewers"
               labels={fields.viewers || []}
               setValue={setValue}
             />
           </div>
-          <br />
+          <LineBreak />
           <Button type="submit" disabled={!isReady || isLoading}>
             {isLoading ? 'Loading...' : 'Submit'}
           </Button>
@@ -206,7 +207,7 @@ export const SpokeAccountModal = ({ defaultValues, aws }) => {
           <p style={{ textAlign: 'center' }}>
             You cannot connect your Spoke Accounts before having a Hub Account
             connected.
-            <br />
+            <LineBreak />
             <strong>
               If you already did, please try to refresh the screen.
             </strong>
@@ -232,7 +233,7 @@ export const SpokeAccountModal = ({ defaultValues, aws }) => {
             assume the spoke role on *account_b*. It will write the IAM policy
             from the spoke role on *account_b*.
           </p>
-          <br />
+          <LineBreak />
           <Button onClick={handleClick} fullWidth>
             Proceed
           </Button>

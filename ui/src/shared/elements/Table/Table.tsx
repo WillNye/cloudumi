@@ -13,6 +13,7 @@ import { Loader } from '../Loader';
 import { EmptyState } from '../EmptyState';
 import { Checkbox } from 'shared/form/Checkbox';
 import { Pagination } from '../Pagination';
+import { LineBreak } from '../LineBreak';
 
 interface TableProps<T, D> {
   spacing?: 'expanded' | 'compact';
@@ -202,14 +203,16 @@ export const Table = <T, D>({
           </tbody>
         )}
       </table>
-      <br />
       {shouldShowPagination && (
-        <Pagination
-          pageSize={pageSize}
-          pageIndex={pageIndex}
-          totalCount={totalCount}
-          handleOnPageChange={handleOnPageChange}
-        />
+        <>
+          <LineBreak />
+          <Pagination
+            pageSize={pageSize}
+            pageIndex={pageIndex}
+            totalCount={totalCount}
+            handleOnPageChange={handleOnPageChange}
+          />
+        </>
       )}
     </>
   );
