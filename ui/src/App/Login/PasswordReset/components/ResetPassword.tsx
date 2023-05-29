@@ -10,9 +10,10 @@ import { PasswordMeter } from 'shared/elements/PasswordMeter';
 import { Block } from 'shared/layout/Block';
 import { Button } from 'shared/elements/Button';
 import { Input } from 'shared/form/Input';
-import { resetPassword } from 'core/API/auth';
+import { ForgotPasswordParams, resetPassword } from 'core/API/auth';
 import { LineBreak } from 'shared/elements/LineBreak';
 import styles from '../PasswordReset.module.css';
+import { useMutation } from '@tanstack/react-query';
 
 interface ResetPasswordProps {
   token: string;
@@ -29,6 +30,11 @@ export const ResetPassword: FC<ResetPasswordProps> = ({ token }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const navigate = useNavigate();
+
+  const { mutateAsync: resetPasswordMutation } = useMutation({
+    mutationFn: (formData: ForgotPasswordParams) => resetPassword(formData),
+    mutationKey: ['resetPassword']
+  });
 
   const {
     register,
@@ -50,7 +56,7 @@ export const ResetPassword: FC<ResetPasswordProps> = ({ token }) => {
   const onSubmit = useCallback(
     async ({ newPassword }) => {
       try {
-        await resetPassword({
+        await resetPasswordMutation({
           token,
           command: 'reset',
           password: newPassword
@@ -65,7 +71,7 @@ export const ResetPassword: FC<ResetPasswordProps> = ({ token }) => {
         );
       }
     },
-    [token, navigate]
+    [token, navigate, resetPasswordMutation]
   );
 
   return (

@@ -8,8 +8,8 @@ from common.config import config
 
 
 class TenantConfig:
-    def __init__(self, tenant):
-        self.tenant = tenant
+    def __init__(self, tenant: str):
+        self.tenant: str = tenant
 
     def get_tenant_or_global_config_var(self, config_str, default=None) -> Any:
         """Get a config variable from the tenant config. If it doesn't

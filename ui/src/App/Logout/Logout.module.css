@@ -1,0 +1,18 @@
+.container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+
+  .title {
+    padding-top: var(--spacing-lg);
+  }
+
+  .text {
+    color: var(--gray-300);
+    padding: var(--spacing-md);
+  }
+}

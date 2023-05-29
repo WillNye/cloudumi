@@ -1,3 +1,4 @@
+import { LineBreak } from '../LineBreak';
 import { Tooltip } from './Tooltip';
 
 export default {
@@ -11,15 +12,15 @@ export const Basic = () => {
       <Tooltip text="This is a left tooltip" alignment="left">
         <div>Left</div>
       </Tooltip>
-      <br />
+      <LineBreak />
       <Tooltip text="This is a right tooltip" alignment="right">
         <div>Right</div>
       </Tooltip>
-      <br />
+      <LineBreak />
       <Tooltip text="This is a bottom tooltip" alignment="bottom">
         <div>Bottom</div>
       </Tooltip>
-      <br />
+      <LineBreak />
       <Tooltip text="This is a top tooltip" alignment="top">
         Top
       </Tooltip>

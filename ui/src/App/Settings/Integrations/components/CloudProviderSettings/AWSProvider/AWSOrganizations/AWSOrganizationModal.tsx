@@ -11,46 +11,47 @@ import { Segment } from 'shared/layout/Segment';
 import { SpokeAccount } from '../SpokeAccounts/types';
 import { Select, SelectOption } from 'shared/form/Select';
 import { Notification, NotificationType } from 'shared/elements/Notification';
+import { LineBreak } from 'shared/elements/LineBreak';
+import { useQuery } from '@tanstack/react-query';
 import styles from '../AWSProvider.module.css';
 
+const formatSpokeAccount = data => {
+  if (data?.account_id) {
+    return `${data.account_name || ''} - ${data.account_id}`;
+  }
+  return '';
+};
+
 export const SelectAccount = ({
-  register,
   label,
   options = [],
-  onOptionsLoad
+  onOptionsLoad,
+  onChange,
+  value
 }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [spokeAccounts, setSpokeAccounts] = useState<SpokeAccount[]>([]);
 
-  useEffect(() => {
-    getAllSpokeAccounts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const getAllSpokeAccounts = useCallback(async () => {
-    setErrorMessage(null);
-    setIsLoading(true);
-    try {
-      const res = await getSpokeAccounts();
-      const resData = res?.data?.data;
+  const { isLoading } = useQuery({
+    queryFn: getSpokeAccounts,
+    queryKey: ['getSpokeAccounts'],
+    onSuccess: response => {
+      const resData = response?.data;
       setSpokeAccounts(resData);
-      setIsLoading(false);
-      onOptionsLoad && onOptionsLoad();
-    } catch (error) {
-      const err = error as AxiosError;
+      onOptionsLoad?.();
+    },
+    onError: (err: AxiosError) => {
       const errorRes = err?.response;
       const errorMsg = extractErrorMessage(errorRes?.data);
       setErrorMessage(
         errorMsg || 'An error occurred while getting spoke accounts'
       );
-      setIsLoading(false);
     }
-  }, [onOptionsLoad]);
+  });
 
   const handleOptions = (data: SpokeAccount[]) => {
     if (data) {
-      return data.map(i => `${i.account_name || ''} - ${i.account_id}`);
+      return data.map(account => formatSpokeAccount(account));
     }
     return options;
   };
@@ -60,7 +61,12 @@ export const SelectAccount = ({
       <Block disableLabelPadding required>
         {label}
       </Block>
-      <Select {...register} disabled={isLoading || !spokeAccounts.length}>
+      <Select
+        name="account_name"
+        disabled={isLoading || !spokeAccounts.length}
+        onChange={onChange}
+        value={value}
+      >
         {!spokeAccounts.length && (
           <SelectOption value="">
             You need at least one Spoke Account to proceed.
@@ -70,9 +76,9 @@ export const SelectAccount = ({
           <SelectOption value="">Select provider type</SelectOption>
         )}
         {!isLoading ? (
-          handleOptions(spokeAccounts).map((value, index) => (
-            <SelectOption key={index} value={value}>
-              {value}
+          handleOptions(spokeAccounts).map((account, index) => (
+            <SelectOption key={index} value={account}>
+              {account}
             </SelectOption>
           ))
         ) : (
@@ -87,6 +93,9 @@ export const AWSOrganizationModal = ({ defaultValues }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [accountName, setAccountName] = useState(
+    formatSpokeAccount(defaultValues)
+  );
 
   const { register, handleSubmit, watch, setValue } = useForm({
     defaultValues
@@ -95,31 +104,40 @@ export const AWSOrganizationModal = ({ defaultValues }) => {
   const fields = watch();
 
   const isReady = useMemo(() => {
-    return Boolean(fields.org_id && fields.account_name && fields.owner);
-  }, [fields]);
+    return Boolean(fields.org_id && fields.owner && accountName);
+  }, [fields, accountName]);
 
-  const onSubmit = useCallback(async data => {
-    const name = data.account_name.split(' - ');
-    data.account_name = name[0];
-    data.account_id = name[1];
+  const onSubmit = useCallback(
+    async data => {
+      if (!accountName) {
+        return;
+      }
 
-    setErrorMessage(null);
-    setIsLoading(true);
-    try {
-      await updateAWSOrganization(data);
-      setIsLoading(false);
-      setSuccessMessage('Successfully updated AWS Organization');
-    } catch (error) {
-      const err = error as AxiosError;
-      const errorRes = err?.response;
-      const errorMsg = extractErrorMessage(errorRes?.data);
-      setErrorMessage(errorMsg || 'An error occurred while adding hub account');
-      setIsLoading(false);
-    }
-  }, []);
+      const name = accountName.split(' - ');
+      data.account_name = name[0];
+      data.account_id = name[1];
+
+      setErrorMessage(null);
+      setIsLoading(true);
+      try {
+        await updateAWSOrganization(data);
+        setIsLoading(false);
+        setSuccessMessage('Successfully updated AWS Organization');
+      } catch (error) {
+        const err = error as AxiosError;
+        const errorRes = err?.response;
+        const errorMsg = extractErrorMessage(errorRes?.data);
+        setErrorMessage(
+          errorMsg || 'An error occurred while adding hub account'
+        );
+        setIsLoading(false);
+      }
+    },
+    [accountName]
+  );
 
   const onOptionsLoad = useCallback(() => {
-    if (defaultValues.account_name) {
+    if (defaultValues?.account_name) {
       setValue('account_name', defaultValues.account_name);
       setValue('ord_id', defaultValues.org_id);
     }
@@ -143,24 +161,27 @@ export const AWSOrganizationModal = ({ defaultValues }) => {
           fullWidth
         />
       )}
-      <br />
+      <LineBreak />
       <form onSubmit={handleSubmit(onSubmit)}>
         <div>
           <Block disableLabelPadding>Organization Id</Block>
           <Input {...register('org_id', { required: true })} />
         </div>
-        <br />
+        <LineBreak />
         <SelectAccount
           label="Spoke Account Name and Id"
-          register={{ ...register('account_name', { required: true }) }}
           onOptionsLoad={onOptionsLoad}
+          onChange={value => {
+            setAccountName(value);
+          }}
+          value={accountName}
         />
-        <br />
+        <LineBreak />
         <div>
           <Block disableLabelPadding>Owner</Block>
           <Input {...register('owner', { required: true })} />
         </div>
-        <br />
+        <LineBreak />
         <div className={styles.customCheckbox}>
           <Checkbox
             {...register('automatically_onboard_accounts', { required: false })}

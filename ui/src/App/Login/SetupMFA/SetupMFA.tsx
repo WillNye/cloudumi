@@ -5,7 +5,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { QRCode } from 'shared/elements/QRCode';
 import { AuthCode } from 'shared/form/AuthCode';
 import { ReactComponent as Logo } from 'assets/brand/mark.svg';
-import { setupMFA } from 'core/API/auth';
+import { SetupMFAParams, setupMFA } from 'core/API/auth';
 import { extractErrorMessage } from 'core/API/utils';
 import { AxiosError } from 'axios';
 import { Loader } from 'shared/elements/Loader';
@@ -13,6 +13,7 @@ import { Notification, NotificationType } from 'shared/elements/Notification';
 import { LineBreak } from 'shared/elements/LineBreak';
 
 import styles from './SetupMFA.module.css';
+import { useMutation } from '@tanstack/react-query';
 
 export const SetupMFA: FC = () => {
   const [totpCode, setTotpCode] = useState<Record<string, string>>();
@@ -25,6 +26,11 @@ export const SetupMFA: FC = () => {
 
   const navigate = useNavigate();
 
+  const { mutateAsync: setupMFAMutation } = useMutation({
+    mutationFn: (formData: SetupMFAParams) => setupMFA(formData),
+    mutationKey: ['setupMFA']
+  });
+
   const isMounted = useRef(false);
 
   const mfaSetupRequired = useMemo(() => user?.mfa_setup_required, [user]);
@@ -32,7 +38,7 @@ export const SetupMFA: FC = () => {
   const getTOTPCode = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await setupMFA({
+      const res = await setupMFAMutation({
         command: 'setup'
       });
       setTotpCode(res.data.data);
@@ -44,7 +50,7 @@ export const SetupMFA: FC = () => {
       setErrorMessage(errorMsg || 'Unable to setup MFA');
       setIsLoading(false);
     }
-  }, []);
+  }, [setupMFAMutation]);
 
   useEffect(() => {
     if (!isMounted.current && mfaSetupRequired) {
@@ -57,7 +63,7 @@ export const SetupMFA: FC = () => {
     async (val: string) => {
       setIsSubmitting(true);
       try {
-        await setupMFA({
+        await setupMFAMutation({
           command: 'verify',
           mfa_token: val
         });
@@ -72,7 +78,7 @@ export const SetupMFA: FC = () => {
         setIsSubmitting(false);
       }
     },
-    [getUser, navigate]
+    [getUser, navigate, setupMFAMutation]
   );
 
   if (errorMessage) {
@@ -103,7 +109,7 @@ export const SetupMFA: FC = () => {
             <QRCode value={totpCode?.totp_uri ?? ''} />
             <LineBreak size="large" />
             <div>or use manual code</div>
-            <div className={styles.box}>
+            <div className={styles.box} data-testid="manual-code">
               <pre>{totpCode?.mfa_secret}</pre>
             </div>
             <LineBreak />

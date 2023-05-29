@@ -1,26 +1,26 @@
 import axios from '../Axios';
 import { V1_API_URL, V2_API_URL, V3_API_URL, V4_API_URL } from './constants';
 
-type LoginParams = {
+export type LoginParams = {
   email: string;
   password: string;
 };
 
-type CompletePasswordParams = {
+export type CompletePasswordParams = {
   new_password: string;
   current_password: string;
 };
 
-type SetupMFAParams = {
+export type SetupMFAParams = {
   command: 'setup' | 'verify';
   mfa_token?: string;
 };
 
-type VerifyMFAParams = {
+export type VerifyMFAParams = {
   mfa_token: string;
 };
 
-type ForgotPasswordParams = {
+export type ForgotPasswordParams = {
   command: 'request' | 'reset';
   email?: string;
   password?: string;
@@ -32,10 +32,9 @@ export const login = (data: LoginParams) => {
   return axios.post(url, data);
 };
 
-// Not yet implemented in the backend
 export const logout = () => {
-  const url = `${V2_API_URL}/logout`;
-  return axios.post(url);
+  const url = `${V4_API_URL}/logout`;
+  return axios.get(url);
 };
 
 export const setupMFA = (data: SetupMFAParams) => {
@@ -76,12 +75,19 @@ export const awsSignIn = async ({ queryKey }) => {
   return response.data;
 };
 
-export const getEndUserAgreement = () => {
+export const getEndUserAgreement = async () => {
   const url = `${V3_API_URL}/legal/agreements/eula`;
-  return axios.get(url);
+  const response = await axios.get(url);
+  return response.data;
 };
 
 export const acceptEndUserAgreement = () => {
   const url = `${V3_API_URL}/tenant/details/eula`;
   return axios.post(url);
+};
+
+export const checkPasswordComplexity = async data => {
+  const url = `${V4_API_URL}/users/password/complexity`;
+  const response = await axios.post(url, data);
+  return response.data;
 };

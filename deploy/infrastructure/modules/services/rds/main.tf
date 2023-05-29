@@ -86,6 +86,7 @@ resource "aws_rds_cluster_instance" "cluster_instances" {
   performance_insights_enabled    = true
   monitoring_role_arn             = aws_iam_role.rds_monitoring_role.arn
   monitoring_interval             = 30
+
   lifecycle {
     ignore_changes = [
       cluster_identifier,

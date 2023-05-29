@@ -69,5 +69,5 @@ module.exports = {
     'eol-last': 0,
     'no-duplicate-imports': 0
   },
-  ignorePatterns: ['!.storybook']
+  ignorePatterns: ['!.storybook', 'dist']
 };

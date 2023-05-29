@@ -60,7 +60,7 @@ const CreateAWSStack = ({
 
       <div>
         <Button primary onClick={handleClick}>
-          Login to {accountName}
+          Open URL for {accountName}
         </Button>
         <CopyButton value={cloudFormationUrl} />
       </div>

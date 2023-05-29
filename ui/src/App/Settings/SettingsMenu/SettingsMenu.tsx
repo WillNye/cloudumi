@@ -8,8 +8,11 @@ import {
   BREAD_CRUMBS_SETTINGS_PATH
 } from './constants';
 import { Breadcrumbs } from 'shared/elements/Breadcrumbs';
+import { useAuth } from 'core/Auth';
 
 const SettingsMenu: FC = () => {
+  const { user } = useAuth();
+
   const isMyProfilePath = useMatch('/settings');
   const isIntegrationsPath = useMatch('/settings/integrations');
   const isAccountsPath = useMatch('/settings/user_management');
@@ -39,20 +42,24 @@ const SettingsMenu: FC = () => {
               >
                 <Link to="/settings">My Profile</Link>
               </li>
-              <li
-                className={`${styles.navItem} ${
-                  isIntegrationsPath && styles.isActive
-                }`}
-              >
-                <Link to="/settings/integrations">Integrations</Link>
-              </li>
-              <li
-                className={`${styles.navItem} ${
-                  isAccountsPath && styles.isActive
-                }`}
-              >
-                <Link to="/settings/user_management">User Management</Link>
-              </li>
+              {user.is_admin && (
+                <>
+                  <li
+                    className={`${styles.navItem} ${
+                      isIntegrationsPath && styles.isActive
+                    }`}
+                  >
+                    <Link to="/settings/integrations">Integrations</Link>
+                  </li>
+                  <li
+                    className={`${styles.navItem} ${
+                      isAccountsPath && styles.isActive
+                    }`}
+                  >
+                    <Link to="/settings/user_management">User Management</Link>
+                  </li>
+                </>
+              )}
             </ul>
           </nav>
         </div>

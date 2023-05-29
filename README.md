@@ -114,21 +114,33 @@ Then run Zipkin: `docker run -d -p 9411:9411 openzipkin/zipkin`
 
 Start the API, browse to Noq, then view traces at http://localhost:9411/
 
-## Troubleshooting in Container
+## Using ecsgo for Staging and Production Environments
 
-Install ecsgo from the official repo and connect to the containers: https://github.com/tedsmitt/ecsgo
+[ecsgo](https://github.com/tedsmitt/ecsgo) is a utility that allows you to quickly switch between and connect to Amazon ECS clusters. To use `ecsgo` with your staging and production environments, follow these steps:
 
-To connect to the containers:
+### Prerequisites
 
-```bash
-AWS_REGION=us-west-2
-AWS_DEFAULT_REGION=us-west-2
-AWS_PROFILE=staging/staging_admin ecsgo
-# For prod
-AWS_PROFILE=prod/prod_admin ecsgo
-```
+1. Make sure you have the [AWS CLI](https://aws.amazon.com/cli/) installed and configured with the appropriate credentials for the `staging/staging_admin` or `prod/prod_admin` profiles.
 
-Select the appropriate cluster, service, and tasks to connect to the container of your choice.
+2. Install `ecsgo` by following the instructions in its [GitHub repository](https://github.com/tedsmitt/ecsgo).
+
+### Using ecsgo with Makefile Commands
+
+1. Clone your project repository and navigate to the project directory.
+
+2. Run one of the following `make` commands to use `ecsgo` with the desired environment:
+
+   - Staging environment:
+
+     ```bash
+     make ecsgo-staging
+     ```
+
+   - Production environment:
+
+     ```bash
+     make ecsgo-prod
+     ```
 
 ### Update your local database
 
@@ -144,24 +156,81 @@ Here are the steps to follow to update your local database:
 
 # Note: For Kayizzi, this didn't work for removing his database, you may want to manually delete the `noq` database using DBeaver or PG Admin
 
-# PG Admin runs on localhost:8080 through the Docker-Compose file.
+# PG Admin runs on localhost:8008 through the Docker-Compose file.
 
 3. docker-compose -f deploy/docker-compose-dependencies.yaml up -d
 4. (In VSCode) Alembic Upgrade Head
 5. (In VSCode) Update Local Config and Populate Redis
 
-### Connecting to Celery Flower
+## Connecting to Celery Flower
 
 Celery Flower contains a web interface that details Celery task status.
-To connect to the web interface, install [ecs-tunnel](https://github.com/alastairmccormack/ecs-tunnel) and run the following command (Replace the cluster and task IDs as appropriate)
+To connect to the web interface, install [ecs-tunnel](https://github.com/alastairmccormack/ecs-tunnel) and follow
+the steps below:
 
-```bash
-AWS_PROFILE=staging/staging_admin ecs-tunnel -L 7101:7101 -c staging-noq-dev-shared-staging-1 -t 4ef8875d30b24f3db9e0d0f6cb8b5619 --region us-west-2
-```
+### Prerequisites
 
-```bash
-AWS_PROFILE=prod/prod_admin ecs-tunnel -L 7101:7101 -c noq-dev-shared-prod-1 -t 6a26122f6fdb4aeda3fdb3b62124b70e --region us-west-2
-```
+1. Make sure you have the [AWS CLI](https://aws.amazon.com/cli/) installed and configured with the appropriate credentials for the `staging/staging_admin` or `prod/prod_admin` profiles.
+
+2. Install the `ecs-tunnel` utility using `pip`:
+
+   ```bash
+   pip3 install ecs-tunnel
+   ```
+
+   For more details about `ecs-tunnel`, visit its [PyPI page](https://pypi.org/project/ecs-tunnel/).
+
+### Connecting to the Celery Flower Web Interface
+
+1. Run the following `make` command to create a tunnel from your local machine to the Celery Flower service in the staging or production environment:
+
+   - Staging environment:
+
+     ```bash
+     make ecs-tunnel-staging-celery-flower
+     ```
+
+   - Production environment:
+
+     ```bash
+     make ecs-tunnel-prod-celery-flower
+     ```
+
+2. Open your web browser and navigate to `http://localhost:7101` to access the Celery Flower web interface.
+
+## Setting up ecs-tunnel and Connecting to the Fargate Task
+
+The `ecs-tunnel` utility is used to create a tunnel between your local machine and a specific Fargate task in the staging environment. To set up `ecs-tunnel` and use the provided `Makefile` command, follow these steps:
+
+### Prerequisites
+
+1. Make sure you have the [AWS CLI](https://aws.amazon.com/cli/) installed and configured with the appropriate credentials for the `staging/staging_admin` profile.
+
+2. Install the `ecs-tunnel` utility using `pip`:
+
+   ```
+   pip3 install ecs-tunnel
+   ```
+
+   For more details about `ecs-tunnel`, visit its [PyPI page](https://pypi.org/project/ecs-tunnel/).
+
+Here is the updated README snippet with instructions to run `make ecs-tunnel-staging-ssh` and the SSH command and password to connect:
+
+### Connecting to the Fargate Task
+
+1. Run the following `make` command to set the SSH password and create an SSH tunnel from your local machine to the Fargate task:
+
+   ```bash
+   make ecs-tunnel-staging-ssh
+   ```
+
+2. The command will output the SSH connection details. Use the provided SSH command and password to connect to the Fargate task:
+
+   ```bash
+   ssh root@127.0.0.1 -p 2222
+   ```
+
+   Password: TEMP_PASS
 
 ### Connecting to Postgres DB in a cluster (TODO)
 
@@ -234,10 +303,19 @@ our normal deployment process. The [Cookie-Editor](https://cookie-editor.cgagnie
 3. Refresh the page
    ==> Voila! The new UI should load.
 
-## Testing changes in staging
+## Testing Changes in Staging
 
-The staging API container runs with watchdog and watchmedo (links needed), which will automatically restart the api server
-whenever any python files under /app/api are modified. If you are making other changes, you can just add a `#` (empty comment) on
-the top of `/app/api/__main__.py` to force a restart.
+The staging API container uses [watchdog](https://pypi.org/project/watchdog/) and watchmedo to automatically restart the API server whenever any Python files under /app/api are modified. This allows for faster development and testing of changes in the staging environment.
 
-You can verify the restart of the container in Cloudwatch logs.
+Triggering a Restart
+If you're making changes that don't involve Python files under /app/api, you can still trigger a restart by adding an empty comment (#) at the top of /app/api/**main**.py. This will be treated as a modification and cause the API server to restart.
+
+Verifying Restart in CloudWatch Logs
+To confirm that the container has restarted, you can check the log events in Amazon CloudWatch Logs. Follow these steps:
+
+Sign in to the AWS Management Console and open the CloudWatch console.
+In the navigation pane, choose Logs > Log groups.
+Locate and select the log group for your staging API container (usually named as {{ ecs_cluster_name }}).
+Choose the appropriate log stream (typically prefixed with "web" if you followed the awslogs-stream-prefix configuration in your task definition).
+Look for log events indicating the restart of the API server. You can also use CloudWatch Logs Insights to query and analyze the logs for specific patterns or events related to the restart.
+By using watchdog and watchmedo in the staging environment, you can quickly test and iterate on changes without having to manually restart the API server or rebuild the entire container.

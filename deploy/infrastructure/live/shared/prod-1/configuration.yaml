@@ -46,6 +46,8 @@ _global_:
       role_arn: arn:aws:iam::894599878328:role/ZelkovaAnalysisRole
   s3_buckets:
     legal_docs: noq-global-prod-legal-docs
+    temp_files: cloudumi-temp-files-noq-dev-shared-prod-1
+  slack_webhook_url: "A_SECRET"
   deployment:
     domain_name: "*.noq.dev"
     namespace: shared

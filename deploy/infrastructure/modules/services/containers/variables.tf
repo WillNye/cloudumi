@@ -9,6 +9,11 @@ variable "attributes" {
   default     = 1
 }
 
+variable "cloudumi_temp_files_bucket" {
+  description = "Bucket for storing temporary files"
+  type        = string
+}
+
 variable "bucket_encryption_key" {
   description = "KMS key used to encrypt bucket objects"
   type        = string

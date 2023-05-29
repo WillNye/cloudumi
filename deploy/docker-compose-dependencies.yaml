@@ -29,7 +29,7 @@ services:
     ports:
       - "8005:8005"
     volumes:
-      - ./dynamodb-data:/data:delegated
+      - cloudumi-dynamodb:/data:delegated
 
   cloudumi-dynamodb_admin:
     container_name: cloudumi-dynamodb-admin
@@ -48,7 +48,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - cloudumi-pg-githubpr:/data:delegated
+      - cloudumi-pg:/data:delegated
 
   cloudumi-pg-admin:
     image: adminer
@@ -58,7 +58,7 @@ services:
 volumes:
   cloudumi-pg:
   cloudumi-redis:
-  cloudumi-pg-githubpr:
+  cloudumi-dynamodb:
 
   # redis-cluster:
   #   image: noqdev/redis-cluster
@@ -162,4 +162,6 @@ networks:
   cloudumi-redis-data:
     driver: bridge
   cloudumi-localstack:
+    driver: bridge
+  cloudumi-pg:
     driver: bridge
