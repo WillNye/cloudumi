@@ -10,6 +10,17 @@ async def save_iambic_repos(tenant: str, iambic_repos: list[IambicRepoDetails]):
     ).from_model(iambic_repos).store_list()
 
 
+async def delete_iambic_repos(tenant: str):
+    from common.config import models
+
+    try:
+        await models.ModelAdapter(IambicRepoDetails, "delete_iambic_repos").load_config(
+            IAMBIC_REPOS_BASE_KEY, tenant
+        ).delete_key()
+    except KeyError:
+        pass
+
+
 async def get_iambic_repo(tenant: str) -> IambicRepoDetails:
     """Retrieve the proper IAMbic repo.
     Currently, we really only support one repo per tenant.

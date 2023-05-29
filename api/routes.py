@@ -9,6 +9,8 @@ from api.handlers.v3.github.handler import (
     GitHubCallbackHandler,
     GitHubEventsHandler,
     GitHubOAuthHandler,
+    GithubRepoHandler,
+    GithubStatusHandler,
 )
 from api.handlers.v3.slack.install import (
     AsyncSlackEventsHandler,
@@ -412,11 +414,16 @@ def make_app(jwt_validator=None):
         ),
         (r"/api/v3/slack/events", AsyncSlackEventsHandler, dict(app=slack_app)),
         (
+            r"/api/v3/github/?",
+            GithubStatusHandler,
+        ),
+        (
             r"/api/v3/github/install/?",
             GitHubOAuthHandler,
         ),
         (r"/api/v3/github/events/?", GitHubEventsHandler),
         (r"/api/v3/github/callback/?", GitHubCallbackHandler),
+        (r"/api/v3/github/repos/?", GithubRepoHandler),
         (
             r"/api/v3/slack/install/?",
             AsyncSlackInstallHandler,

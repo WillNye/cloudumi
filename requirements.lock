@@ -47,7 +47,9 @@ amqp==5.1.1
 antlr4-python3-runtime==4.7.2
     # via noq-dax-client
 anyio==3.6.2
-    # via aiopath
+    # via
+    #   aiopath
+    #   httpcore
 argcomplete==3.0.5
     # via checkov
 asgiref==3.6.0
@@ -168,6 +170,8 @@ certifi==2022.12.7
     #   -r ./api/requirements.in
     #   elastic-apm
     #   geventhttpclient
+    #   httpcore
+    #   httpx
     #   requests
     #   sentry-sdk
 cffi==1.15.1
@@ -276,7 +280,9 @@ dictdiffer==0.9.0
 distlib==0.3.6
     # via virtualenv
 dnspython==2.3.0
-    # via email-validator
+    # via
+    #   email-validator
+    #   eventlet
 docker==6.0.1
     # via
     #   -r ./api/util/requirements-test.in
@@ -389,14 +395,21 @@ googleapis-common-protos==1.59.0
 greenlet==2.0.2
     # via
     #   -r ./common/util/requirements.in
+    #   eventlet
     #   gevent
     #   sqlalchemy
+h11==0.14.0
+    # via httpcore
 html5lib==1.1
     # via weasyprint
+httpcore==0.17.2
+    # via httpx
 httplib2==0.22.0
     # via
     #   google-api-python-client
     #   google-auth-httplib2
+httpx==0.24.1
+    # via -r ./common/requirements.in
 humanfriendly==10.0
     # via -r ./common/requirements.in
 humanize==4.6.0
@@ -409,6 +422,7 @@ idna==3.4
     # via
     #   anyio
     #   email-validator
+    #   httpx
     #   requests
     #   yarl
 igraph==0.10.4
@@ -945,6 +959,7 @@ six==1.16.0
     #   click-repl
     #   cloudaux
     #   ecdsa
+    #   eventlet
     #   flask-cors
     #   furl
     #   geventhttpclient
@@ -969,7 +984,10 @@ slack-sdk==3.21.2
 smmap==5.0.0
     # via gitdb
 sniffio==1.3.0
-    # via anyio
+    # via
+    #   anyio
+    #   httpcore
+    #   httpx
 snowballstemmer==2.2.0
     # via pydocstyle
 sortedcontainers==2.4.0
