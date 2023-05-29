@@ -34,7 +34,7 @@ export const Navbar = () => {
             </div>
           </Tooltip>
         </Link>
-        <Link to="/request">
+        <Link to="/requests">
           <Tooltip text="Requests" alignment="right">
             <div>
               <Icon width="26px" height="26px" name="pointer" />

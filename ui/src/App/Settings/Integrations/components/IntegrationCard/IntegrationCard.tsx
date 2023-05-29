@@ -17,7 +17,7 @@ const IntegrationCard = ({
   icon,
   handleConnect,
   title,
-  // description,
+  description,
   link,
   buttonText,
   disableBtn
@@ -28,7 +28,7 @@ const IntegrationCard = ({
         <img src={icon} alt="Slack Icon" className={styles.icon} />
         <h3 className={styles.title}>{title}</h3>
         <LineBreak />
-        {/* <p className={styles.description}>{description}</p> */}
+        <p className={styles.description}>{description}</p>
         <Button
           onClick={handleConnect}
           href={link}
