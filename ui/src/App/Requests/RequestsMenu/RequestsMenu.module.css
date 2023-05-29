@@ -57,8 +57,33 @@
     }
   }
 
-  .cardImg {
-    height: 32px;
-    width: 32px;
+  .providers {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .card {
+    width: 220px;
+    margin: var(--spacing-sm);
+  }
+
+  .cardContent {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: var(--spacing-sm);
+
+    img {
+      height: 32px;
+      width: 32px;
+    }
+    p {
+      font-size: var(--font-size-sm);
+    }
   }
 }

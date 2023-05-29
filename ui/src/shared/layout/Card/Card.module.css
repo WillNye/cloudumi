@@ -1,3 +1,7 @@
+:root {
+  --card-background: transparent;
+}
+
 .card {
   padding: var(--spacing-md);
   border-radius: var(--border-radius-md);
@@ -8,6 +12,7 @@
   background: var(--card-background);
   color: var(--card-color);
   border-radius: var(--border-radius-md);
+  width: auto;
 
   &.disablePadding {
     padding: 0;
@@ -24,22 +29,22 @@
   }
 
   &.primary {
-    --card-background: var(--orange--100);
+    --card-background: var(--blue-600);
     --card-color: var(--blue-100);
   }
 
   &.warning {
-    --card-background: var(--orange--100);
+    --card-background: var(--orange-700);
     --card-color: var(--gray-100);
   }
 
   &.secondary {
-    --card-background: var(--gray--100);
+    --card-background: var(--gray-700);
     --card-color: var(--gray-100);
   }
 
   &.danger {
-    --card-background: var(--red--100);
+    --card-background: var(--red-700);
     --card-color: var(--gray-100);
   }
 

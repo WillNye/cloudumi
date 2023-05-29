@@ -11,6 +11,11 @@
     width: 100%;
   }
 
+  .header {
+    font-size: var(--font-size-lg);
+    color: var(--gray-100);
+  }
+
   .subText {
     color: var(--gray-200);
     font-size: var(--font-size-sm);

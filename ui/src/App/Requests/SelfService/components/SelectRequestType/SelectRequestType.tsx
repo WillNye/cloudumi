@@ -1,14 +1,41 @@
-import { Card } from 'reablocks';
-import { LineBreak } from 'shared/elements/LineBreak';
 import { Segment } from 'shared/layout/Segment';
+import RequestCard from '../RequestCard';
+import identityIcon from '../../../../../assets/vendor/identity.svg';
+import accessIcon from '../../../../../assets/vendor/access.svg';
+import permissionsIcon from '../../../../../assets/vendor/permissions.svg';
+
+import styles from './SelectRequestType.module.css';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 const SelectRequestType = () => {
   return (
     <Segment>
-      <h3>Request Access</h3>
-      <p>What would you like to do?</p>
-      <LineBreak />
-      <Card></Card>
+      <div className={styles.container}>
+        <h3 className={styles.header}>Request Access</h3>
+        <LineBreak />
+        <p className={styles.subText}>What would you like to do?</p>
+        <LineBreak size="large" />
+        <div className={styles.cardList}>
+          <RequestCard
+            title="Create a new Resource"
+            icon={identityIcon}
+            description="Submit a request to create an AWS IAM Role."
+          />
+
+          <RequestCard
+            title="Request Access to an existing Resource"
+            icon={permissionsIcon}
+            description="Submit a request to add IAM permissions to a role."
+          />
+
+          <RequestCard
+            title="Request Permissions Change"
+            icon={accessIcon}
+            description="Submit a request to access short-lived AWS IAM role.
+            Examples: Update Tags, Add new inline policy"
+          />
+        </div>
+      </div>
     </Segment>
   );
 };

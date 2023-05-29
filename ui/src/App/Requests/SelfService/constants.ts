@@ -1,0 +1,4 @@
+export enum SELF_SERICE_STEPS {
+  SELECT_PROVIDER,
+  REQUEST_TYPE
+}
