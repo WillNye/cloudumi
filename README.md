@@ -90,7 +90,7 @@ Within the UI you can perform all CRUD operations on your configs
 
 ## Testing
 
-- Either use the most superior IDE known to people, named VSCODE or run `make test`, if using the IDE there is a settings.json file in the test README that can be used to get setup. Hint: just reference the `pytest.ini` file in the project root using the -c pytest flag.
+- Either use the most superior IDE known to people, named PyCharm or run `make test`, if using the IDE there is a settings.json file in the test README that can be used to get setup.
 
 # Versioning
 
