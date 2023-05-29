@@ -34,3 +34,4 @@ ASYNC_PG_SESSION = sessionmaker(
 AUTH_COOKIE_NAME: str = config.get("_global_.auth.cookie.name", "noq_auth")
 
 IAMBIC_REPOS_BASE_KEY = "iambic_repos"
+GITHUB_APP_URL = config.get("_global_.secrets.github_app.app_url")

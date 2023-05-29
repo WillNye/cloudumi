@@ -19,19 +19,19 @@ class GitHubInstall(Base):
         primaryjoin="Tenant.id == GitHubInstall.tenant_id",
         back_populates="github_installs",
     )
-    access_token = Column(String, nullable=True)
+    installation_id = Column(String, nullable=True)
 
     @classmethod
-    async def create(cls, tenant, access_token):
+    async def create(cls, tenant, installation_id):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 existing_entry = await cls.get(tenant, session=session)
                 if existing_entry:
-                    existing_entry.access_token = access_token
+                    existing_entry.installation_id = installation_id
                     entry = existing_entry
                     session.add(entry)
                 else:
-                    entry = cls(tenant_id=tenant.id, access_token=access_token)
+                    entry = cls(tenant_id=tenant.id, installation_id=installation_id)
                     session.add(entry)
                 await session.commit()
         return entry

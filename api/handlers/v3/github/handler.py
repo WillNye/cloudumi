@@ -2,17 +2,10 @@ import uuid
 
 from tornado.web import HTTPError
 
-from common.config import config
+from common.config.globals import GITHUB_APP_URL
 from common.github.models import GitHubInstall, GitHubOAuthState
 from common.handlers.base import BaseAdminHandler, TornadoRequestHandler
 from common.tenants.models import Tenant
-
-GITHUB_OAUTH_URL = "https://github.com/login/oauth/"
-GITHUB_APP_URL = config.get("_global_.secrets.github_app.app_url")
-GITHUB_APP_ID = config.get("_global_.secrets.github_app.app_id")
-GITHUB_CLIENT_ID = config.get("_global_.secrets.github_app.client_id")
-GITHUB_CLIENT_SECRET = config.get("_global_.secrets.github_app.client_secret")
-
 
 # TODO: Need to know which repos to use, in case they grant us access to more than necessary.
 # TODO: Which repo does this installation token have access to?
@@ -31,7 +24,6 @@ class GitHubOAuthHandler(BaseAdminHandler):
 class GitHubCallbackHandler(TornadoRequestHandler):
     async def get(self):
         state = self.get_argument("state")
-        # setup_action = self.get_argument("setup_action")
         installation_id = self.get_argument("installation_id")
         # TODO: Try repository because it might come here.
 
@@ -46,15 +38,9 @@ class GitHubCallbackHandler(TornadoRequestHandler):
             raise HTTPError(400, "Invalid tenant")
 
         # Save the GitHub installation
-        # TODO: rename access_token to installation_id
-        await GitHubInstall.create(tenant=db_tenant, access_token=installation_id)
+        await GitHubInstall.create(tenant=db_tenant, installation_id=installation_id)
         await github_oauth_state.delete()
         self.write("GitHub integration complete")
-        print("here")
-        # Exchange installation id for installation token/access token/ whatever
-        # _get_installation_token function
-        # https://github.com/noqdev/iambic/blob/main/iambic/plugins/v0_1_0/github/github_app.py
-        # TODO: Return some success message
 
 
 class DeleteGitHubInstallHandler(BaseAdminHandler):
@@ -69,6 +55,7 @@ class DeleteGitHubInstallHandler(BaseAdminHandler):
 
 class GitHubEventsHandler(TornadoRequestHandler):
     async def post(self):
+        pass
         # 1. Verify the payload signature
         # https://github.com/noqdev/iambic/blob/main/iambic/plugins/v0_1_0/github/github_app.py#L141
         # 2. Gate on `installation.id` to find the tenant

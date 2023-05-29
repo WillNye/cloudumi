@@ -417,7 +417,6 @@ def make_app(jwt_validator=None):
         ),
         (r"/api/v3/github/events/?", GitHubEventsHandler),
         (r"/api/v3/github/callback/?", GitHubCallbackHandler),
-        # TODO: /api/v3/github/events/? route
         (
             r"/api/v3/slack/install/?",
             AsyncSlackInstallHandler,
