@@ -57,7 +57,7 @@ const configureYAMLSchema = async (
   monaco.editor.createModel(content, 'yaml', modelUri);
 };
 
-const ResourcesDetails = () => {
+const ResourceDetails = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [modifiedTemplate, setModifiedTemplate] = useState<string | null>(null);
@@ -246,4 +246,4 @@ const ResourcesDetails = () => {
   );
 };
 
-export default ResourcesDetails;
+export default ResourceDetails;

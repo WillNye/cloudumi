@@ -8,12 +8,12 @@ import 'react-toastify/dist/ReactToastify.css';
 const Login = lazy(() => import('./Login'));
 const Settings = lazy(() => import('./Settings'));
 const Requests = lazy(() => import('./Requests'));
+const Resources = lazy(() => import('./Resources'));
 const NotFound = lazy(() => import('./NotFound'));
 const Access = lazy(() => import('./Access'));
 const Dashboard = lazy(() => import('./Dashboard'));
 const EULA = lazy(() => import('./EULA'));
 const Logout = lazy(() => import('./Logout'));
-const Resources = lazy(() => import('./Resources'));
 
 export const App: FC = () => (
   <Suspense fallback={<Loader fullPage />}>
