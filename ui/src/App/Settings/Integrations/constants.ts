@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-export const GOOGLE_CARD_DESCRIPTION = 'Google Cloud Platform (GCP)';
+export const GOOGLE_WORKSPACE_CARD_DESCRIPTION = 'Google Workspace (GSuite)';
 export const AZURE_CARD_DESCRIPTION =
   'Microsoft Azure cloud computing platform';
 export const AWS_CARD_DESCRIPTION = 'Amazon Web Services (AWS)';
