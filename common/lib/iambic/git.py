@@ -126,7 +126,7 @@ class IambicGit:
     def load_templates(self, template_paths, *args, **kwargs):
         tenant_repo_base_path_posix = Path(self.tenant_repo_base_path)
         for template_path in template_paths:
-            if tenant_repo_base_path_posix not in template_path.parents:
+            if tenant_repo_base_path_posix not in Path(template_path).parents:
                 raise Exception(
                     f"Template path {template_path} is not valid for this tenant."
                 )
@@ -162,7 +162,7 @@ class IambicGit:
         await self.set_git_repositories()
         for repository in self.git_repositories:
             repo_name = repository.repo_name
-            access_token = repository.access_token
+            access_token = await self.get_access_token()
             repo_path = self.get_iambic_repo_path(repository.repo_name)
             git_uri = f"https://oauth:{access_token}@github.com/{repo_name}"
             try:
@@ -176,7 +176,7 @@ class IambicGit:
                 self.repos[repo_name] = {
                     "repo": repo,
                     "path": repo_path,
-                    "gh": Github(repository.access_token),
+                    "gh": Github(access_token),
                     "default_branch": default_branch,
                 }
             except GitCommandError as e:
@@ -195,7 +195,7 @@ class IambicGit:
                 self.repos[repo_name] = {
                     "repo": repo,
                     "path": repo_path,
-                    "gh": Github(repository.access_token),
+                    "gh": Github(access_token),
                     "default_branch": default_branch,
                 }
         return
