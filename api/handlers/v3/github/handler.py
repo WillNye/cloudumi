@@ -151,7 +151,7 @@ class GithubRepoHandler(BaseAdminHandler):
 
         iambic_repos = IambicRepoDetails(repo_name=body.repo_name)
         # TODO: We want to overwrite the existing repos if they exist
-        await save_iambic_repos(self.ctx.tenant, iambic_repos)
+        await save_iambic_repos(self.ctx.tenant, iambic_repos, self.user)
 
         self.set_header("Content-Type", "application/json")
         self.write(
