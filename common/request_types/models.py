@@ -102,6 +102,7 @@ class RequestType(SoftDeleteMixin, Base):
             "name": self.name,
             "description": self.description,
             "provider": self.provider,
+            "supported_template_types": self.supported_template_types,
         }
         return response
 

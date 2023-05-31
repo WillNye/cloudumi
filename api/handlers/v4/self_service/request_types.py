@@ -51,7 +51,6 @@ class SelfServiceChangeTypeHandler(BaseHandler):
             tenant_url = self.get_tenant_url()
             change_type = await get_tenant_change_type(tenant_id, change_type_id)
             data = change_type.dict()
-            data["template"] = change_type.change_template.template
             data["fields"] = [
                 field.self_service_dict(tenant_url)
                 for field in change_type.change_fields

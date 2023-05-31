@@ -449,13 +449,13 @@ def make_app(jwt_validator=None):
         # (r"/api/v3/api_keys/remove", RemoveApiKeyHandler),
         # (r"/api/v3/api_keys/view", ViewApiKeysHandler),
         (r"/api/v2/.*", V2NotFoundHandler),
-        (r"/api/v4/requests/?", IambicRequestHandler),
+        (r"/api/v4/self-service/requests/?", IambicRequestHandler),
         (
-            rf"/api/v4/requests/(?P<request_id>{UUID_REGEX})/comments/?",
+            rf"/api/v4/self-service/requests/(?P<request_id>{UUID_REGEX})/comments/?",
             IambicRequestCommentHandler,
         ),
         (
-            rf"/api/v4/requests/(?P<request_id>{UUID_REGEX})/comments/(?P<comment_id>{UUID_REGEX})",
+            rf"/api/v4/self-service/requests/(?P<request_id>{UUID_REGEX})/comments/(?P<comment_id>{UUID_REGEX})",
             IambicRequestCommentHandler,
         ),
         (r"/api/v4/self-service/request-types/?", SelfServiceRequestTypeHandler),
@@ -467,7 +467,10 @@ def make_app(jwt_validator=None):
             rf"/api/v4/self-service/request-types/(?P<request_type_id>{UUID_REGEX})/change-types/(?P<change_type_id>{UUID_REGEX})",
             SelfServiceChangeTypeHandler,
         ),
-        (rf"/api/v4/requests/(?P<request_id>{UUID_REGEX})", IambicRequestHandler),
+        (
+            rf"/api/v4/self-service/requests/(?P<request_id>{UUID_REGEX})",
+            IambicRequestHandler,
+        ),
         (r"/api/v4/providers/?", IambicProviderHandler),
         (r"/api/v4/providers/definitions/?", IambicProviderDefinitionHandler),
         (r"/api/v4/templates/?", IambicTemplateHandler),
