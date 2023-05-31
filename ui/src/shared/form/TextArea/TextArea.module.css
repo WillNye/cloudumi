@@ -1,0 +1,53 @@
+.container {
+  background: var(--textarea-background);
+  border-radius: var(--border-radius-lg);
+  border: solid 2px transparent;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  border: solid 2px var(--gray-400);
+
+  &:focus-within,
+  &:focus-visible {
+    border: solid 2px var(--blue-900);
+  }
+
+  &.error {
+    border: solid 2px var(--red-500);
+  }
+
+  &.disabled {
+    background: var(--gray-600);
+  }
+
+  &.fullWidth {
+    width: 100%;
+
+    .textarea {
+      width: 100%;
+    }
+  }
+}
+
+.textarea {
+  flex: 1;
+  font-weight: normal;
+  background: var(--input-background);
+  font-family: var(--font-family);
+  border-radius: var(--border-radius-lg);
+
+  &[disabled] {
+    cursor: not-allowed;
+    background: var(--gray-600);
+  }
+
+  &::placeholder {
+    font-style: italic;
+  }
+
+  &:focus {
+    outline: none;
+  }
+}

@@ -1,8 +1,7 @@
-import { Segment } from 'shared/layout/Segment';
-import SelectProvider from './components/SelectProvider';
-import SelectRequestType from './components/SelectRequestType';
 import { useState } from 'react';
 import { SELF_SERICE_STEPS } from './constants';
+import RequestViewier from './components/RequestViewier';
+import SelfServiceContext from './SelfServiceContext';
 
 const SelfService = () => {
   const [currentStep, setCurrentStep] = useState(
@@ -10,14 +9,18 @@ const SelfService = () => {
   );
 
   return (
-    <Segment>
-      {currentStep === SELF_SERICE_STEPS.SELECT_PROVIDER ? (
-        // TODO add context provider for selfservice
-        <SelectProvider />
-      ) : (
-        <SelectRequestType />
-      )}
-    </Segment>
+    <SelfServiceContext.Provider
+      value={{
+        store: {
+          currentStep
+        },
+        actions: {
+          setCurrentStep
+        }
+      }}
+    >
+      <RequestViewier />
+    </SelfServiceContext.Provider>
   );
 };
 

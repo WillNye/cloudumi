@@ -6,12 +6,19 @@ import permissionsIcon from '../../../../../assets/vendor/permissions.svg';
 
 import styles from './SelectRequestType.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
+import { useContext } from 'react';
+import SelfServiceContext from '../../SelfServiceContext';
+import { SELF_SERICE_STEPS } from '../../constants';
 
 const SelectRequestType = () => {
+  const {
+    actions: { setCurrentStep }
+  } = useContext(SelfServiceContext);
+
   return (
     <Segment>
       <div className={styles.container}>
-        <h3 className={styles.header}>Request Access</h3>
+        <h3>Request Access</h3>
         <LineBreak />
         <p className={styles.subText}>What would you like to do?</p>
         <LineBreak size="large" />
@@ -20,6 +27,7 @@ const SelectRequestType = () => {
             title="Create a new Resource"
             icon={identityIcon}
             description="Submit a request to create an AWS IAM Role."
+            onClick={() => setCurrentStep(SELF_SERICE_STEPS.COMPLETION_FORM)}
           />
 
           <RequestCard

@@ -20,7 +20,7 @@
 
   &.outlined {
     box-shadow: var(--shadow-300);
-    border: solid 1px var(--card-color);
+    border: solid 1px var(--gray-200);
   }
 
   &.default {

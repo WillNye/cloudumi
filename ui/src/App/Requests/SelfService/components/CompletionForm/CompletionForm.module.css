@@ -1,0 +1,59 @@
+.container {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: var(--spacing-md);
+
+  .cardList {
+    max-width: 520px;
+    width: 100%;
+  }
+
+  .radioGroup {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .radioInput {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-sm) var(--spacing-lg);
+  }
+
+  .subText {
+    color: var(--gray-200);
+    font-size: var(--font-size-sm);
+  }
+
+  .text {
+    color: var(--gray-200);
+    font-size: var(--font-size-md);
+    padding-top: var(--spacing-sm);
+    padding-bottom: var(--spacing-md);
+  }
+
+  .section {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    max-width: 1000px;
+  }
+
+  .content {
+    width: 520px;
+    padding: 0 var(--spacing-md);
+  }
+
+  .codeEditor {
+    width: 480px;
+    height: 100%;
+    padding: 0 var(--spacing-md);
+  }
+}
