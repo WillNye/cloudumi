@@ -1,5 +1,7 @@
 # import itertools
 
+from typing import Optional
+
 import tornado.web
 from pydantic import BaseModel
 from pydantic.fields import Field
@@ -19,7 +21,7 @@ log = config.get_logger()
 
 class ResourceDataTableModel(BaseModel):
     template_type: str
-    identifier: str
+    identifier: Optional[str]
     repo_name: str
     repo_relative_file_path: str = Field(..., alias="file_path")
     provider: str = "IAMbic"

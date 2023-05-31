@@ -7,6 +7,7 @@ import { getUserDetails } from 'core/API/auth';
 import { Loader } from 'shared/elements/Loader';
 import { useAxiosInterceptors } from './hooks';
 import { useQuery } from '@tanstack/react-query';
+import { ErrorFallback } from 'shared/elements/ErrorFallback';
 
 export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -39,9 +40,10 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
     () => ({
       user,
       setUser,
-      getUser
+      getUser,
+      setInternalServerError
     }),
-    [user, setUser, getUser]
+    [user, setUser, getUser, setInternalServerError]
   );
 
   // NOTE: I don't think we should put these 2 loading/invalid checks here
@@ -60,8 +62,8 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
   }
 
   if (internalServerError) {
-    // Invalid Tenant component
-    return <div>Internal server error</div>;
+    // Handle Internal Server Error
+    return <ErrorFallback fullPage />;
   }
 
   return <AuthProvider value={values}>{children}</AuthProvider>;

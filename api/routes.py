@@ -23,6 +23,7 @@ from api.handlers.v4.aws.roles import RolesHandlerV4
 from api.handlers.v4.groups.manage_group_memberships import (
     ManageGroupMembershipsHandler,
 )
+from api.handlers.v4.iambic.handler import IambicResourcesHandler
 from api.handlers.v4.iambic.iambic_providers import (
     IambicProviderDefinitionHandler,
     IambicProviderHandler,
@@ -498,6 +499,7 @@ def make_app(jwt_validator=None):
         (r"/api/v4/roles", RolesHandlerV4),
         (r"/api/v4/resources/datatable/?", ResourcesDataTableHandler),
         (r"/api/v4/logout/?", LogOutHandler),
+        (r"/api/v4/resources/iambic/(.*)", IambicResourcesHandler),
     ]
 
     router = RuleRouter(routes)
@@ -531,16 +533,16 @@ def make_app(jwt_validator=None):
     )
     router.rules.append(
         Rule(
-            CookieMatcher(r"/(.*)", "V2_UI"),
+            CookieMatcher(r"/(.*)", "V1_UI"),
             FrontendHandler,
-            dict(path=frontend_v2_path, default_filename="index.html"),
+            dict(path=frontend_path, default_filename="index.html"),
         ),
     )
     router.rules.append(
         Rule(
             PathMatches(r"/(.*)"),
             FrontendHandler,
-            dict(path=frontend_path, default_filename="index.html"),
+            dict(path=frontend_v2_path, default_filename="index.html"),
         ),
     )
 

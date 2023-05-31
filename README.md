@@ -90,7 +90,7 @@ Within the UI you can perform all CRUD operations on your configs
 
 ## Testing
 
-- Either use the most superior IDE known to people, named VSCODE or run `make test`, if using the IDE there is a settings.json file in the test README that can be used to get setup. Hint: just reference the `pytest.ini` file in the project root using the -c pytest flag.
+- Either use the most superior IDE known to people, named PyCharm or run `make test`, if using the IDE there is a settings.json file in the test README that can be used to get setup.
 
 # Versioning
 
@@ -293,13 +293,13 @@ This command captures all TCP traffic on port 8092, and displays the packet payl
 After connecting to the API service with `ecsgo`, run this command on the terminal to see the traffic hitting the web service. You will likely need to install
 tcpdump on the container first with `sudo apt-get install tcpdump`.
 
-## Testing the new UI (UI V2)
+## Testing the old UI (UI V1)
 
 The new UI is built by `vite` and deployed to our Staging and Production environments during
 our normal deployment process. The [Cookie-Editor](https://cookie-editor.cgagnier.ca/) extension for Chrome can be used to create a cookie, which can then be used to test the new UI.
 
 1. Visit [https://corp.staging.noq.dev](https://corp.staging.noq.dev), [https://corp.noq.dev](https://corp.noq.dev) (Or any tenant for that matter)
-2. Use `Cookie-Editor` to add a cookie with a key of `V2_UI` and any value
+2. Use `Cookie-Editor` to add a cookie with a key of `V1_UI` and any value
 3. Refresh the page
    ==> Voila! The new UI should load.
 

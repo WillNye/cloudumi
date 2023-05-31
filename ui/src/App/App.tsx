@@ -8,11 +8,15 @@ import 'react-toastify/dist/ReactToastify.css';
 const Login = lazy(() => import('./Login'));
 const Settings = lazy(() => import('./Settings'));
 const Requests = lazy(() => import('./Requests'));
+const Resources = lazy(() => import('./Resources'));
 const NotFound = lazy(() => import('./NotFound'));
 const Access = lazy(() => import('./Access'));
 const Dashboard = lazy(() => import('./Dashboard'));
 const EULA = lazy(() => import('./EULA'));
 const Logout = lazy(() => import('./Logout'));
+const SignInToRole = lazy(
+  () => import('./Access/components/common/SignInToRole/SignInToRole')
+);
 
 export const App: FC = () => (
   <Suspense fallback={<Loader fullPage />}>
@@ -24,8 +28,10 @@ export const App: FC = () => (
       <Route path="/" element={<AuthRoute />}>
         <Route path="/" element={<Dashboard />}>
           <Route path="/" element={<Access />} />
+          <Route path="/resources/*" element={<Resources />} />
           <Route path="/settings/*" element={<Settings />} />
           <Route path="/requests/*" element={<Requests />} />
+          <Route path="/role/*" element={<SignInToRole />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Route>
