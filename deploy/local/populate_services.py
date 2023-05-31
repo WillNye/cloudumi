@@ -11,6 +11,7 @@ from asgiref.sync import async_to_sync
 from common.config.config import dict_merge
 from common.lib.aws.aws_secret_manager import get_aws_secret
 from common.lib.yaml import yaml
+from common.scripts.data_migrations import run_data_migrations
 
 os.environ.setdefault(
     "CONFIG_LOCATION", "configs/development_account/saas_development.yaml"
@@ -606,6 +607,7 @@ def create_tables():
     try:
         run_alembic_migrations()
         asyncio.run(rebuild_tables())
+        run_data_migrations()
 
     except Exception as e:
         print("Failed to create tables:", str(e))

@@ -6,7 +6,7 @@ from typing import Optional
 
 from iambic.core.parser import load_templates
 from iambic.core.utils import gather_templates
-from sqlalchemy import and_, cast, not_, select
+from sqlalchemy import and_, cast, delete, not_, select
 
 from common.config import config as saas_config
 from common.config.globals import ASYNC_PG_SESSION
@@ -269,20 +269,28 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
                     )
                 )
 
-    create_tasks = []
-    delete_tasks = []
-
     if deleted_definitions:
-        delete_tasks.append(bulk_delete(deleted_definitions))
+        await bulk_delete(deleted_definitions)
     if deleted_providers:
-        delete_tasks.append(bulk_delete(deleted_providers))
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = delete(TenantProviderDefinition).where(
+                    and_(
+                        TenantProviderDefinition.tenant_id == tenant.id,
+                        TenantProviderDefinition.provider.in_(
+                            [dp.provider for dp in deleted_providers]
+                        ),
+                    )
+                )
+                await session.execute(stmt)
 
+        await bulk_delete(deleted_providers)
+
+    create_tasks = []
     if new_definitions:
         create_tasks.append(bulk_add(new_definitions))
     if new_providers:
         create_tasks.append(bulk_add(new_providers))
 
-    if delete_tasks:
-        await asyncio.gather(*delete_tasks)
     if create_tasks:
         await asyncio.gather(*create_tasks)

@@ -3415,6 +3415,26 @@ components:
         provider:
           type: string
           description: The name of the provider e.g. aws
+    IambicRequestTypeAheadFieldResponse:
+      type: object
+      required:
+        - data
+        - page
+      properties:
+        data:
+          type: array
+          items:
+            type: string
+          description: The type ahead field values
+        page:
+          type: integer
+          description: The current page
+        next_page:
+          type: integer
+          description: The next page
+        page_size:
+          type: integer
+          description: The number of results per page
     IambicProviderDefinition:
       type: object
       required:
