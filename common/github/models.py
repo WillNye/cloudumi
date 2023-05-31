@@ -13,13 +13,16 @@ class GitHubInstall(Base):
     __tablename__ = "github_installs"
 
     id = Column(Integer(), primary_key=True, autoincrement=True, unique=True)
+    # Note: when usage increase, check if tenant_id looks up deserve an index
     tenant_id = Column(Integer(), ForeignKey("tenant.id"), nullable=False, unique=True)
     tenant = relationship(
         "Tenant",
         primaryjoin="Tenant.id == GitHubInstall.tenant_id",
         back_populates="github_installs",
     )
-    installation_id = Column(String, nullable=True)
+    # installation_id is defined by Github and typed as integer
+    # Note: when usage increase, check if installation_id looks up deserve an index
+    installation_id = Column(Integer(), nullable=False, unique=True)
 
     @classmethod
     async def create(cls, tenant, installation_id):
@@ -48,6 +51,26 @@ class GitHubInstall(Base):
         async def _query(session):
             stmt = select(GitHubInstall).where(
                 GitHubInstall.tenant_id == tenant.id,
+            )
+            result = await session.execute(stmt)
+            return result.scalars().first()
+
+        if session:
+            return await _query(session)
+
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                return await _query(session)
+
+    @classmethod
+    async def get_with_installation_id(cls, installation_id, session=None):
+        """Note: You should only called this if you get the installation_id from a verified
+        caller like GitHub Webhook events that the payload is signed with valid signature
+        """
+
+        async def _query(session):
+            stmt = select(GitHubInstall).where(
+                GitHubInstall.installation_id == installation_id,
             )
             result = await session.execute(stmt)
             return result.scalars().first()

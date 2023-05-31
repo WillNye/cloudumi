@@ -1,15 +1,15 @@
 """migration
 
-Revision ID: 417822ca4e69
+Revision ID: 2818563ad73b
 Revises: 66bfd6f60a98
-Create Date: 2023-05-29 12:37:29.022401
+Create Date: 2023-05-31 14:03:21.738039
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "417822ca4e69"
+revision = "2818563ad73b"
 down_revision = "66bfd6f60a98"
 branch_labels = None
 depends_on = None
@@ -21,13 +21,14 @@ def upgrade() -> None:
         "github_installs",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("tenant_id", sa.Integer(), nullable=False),
-        sa.Column("installation_id", sa.String(), nullable=True),
+        sa.Column("installation_id", sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(
             ["tenant_id"],
             ["tenant.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("id"),
+        sa.UniqueConstraint("installation_id"),
         sa.UniqueConstraint("tenant_id"),
     )
     op.create_table(
