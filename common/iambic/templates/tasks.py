@@ -8,8 +8,10 @@ from typing import Optional, Union
 import pytz
 from git import Repo
 from iambic.core.git import retrieve_git_changes
+from iambic.core.models import BaseTemplate as IambicBaseTemplate
 from iambic.core.parser import load_templates
-from iambic.core.utils import evaluate_on_provider, gather_templates
+from iambic.core.utils import evaluate_on_provider, gather_templates, sanitize_string
+from jinja2 import BaseLoader, Environment
 from sqlalchemy import and_, cast, delete, select, update
 from sqlalchemy.orm import contains_eager
 
@@ -21,7 +23,10 @@ from common.iambic.config.models import (
     TenantProviderDefinition,
     TrustedProvider,
 )
-from common.iambic.config.utils import list_tenant_provider_definitions
+from common.iambic.config.utils import (
+    list_tenant_provider_definitions,
+    update_tenant_providers_and_definitions,
+)
 from common.iambic.templates.models import (
     IambicTemplate,
     IambicTemplateContent,
@@ -35,6 +40,25 @@ from common.pg_core.utils import bulk_add, bulk_delete
 from common.tenants.models import Tenant
 
 log = saas_config.get_logger()
+
+
+def get_template_provider_resource_id(
+    iambic_provider_def, template: IambicBaseTemplate
+) -> str:
+    variables = {var.key: var.value for var in iambic_provider_def.variables}
+    extra_attr_checks = ["account_id", "account_name"]
+
+    for extra_attr in extra_attr_checks:
+        if attr_val := getattr(iambic_provider_def, extra_attr, None):
+            variables[extra_attr] = attr_val
+
+    rtemplate = Environment(loader=BaseLoader()).from_string(template.resource_id)
+    valid_characters_re = r"[\w_+=,.@-]"
+    variables = {
+        k: sanitize_string(v, valid_characters_re) for k, v in variables.items()
+    }
+
+    return str(rtemplate.render(var=variables))
 
 
 async def create_tenant_templates_and_definitions(
@@ -139,6 +163,7 @@ async def create_tenant_templates_and_definitions(
                 IambicTemplateProviderDefinition(
                     tenant=tenant,
                     iambic_template=iambic_template,
+                    resource_id=iambic_template.resource_id,  # Not able to resolve variable usage on these templates
                     tenant_provider_definition=tpd,
                 )
             )
@@ -159,6 +184,9 @@ async def create_tenant_templates_and_definitions(
                         IambicTemplateProviderDefinition(
                             tenant=tenant,
                             iambic_template=iambic_template,
+                            resource_id=get_template_provider_resource_id(
+                                provider_def, raw_iambic_template
+                            ),
                             tenant_provider_definition=tpd,
                         )
                     )
@@ -522,14 +550,8 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
     # k1 is the provider name, k2 is the provider definition str repr and the value is the provider definition
     raw_existing_definitions = await list_tenant_provider_definitions(tenant.id)
     if not raw_existing_definitions:
-        log.warning(
-            {
-                "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-                "message": "Unable to create tenant templates and definitions without provider definitions.",
-                "tenant": tenant.name,
-            }
-        )
-        return
+        await update_tenant_providers_and_definitions(tenant_name)
+
     for existing_definition in raw_existing_definitions:
         provider_definition_map[existing_definition.provider][
             existing_definition.name

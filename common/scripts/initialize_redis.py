@@ -52,6 +52,7 @@ if args.use_celery:
         celery.cache_access_advisor_across_accounts_for_all_tenants,
         celery.sync_iambic_templates_all_tenants,
         celery.update_providers_and_provider_definitions_all_tenants,
+        celery.upsert_tenant_request_types_for_all_tenants,
     ]
     async_tasks = [
         celery.cache_policies_table_details_for_all_tenants,
@@ -146,8 +147,7 @@ else:
             celery.cache_scps_across_organizations,
             celery.sync_iambic_templates_for_tenant,
             celery.update_providers_and_provider_definitions_for_tenant,
-            # This is on purpose.
-            celery.sync_iambic_templates_for_tenant,
+            celery.upsert_tenant_request_types_for_tenant,
         ]
 
         for post_task in post_tasks:
