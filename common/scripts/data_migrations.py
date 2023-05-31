@@ -11,43 +11,36 @@ async def typeahead_upgrade():
         dict(
             name="S3 Bucket ARN",
             description="Returns a list of S3 bucket ARNs.",
-            endpoint="/api/v2/policies/typeahead?resource=s3&show_full_arn_for_s3_buckets=true",
-            query_param_key="search",
+            endpoint="api/v4/self-service/typeahead/aws/service/s3",
+            query_param_key="resource_arn",
             provider="aws",
         ),
         dict(
             name="AWS Resource ARN",
-            description="Returns a list of all matching AWS resource ARNs.",
-            endpoint="/api/v2/typeahead/resources?ui_formatted=true",
-            query_param_key="typeahead",
+            description="Returns a list of all matching AWS resource ARNs available to Noq.",
+            endpoint="api/v4/self-service/typeahead/aws/service/all",
+            query_param_key="resource_arn",
             provider="aws",
         ),
         dict(
             name="IAM Role ARN",
             description="Returns a list of IAM Role ARNs.",
-            endpoint="/api/v2/policies/typeahead?resource=iam_arn",
-            query_param_key="search",
+            endpoint="api/v4/self-service/typeahead/aws/service/iam_role",
+            query_param_key="resource_arn",
             provider="aws",
         ),
         dict(
             name="SNS Topic ARN",
             description="Returns a list of SNS Topic ARNs.",
-            endpoint="/api/v2/policies/typeahead?resource=sns",
-            query_param_key="search",
+            endpoint="api/v4/self-service/typeahead/aws/service/sns",
+            query_param_key="resource_arn",
             provider="aws",
         ),
         dict(
             name="SQS Queue ARN",
             description="Returns a list of SQS Queue ARNs.",
-            endpoint="/api/v2/policies/typeahead?resource=sqs",
-            query_param_key="search",
-            provider="aws",
-        ),
-        dict(
-            name="List AWS services",
-            description="Returns a list of AWS services.",
-            endpoint="/api/v4/policy-sentry/services",
-            query_param_key="service",
+            endpoint="api/v4/self-service/typeahead/aws/service/sqs",
+            query_param_key="resource_arn",
             provider="aws",
         ),
     ]
@@ -63,5 +56,9 @@ async def typeahead_upgrade():
             await session.flush()
 
 
-if __name__ == "__main__":
+def run_data_migrations():
     asyncio.run(typeahead_upgrade())
+
+
+if __name__ == "__main__":
+    run_data_migrations()

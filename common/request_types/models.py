@@ -19,7 +19,6 @@ FieldType = ENUM(
     "EnforcedTypeAhead",
     "CheckBox",
     "Choice",
-    "CallbackChoice",
     name="FieldTypeEnum",
 )
 ApplyAttrBehavior = ENUM("Append", "Merge", "Replace", name="ApplyAttrBehaviorEnum")
@@ -98,9 +97,11 @@ class RequestType(SoftDeleteMixin, Base):
     )
 
     def dict(self):
-        # Be sure to normalize supported_template_types to list[dict[name, template_type]]
         response = {
             "id": str(self.id),
+            "name": self.name,
+            "description": self.description,
+            "provider": self.provider,
         }
         return response
 
@@ -147,8 +148,11 @@ class ChangeType(SoftDeleteMixin, Base):
     request_type_id = Column(
         UUID(as_uuid=True), ForeignKey("request_type.id"), nullable=False
     )
+    tenant_id = Column(Integer, ForeignKey("tenant.id"), nullable=False)
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
+
+    tenant = relationship("Tenant")
 
     request_type = relationship("RequestType", back_populates="change_types")
     change_fields = relationship(
@@ -166,13 +170,17 @@ class ChangeType(SoftDeleteMixin, Base):
     )
 
     __table_args__ = (
-        Index("ct_request_type_idx", "request_type_id"),
+        Index("ct_tenant_idx", "id", "tenant_id"),
+        Index("ct_request_type_idx", "tenant_id", "request_type_id"),
         Index("uix_change_type_request_name", "request_type_id", "name", unique=True),
     )
 
     def dict(self):
         response = {
             "id": str(self.id),
+            "name": self.name,
+            "description": self.description,
+            "request_type_id": str(self.request_type_id),
         }
         return response
 
@@ -214,10 +222,29 @@ class ChangeField(Base):
         ),
     )
 
-    def dict(self):
+    def self_service_dict(self, tenant_url: str):
         response = {
             "id": str(self.id),
+            "change_type_id": str(self.change_type_id),
+            "change_element": self.change_element,
+            "field_key": self.field_key,
+            "field_type": str(self.field_type),
+            "field_text": self.field_text,
+            "description": self.description,
+            "allow_none": self.allow_none,
+            "allow_multiple": self.allow_multiple,
         }
+        if self.options:
+            response["options"] = [option["option_text"] for option in self.options]
+        if self.typeahead:
+            response["typeahead"] = {
+                "url": f"{tenant_url}{self.typeahead.endpoint}",
+                "query_param_key": self.typeahead.query_param_key,
+            }
+        for optional_field in ["default_value", "max_char", "validation_regex"]:
+            if field_val := getattr(self, optional_field):
+                response[optional_field] = field_val
+
         return response
 
 

@@ -13,8 +13,13 @@ class BaseException(Exception):
         self.msg = msg
         log.error(msg)  # use your logging things here
         stats.count(
-            "baseexception",
-            tags={"exception": str(self.__class__.__name__), "msg": msg},
+            self.__class__.__name__,
+            tags={
+                "msg": msg,
+                "parent_exceptions": [
+                    str(base.__name__) for base in self.__class__.__bases__
+                ],
+            },
         )
         super().__init__(msg)
 
@@ -36,265 +41,205 @@ class WebAuthNError(tornado.web.HTTPError):
 
 
 class ProvisionedThroughputExceededError(Exception):
-    def __init__(self, msg=""):
-        stats.count("ProvisionedThroughputExceededError")
-        super().__init__(msg)
+    pass
 
 
 class MissingDataException(BaseException):
     """MissingDataException."""
 
-    def __init__(self, msg=""):
-        stats.count("MissingDataException")
-        super().__init__(msg)
+    pass
 
 
 class InvalidCertificateException(BaseException):
     """InvalidCertificateException."""
 
-    def __init__(self, msg=""):
-        stats.count("InvalidCertificateException")
-        super().__init__(msg)
+    pass
 
 
 class MissingCertificateException(BaseException):
     """MissingCertificateException."""
 
-    def __init__(self, msg=""):
-        stats.count("MissingCertificateException")
-        super().__init__(msg)
+    pass
 
 
 class NoUserException(BaseException):
     """NoUserException."""
 
-    def __init__(self, msg=""):
-        stats.count("NoUserException")
-        super().__init__(msg)
+    pass
 
 
 class NoGroupsException(BaseException):
     """NoGroupsException."""
 
-    def __init__(self, msg=""):
-        stats.count("NoGroupsException")
-        super().__init__(msg)
+    pass
 
 
 class PendingRequestAlreadyExists(BaseException):
     """Pending request already exists for user."""
 
-    def __init__(self, msg=""):
-        stats.count("PendingRequestAlreadyExists")
-        super().__init__(msg)
+    pass
 
 
 class NoExistingRequest(BaseException):
     """No existing request exists for user."""
 
-    def __init__(self, msg=""):
-        stats.count("NoExistingRequest")
-        super().__init__(msg)
+    pass
 
 
 class CertTooOldException(BaseException):
     """MTLS Certificate is too old, despite being valid."""
 
-    def __init__(self, msg=""):
-        stats.count("CertTooOldException")
-        super().__init__(msg)
+    pass
 
 
 class NotAMemberException(BaseException):
     """User is not a member of a group they are being removed from."""
 
-    def __init__(self, msg: str = "") -> None:
-        stats.count("NotAMemberException")
-        super().__init__(msg)
+    pass
 
 
 class NoCredentialSubjectException(BaseException):
     """Unable to find credential subject for domain."""
 
-    def __init__(self, msg=""):
-        stats.count("NoCredentialSubjectException")
-        super().__init__(msg)
+    pass
 
 
 class BackgroundCheckNotPassedException(BaseException):
     """User does not have a background check where one is required."""
 
-    def __init__(self, msg=""):
-        stats.count("BackgroundCheckNotPassedException")
-        super().__init__(msg)
+    pass
 
 
 class DifferentUserGroupDomainException(BaseException):
     """Users cannot be added to groups that are under different domains."""
 
-    def __init__(self, msg=""):
-        stats.count("DifferentUserGroupDomainException")
-        super().__init__(msg)
+    pass
 
 
 class UserAlreadyAMemberOfGroupException(BaseException):
     """Unable to add a user to a group that they're already a member of."""
 
-    def __init__(self, msg=""):
-        stats.count("UserAlreadyAMemberOfGroupException")
-        super().__init__(msg)
+    pass
 
 
 class UnableToModifyRestrictedGroupMembers(BaseException):
     """Unable to add/remove a user to a group that is marked as restricted."""
 
-    def __init__(self, msg=""):
-        stats.count("UnableToModifyRestrictedGroupMembers")
-        super().__init__(msg)
+    pass
 
 
 class UnableToEditSensitiveAttributes(BaseException):
     """Unable edit sensitive attributes."""
 
-    def __init__(self, msg=""):
-        stats.count("UnableToEditSensitiveAttributes")
-        super().__init__(msg)
+    pass
 
 
 class NoMatchingRequest(BaseException):
     """Cannot find a matching request"""
 
-    def __init__(self, msg=""):
-        stats.count("NoMatchingRequest")
-        super().__init__(msg)
+    pass
 
 
 class BulkAddPrevented(BaseException):
     """Bulk adding user to group is prevented"""
 
-    def __init__(self, msg=""):
-        stats.count("BulkAddPrevented")
-        super().__init__(msg)
+    pass
 
 
 class UnauthorizedToAccess(BaseException):
     """Unauthorized to access resource"""
 
-    def __init__(self, msg=""):
-        stats.count("UnauthorizedToViewPage")
-        super().__init__(msg)
+    pass
 
 
 class NoRoleTemplateException(BaseException):
     """The IAM role template for the per-user role does not exist."""
 
-    def __init__(self, msg=""):
-        stats.count("NoRoleTemplate")
-        super().__init__(msg)
+    pass
 
 
 class UserRoleLambdaException(BaseException):
     """The Lambda function to create IAM roles errored out for some reason."""
 
-    def __init__(self, msg=""):
-        stats.count("BadResponseFromUserRoleLambda")
-        super().__init__(msg)
+    pass
 
 
 class PolicyUnchanged(BaseException):
     """Updated policy is identical to existing policy."""
 
-    def __init__(self, msg=""):
-        stats.count("PolicyUnchanged")
-        super().__init__(msg)
+    pass
 
 
 class InvalidDomainError(BaseException):
     """Invalid domain"""
 
-    def __init__(self, msg=""):
-        stats.count("InvalidDomainError")
-        super().__init__(msg)
+    pass
 
 
 class UnableToGenerateRoleName(BaseException):
     """Unable to generate role name within constraints (64 characters, up to 10 duplicate usernames handled"""
 
-    def __init__(self, msg=""):
-        stats.count("UnableToGenerateRoleName")
-        super().__init__(msg)
+    pass
 
 
 class InvalidInvocationArgument(BaseException):
     """Function was invoked with an invalid argument."""
 
-    def __init__(self, msg=""):
-        stats.count("InvalidInvocationArgument")
-        super().__init__(msg)
+    pass
 
 
 class UserRoleNotAssumableYet(BaseException):
     """Newly created user role is not assumable yet."""
 
-    def __init__(self, msg=""):
-        stats.count("UserRoleNotAssumableYet")
-        super().__init__(msg)
+    pass
 
 
 class RoleTrustPolicyModified(BaseException):
     """Role trust policy was modified to allow request. Retry in a bit."""
 
-    def __init__(self, msg=""):
-        stats.count("RoleTrustPolicyModified")
-        super().__init__(msg)
+    pass
 
 
 class NoArnException(BaseException):
     """No ARN passed to endpoint."""
 
-    def __init__(self, msg=""):
-        stats.count("NoArnException")
-        super().__init__(msg)
+    pass
 
 
 class MustBeFte(BaseException):
     """Only Full Time Employees are allowed"""
 
-    def __init__(self, msg=""):
-        stats.count("MustBeFte")
-        super().__init__(msg)
+    pass
 
 
 class Unauthorized(BaseException):
     """Unauthorized"""
 
-    def __init__(self, msg=""):
-        stats.count("Unauthorized")
-        super().__init__(msg)
+    pass
+
+
+class InvalidRequest(BaseException):
+    """Invalid Request Parameter passed to function"""
+
+    pass
 
 
 class InvalidRequestParameter(BaseException):
     """Invalid Request Parameter passed to function"""
 
-    def __init__(self, msg=""):
-        stats.count("InvalidRequestParameter")
-        super().__init__(msg)
+    pass
 
 
 class MissingRequestParameter(BaseException):
     """Missing Request Parameter passed to function"""
 
-    def __init__(self, msg=""):
-        stats.count("InvalidRequestParameter")
-        super().__init__(msg)
+    pass
 
 
 class KriegerError(BaseException):
     """Krieger communication error"""
 
-    def __init__(self, msg=""):
-        stats.count("InvalidRequestParameter")
-        super().__init__(msg)
+    pass
 
 
 class BaseWebpackLoaderException(BaseException):
@@ -302,9 +247,7 @@ class BaseWebpackLoaderException(BaseException):
     Base exception for django-webpack-loader.
     """
 
-    def __init__(self, msg=""):
-        stats.count("BaseWebpackLoaderException")
-        super().__init__(msg)
+    pass
 
 
 class WebpackError(BaseWebpackLoaderException):
@@ -312,9 +255,7 @@ class WebpackError(BaseWebpackLoaderException):
     General webpack loader error.
     """
 
-    def __init__(self, msg=""):
-        stats.count("WebpackLoaderBadStatsError")
-        super().__init__(msg)
+    pass
 
 
 class WebpackLoaderBadStatsError(BaseWebpackLoaderException):
@@ -322,9 +263,7 @@ class WebpackLoaderBadStatsError(BaseWebpackLoaderException):
     The stats file does not contain valid data.
     """
 
-    def __init__(self, msg=""):
-        stats.count("WebpackLoaderBadStatsError")
-        super().__init__(msg)
+    pass
 
 
 class WebpackLoaderTimeoutError(BaseWebpackLoaderException):
@@ -332,9 +271,7 @@ class WebpackLoaderTimeoutError(BaseWebpackLoaderException):
     The bundle took too long to compile.
     """
 
-    def __init__(self, msg=""):
-        stats.count("WebpackLoaderTimeoutError")
-        super().__init__(msg)
+    pass
 
 
 class WebpackBundleLookupError(BaseWebpackLoaderException):
@@ -342,65 +279,49 @@ class WebpackBundleLookupError(BaseWebpackLoaderException):
     The bundle name was invalid.
     """
 
-    def __init__(self, msg=""):
-        stats.count("WebpackBundleLookupError")
-        super().__init__(msg)
+    pass
 
 
 class UnsupportedRedisDataType(BaseException):
     """Unsupported Redis Data Type passed"""
 
-    def __init__(self, msg=""):
-        stats.count("UnsupportedRedisDataType")
-        super().__init__(msg)
+    pass
 
 
 class DataNotRetrievable(BaseException):
     """Data was expected but is not retrievable"""
 
-    def __init__(self, msg=""):
-        stats.count("DataNotRetrievable")
-        super().__init__(msg)
+    pass
 
 
 class MissingConfigurationValue(BaseException):
     """Unable to find expected configuration value"""
 
-    def __init__(self, msg=""):
-        stats.count("MissingConfigurationValue")
-        super().__init__(msg)
+    pass
 
 
 class ExpiredData(BaseException):
     """Data was retrieved but is older than expected"""
 
-    def __init__(self, msg=""):
-        stats.count("ExpiredData")
-        super().__init__(msg)
+    pass
 
 
 class UnsupportedChangeType(BaseException):
     """Unsupported Change Type"""
 
-    def __init__(self, msg=""):
-        stats.count("UnsupportedChangeType")
-        super().__init__(msg)
+    pass
 
 
 class ResourceNotFound(BaseException):
     """Resource Not Found"""
 
-    def __init__(self, msg=""):
-        stats.count("ResourceNotFound")
-        super().__init__(msg)
+    pass
 
 
 class UnableToAuthenticate(BaseException):
     """Unable to authenticate user or app"""
 
-    def __init__(self, msg=""):
-        stats.count("UnableToAuthenticate")
-        super().__init__(msg)
+    pass
 
 
 class TenantNoCentralRoleConfigured(BaseException):
@@ -408,9 +329,7 @@ class TenantNoCentralRoleConfigured(BaseException):
     Tenant has no central role configured
     """
 
-    def __init__(self, msg=""):
-        stats.count("TenantNoCentralRoleconfigured")
-        super().__init__(msg)
+    pass
 
 
 class WorkOSNoOrganizationId(BaseException):
@@ -418,9 +337,7 @@ class WorkOSNoOrganizationId(BaseException):
     Tenant does not have an Organization ID in WorkOS
     """
 
-    def __init__(self, msg=""):
-        stats.count("WorkOSNoOrganizationId")
-        super().__init__(msg)
+    pass
 
 
 class NoMatchingTenant(BaseException):
@@ -428,6 +345,4 @@ class NoMatchingTenant(BaseException):
     A matching tenant was not found
     """
 
-    def __init__(self, msg=""):
-        stats.count("NoMatchingTenant")
-        super().__init__(msg)
+    pass
