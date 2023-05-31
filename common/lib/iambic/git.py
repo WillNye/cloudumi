@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 from typing import Optional
 
+import pytz
 import ujson as json
 from git import Repo
 from git.exc import GitCommandError
@@ -102,6 +103,40 @@ class IambicGit:
         return next(
             ref for ref in repo.remotes.origin.refs if ref.name == "origin/HEAD"
         ).ref.name
+
+    async def get_raw_template_yaml(
+        self, repo_name: str, file_path: str
+    ) -> Optional[str]:
+        await self.set_git_repositories()
+        for repository in self.git_repositories:
+            if repository.repo_name != repo_name:
+                continue
+            repo_path = os.path.join(self.tenant_repo_base_path, repo_name, file_path)
+            try:
+                with open(repo_path, "r") as file:
+                    content = file.read()
+                return content
+            except FileNotFoundError:
+                return None
+
+    async def get_last_updated(self, repo_name: str, file_path: str) -> Optional[str]:
+        await self.set_git_repositories()
+        for repository in self.git_repositories:
+            if repository.repo_name != repo_name:
+                continue
+            repo_path = os.path.join(self.tenant_repo_base_path, repo_name)
+            repo = Repo(repo_path)
+            commits = repo.iter_commits(paths=file_path)
+            for commit in commits:
+                committed_date = commit.committed_datetime
+                return committed_date.astimezone(pytz.UTC).strftime(
+                    "%Y-%m-%d %H:%M:%S UTC"
+                )
+
+    async def generate_github_link(
+        self, org_name: str, repo_name: str, default_branch: str, file_path: str
+    ) -> str:
+        return f"https://github.com/{org_name}/{repo_name}/blob/{default_branch}/{file_path}"
 
     async def clone_or_pull_git_repos(self) -> None:
         # TODO: Formalize the model for secrets

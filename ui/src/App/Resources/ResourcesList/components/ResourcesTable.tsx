@@ -1,22 +1,14 @@
 import { PropertyFilter, PropertyFilterProps } from '@noqdev/cloudscape';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import MoreActions from '../common/MoreActions';
 import { Table } from 'shared/elements/Table';
-import { allRolesColumns } from '../EligibleRoles/constants';
-
-import { ROLE_PROPERTY_SEARCH_FILTER } from 'App/Access/constants';
-import css from './AllRoles.module.css';
+import { resourcesColumns } from './constants';
 import { useQuery } from '@tanstack/react-query';
-import { getAllRoles } from 'core/API/roles';
+import { getAllResources } from 'core/API/resources';
+import css from './ResourcesTable.module.css';
 
-const AllRoles = () => {
-  const [filter, setFilter] = useState<PropertyFilterProps.Query>({
-    tokens: [],
-    operation: 'and'
-  });
-
+const ResourcesTable = () => {
   const [query, setQuery] = useState({
     pagination: {
       currentPageIndex: 1,
@@ -25,47 +17,58 @@ const AllRoles = () => {
     sorting: {
       sortingColumn: {
         id: 'id',
-        sortingField: 'account_name',
-        header: 'Account Name',
+        sortingField: 'template_type',
+        header: 'template_type',
         minWidth: 180
       },
       sortingDescending: false
     },
-    filtering: filter
+    filtering: {
+      tokens: [],
+      operation: 'and'
+    }
   });
 
-  const { isLoading, data: allRolesData } = useQuery({
-    queryFn: getAllRoles,
-    queryKey: ['allRoles', query]
+  const { isLoading, data: resourcesData } = useQuery({
+    queryFn: getAllResources,
+    queryKey: ['resources', query]
   });
 
-  useEffect(() => {
-    setQuery(exstingQuery => ({
-      ...exstingQuery,
+  const tableRows = useMemo(() => {
+    return (resourcesData?.data || []).map(item => {
+      const strippedPath = item.file_path.replace(/\.yaml$/, '');
+      const provider = item.provider.toLowerCase();
+      return {
+        ...item,
+        file_path: (
+          <Link to={`/resources/${provider}${strippedPath}`}>
+            {item.file_path}
+          </Link>
+        )
+      };
+    });
+  }, [resourcesData]);
+
+  const handleOnPageChange = useCallback((newPageIndex: number) => {
+    setQuery(query => ({
+      ...query,
+      pagination: {
+        ...query.pagination,
+        currentPageIndex: newPageIndex
+      }
+    }));
+  }, []);
+
+  const handleOnFilterChange = useCallback(filter => {
+    setQuery(query => ({
+      ...query,
       filtering: filter,
       pagination: {
-        ...exstingQuery.pagination,
+        ...query.pagination,
         currentPageIndex: 1
       }
     }));
-  }, [filter]);
-
-  const tableRows = useMemo(() => {
-    return (allRolesData?.data || []).map(item => {
-      const arn = item.arn.match(/\[(.+?)\]\((.+?)\)/)[1];
-      return {
-        ...item,
-        roleName: <Link to={`/resources/edit/${arn}`}>{arn}</Link>,
-        name: (
-          <div>
-            <div>{item.account_name}</div>
-            <div className={css.tableSecondaryText}>{item.account_id}</div>
-          </div>
-        ),
-        moreActions: <MoreActions />
-      };
-    });
-  }, [allRolesData]);
+  }, []);
 
   return (
     <>
@@ -73,12 +76,12 @@ const AllRoles = () => {
         <div className={css.filter}>
           <PropertyFilter
             expandToViewport
-            onChange={({ detail }) => setFilter(detail)}
-            query={filter}
+            onChange={({ detail }) => handleOnFilterChange(detail)}
+            query={query.filtering as PropertyFilterProps.Query}
             i18nStrings={{
               filteringAriaLabel: 'your choice',
               dismissAriaLabel: 'Dismiss',
-              filteringPlaceholder: ROLE_PROPERTY_SEARCH_FILTER,
+              filteringPlaceholder: 'Filter Resources',
               groupValuesText: 'Values',
               groupPropertiesText: 'Properties',
               operatorsText: 'Operators',
@@ -110,32 +113,45 @@ const AllRoles = () => {
             filteringOptions={[]}
             filteringProperties={[
               {
-                key: 'account_name',
+                key: 'template_type',
                 operators: ['=', '!=', ':', '!:'],
-                propertyLabel: 'Account Name',
-                groupValuesLabel: 'Account Name values'
+                propertyLabel: 'Template Type',
+                groupValuesLabel: 'Template Type values'
               },
               {
-                key: 'account_id',
+                key: 'identifier',
                 operators: ['=', '!=', ':', '!:'],
-                propertyLabel: 'Account ID',
-                groupValuesLabel: 'Account ID values'
+                propertyLabel: 'Identifier',
+                groupValuesLabel: 'Identifier values'
               },
               {
-                key: 'role_name',
+                key: 'repository_name',
                 operators: ['=', '!=', ':', '!:'],
-                propertyLabel: 'Role Name',
-                groupValuesLabel: 'Role Name values'
+                propertyLabel: 'Repository Name',
+                groupValuesLabel: 'Repository Name values'
+              },
+              {
+                key: 'file_path',
+                operators: ['=', '!=', ':', '!:'],
+                propertyLabel: 'File Path',
+                groupValuesLabel: 'File Path values'
               }
             ]}
           />
         </div>
         <div className={css.table}>
           <Table
+            columns={resourcesColumns}
             data={tableRows}
-            columns={allRolesColumns}
             border="row"
             isLoading={isLoading}
+            totalCount={
+              resourcesData?.filteredCount || query.pagination.pageSize
+            }
+            pageSize={query.pagination.pageSize}
+            pageIndex={query.pagination.currentPageIndex}
+            handleOnPageChange={handleOnPageChange}
+            showPagination
           />
         </div>
       </div>
@@ -143,4 +159,4 @@ const AllRoles = () => {
   );
 };
 
-export default AllRoles;
+export default ResourcesTable;
