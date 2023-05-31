@@ -29,6 +29,10 @@ from api.handlers.v4.self_service.request_types import (
     SelfServiceRequestTypeHandler,
 )
 from api.handlers.v4.self_service.type_ahead.aws import AWSResourceTypeAheadHandler
+from api.handlers.v4.self_service.type_ahead.noq import (
+    NoqGroupTypeAheadHandler,
+    NoqUserTypeAheadHandler,
+)
 from api.handlers.v4.users.login import LoginHandler, MfaHandler
 from api.handlers.v4.users.manage_users import (
     ManageListUsersHandler,
@@ -478,6 +482,8 @@ def make_app(jwt_validator=None):
             r"/api/v4/self-service/typeahead/aws/service/(?P<service>[\w-]+)",
             AWSResourceTypeAheadHandler,
         ),
+        (r"/api/v4/self-service/typeahead/noq/users", NoqUserTypeAheadHandler),
+        (r"/api/v4/self-service/typeahead/noq/groups", NoqGroupTypeAheadHandler),
         (r"/api/v4/groups/?", ManageGroupsHandler),
         (r"/api/v4/list_groups/?", ManageListGroupsHandler),
         (r"/api/v4/group_memberships/?", ManageGroupMembershipsHandler),

@@ -1,5 +1,7 @@
 import asyncio
+import random
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import contains_eager, joinedload
@@ -455,18 +457,55 @@ async def api_list_providers():
     generic_api_get_request(base_url, provider="aws")
 
 
-async def api_list_change_types():
+async def api_list_change_types(request_type_id: Optional[str] = None):
+    if not request_type_id:
+        tenant = await Tenant.get_by_name(TENANT_NAME)
+        all_request_types = await list_tenant_request_types(tenant.id)
+        request_type = random.choice(list(all_request_types))
+        request_type_id = request_type.id
+
     base_url = "v4/self-service/request-types"
-    request_type_id = "3c8254a0-362c-4770-98bb-2fe3dd269201"  # TODO: Get from DB
     change_type_url = f"{base_url}/{request_type_id}/change-types/"
 
     generic_api_get_request(change_type_url)
 
 
-async def api_get_change_type():
+async def api_get_change_type(
+    request_type_id: Optional[str] = None,
+    change_type_id: Optional[str] = None,
+):
+    if change_type_id:
+        assert request_type_id
+    else:
+        tenant = await Tenant.get_by_name(TENANT_NAME)
+        all_request_types = await list_tenant_request_types(
+            tenant.id, summary_only=False
+        )
+        if request_type_id:
+            request_type = [rt for rt in all_request_types if rt.id == request_type_id]
+            if not request_type:
+                print(
+                    f"Request type {request_type_id} not found. Using random request type."
+                )
+                request_type = random.choice(list(all_request_types))
+        else:
+            request_type = random.choice(list(all_request_types))
+
+        request_type_id = request_type.id
+        change_type = random.choice(request_type.change_types)
+        change_type_id = change_type.id
+
     base_url = "v4/self-service/request-types"
-    request_type_id = "3c8254a0-362c-4770-98bb-2fe3dd269201"  # TODO: Get from DB
-    change_type_id = "659d97e0-9184-4cbe-8333-83377bfaf82f"  # TODO: Get from DB
     change_type_url = f"{base_url}/{request_type_id}/change-types/{change_type_id}"
 
     generic_api_get_request(change_type_url)
+
+
+async def api_typeahead_list_groups(name: Optional[str] = None):
+    request_params = {} if not name else {"name": name}
+    generic_api_get_request("v4/self-service/typeahead/noq/groups", **request_params)
+
+
+async def api_typeahead_list_users(email: Optional[str] = None):
+    request_params = {} if not email else {"email": email}
+    generic_api_get_request("v4/self-service/typeahead/noq/users", **request_params)
