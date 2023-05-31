@@ -1,6 +1,7 @@
 import argparse
 import os
 import pathlib
+import shutil
 import tempfile
 from datetime import datetime
 
@@ -87,8 +88,10 @@ def run():
         logger.info("Running functional tests")
         conftest = __import__("functional_tests.conftest")
 
-        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as output_file:
-            prev_stdout = os.dup(1)
+        with tempfile.NamedTemporaryFile(
+            mode="w+", delete=False
+        ) as output_file, os.fdopen(os.dup(1), "w") as stdout_dup:
+            # prev_stdout = os.dup(1)
             os.dup2(output_file.fileno(), 1)
             exit_code = pytest.main(
                 # ["--capture=sys", "-k", "test_retrieve_items", loc],
@@ -97,16 +100,26 @@ def run():
             )
 
             # Restore the original stdout
-            os.dup2(prev_stdout, 1)
+            # os.dup2(prev_stdout, 1)
+
+            # flush output_file to ensure all output has been written
+            output_file.flush()
+
+            output_file.seek(0)  # go to the start of output_file
+            shutil.copyfileobj(
+                output_file, stdout_dup
+            )  # copy output_file to stdout_dup
+
+            # restore the original stdout
+            os.dup2(stdout_dup.fileno(), 1)
 
             # Upload test output to S3 and send to Slack
-            output_file.flush()
             transfer_url = generate_presigned_url(output_file.name)
             if exit_code in [ExitCode.TESTS_FAILED, ExitCode.USAGE_ERROR]:
                 send_to_slack(
                     f"Functional tests failed. Check the logs for more information: {transfer_url}"
                 )
-                raise RuntimeError("Functional tests failed")
+                raise RuntimeError(f"Functional tests failed. Logs: {transfer_url}")
             else:
                 send_to_slack(
                     f"Functional tests finished successfully. Test output: {transfer_url}"

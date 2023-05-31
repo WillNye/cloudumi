@@ -179,7 +179,7 @@ async def cache_terraform_resources_for_repository(
         )
         all_tf_resources = []
         for file, tf_definition in tf_definitions.items():
-            filepath = file.replace(repo.working_dir + os.sep, "")
+            filepath = file.file_path.replace(repo.working_dir + os.sep, "")
             if not tf_definition.get("resource"):
                 continue
             for resources_details in tf_definition["resource"]:

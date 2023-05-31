@@ -59,24 +59,25 @@ class IambicRequestHandler(BaseHandler):
 
     async def post(self):
         """
-        POST /api/v4/request - Create a new request
+        POST /api/v4/requests - Create a new request
         """
         await self.fte_check()
 
-        tenant = self.ctx.tenant
+        db_tenant = self.ctx.db_tenant
         user = self.user
         request_data = IambicRequest(**json.loads(self.request.body))
         response = await create_request(
-            tenant=tenant,
+            tenant=db_tenant,
             created_by=user,
             justification=request_data.justification,
             changes=request_data.changes,
+            request_method="WEB",
         )
         return self.write(
             WebResponse(
                 success="success",
                 status_code=200,
-                data=response,
+                data=response.get("friendly_request"),
             ).json(exclude_unset=True, exclude_none=True)
         )
 

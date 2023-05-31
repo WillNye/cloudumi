@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
 import { FC, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { Transition, motion } from 'framer-motion';
 import classNames from 'classnames';
 import styles from './Loader.module.css';
 
@@ -9,23 +9,24 @@ interface LoaderProps {
   className?: string;
 }
 
-const transition = {
+const transition: Transition = {
   duration: 2,
-  yoyo: Infinity,
+  repeat: Infinity,
+  repeatType: 'reverse',
   ease: 'easeInOut'
 };
 
 export const Loader: FC<LoaderProps> = ({ className, fullPage = false }) => {
   const classes = useMemo(
     () =>
-      classNames(styles.loader, {
+      classNames(className, styles.loader, {
         [styles.fullPage]: fullPage
       }),
-    [fullPage]
+    [fullPage, className]
   );
 
   return (
-    <div className={`${className} ${classes}`}>
+    <div className={classes}>
       <svg
         width="32"
         height="32"

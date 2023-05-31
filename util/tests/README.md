@@ -20,18 +20,7 @@ Magic? Yes.
 
 - Make sure you run VSCODE as follows: `PYTHONPATH=$(pwd) code .` from your cloudumi repo
 - Ensure you have the following settings in your workspace settings (should be checked in under .vscode) // "functional_tests",:
-- The rest of all configuration is in the `pytest.ini` file in the project workspace root
-
-```json
-{
-  "python.formatting.provider": "black",
-  "python.testing.pytestArgs": ["-c", "${workspaceFolder}/pytest.ini"],
-  "python.envFile": "${workspaceFolder}/.env",
-  "python.testing.unittestEnabled": false,
-  "python.testing.pytestEnabled": true,
-  "python.testing.unittestArgs": ["-v", "-s", "./common", "-p", "test_*.py"]
-}
-```
+- Use the `Debug: Unit Tests` configuration in launch.json to run tests in VSCODE
 
 Here is the .env file content:
 

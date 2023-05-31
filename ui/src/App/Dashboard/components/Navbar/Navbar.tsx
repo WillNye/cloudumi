@@ -34,6 +34,13 @@ export const Navbar = () => {
             </div>
           </Tooltip>
         </Link>
+        <Link to="/resources">
+          <Tooltip text="Resources" alignment="right">
+            <div>
+              <Icon width="26px" height="26px" name="resource" />
+            </div>
+          </Tooltip>
+        </Link>
         <Link to="/requests">
           <Tooltip text="Requests" alignment="right">
             <div>

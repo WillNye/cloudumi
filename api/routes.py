@@ -16,6 +16,7 @@ from api.handlers.v4.aws.roles import RolesHandlerV4
 from api.handlers.v4.groups.manage_group_memberships import (
     ManageGroupMembershipsHandler,
 )
+from api.handlers.v4.iambic.handler import IambicResourcesHandler
 from api.handlers.v4.iambic.iambic_providers import (
     IambicProviderDefinitionHandler,
     IambicProviderHandler,
@@ -480,6 +481,7 @@ def make_app(jwt_validator=None):
         (r"/api/v4/roles", RolesHandlerV4),
         (r"/api/v4/resources/datatable/?", ResourcesDataTableHandler),
         (r"/api/v4/logout/?", LogOutHandler),
+        (r"/api/v4/resources/iambic/(.*)", IambicResourcesHandler),
     ]
 
     router = RuleRouter(routes)
