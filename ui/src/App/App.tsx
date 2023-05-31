@@ -31,8 +31,8 @@ export const App: FC = () => (
           <Route path="/resources/*" element={<Resources />} />
           <Route path="/settings/*" element={<Settings />} />
           <Route path="/requests/*" element={<Requests />} />
-          <Route path="*" element={<NotFound />} />
           <Route path="/role/*" element={<SignInToRole />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Route>
 
