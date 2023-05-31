@@ -19,7 +19,10 @@ import boto3
 import botocore.exceptions
 import logmatic
 import sentry_sdk
+
 from cachetools import TTLCache, cached, cachedmethod
+
+import structlog
 from pytz import timezone
 
 import common.lib.noq_json as json
@@ -58,6 +61,37 @@ def dict_merge(dct: dict, merge_dct: dict):
             if k not in dct.keys():
                 dct[k] = merge_dct[k]
     return dct
+
+
+def positional_to_keyword_processor(logger, method_name, event_dict):
+    if event_dict.get("event") and isinstance(event_dict["event"], dict):
+        event_dict = {**event_dict["event"], **event_dict}
+        del event_dict["event"]
+    return event_dict
+
+
+# def get_logging_renderer():
+#     # get value from configuration
+#     json_enabled = self.get("_global_.logging.json_enabled", False)
+#     if json_enabled:
+#         return structlog.processors.JSONRenderer()
+#     else:
+#         return structlog.dev.ConsoleRenderer()
+
+structlog.configure(
+    processors=[
+        positional_to_keyword_processor,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.add_logger_name,
+        structlog.processors.TimeStamper(fmt="iso"),
+        # structlog.processors.JSONRenderer()
+        structlog.dev.ConsoleRenderer(pad_event=False, event_key="message"),
+    ],
+    context_class=dict,
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    wrapper_class=structlog.stdlib.BoundLogger,
+    cache_logger_on_first_use=True,
+)
 
 
 class Configuration(metaclass=Singleton):
@@ -482,8 +516,8 @@ class Configuration(metaclass=Singleton):
 
     def get_logger(self, name: Optional[str] = None) -> LoggerAdapter:
         """Get logger."""
-        if self.log:
-            return self.log
+        # if self.log:
+        #     return self.log
         if not name:
             name = self.get("_global_.application_name", "noq")
         level_c = self.get("_global_.logging.level", "debug")
@@ -500,29 +534,38 @@ class Configuration(metaclass=Singleton):
         else:
             # default
             level = logging.DEBUG
-        filter_c = ContextFilter()
-        format_c = self.get(
-            "_global_.logging.format",
-            "%(asctime)s - %(levelname)s - %(name)s - [%(filename)s:%(lineno)s - %(funcName)s() ] - %(message)s",
-        )
-
-        logging.basicConfig(level=level, format=format_c)
-        logger = logging.getLogger(name)
-        logger.addFilter(filter_c)
-
-        extra = {"eventTime": datetime.datetime.now(timezone("US/Pacific")).isoformat()}
+        # filter_c = ContextFilter()
+        # format_c = self.get(
+        #     "_global_.logging.format",
+        #     "%(asctime)s - %(levelname)s - %(name)s - [%(filename)s:%(lineno)s - %(funcName)s() ] - %(message)s",
+        # )
+        logging.basicConfig(level=level)
+        # logging.basicConfig(level=level, format=format_c)
+        original_logger = logging.getLogger(name)
+        # logger.addFilter(filter_c)
+        original_logger.propagate = False
+        logger = structlog.wrap_logger(original_logger)
 
         # Log to stdout and disk
         if self.get("_global_.logging.stdout_enabled", True):
-            logger.propagate = False
-            handler = logging.StreamHandler(sys.stdout)
-            handler.setFormatter(
-                logmatic.JsonFormatter(
-                    json_indent=self.get("_global_.logging.json_formatter.indent")
-                )
-            )
-            handler.setLevel(self.get("_global_.logging.stdout.level", "DEBUG"))
-            logger.addHandler(handler)
+            # handler = logging.StreamHandler(sys.stdout)
+            # handler.setFormatter(
+            #     structlog.stdlib.ProcessorFormatter(
+            #         processor=structlog.dev.ConsoleRenderer(),
+            #         foreign_pre_chain=[
+            #             structlog.stdlib.add_log_level,
+            #             structlog.stdlib.add_logger_name,
+            #             structlog.stdlib.PositionalArgumentsFormatter(),
+            #         ],
+            #     )
+            # )
+            # handler.setFormatter(
+            #     logmatic.JsonFormatter(
+            #         json_indent=self.get("_global_.logging.json_formatter.indent")
+            #     )
+            # )
+            # handler.setLevel(self.get("_global_.logging.stdout.level", "DEBUG"))
+            # logger.addHandler(handler)
             logging_file = self.get("_global_.logging.file")
             if logging_file:
                 if "~" in logging_file:
@@ -537,12 +580,23 @@ class Configuration(metaclass=Singleton):
                     delay=False,
                 )
                 file_handler.setFormatter(
-                    logmatic.JsonFormatter(
-                        json_indent=self.get("_global_.logging.json_formatter.indent")
+                    structlog.stdlib.ProcessorFormatter(
+                        processor=structlog.processors.JSONRenderer(),
+                        foreign_pre_chain=[
+                            structlog.stdlib.add_log_level,
+                            structlog.stdlib.add_logger_name,
+                            structlog.stdlib.PositionalArgumentsFormatter(),
+                        ],
                     )
                 )
-                logger.addHandler(file_handler)
-        self.log = logging.LoggerAdapter(logger, extra)
+                # file_handler.setFormatter(
+                #     logmatic.JsonFormatter(
+                #         json_indent=self.get("_global_.logging.json_formatter.indent")
+                #     )
+                # )
+                # logger.addHandler(file_handler)
+        self.log = logging.LoggerAdapter(logger)
+        # self.log = logging.LoggerAdapter(original_logger)
         return self.log
 
     def set_logging_levels(self):
@@ -621,14 +675,14 @@ class Configuration(metaclass=Singleton):
         return self.get("_global_.dax_endpoints", [])
 
 
-class ContextFilter(logging.Filter):
-    """Logging Filter for adding hostname to log entries."""
+# class ContextFilter(logging.Filter):
+#     """Logging Filter for adding hostname to log entries."""
 
-    hostname = socket.gethostname()
+#     hostname = socket.gethostname()
 
-    def filter(self, record: LogRecord) -> bool:
-        record.hostname = ContextFilter.hostname
-        return True
+#     def filter(self, record: LogRecord) -> bool:
+#         record.hostname = ContextFilter.hostname
+#         return True
 
 
 CONFIG = Configuration()
