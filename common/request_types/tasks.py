@@ -67,6 +67,7 @@ async def upsert_tenant_request_types(tenant_name: str):
     tenant_request_type_change_map = defaultdict(dict)
     for request_type in tenant_request_types:
         for change_type in request_type.change_types:
+            change_type.tenant_id = tenant.id
             tenant_request_type_change_map[request_type.name][
                 change_type.name
             ] = change_type
@@ -77,6 +78,7 @@ async def upsert_tenant_request_types(tenant_name: str):
     default_request_type_change_map = defaultdict(dict)
     for request_type in default_request_types:
         for change_type in request_type.change_types:
+            change_type.tenant_id = tenant.id
             default_request_type_change_map[request_type.name][
                 change_type.name
             ] = change_type
@@ -231,6 +233,7 @@ async def upsert_tenant_request_types(tenant_name: str):
                 not in tenant_request_type_change_map[request_type.name]
             ):
                 write_obj = True
+                default_change_type.tenant_id = tenant.id
                 default_change_type.request_type_id = request_type.id
                 request_type.change_types.append(default_change_type)
 
