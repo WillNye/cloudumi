@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import contains_eager, joinedload
 
 from common.config.globals import ASYNC_PG_SESSION
@@ -16,6 +16,7 @@ from common.request_types.tasks import upsert_tenant_request_types
 from common.request_types.utils import list_tenant_request_types
 from common.tenants.models import Tenant
 from qa import TENANT_NAME
+from qa.utils import generic_api_get_request
 
 
 async def get_request_type_by_id(request_type_id):
@@ -67,8 +68,37 @@ async def hard_delete_request_type(request_type: RequestType):
         )
         change_types = items.scalars().all()
 
+    change_type_ids = [change_type.id for change_type in change_types]
+    async with ASYNC_PG_SESSION() as session:
+        async with session.begin():
+            stmt = delete(ChangeTypeTemplate).where(
+                ChangeTypeTemplate.change_type_id.in_(change_type_ids)
+            )
+            await session.execute(stmt)
+
+            stmt = delete(ChangeField).where(
+                ChangeField.change_type_id.in_(change_type_ids)
+            )
+            await session.execute(stmt)
+
     await bulk_delete(change_types)
     await bulk_delete([request_type])
+
+
+async def hard_delete_change_type(change_type: ChangeType):
+    async with ASYNC_PG_SESSION() as session:
+        async with session.begin():
+            stmt = delete(ChangeTypeTemplate).where(
+                ChangeTypeTemplate.change_type_id == change_type.id
+            )
+            await session.execute(stmt)
+
+            stmt = delete(ChangeField).where(
+                ChangeField.change_type_id == change_type.id
+            )
+            await session.execute(stmt)
+
+    await bulk_delete([change_type])
 
 
 async def reset_request_type_tables(tenant: Tenant):
@@ -199,7 +229,7 @@ async def add_new_change_type_to_request_type():
     assert init_count > 0
 
     # Addition by subtraction
-    await bulk_delete([removed_change_type])
+    await hard_delete_change_type(removed_change_type)
     rt = await get_request_type_by_id(rt.id)
     # Verify change type was removed
     assert len(rt.change_types) == init_count - 1
@@ -276,17 +306,14 @@ async def update_change_type_template():
     updated_change_type.change_template.template = new_template
     await updated_change_type.write()
 
-    rt = await get_request_type_by_id(rt.id)
     # Confirm template was properly applied
-    assert new_template in [ct.change_template.template for ct in rt.change_types]
-    assert original_template not in [
-        ct.change_template.template for ct in rt.change_types
-    ]
+    updated_change_type = await get_change_type_by_id(updated_change_type.id)
+    assert updated_change_type.change_template.template == new_template
 
     await upsert_tenant_request_types(TENANT_NAME)
-    rt = await get_request_type_by_id(rt.id)
     # Verify it was updated because this is a Noq managed template
-    assert original_template in [ct.change_template.template for ct in rt.change_types]
+    updated_change_type = await get_change_type_by_id(updated_change_type.id)
+    assert updated_change_type.change_template.template == original_template
 
 
 async def delete_change_type():
@@ -420,3 +447,26 @@ async def delete_change_field():
         cf.field_key for cf in updated_change_type.change_fields
     ]
     assert len(updated_change_type.change_fields) == original_change_field_count
+
+
+async def api_list_providers():
+    base_url = "v4/self-service/request-types"
+
+    generic_api_get_request(base_url, provider="aws")
+
+
+async def api_list_change_types():
+    base_url = "v4/self-service/request-types"
+    request_type_id = "3c8254a0-362c-4770-98bb-2fe3dd269201"  # TODO: Get from DB
+    change_type_url = f"{base_url}/{request_type_id}/change-types/"
+
+    generic_api_get_request(change_type_url)
+
+
+async def api_get_change_type():
+    base_url = "v4/self-service/request-types"
+    request_type_id = "3c8254a0-362c-4770-98bb-2fe3dd269201"  # TODO: Get from DB
+    change_type_id = "659d97e0-9184-4cbe-8333-83377bfaf82f"  # TODO: Get from DB
+    change_type_url = f"{base_url}/{request_type_id}/change-types/{change_type_id}"
+
+    generic_api_get_request(change_type_url)
