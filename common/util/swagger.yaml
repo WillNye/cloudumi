@@ -3465,6 +3465,9 @@ components:
         body:
           type: string
           description: The template's content
+        template:
+          type: AnyValue
+          description: An ephemeral template object (for Slack self-service V1)
     IambicRequest:
       type: object
       required:

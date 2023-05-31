@@ -7,17 +7,14 @@ from typing import Optional, Union
 
 import pytz
 from git import Repo
-from iambic.core.git import retrieve_git_changes
 from iambic.core.models import BaseTemplate as IambicBaseTemplate
-from iambic.core.parser import load_templates
-from iambic.core.utils import evaluate_on_provider, gather_templates, sanitize_string
+from iambic.core.utils import sanitize_string
 from jinja2 import BaseLoader, Environment
 from sqlalchemy import and_, cast, delete, select, update
 from sqlalchemy.orm import contains_eager
 
 from common.config import config as saas_config
 from common.config.globals import ASYNC_PG_SESSION
-from common.iambic.config.dynamic_config import load_iambic_config
 from common.iambic.config.models import (
     TRUSTED_PROVIDER_RESOLVER_MAP,
     TenantProviderDefinition,
@@ -34,7 +31,7 @@ from common.iambic.templates.models import (
 )
 from common.iambic.utils import get_iambic_repo
 from common.lib.asyncio import NoqSemaphore
-from common.lib.iambic.git import get_iambic_repo_path
+from common.lib.iambic.git import IambicGit
 from common.models import IambicRepoDetails
 from common.pg_core.utils import bulk_add, bulk_delete
 from common.tenants.models import Tenant
@@ -80,7 +77,7 @@ async def create_tenant_templates_and_definitions(
         provider_definition_map (dict[dict[str, TenantProviderDefinition]]): A map of provider definitions.
         template_paths (list[str], optional): A list of template paths. Defaults to None.
     """
-
+    iambic_git = IambicGit(tenant.name)
     template_type_provider_map = {}
     iambic_templates = []
     iambic_template_content_list = []
@@ -88,7 +85,7 @@ async def create_tenant_templates_and_definitions(
 
     # If no template paths provided, gather all templates from the repository directory
     if not template_paths:
-        template_paths = await gather_templates(repo_dir)
+        template_paths = await iambic_git.gather_templates(repo.repo_name)
 
     log.info(
         {
@@ -100,7 +97,7 @@ async def create_tenant_templates_and_definitions(
     )
 
     # Collect provider definitions from the template repo
-    for raw_iambic_template in load_templates(template_paths):
+    for raw_iambic_template in iambic_git.load_templates(template_paths):
         provider = template_type_provider_map.get(raw_iambic_template.template_type)
 
         # If provider not already mapped, find and map the provider
@@ -174,7 +171,9 @@ async def create_tenant_templates_and_definitions(
                 iambic_config
             )
             for provider_def in provider_defs:
-                if evaluate_on_provider(raw_iambic_template, provider_def, False):
+                if iambic_git.evaluate_on_provider(
+                    raw_iambic_template, provider_def, False
+                ):
                     pd_name = provider_resolver.get_name_from_iambic_provider_config(
                         provider_def
                     )
@@ -225,6 +224,7 @@ async def update_tenant_template(
         The second element is a list of IambicTemplateProviderDefinition instances to be created
     """
     iambic_template_provider_definitions = []
+    iambic_git = IambicGit(tenant.name)
 
     # Get the existing template with its provider definition references
     async with ASYNC_PG_SESSION() as session:
@@ -301,7 +301,9 @@ async def update_tenant_template(
             iambic_config
         )
         for provider_def in provider_defs:
-            if evaluate_on_provider(raw_iambic_template, provider_def, False):
+            if iambic_git.evaluate_on_provider(
+                raw_iambic_template, provider_def, False
+            ):
                 pd_name = provider_resolver.get_name_from_iambic_provider_config(
                     provider_def
                 )
@@ -349,6 +351,7 @@ async def upsert_tenant_templates_and_definitions(
         provider_definition_map (dict[dict[str, TenantProviderDefinition]]): A map of provider definitions.
         template_paths (list[str], optional): A list of template paths. Defaults to None.
     """
+    iambic_git = IambicGit(tenant.name)
     template_type_provider_map = {}
     update_tenant_template_semaphore = NoqSemaphore(update_tenant_template, 30)
 
@@ -363,7 +366,7 @@ async def upsert_tenant_templates_and_definitions(
 
     # Collect provider definitions from the template repo
     messages = []
-    for raw_iambic_template in load_templates(template_paths):
+    for raw_iambic_template in iambic_git.load_templates(template_paths):
         provider = template_type_provider_map.get(raw_iambic_template.template_type)
 
         # If provider not already mapped, find and map the provider
@@ -494,6 +497,7 @@ async def full_create_tenant_templates_and_definitions(
         tenant (Tenant): The Tenant object for which templates and definitions are to be created.
         provider_definition_map (dict[dict[str, TenantProviderDefinition]]): A map of provider definitions.
     """
+    iambic_git = IambicGit(tenant.name)
     try:
         # At some point we will support multiple repos and this is a way to futureproof
         iambic_repos = await get_iambic_repo(tenant.name)
@@ -511,9 +515,9 @@ async def full_create_tenant_templates_and_definitions(
 
     # Iterate the tenants iambic repos
     for repo in iambic_repos:
-        repo_dir = get_iambic_repo_path(tenant.name, repo.repo_name)
+        repo_dir = iambic_git.get_iambic_repo_path(repo.repo_name)
         try:
-            iambic_config = await load_iambic_config(repo_dir)
+            iambic_config = await iambic_git.load_iambic_config(repo.repo_name)
         except ValueError as err:
             log.error(
                 {
@@ -543,6 +547,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
         tenant_name (str): The name of the tenant.
     """
     tenant = await Tenant.get_by_name(tenant_name)
+    iambic_git = IambicGit(tenant_name)
     provider_definition_map = defaultdict(dict)
     iambic_templates_last_parsed = datetime.utcnow()
 
@@ -597,7 +602,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
 
     # Iterate the tenants iambic repos
     for repo in iambic_repos:
-        repo_dir = get_iambic_repo_path(tenant.name, repo.repo_name)
+        repo_dir = iambic_git.get_iambic_repo_path(repo.repo_name)
 
         # Get all changes since last parsed
         git_repo = Repo(repo_dir)
@@ -612,8 +617,8 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
             else:
                 from_sha = commit.hexsha
 
-        template_changes = await retrieve_git_changes(
-            repo_dir, from_sha=from_sha, to_sha=to_sha
+        template_changes = await iambic_git.retrieve_git_changes(
+            repo.repo_name, from_sha=from_sha, to_sha=to_sha
         )
         create_template_paths = []
         upsert_template_paths = []
@@ -629,7 +634,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
             deleted_template_paths.append(git_diff.path)
 
         try:
-            iambic_config = await load_iambic_config(repo_dir)
+            iambic_config = await iambic_git.load_iambic_config(repo.repo_name)
         except ValueError as err:
             log.error(
                 {

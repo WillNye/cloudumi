@@ -1,27 +1,43 @@
+# Helpful commands - The first one gets AWS credentials that the container will use
+# The second one forces a rebuild of the container and then runs it
+# noq file -p arn:aws:iam::759357822767:role/NoqSaasRoleLocalDev arn:aws:iam::759357822767:role/NoqSaasRoleLocalDev -f
+# docker-compose -f docker-compose.yaml -f deploy/docker-compose-dependencies.yaml down && docker-compose -f docker-compose.yaml -f deploy/docker-compose-dependencies.yaml build && docker-compose -f docker-compose.yaml -f deploy/docker-compose-dependencies.yaml up --force-recreate
 version: "3"
 services:
-  cloudumi-api:
-    container_name: cloudumi-api
+  cloudumi-preflight-cypress:
+    container_name: cloudumi-preflight-cypress
+    # TODO: Uncomment to limit resources to the same extent as ECS Fargate API server.
+    # cpus: 2
+    # mem_limit: 8g
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
       - ~/.aws:/root/.aws:cached
-      - .:/app:cached
+      # Uncomment to mount local code into container to see changes in realtime:
+      # - .:/app:cached
       # Don't allow node_modules to be a volume in container
+      - ./common/scripts/preflight/preflight_cypress.sh:/app/common/scripts/preflight/preflight_cypress.sh:cached
       - /app/frontend/node_modules/
+      - /app/ui/node_modules/
     ports:
       - 8092:8092
     depends_on:
       - cloudumi-redis
       - cloudumi-dynamodb
+      - cloudumi-pg
     links:
       - cloudumi-redis
       - cloudumi-dynamodb
-    command: bash -c 'python /app/api/__main__.py'
+      - cloudumi-pg
+    command: bash -c 'common/scripts/preflight/preflight_cypress.sh'
+    # Uncomment to run container in background and connect via `docker run`:
     # command: tail -f /dev/null
     environment:
       CONFIG_LOCATION: /app/configs/development_account/saas_development.yaml
       AWS_PROFILE: arn:aws:iam::759357822767:role/NoqSaasRoleLocalDev
       AWS_REGION: us-west-2
       AWS_DEFAULT_REGION: us-west-2
+      STAGE: development
+      PYTHONPATH: /app
+      RUNTIME_PROFILE: PREFLIGHT

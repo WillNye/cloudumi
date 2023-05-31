@@ -18,6 +18,7 @@ class IambicProviderHandler(BaseHandler):
         GET /api/v4/providers - List all providers that are enabled on the tenant’s IAMbic template repo.
         """
         tenant_id = self.ctx.db_tenant.id
+        self.set_header("Content-Type", "application/json")
         self.write(
             WebResponse(
                 success="success",
@@ -39,6 +40,7 @@ class IambicProviderDefinitionHandler(BaseHandler):
         query_params = ProviderDefinitionQueryParams(
             **{k: self.get_argument(k) for k in self.request.arguments}
         )
+        self.set_header("Content-Type", "application/json")
         self.write(
             WebResponse(
                 success="success",

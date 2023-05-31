@@ -1,5 +1,6 @@
 import sys
 
+import requests
 import tornado.escape
 from tornado.httpclient import AsyncHTTPClient, HTTPClientError, HTTPRequest
 from tornado.httputil import HTTPHeaders
@@ -13,6 +14,25 @@ from identity.lib.groups.models import GroupRequest
 
 log = config.get_logger()
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
+
+
+def send_slack_notification_sync(log_data, payload, slack_webhook_url):
+    headers = {"Content-Type": "application/json"}
+    try:
+        response = requests.post(
+            slack_webhook_url, headers=headers, data=json.dumps(payload)
+        )
+        if response.status_code == 200:
+            log_data["message"] = "Slack notification sent"
+            log.debug(log_data)
+        else:
+            log_data["message"] = "Error occurred sending Slack notification"
+            log_data["error"] = f"Status code: {response.status_code}"
+            log.error(log_data)
+    except requests.exceptions.RequestException as e:
+        log_data["message"] = "Error occurred sending Slack notification"
+        log_data["error"] = str(e)
+        log.error(log_data)
 
 
 async def _send_slack_notification(tenant, log_data, payload):

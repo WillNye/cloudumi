@@ -1,2 +1,1 @@
-export * from './Select';
-export * from './SelectOption';
+export { Select, SelectOption } from 'reablocks';
