@@ -15,12 +15,14 @@ export interface AuthResetPasswordInputs {
 export interface AuthContextProps {
   user: User | null;
   setUser: Dispatch<User | null>;
+  setInternalServerError: Dispatch<boolean>;
   getUser: () => Promise<QueryObserverResult<any, unknown>>;
 }
 
 export const AuthContext = createContext<AuthContextProps>({
   user: null,
   setUser: () => undefined,
+  setInternalServerError: () => undefined,
   getUser: () => undefined
 });
 

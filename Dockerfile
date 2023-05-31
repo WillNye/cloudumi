@@ -93,6 +93,7 @@ COPY . /app
 RUN python3.11 -m pip install -e . && \
     pip3 cache purge && \
     apt-get -y autoremove
+RUN rm -rf /root/.cache/
 
 RUN $CONFIG_LOCATION || alembic upgrade head
 

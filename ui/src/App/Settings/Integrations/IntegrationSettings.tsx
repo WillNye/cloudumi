@@ -16,7 +16,7 @@ import {
   CLOUD_PROVIDER_SECTION_DESCRIPTION,
   GENERAL_SECTION_DESCRPTION,
   GITHUB_CARD_DESCRIPTION,
-  // GOOGLE_CARD_DESCRIPTION,
+  // GOOGLE_WORKSPACE_CARD_DESCRIPTION,
   OKTA_CARD_DESCRIPTION,
   SLACK_CARD_DESCRIPTION
 } from './constants';
@@ -52,7 +52,7 @@ const IntegrationSettings = () => {
             link="/settings/integrations/aws"
           />
           {/* <IntegrationCard
-            description={GOOGLE_CARD_DESCRIPTION}
+            description={GOOGLE_WORKSPACE_CARD_DESCRIPTION}
             title="Configure GCP"
             icon={gcpIcon}
             buttonText="Configure"

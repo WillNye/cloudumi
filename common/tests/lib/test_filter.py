@@ -109,14 +109,17 @@ class TestFilterData(IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError):
             await filter_data(self.data, {**self.base_filter, "filtering": filter})
 
-    async def test_filter_with_invalid_property_key(self):
+    async def test_filter_with_invalid_property_key_generic_search(self):
         from common.lib.filter import filter_data
 
         filter = {
             "tokens": [{"propertyKey": "invalid", "operator": "=", "value": "New York"}]
         }
-        with self.assertRaises(KeyError):
-            res = await filter_data(
-                self.data, {**self.base_filter, "filtering": filter}
-            )
-            print(res)
+        res = await filter_data(self.data, {**self.base_filter, "filtering": filter})
+        self.assertEqual(
+            res.data,
+            [
+                {"id": 3, "name": "Bob", "age": 35, "city": "New York"},
+                {"id": 1, "name": "John", "age": 30, "city": "New York"},
+            ],
+        )

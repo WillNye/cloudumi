@@ -42,7 +42,11 @@ const AllRoles = () => {
   useEffect(() => {
     setQuery(exstingQuery => ({
       ...exstingQuery,
-      filtering: filter
+      filtering: filter,
+      pagination: {
+        ...exstingQuery.pagination,
+        currentPageIndex: 1
+      }
     }));
   }, [filter]);
 
