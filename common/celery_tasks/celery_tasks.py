@@ -2850,6 +2850,14 @@ def sync_iambic_templates_for_tenant(tenant: str) -> Dict:
     }
     log.debug(log_data)
     iambic = IambicGit(tenant)
+
+    if not async_to_sync(iambic.is_github_app_connected)():
+        # early return because github app is not even connected.
+        # Why check before relying the below git_repositories loop?
+        # there is a tear case in which tenant disconnect the github app
+        # from github side.
+        return log_data
+
     async_to_sync(iambic.clone_or_pull_git_repos)()
     async_to_sync(iambic.gather_templates_for_tenant)()
     async_to_sync(sync_tenant_templates_and_definitions)(tenant)

@@ -63,6 +63,18 @@ class IambicGit:
         self.db_tenant = None
         self.installation_id = None
 
+    async def is_github_app_connected(self):
+        """Use this function to handle the case github_app connectivity is missing
+
+        Note: This only checks against cloudumi database knowledge and does not
+        reach out to Github. Github side will have transient failure. The database
+        check is more repeatable.
+        """
+        # do not mutate the self object in this function
+        db_tenant = await Tenant.get_by_name(self.tenant)
+        gh_installation = await GitHubInstall.get(db_tenant)
+        return bool(gh_installation)
+
     async def get_access_token(self):
         if not self.db_tenant:
             self.db_tenant = await Tenant.get_by_name(self.tenant)
