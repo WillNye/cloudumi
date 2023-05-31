@@ -73,7 +73,7 @@ class IambicGit:
     def load_templates(self, template_paths, *args, **kwargs):
         tenant_repo_base_path_posix = Path(self.tenant_repo_base_path)
         for template_path in template_paths:
-            if tenant_repo_base_path_posix not in template_path.parents:
+            if tenant_repo_base_path_posix not in Path(template_path).parents:
                 raise Exception(
                     f"Template path {template_path} is not valid for this tenant."
                 )

@@ -31,16 +31,42 @@ pytest_single_process := PYTHONDONTWRITEBYTECODE=1 \
 html_report := --cov-report html
 test_args := --cov-report term-missing
 
+GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 BASE_DIR := $(shell pwd)
 AWS_PROFILE_STAGING = staging/staging_admin
 AWS_REGION_STAGING = us-west-2
 STAGING_VAR_FILES = --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars
+DEVELOPMENT_DOCKER_VOLUME_S3_BUCKET = consoleme-dev-configuration-bucket/docker_volumes_backup
+# Docker volume names
+DOCKER_VOLUMES_TO_BACKUP := cloudumi-pg cloudumi-redis cloudumi-dynamodb
+DOCKER_VOLUMES_BACKUP_DIR := ./docker_volumes_backup
 
+AWS_PROFILE_DEV = development/development_admin
 AWS_PROFILE_PROD = production/prod_admin
 AWS_REGION_PROD = us-west-2
 PROD_VAR_FILES = --var-file=live/shared/prod-1/noq.dev-prod.tfvars --var-file=live/shared/prod-1/secret.tfvars
 
 .PHONY: tf-staging-refresh tf-staging-plan tf-staging-apply tf-prod-refresh tf-prod-plan tf-prod-apply
+
+.PHONY: upload-volumes
+upload-volumes:
+	@echo "Uploading Docker volumes to S3..."
+	@noq file -f -p arn:aws:iam::759357822767:role/development_admin arn:aws:iam::759357822767:role/development_admin
+	@mkdir -p $(DOCKER_VOLUMES_BACKUP_DIR)
+	@for volume in $(DOCKER_VOLUMES_TO_BACKUP); do \
+		docker run --rm -e AWS_PROFILE=arn:aws:iam::759357822767:role/development_admin -v ~/.aws:/root/.aws:cached -v $$volume:/data -v $(PWD)/$(DOCKER_VOLUMES_BACKUP_DIR):/backup ubuntu tar cvf /backup/$$volume-$(GIT_BRANCH).tar /data; \
+		docker run --rm -e AWS_PROFILE=arn:aws:iam::759357822767:role/development_admin -v ~/.aws:/root/.aws:cached -v $(PWD)/$(DOCKER_VOLUMES_BACKUP_DIR):/backup amazon/aws-cli s3 cp /backup/$$volume-$(GIT_BRANCH).tar s3://$(DEVELOPMENT_DOCKER_VOLUME_S3_BUCKET)/$$volume-$(GIT_BRANCH).tar; \
+	done
+
+.PHONY: download-volumes
+download-volumes:
+	@echo "Downloading Docker volumes from S3..."
+	@noq file -f -p arn:aws:iam::759357822767:role/development_admin arn:aws:iam::759357822767:role/development_admin
+	@mkdir -p $(DOCKER_VOLUMES_BACKUP_DIR)
+	@for volume in $(DOCKER_VOLUMES_TO_BACKUP); do \
+		docker run --rm -e AWS_PROFILE=arn:aws:iam::759357822767:role/development_admin -v ~/.aws:/root/.aws:cached -v $(PWD)/$(DOCKER_VOLUMES_BACKUP_DIR):/backup amazon/aws-cli s3 cp s3://$(DEVELOPMENT_DOCKER_VOLUME_S3_BUCKET)/$$volume-$(GIT_BRANCH).tar /backup/$$volume-$(GIT_BRANCH).tar; \
+		docker run --rm -e AWS_PROFILE=arn:aws:iam::759357822767:role/development_admin -v $$volume:/data -v $(PWD)/$(DOCKER_VOLUMES_BACKUP_DIR):/backup ubuntu tar xvf /backup/$$volume-$(GIT_BRANCH).tar -C /; \
+	done
 
 .PHONY: clean
 clean:

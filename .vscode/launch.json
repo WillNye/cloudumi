@@ -256,13 +256,7 @@
       "type": "python",
       "request": "launch",
       "module": "pytest",
-      "args": [
-        "--ignore",
-        "functional_tests",
-        "-k",
-        "test_filter_with_invalid_property_key",
-        "."
-      ],
+      "args": ["--ignore", "functional_tests", "-c", "."],
       "console": "integratedTerminal",
       "justMyCode": false,
       "stopOnEntry": false,
