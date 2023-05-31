@@ -16,6 +16,7 @@ from common.request_types.models import (
     ChangeType,
     ChangeTypeTemplate,
     RequestType,
+    TypeAheadFieldHelper,
 )
 from common.request_types.utils import list_provider_typeahead_field_helpers
 
@@ -50,13 +51,9 @@ def get_services_permissions() -> dict[dict[list[str]]]:
     return service_permissions
 
 
-async def get_default_aws_request_types() -> list[RequestType]:
-    aws_typeahead_field_helpers = await list_provider_typeahead_field_helpers(
-        provider=aws_provider_resolver.provider
-    )
-    field_helper_map = {
-        field_helper.name: field_helper for field_helper in aws_typeahead_field_helpers
-    }
+def _get_default_aws_request_permission_request_types(
+    field_helper_map: dict[str:TypeAheadFieldHelper],
+) -> list[RequestType]:
 
     # Formatted like this to catch all RDS variants
     permission_changes = [
@@ -180,7 +177,8 @@ async def get_default_aws_request_types() -> list[RequestType]:
         {
           "Action":{{form.s3_permissions}},
           "Effect":"Allow",
-          "Resource": ["{{form.s3_bucket}}","{{form.s3_bucket}}/*"]}
+          "Resource": ["{{form.s3_bucket}}","{{form.s3_bucket}}/*"]
+        }
       ],
       "Version":"2012-10-17"
     }"""
@@ -399,10 +397,156 @@ async def get_default_aws_request_types() -> list[RequestType]:
         description="Add permissions to a managed policy on 1 or more accounts",
         provider=aws_provider_resolver.provider,
         template_types=[AWS_MANAGED_POLICY_TEMPLATE_TYPE],
-        template_attribute="properties.policy_document",
-        apply_attr_behavior="Merge",
+        template_attribute="properties.policy_document.statement",
+        apply_attr_behavior="Append",
         created_by="Noq",
     )
     add_permission_to_mp_request.change_types = deepcopy(permission_changes)
 
     return [add_permission_to_identity_request, add_permission_to_mp_request]
+
+
+def _get_default_aws_request_access_request_types(
+    field_helper_map: dict[str:TypeAheadFieldHelper],
+) -> list[RequestType]:
+
+    access_to_role_request = RequestType(
+        name="Request access to AWS IAM Role",
+        description="Request access to an AWS IAM Role on 1 or more accounts",
+        provider=aws_provider_resolver.provider,
+        template_types=[
+            AWS_IAM_ROLE_TEMPLATE_TYPE,
+        ],
+        template_attribute="access_rules",
+        apply_attr_behavior="Append",
+        created_by="Noq",
+    )
+    access_to_role_request.change_types = [
+        ChangeType(
+            name="Noq User access request",
+            description="Request Noq User access to an AWS IAM Role.",
+            change_fields=[
+                ChangeField(
+                    change_element=0,
+                    field_key="noq_email",
+                    field_type="TypeAhead",
+                    field_text="User E-Mail",
+                    description="The Noq user that requires access.",
+                    allow_none=False,
+                    allow_multiple=False,
+                    typeahead_field_helper_id=field_helper_map["Noq User"].id,
+                )
+            ],
+            change_template=ChangeTypeTemplate(
+                template="""
+        {
+            "users":["{{form.noq_email}}"],
+            "included_accounts": {{form.provider_definitions}}
+        }"""
+            ),
+            created_by="Noq",
+        ),
+        ChangeType(
+            name="Noq Group access request",
+            description="Request Noq Group access to an AWS IAM Role.",
+            change_fields=[
+                ChangeField(
+                    change_element=0,
+                    field_key="noq_group",
+                    field_type="TypeAhead",
+                    field_text="Group",
+                    description="The Noq group that requires access.",
+                    allow_none=False,
+                    allow_multiple=False,
+                    typeahead_field_helper_id=field_helper_map["Noq Group"].id,
+                )
+            ],
+            change_template=ChangeTypeTemplate(
+                template="""
+        {
+            "users":[{{form.noq_group}}],
+            "included_accounts": {{form.provider_definitions}}
+        }"""
+            ),
+            created_by="Noq",
+        ),
+    ]
+
+    access_to_permission_set_request = RequestType(
+        name="Request access to AWS Identity Center (SSO) PermissionSet",
+        description="Request access to an AWS Identity Center (SSO) PermissionSet on 1 or more accounts.",
+        provider=aws_provider_resolver.provider,
+        template_types=[
+            AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
+        ],
+        template_attribute="access_rules",
+        apply_attr_behavior="Append",
+        created_by="Noq",
+    )
+    access_to_permission_set_request.change_types = [
+        ChangeType(
+            name="SSO User access request",
+            description="Request SSO User access to an AWS SSO PermissionSet.",
+            change_fields=[
+                ChangeField(
+                    change_element=0,
+                    field_key="sso_username",
+                    field_type="TextBox",
+                    field_text="User",
+                    description="The SSO user that requires access.",
+                    allow_none=False,
+                    allow_multiple=False,
+                )
+            ],
+            change_template=ChangeTypeTemplate(
+                template="""
+        {
+            "users":[{{form.sso_username}}],
+            "included_accounts": {{form.provider_definitions}}
+        }"""
+            ),
+            created_by="Noq",
+        ),
+        ChangeType(
+            name="SSO Group access request",
+            description="Request SSO Group access to an AWS SSO PermissionSet.",
+            change_fields=[
+                ChangeField(
+                    change_element=0,
+                    field_key="noq_group",
+                    field_type="TextBox",
+                    field_text="Group",
+                    description="The SSO group that requires access.",
+                    allow_none=False,
+                    allow_multiple=False,
+                )
+            ],
+            change_template=ChangeTypeTemplate(
+                template="""
+        {
+            "users":[{{form.noq_group}}],
+            "included_accounts": {{form.provider_definitions}}
+        }"""
+            ),
+            created_by="Noq",
+        ),
+    ]
+
+    return [access_to_role_request, access_to_permission_set_request]
+
+
+async def get_default_aws_request_types() -> list[RequestType]:
+    aws_typeahead_field_helpers = await list_provider_typeahead_field_helpers(
+        provider=aws_provider_resolver.provider
+    )
+    field_helper_map = {
+        field_helper.name: field_helper for field_helper in aws_typeahead_field_helpers
+    }
+    default_request_types = _get_default_aws_request_permission_request_types(
+        field_helper_map
+    )
+    default_request_types.extend(
+        _get_default_aws_request_access_request_types(field_helper_map)
+    )
+
+    return default_request_types

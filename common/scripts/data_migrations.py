@@ -7,7 +7,7 @@ async def typeahead_upgrade():
     from common import TypeAheadFieldHelper
     from common.config.globals import ASYNC_PG_SESSION
 
-    new_typeahead_field_helpers = [
+    aws_typeahead_field_helpers = [
         dict(
             name="S3 Bucket ARN",
             description="Returns a list of S3 bucket ARNs.",
@@ -43,12 +43,27 @@ async def typeahead_upgrade():
             query_param_key="resource_arn",
             provider="aws",
         ),
+        dict(
+            name="Noq Group",
+            description="Returns a list of Noq Group names.",
+            endpoint="api/v4/self-service/typeahead/noq/groups",
+            query_param_key="name",
+            provider="aws",
+        ),
+        dict(
+            name="Noq User",
+            description="Returns a list of Noq User E-Mail addresses.",
+            endpoint="api/v4/self-service/typeahead/noq/users",
+            query_param_key="email",
+            provider="aws",
+        ),
     ]
+    default_typeahead_field_helpers = aws_typeahead_field_helpers
 
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
             stmt = postgresql.insert(TypeAheadFieldHelper).values(
-                new_typeahead_field_helpers
+                default_typeahead_field_helpers
             )
             stmt = stmt.on_conflict_do_nothing()
 
