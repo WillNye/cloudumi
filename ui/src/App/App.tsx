@@ -4,6 +4,7 @@ import { ToastContainer } from 'react-toastify';
 import { AuthRoute } from 'core/Auth';
 import { Loader } from 'shared/elements/Loader';
 import 'react-toastify/dist/ReactToastify.css';
+import ChallengeValidator from './ChallengeValidator/ChallengeValidator';
 
 const Login = lazy(() => import('./Login'));
 const Settings = lazy(() => import('./Settings'));
@@ -32,6 +33,10 @@ export const App: FC = () => (
           <Route path="/settings/*" element={<Settings />} />
           <Route path="/requests/*" element={<Requests />} />
           <Route path="/role/*" element={<SignInToRole />} />
+          <Route
+            path="/challenge_validator/:challengeToken"
+            element={<ChallengeValidator />}
+          />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Route>
