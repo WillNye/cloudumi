@@ -515,16 +515,16 @@ def make_app(jwt_validator=None):
     )
     router.rules.append(
         Rule(
-            CookieMatcher(r"/(.*)", "V2_UI"),
+            CookieMatcher(r"/(.*)", "V1_UI"),
             FrontendHandler,
-            dict(path=frontend_v2_path, default_filename="index.html"),
+            dict(path=frontend_path, default_filename="index.html"),
         ),
     )
     router.rules.append(
         Rule(
             PathMatches(r"/(.*)"),
             FrontendHandler,
-            dict(path=frontend_path, default_filename="index.html"),
+            dict(path=frontend_v2_path, default_filename="index.html"),
         ),
     )
 

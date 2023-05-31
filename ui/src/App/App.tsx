@@ -14,6 +14,9 @@ const Access = lazy(() => import('./Access'));
 const Dashboard = lazy(() => import('./Dashboard'));
 const EULA = lazy(() => import('./EULA'));
 const Logout = lazy(() => import('./Logout'));
+const SignInToRole = lazy(
+  () => import('./Access/components/common/SignInToRole/SignInToRole')
+);
 
 export const App: FC = () => (
   <Suspense fallback={<Loader fullPage />}>
@@ -29,6 +32,7 @@ export const App: FC = () => (
           <Route path="/settings/*" element={<Settings />} />
           <Route path="/requests/*" element={<Requests />} />
           <Route path="*" element={<NotFound />} />
+          <Route path="/role/*" element={<SignInToRole />} />
         </Route>
       </Route>
 

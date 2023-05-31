@@ -10,12 +10,17 @@ import styles from './AWSSignin.module.css';
 
 type AWSSignInProps = {
   role;
+  showDialogInitially?: boolean;
   setErrorMessage: Dispatch<string | null>;
 };
 
-const AWSSignIn: FC<AWSSignInProps> = ({ role, setErrorMessage }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [showDialog, setShowDialog] = useState(false);
+const AWSSignIn: FC<AWSSignInProps> = ({
+  role,
+  showDialogInitially = false,
+  setErrorMessage
+}) => {
+  const [isLoading, setIsLoading] = useState(showDialogInitially);
+  const [showDialog, setShowDialog] = useState(showDialogInitially);
 
   const { refetch: handleAWSSignIn } = useQuery({
     enabled: false,
