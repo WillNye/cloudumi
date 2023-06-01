@@ -1,0 +1,40 @@
+.downloadsContainer {
+  padding: 20px;
+}
+
+.downloadsHeader {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.downloadsDescription {
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.navList {
+  list-style-type: none;
+  padding: 0;
+  display: flex;
+  justify-content: start;
+  margin-bottom: 20px;
+}
+
+.navItem {
+  margin-right: 10px;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.navItem:hover {
+  background-color: #f0f0f0;
+}
+
+.isActive {
+  font-weight: bold;
+}
+
+.codeBlockContainer {
+  max-width: 50%;
+}
