@@ -70,7 +70,7 @@ export const signinWithSSO = () => {
 
 export const awsSignIn = async ({ queryKey }) => {
   const [_, role, extraParams] = queryKey;
-  const url = `${V2_API_URL}/role_login/${role}` + extraParams;
+  const url = `${V2_API_URL}/role_login/${role}?${extraParams}`;
   const response = await axios.get(url);
   return response.data;
 };

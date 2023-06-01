@@ -71,6 +71,13 @@ class UserProfileHandler(BaseAPIV1Handler):
             "temp_policy_support": config.get_tenant_specific_key(
                 "policies.temp_policy_support", tenant, True
             ),
+            "access": {
+                "aws": {
+                    "default_region": config.get_tenant_specific_key(
+                        "access.aws.default_region", tenant, "us-east-1"
+                    )
+                }
+            },
         }
 
         custom_page_header: Dict[str, str] = await get_custom_page_header(

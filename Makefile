@@ -253,3 +253,8 @@ generate_pydantic_models_from_swagger_spec:
 	datamodel-codegen --input swagger.yaml  --output ../models.py --base-class common.lib.pydantic.BaseModel --field-extra-keys 'is_secret' && \
 	black ../models.py
 	@echo "Pydantic models generated."
+
+.PHONY: update_aws_service_definitions_frontend
+update_aws_service_definitions_frontend:
+	@echo "Updating Frontend AWS service Definitions from policyuniverse..."
+	python common/scripts/download_aws_services.py --output_location ui/src/assets/definitions/aws_services_simple.json
