@@ -32,7 +32,7 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
       const relativePath = window.location.pathname + window.location.search;
       sessionStorage.setItem('preLoginPath', relativePath);
       if (!isResetPasswordRoute) {
-        navigate('/login?redirect_uri=' + relativePath);
+        navigate('/login');
       }
       setIsLoading(false);
     }
