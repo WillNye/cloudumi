@@ -1,5 +1,5 @@
 import { FC, useEffect, useState, useMemo } from 'react';
-import axios from 'axios';
+import axios from 'core/Axios/Axios';
 import { Table } from 'shared/elements/Table';
 import { Segment } from 'shared/layout/Segment';
 import { CopyBlock, dracula } from 'react-code-blocks';

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import styles from './ChallengeValidator.module.css';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import axios from 'core/Axios/Axios';
 import ReactMarkdown from 'react-markdown';
 import { Button } from 'shared/elements/Button';
 import { Segment } from 'shared/layout/Segment';
