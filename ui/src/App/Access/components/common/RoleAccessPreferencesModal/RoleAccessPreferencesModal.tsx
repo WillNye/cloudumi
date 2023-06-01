@@ -3,6 +3,7 @@ import { Dialog } from 'shared/layers/Dialog';
 import { Button } from 'shared/elements/Button';
 import { Select, SelectOption } from 'shared/form/Select';
 import { AWS_REGIONS, AWS_SERVICES_SIMPLE } from 'core/API/constants';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 interface RoleAccessPreferencesModalProps {
   role: { arn: string; inactive_tra: boolean };
@@ -34,11 +35,13 @@ const RoleAccessPreferencesModal: FC<RoleAccessPreferencesModalProps> = ({
     <Dialog
       showDialog={showDialog}
       setShowDialog={setShowDialog}
-      header={'User Preferences'}
+      header={''}
       size="medium"
       showCloseIcon
     >
       <div>
+        <h3>User Preferences for {role.arn}</h3>
+        <LineBreak />
         <label>
           Default Region:
           <Select
@@ -54,7 +57,7 @@ const RoleAccessPreferencesModal: FC<RoleAccessPreferencesModalProps> = ({
             ))}
           </Select>
         </label>
-
+        <LineBreak />
         <label>
           Default Service:
           <Select
@@ -71,6 +74,7 @@ const RoleAccessPreferencesModal: FC<RoleAccessPreferencesModalProps> = ({
           </Select>
         </label>
       </div>
+      <LineBreak />
       <Button onClick={handleSave} color="secondary" fullWidth>
         Save
       </Button>
