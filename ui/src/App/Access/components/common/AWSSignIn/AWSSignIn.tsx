@@ -12,6 +12,7 @@ import { useEffect } from 'react';
 
 type AWSSignInProps = {
   role;
+  extraParams?: string;
   showDialogInitially?: boolean;
   setErrorMessage: Dispatch<string | null>;
 };
@@ -19,6 +20,7 @@ type AWSSignInProps = {
 const AWSSignIn: FC<AWSSignInProps> = ({
   role,
   showDialogInitially = false,
+  extraParams = '',
   setErrorMessage
 }) => {
   const [isLoading, setIsLoading] = useState(showDialogInitially);
@@ -35,7 +37,7 @@ const AWSSignIn: FC<AWSSignInProps> = ({
   const { refetch: handleAWSSignIn } = useQuery({
     enabled: false,
     queryFn: awsSignIn,
-    queryKey: ['awsSignIn', role.arn],
+    queryKey: ['awsSignIn', role.arn, extraParams],
     onSuccess: roleData => {
       if (!roleData) {
         setShowDialog(false);
