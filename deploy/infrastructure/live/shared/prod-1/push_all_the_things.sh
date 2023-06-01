@@ -38,10 +38,6 @@ if [ "prod" == "prod" ]; then
   fi
 fi
 
-export VERSION=$(git describe --tags --abbrev=0)
-export GIT_HASH=$(git rev-parse --short HEAD)
-export GIT_DIRTY="$(git diff --quiet || echo '-dirty')"
-
 export UNTRACKED_FILES="$(git ls-files --others --exclude-standard)"
 # Stash untracked files if they exist
 if [ -n "$UNTRACKED_FILES" ]; then
@@ -49,9 +45,12 @@ if [ -n "$UNTRACKED_FILES" ]; then
     echo "Stashing untracked files"
     git stash save --include-untracked
 fi
-
 # Catch exit signal to apply the stash
 trap 'if [ -n "$UNTRACKED_FILES" ]; then echo "Applying stash to bring back untracked files"; git stash apply; fi' EXIT
+
+export VERSION=$(git describe --tags --abbrev=0)
+export GIT_HASH=$(git rev-parse --short HEAD)
+export GIT_DIRTY="$(git diff --quiet || echo '-dirty')"
 
 export VERSION_PATH="$VERSION-$GIT_HASH$GIT_DIRTY/$BRANCH/"
 export UPLOAD_DIRECTORY="s3://noq-global-frontend/$VERSION_PATH"
