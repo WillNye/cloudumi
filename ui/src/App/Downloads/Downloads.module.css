@@ -1,40 +1,59 @@
-.downloadsContainer {
-  padding: 20px;
-}
+.container {
+  overflow-y: scroll;
+  height: 100%;
 
-.downloadsHeader {
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 10px;
-}
+  .nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-md)
+      var(--spacing-lg);
+    background-color: var(--gray-700);
+    margin: var(--spacing-sm) 0px;
+    border-radius: var(--border-radius-lg);
+  }
 
-.downloadsDescription {
-  font-size: 18px;
-  margin-bottom: 20px;
-}
+  .navList {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
 
-.navList {
-  list-style-type: none;
-  padding: 0;
-  display: flex;
-  justify-content: start;
-  margin-bottom: 20px;
-}
+  .navItem {
+    margin: 0 10px;
+    cursor: pointer;
+    color: var(--gray-100);
 
-.navItem {
-  margin-right: 10px;
-  padding: 10px;
-  cursor: pointer;
-}
+    .text {
+      margin-bottom: var(--spacing-md);
+    }
 
-.navItem:hover {
-  background-color: #f0f0f0;
-}
+    &:hover {
+      border-bottom: solid 2px var(--gray-100);
+    }
+  }
 
-.isActive {
-  font-weight: bold;
-}
+  .isActive {
+    color: var(--blue-500);
+    border-bottom: solid 2px var(--blue-500);
 
-.codeBlockContainer {
-  max-width: 50%;
+    &:hover {
+      color: var(--blue-600);
+      border-bottom: solid 2px var(--blue-600);
+    }
+  }
+
+  .codeBlockContainer {
+    max-width: 100%;
+    margin: var(--spacing-lg);
+
+    div {
+      padding: var(--spacing-lg);
+    }
+  }
+
+  .description {
+    color: var(--gray-100);
+  }
 }

@@ -1,14 +1,9 @@
-/* ChallengeValidator.module.css */
-.markdownContainer {
-  /* display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    text-align: lrfg;
-    font-size: 1.2em;
+.container {
+  height: 100%;
+
+  .markdownContainer {
+    font-size: var(--font-size-md);
     line-height: 1.5em;
-    padding: 1em;
     max-width: 80%;
-    margin: 0 auto; */
+  }
 }

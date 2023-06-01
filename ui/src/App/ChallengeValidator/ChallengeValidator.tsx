@@ -4,6 +4,8 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import { Button } from 'shared/elements/Button';
+import { Segment } from 'shared/layout/Segment';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 interface ChallengeValidatorResponse {
   message: string;
@@ -48,16 +50,19 @@ const ChallengeValidator = () => {
   };
 
   return (
-    <>
-      <div className={styles.markdownContainer}>
-        <ReactMarkdown linkTarget="_blank">{result?.message}</ReactMarkdown>
-      </div>
-      {showApproveButton ? (
-        <Button fullWidth color="primary" onClick={validateChallengeToken}>
-          Approve Credential Request
-        </Button>
-      ) : null}
-    </>
+    <div className={styles.container}>
+      <Segment>
+        <div className={styles.markdownContainer}>
+          <ReactMarkdown linkTarget="_blank">{result?.message}</ReactMarkdown>
+        </div>
+        <LineBreak />
+        {showApproveButton ? (
+          <Button color="primary" size="small" onClick={validateChallengeToken}>
+            Approve Credential Request
+          </Button>
+        ) : null}
+      </Segment>
+    </div>
   );
 };
 
