@@ -1,0 +1,9 @@
+.container {
+  height: 100%;
+
+  .markdownContainer {
+    font-size: var(--font-size-md);
+    line-height: 1.5em;
+    max-width: 80%;
+  }
+}

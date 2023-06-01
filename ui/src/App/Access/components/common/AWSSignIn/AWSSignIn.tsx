@@ -1,4 +1,5 @@
 import Spinner from '@noqdev/cloudscape/spinner';
+import { useSearchParams } from 'react-router-dom';
 import { awsSignIn } from 'core/API/auth';
 import { extractErrorMessage } from 'core/API/utils';
 import { Dispatch, FC, useCallback, useMemo, useState } from 'react';
@@ -7,20 +8,36 @@ import { Dialog } from 'shared/layers/Dialog';
 import { AWS_SIGN_OUT_URL } from 'App/Access/constants';
 import { useQuery } from '@tanstack/react-query';
 import styles from './AWSSignin.module.css';
+import { useEffect } from 'react';
 
 type AWSSignInProps = {
   role;
+  extraParams?: string;
+  showDialogInitially?: boolean;
   setErrorMessage: Dispatch<string | null>;
 };
 
-const AWSSignIn: FC<AWSSignInProps> = ({ role, setErrorMessage }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [showDialog, setShowDialog] = useState(false);
+const AWSSignIn: FC<AWSSignInProps> = ({
+  role,
+  showDialogInitially = false,
+  extraParams = '',
+  setErrorMessage
+}) => {
+  const [isLoading, setIsLoading] = useState(showDialogInitially);
+  const [showDialog, setShowDialog] = useState(showDialogInitially);
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const warningMessage = searchParams.get('warningMessage');
+    if (warningMessage) {
+      setErrorMessage(atob(warningMessage));
+    }
+  }, [searchParams, setErrorMessage]);
 
   const { refetch: handleAWSSignIn } = useQuery({
     enabled: false,
     queryFn: awsSignIn,
-    queryKey: ['awsSignIn', role.arn],
+    queryKey: ['awsSignIn', role.arn, extraParams],
     onSuccess: roleData => {
       if (!roleData) {
         setShowDialog(false);
