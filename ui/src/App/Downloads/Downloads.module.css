@@ -46,7 +46,6 @@
 
   .codeBlockContainer {
     max-width: 100%;
-    margin: var(--spacing-lg);
 
     div {
       padding: var(--spacing-lg);

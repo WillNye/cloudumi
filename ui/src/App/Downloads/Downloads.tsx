@@ -2,9 +2,10 @@ import { FC, useEffect, useState, useMemo } from 'react';
 import axios from 'core/Axios/Axios';
 import { Table } from 'shared/elements/Table';
 import { Segment } from 'shared/layout/Segment';
-import { CopyBlock, dracula } from 'react-code-blocks';
 import css from './Downloads.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
+import { CodeBlock } from 'shared/elements/CodeBlock';
+import { Link } from 'react-router-dom';
 
 interface DownloadLink {
   download_url: string;
@@ -52,12 +53,7 @@ const Downloads: FC = () => {
       return (
         noqInstallScriptWindows && (
           <div className={css.codeBlockContainer}>
-            <CopyBlock
-              text={noqInstallScriptWindows}
-              language={'powershell'}
-              showLineNumbers={false}
-              theme={dracula}
-            />
+            <CodeBlock code={noqInstallScriptWindows} />
           </div>
         )
       );
@@ -66,12 +62,7 @@ const Downloads: FC = () => {
     return (
       noqInstallScript && (
         <div className={css.codeBlockContainer}>
-          <CopyBlock
-            text={noqInstallScript}
-            language={'shell'}
-            showLineNumbers={false}
-            theme={dracula}
-          />
+          <CodeBlock code={noqInstallScript} />
         </div>
       )
     );
@@ -110,7 +101,6 @@ const Downloads: FC = () => {
           </ul>
         </div>
         {content}
-        <LineBreak />
         {noqDownloadTable.length ? (
           <Table
             columns={[
@@ -118,13 +108,13 @@ const Downloads: FC = () => {
                 Header: 'Official Downloads (OS Name)',
                 accessor: 'os_name',
                 Cell: ({ cell: { value }, row: { original } }) => (
-                  <a
-                    href={original.download_url}
+                  <Link
+                    to={original.download_url}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
                     {value}
-                  </a>
+                  </Link>
                 )
               }
             ]}
