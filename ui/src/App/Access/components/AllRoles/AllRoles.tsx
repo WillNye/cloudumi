@@ -62,7 +62,7 @@ const AllRoles = () => {
             <div className={css.tableSecondaryText}>{item.account_id}</div>
           </div>
         ),
-        moreActions: <MoreActions />
+        moreActions: <MoreActions role={item} />
       };
     });
   }, [allRolesData]);
