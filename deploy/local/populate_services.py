@@ -311,7 +311,7 @@ headers:
     enabled: false
   role_login:
     enabled: true
-url: https://cloudumidev.com
+url: https://cloudumidev.com:3000
 application_admin:
   - engineering@noq.dev
   - noq_admins
@@ -332,7 +332,7 @@ account_ids_to_name:
 auth:
   extra_auth_cookies:
     - AWSELBAuthSessionCookie
-  logout_redirect_url: https://cloudumidev-com.auth.us-west-2.amazoncognito.com/logout?client_id=3vqhl3rfcfoqhl88g47norqick&logout_uri=https://cloudumidev.com
+  logout_redirect_url: https://cloudumidev-com.auth.us-west-2.amazoncognito.com/logout?client_id=3vqhl3rfcfoqhl88g47norqick&logout_uri=https://cloudumidev.com:3000
   challenge_url:
     enabled: true
   get_user_by_oidc: true
@@ -509,7 +509,7 @@ headers:
     enabled: false
   role_login:
     enabled: true
-url: https://cloudumisamldev.com
+url: https://cloudumisamldev.com:3000
 application_admin: engineering@noq.dev
 secrets:
   jwt_secret: {token_urlsafe(32)}
@@ -528,7 +528,7 @@ account_ids_to_name:
 auth:
   extra_auth_cookies:
     - AWSELBAuthSessionCookie
-  logout_redirect_url: https://cloudumidev-com.auth.us-west-2.amazoncognito.com/logout?client_id=3vqhl3rfcfoqhl88g47norqick&logout_uri=https://cloudumidev.com
+  logout_redirect_url: https://cloudumidev-com.auth.us-west-2.amazoncognito.com/logout?client_id=3vqhl3rfcfoqhl88g47norqick&logout_uri=https://cloudumidev.com:3000
   challenge_url:
     enabled: true
   get_user_by_saml: true
@@ -544,7 +544,7 @@ get_user_by_saml_settings:
     groups: groups
     email: email
   idp:
-    entityId: https://cloudumisamldev.com
+    entityId: https://cloudumisamldev.com:3000
     singleSignOnService:
       binding: urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST
       url: https://sso.jumpcloud.com/saml2/cloudumisamldev
