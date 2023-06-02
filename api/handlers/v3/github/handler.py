@@ -16,7 +16,6 @@ from common.models import IambicRepoDetails, WebResponse
 from common.tenants.models import Tenant
 
 # TODO: Need to know which repos to use, in case they grant us access to more than necessary.
-# TODO: Which repo does this installation token have access to?
 # TODO: Event driven could route messages to SQS and then have a worker process them. Maybe for Slack too.
 
 
@@ -107,17 +106,14 @@ class GitHubEventsHandler(TornadoRequestHandler):
             await tenant_github_install.delete()
             self.set_status(204)
             return
-        # if github_action
-
-        # 1. Verify the payload signature
-        # https://github.com/noqdev/iambic/blob/main/iambic/plugins/v0_1_0/github/github_app.py#L141
-        # 2. Gate on `installation.id` to find the tenant
-        print("here")
-        # 3. Check if valid IAMbic repo for tenant
-        # 4. Rock on
-        # TODO: Make sure Github is not resending events for non-500 status codes that we return
-        # TODO: Figure out how to rotate private key.
-        # example body
+        # TODO any clean up method if we need to call if webhook event
+        # notify us repos is removed
+        # elif github_action == "removed":
+        #     repositories_removed = github_event["repositories_removed"]
+        else:
+            self.set_status(
+                204
+            )  # such that sender won't attempt to re-send the event to us again.
 
 
 class GithubStatusHandler(BaseAdminHandler):
