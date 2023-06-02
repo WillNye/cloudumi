@@ -18,7 +18,7 @@ const SelectRequestType = () => {
   return (
     <Segment>
       <div className={styles.container}>
-        <h3>Request Access</h3>
+        <h3>Request Type</h3>
         <LineBreak />
         <p className={styles.subText}>What would you like to do?</p>
         <LineBreak size="large" />

@@ -132,11 +132,11 @@ const CompletionForm = () => {
           <LineBreak size="large" />
           <Button fullWidth>Submit Request</Button>
         </div>
-        <div className={styles.codeEditor}>
-          {/* <h4>Preview</h4> */}
+        {/* <div className={styles.codeEditor}>
+          <h4>Preview</h4>
           <LineBreak />
-          <CodeEditor />
-        </div>
+          <CodeEditor minHeight={650} />
+        </div> */}
       </div>
     </div>
   );
