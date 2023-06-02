@@ -12,6 +12,14 @@ export const ProfileSettings: FC = () => {
     PROFILE_SETTINGS_TABS.DETAILS
   );
 
+  const getNavItemClass = tab => {
+    let classes = [css.navItem];
+    if (currentTab === tab) {
+      classes.push(css.isActive);
+    }
+    return classes.join(' ');
+  };
+
   const userStoredPreferences = JSON.parse(
     localStorage.getItem('user-preferences') || '{}'
   );
@@ -74,18 +82,13 @@ export const ProfileSettings: FC = () => {
         <nav className={css.nav}>
           <ul className={css.navList}>
             <li
-              className={`${css.navItem} ${
-                currentTab === PROFILE_SETTINGS_TABS.DETAILS && css.isActive
-              }`}
+              className={getNavItemClass(PROFILE_SETTINGS_TABS.DETAILS)}
               onClick={() => setCurrentTab(PROFILE_SETTINGS_TABS.DETAILS)}
             >
               <div className={css.text}>User Details</div>
             </li>
             <li
-              className={`${css.navItem} ${
-                currentTab === PROFILE_SETTINGS_TABS.CHANGE_PASSWORD &&
-                css.isActive
-              }`}
+              className={getNavItemClass(PROFILE_SETTINGS_TABS.CHANGE_PASSWORD)}
               onClick={() =>
                 setCurrentTab(PROFILE_SETTINGS_TABS.CHANGE_PASSWORD)
               }
@@ -93,10 +96,9 @@ export const ProfileSettings: FC = () => {
               <div className={css.text}>Change Password</div>
             </li>
             <li
-              className={`${css.navItem} ${
-                currentTab === PROFILE_SETTINGS_TABS.ACCESS_PREFERENCES &&
-                css.isActive
-              }`}
+              className={getNavItemClass(
+                PROFILE_SETTINGS_TABS.ACCESS_PREFERENCES
+              )}
               onClick={() =>
                 setCurrentTab(PROFILE_SETTINGS_TABS.ACCESS_PREFERENCES)
               }
