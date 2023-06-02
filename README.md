@@ -319,3 +319,11 @@ Locate and select the log group for your staging API container (usually named as
 Choose the appropriate log stream (typically prefixed with "web" if you followed the awslogs-stream-prefix configuration in your task definition).
 Look for log events indicating the restart of the API server. You can also use CloudWatch Logs Insights to query and analyze the logs for specific patterns or events related to the restart.
 By using watchdog and watchmedo in the staging environment, you can quickly test and iterate on changes without having to manually restart the API server or rebuild the entire container.
+
+## Updating AWS Service Definitions in the Frontend
+
+If you need to update the AWS service definitions that are specified in the frontend, it's a simple process that involves running a make command. This command runs a Python script which pulls the latest service definitions from policyuniverse and updates the relevant JSON file in your frontend assets.
+
+```bash
+make update_aws_service_definitions_frontend
+```

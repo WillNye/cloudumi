@@ -74,7 +74,7 @@ const EligibleRoles = () => {
             role={`${item.account_name}/${roleName}`}
           />
         ),
-        moreActions: <MoreActions />
+        moreActions: <MoreActions role={item} />
       };
     });
   }, [eligibleRolesData]);

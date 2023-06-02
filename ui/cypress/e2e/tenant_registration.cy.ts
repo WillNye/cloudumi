@@ -1,6 +1,5 @@
 /// <reference types="cypress" />
 import * as CryptoJS from 'crypto-js';
-import { authenticator } from 'otplib';
 const date = new Date();
 const DOMAIN = 'test-RANDOM_DIGITS.example.com';
 
