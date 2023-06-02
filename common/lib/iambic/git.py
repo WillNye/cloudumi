@@ -52,6 +52,34 @@ from common.tenants.models import Tenant
 IAMBIC_REPOS_BASE_KEY = "iambic_repos"
 
 
+async def get_github_repos(access_token):
+    # maximum supported value is 100
+    # github default is 30
+    # to test, change this to 1 to test pagination stitching response
+    # why 100? with gzip compression, it's better to have
+    # more results in single response, and let's compression take advantage
+    # of repeated strings.
+    per_page = 100
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/vnd.github.v3+json",
+        "Accept-Encoding": "gzip, deflate, br",
+        "per_page": f"{per_page}",
+    }
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            "https://api.github.com/installation/repositories", headers=headers
+        )
+        response.raise_for_status()
+        content_so_far = response.json()
+        # handle pagination: https://docs.github.com/en/rest/guides/using-pagination-in-the-rest-api?apiVersion=2022-11-28
+        while "next" in response.links:
+            response = await client.get(response.links["next"]["url"], headers=headers)
+            response.raise_for_status()
+            content_so_far["repositories"].extend(response.json()["repositories"])
+    return content_so_far
+
+
 class IambicGit:
     def __init__(self, tenant: str) -> None:
         self.tenant: str = tenant
@@ -109,16 +137,7 @@ class IambicGit:
 
     async def get_repos(self):
         access_token = await self.get_access_token()
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Accept": "application/vnd.github.v3+json",
-        }
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                "https://api.github.com/installation/repositories", headers=headers
-            )
-        response.raise_for_status()
-        return response.json()
+        return await get_github_repos(access_token)
 
     def get_iambic_repo_path(self, repo_name):
         return os.path.join(self.tenant_repo_base_path, repo_name)
