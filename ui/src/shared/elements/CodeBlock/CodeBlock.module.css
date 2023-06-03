@@ -1,5 +1,4 @@
 .codeBlock {
-  padding: var(--spacing-sm);
   position: relative;
   background-color: var(--gray-800);
   color: var(--gray-200);
@@ -7,14 +6,21 @@
   border-radius: var(--border-radius-md);
   font-weight: 500;
 
+  .copyBtn {
+    position: absolute;
+    right: 4px;
+    top: 12px;
+  }
+
   pre {
-    padding: var(--spacing-lg);
+    background-color: var(--gray-900) !important;
+    border-radius: var(--border-radius-md) !important;
+    border: solid 2px var(--gray-500) !important;
+    padding: var(--spacing-lg) !important;
     overflow-y: auto;
   }
 
-  .copyBtn {
-    position: absolute;
-    right: 5px;
-    top: 5px;
+  code {
+    background-color: var(--gray-900) !important;
   }
 }

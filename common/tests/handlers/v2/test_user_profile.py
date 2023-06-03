@@ -52,6 +52,7 @@ class TestUserProfile(NOQAsyncHTTPTestCase):
                     "landing_url": None,
                     "notifications": {"enabled": None, "request_interval": 60},
                     "temp_policy_support": True,
+                    "access": {"aws": {"default_region": "us-east-1"}},
                 },
                 "user": "testuser@example.com",
                 "can_logout": True,

@@ -185,25 +185,24 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
                 To retrieve AWS credentials on demand
               </p>
               <div className={styles.subHeader}>Credential Process</div>
-              <CodeBlock>
-                {`noq credential_process -g ${role}
+              <CodeBlock
+                code={`noq credential_process -g ${role}
 export AWS_PROFILE=${role}`}
-              </CodeBlock>
-
+              />
               <div className={styles.subHeader}>ECS Credential Provider</div>
-              <CodeBlock>
-                {`noq serve & export AWS_CONTAINER_CREDENTIALS_FULL_URI=${window.location.origin}/ecs/${role} `}
-              </CodeBlock>
+              <CodeBlock
+                code={`noq serve & export AWS_CONTAINER_CREDENTIALS_FULL_URI=${window.location.origin}/ecs/${role} `}
+              />
 
               <div className={styles.subHeader}>Write Credentials to File</div>
-              <CodeBlock>
-                {`noq file -p ${role}
+              <CodeBlock
+                code={`noq file -p ${role}
 export AWS_PROFILE=${role}`}
-              </CodeBlock>
+              />
 
               <div className={styles.subHeader}>Credential Export</div>
               <div className={styles.codeBlock}>
-                <CodeBlock>{`noq export ${role}`}</CodeBlock>
+                <CodeBlock code={`noq export ${role}`} />
               </div>
 
               <div
@@ -216,11 +215,11 @@ export AWS_PROFILE=${role}`}
                 To configure your workspace
               </p>
               {crendentials ? (
-                <CodeBlock>
-                  {`export AWS_ACCESS_KEY_ID=${crendentials?.AccessKeyId}
+                <CodeBlock
+                  code={`export AWS_ACCESS_KEY_ID=${crendentials?.AccessKeyId}
 export AWS_SECRET_ACCESS_KEY=${crendentials?.SecretAccessKey}
 export AWS_SESSION_TOKEN=${crendentials?.SessionToken}`}
-                </CodeBlock>
+                />
               ) : (
                 <Notification
                   header="Missing credentials"
@@ -238,12 +237,12 @@ export AWS_SESSION_TOKEN=${crendentials?.SessionToken}`}
                 Add a profile in your AWS credentials file
               </p>
               {crendentials ? (
-                <CodeBlock>
-                  {`[${role}]
+                <CodeBlock
+                  code={`[${role}]
 aws_access_key_id=${crendentials?.AccessKeyId}
 aws_secret_access_key=${crendentials?.SecretAccessKey}
 aws_session_token=${crendentials?.SessionToken}`}
-                </CodeBlock>
+                />
               ) : (
                 <Notification
                   header="Missing credentials"

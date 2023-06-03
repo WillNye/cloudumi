@@ -29,12 +29,20 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
       setIsLoading(false);
     },
     onError: () => {
+      const relativePath = window.location.pathname + window.location.search;
+      sessionStorage.setItem('preLoginPath', relativePath);
       if (!isResetPasswordRoute) {
         navigate('/login');
       }
       setIsLoading(false);
     }
   });
+
+  const preLoginPath = sessionStorage.getItem('preLoginPath');
+  if (user && preLoginPath) {
+    sessionStorage.removeItem('preLoginPath');
+    window.location.href = preLoginPath;
+  }
 
   const values = useMemo(
     () => ({

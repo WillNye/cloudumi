@@ -1,12 +1,29 @@
-import { useCallback, useRef, useState } from 'react';
+import { FC, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import styles from './CodeBlock.module.css';
 import { Button } from '../Button';
+import Prism from 'prismjs';
+import 'prismjs/themes/prism-dark.css';
+import classNames from 'classnames';
 
-export const CodeBlock = ({ children }) => {
+interface CodeBlockProps {
+  code: ReactNode;
+  language?: string;
+}
+
+export const CodeBlock: FC<CodeBlockProps> = ({
+  code,
+  language = 'powershell'
+}) => {
+  const codeRef = useRef(null);
+
   const [isCopied, setIsCopied] = useState(false);
   const [showCopy, setShowCopy] = useState(false);
 
-  const codeRef = useRef(null);
+  useEffect(() => {
+    if (codeRef.current) {
+      Prism.highlightElement(codeRef.current);
+    }
+  }, [code, language, codeRef]);
 
   const handleMouseLeave = useCallback(() => {
     setTimeout(() => {
@@ -47,8 +64,12 @@ export const CodeBlock = ({ children }) => {
           />
         </div>
       )}
-      <pre>
-        <code ref={codeRef}>{children}</code>
+      <pre
+        className={classNames({
+          [`language-${language}`]: language
+        })}
+      >
+        <code ref={codeRef}>{code}</code>
       </pre>
     </div>
   );
