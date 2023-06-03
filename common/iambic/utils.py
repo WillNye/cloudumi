@@ -6,7 +6,7 @@ from common.models import IambicRepoDetails
 
 
 async def save_iambic_repos(
-    tenant: str, iambic_repos: list[IambicRepoDetails], user: str
+    tenant: str, iambic_repos: IambicRepoDetails, user: str
 ) -> bool:
 
     ddb = RestrictedDynamoHandler()
