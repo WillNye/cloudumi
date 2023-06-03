@@ -40,7 +40,7 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
       .catch(error => {
         console.error(error);
       });
-  }, []);
+  }, [isGithubConnected]);
 
   const handleRepoChange = repo => {
     setSelectedRepo(repo);
@@ -70,19 +70,26 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
   );
 
   const handleOnDelete = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      await deleteMutation();
-      toast.success(`Successfully remove Github App`);
-      setIsLoading(false);
-      setShowDialog(false);
-      checkStatus();
-    } catch (error) {
-      const err = error as AxiosError;
-      const errorRes = err?.response;
-      const errorMsg = extractErrorMessage(errorRes?.data);
-      toast.error(errorMsg || `Error when removing Github App`);
-      setIsLoading(false);
+    const confirmDeletion = window.confirm(
+      'Please note that you will also need to go to your GitHub Organization Settings ' +
+        'to manually to uninstall the app.\n\n' +
+        'Do you want to proceed with removing the GitHub integration?'
+    );
+    if (confirmDeletion) {
+      setIsLoading(true);
+      try {
+        await deleteMutation();
+        toast.success(`Successfully removed Github App`);
+        setIsLoading(false);
+        setShowDialog(false);
+        checkStatus();
+      } catch (error) {
+        const err = error as AxiosError;
+        const errorRes = err?.response;
+        const errorMsg = extractErrorMessage(errorRes?.data);
+        toast.error(errorMsg || `Error when removing Github App`);
+        setIsLoading(false);
+      }
     }
   }, [setShowDialog, deleteMutation, checkStatus]);
 

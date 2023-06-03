@@ -67,6 +67,7 @@ class DeleteGitHubInstallHandler(BaseAdminHandler):
             raise HTTPError(404, "GitHub installation not found")
 
         await github_install.delete()
+        await delete_iambic_repos(self.ctx.tenant, self.user)
         self.set_status(204)
 
 

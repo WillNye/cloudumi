@@ -1,3 +1,5 @@
+from typing import Optional
+
 from common.config import config
 from common.config.globals import IAMBIC_REPOS_BASE_KEY
 from common.lib.dynamo import RestrictedDynamoHandler
@@ -32,7 +34,7 @@ async def delete_iambic_repos(tenant: str, user: str):
     return True
 
 
-async def get_iambic_repo(tenant: str) -> IambicRepoDetails:
+async def get_iambic_repo(tenant: str) -> Optional[IambicRepoDetails]:
     """Retrieve the proper IAMbic repo.
     Currently, we really only support one repo per tenant.
     """
@@ -44,6 +46,6 @@ async def get_iambic_repo(tenant: str) -> IambicRepoDetails:
         .models
     )
     if not iambic_repos:
-        raise KeyError(f"No IAMbic repos configured for {tenant}")
+        return None
 
     return iambic_repos[0]
