@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import json
 import uuid
+from typing import Optional
 
 from pydantic import ValidationError
 from tornado.web import HTTPError
@@ -9,7 +10,7 @@ from tornado.web import HTTPError
 from common.config.globals import GITHUB_APP_URL, GITHUB_APP_WEBHOOK_SECRET
 from common.github.models import GitHubInstall, GitHubOAuthState
 from common.handlers.base import BaseAdminHandler, TornadoRequestHandler
-from common.iambic.utils import save_iambic_repos
+from common.iambic.utils import delete_iambic_repos, get_iambic_repo, save_iambic_repos
 from common.lib.iambic.git import IambicGit
 from common.lib.pydantic import BaseModel
 from common.models import IambicRepoDetails, WebResponse
@@ -20,7 +21,7 @@ from common.tenants.models import Tenant
 
 
 class GithubRepoHandlerPost(BaseModel):
-    repo_name: str
+    repo_name: Optional[str]
 
 
 class GitHubOAuthHandler(BaseAdminHandler):
@@ -141,13 +142,39 @@ class GithubStatusHandler(BaseAdminHandler):
 
 class GithubRepoHandler(BaseAdminHandler):
     async def get(self):
+        self.set_header("Content-Type", "application/json")
+        github_install = await GitHubInstall.get(self.ctx.db_tenant)
+        if not github_install:
+            self.write(
+                WebResponse(
+                    success="success",
+                    status_code=200,
+                    data={
+                        "repos": [],
+                        "configured_repo": None,
+                    },
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            return
         iambic_git = IambicGit(self.ctx.tenant)
         repos = await iambic_git.get_repos()
+        repo_fullnames = [
+            repo.get("full_name") for repo in repos.get("repositories", [])
+        ]
+        iambic_repos = await get_iambic_repo(self.ctx.tenant)
+        if isinstance(iambic_repos, list):
+            iambic_repos = iambic_repos[0]
+        iambic_repo_name = iambic_repos.repo_name if iambic_repos else None
         self.set_header("Content-Type", "application/json")
         self.write(
-            WebResponse(success="success", status_code=200, data={"repos": repos}).dict(
-                exclude_unset=True, exclude_none=True
-            )
+            WebResponse(
+                success="success",
+                status_code=200,
+                data={
+                    "repos": repo_fullnames,
+                    "configured_repo": iambic_repo_name,
+                },
+            ).dict(exclude_unset=True, exclude_none=True)
         )
 
     async def post(self):
@@ -164,26 +191,29 @@ class GithubRepoHandler(BaseAdminHandler):
                 ).dict(exclude_unset=True, exclude_none=True)
             )
             return
+        if not body.repo_name:
+            await delete_iambic_repos(self.ctx.tenant, self.user)
+        else:
+            iambic_git = IambicGit(self.ctx.tenant)
+            repos = await iambic_git.get_repos()
 
-        iambic_git = IambicGit(self.ctx.tenant)
-        repos = await iambic_git.get_repos()
+            # Check if the provided repo_name exists in the repos
+            if not any(
+                repo["full_name"] == body.repo_name for repo in repos["repositories"]
+            ):
+                self.set_status(400)
+                self.set_header("Content-Type", "application/json")
+                self.write(
+                    WebResponse(
+                        success="failure",
+                        status_code=400,
+                        message="Repository not found",
+                    ).dict(exclude_unset=True, exclude_none=True)
+                )
+                return
 
-        # Check if the provided repo_name exists in the repos
-        if not any(
-            repo["full_name"] == body.repo_name for repo in repos["repositories"]
-        ):
-            self.set_status(400)
-            self.set_header("Content-Type", "application/json")
-            self.write(
-                WebResponse(
-                    success="failure", status_code=400, message="Repository not found"
-                ).dict(exclude_unset=True, exclude_none=True)
-            )
-            return
-
-        iambic_repos = IambicRepoDetails(repo_name=body.repo_name)
-        # TODO: We want to overwrite the existing repos if they exist
-        await save_iambic_repos(self.ctx.tenant, iambic_repos, self.user)
+            iambic_repo = IambicRepoDetails(repo_name=body.repo_name)
+            await save_iambic_repos(self.ctx.tenant, iambic_repo, self.user)
 
         self.set_header("Content-Type", "application/json")
         self.write(

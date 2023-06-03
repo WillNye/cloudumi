@@ -8,6 +8,8 @@ import { Segment } from 'shared/layout/Segment';
 import { toast } from 'react-toastify';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { LineBreak } from 'shared/elements/LineBreak';
+import { Select, SelectOption } from 'shared/form/Select';
+import axios from 'core/Axios/Axios';
 
 interface GithubIntegrationModalProps {
   showDialog: boolean;
@@ -25,10 +27,30 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
   isGettingIntegrations
 }) => {
   const [isLoading, setIsLoading] = useState(false);
-  0;
+  const [repos, setRepos] = useState([]);
+  const [selectedRepo, setSelectedRepo] = useState(null);
+
+  useEffect(() => {
+    axios
+      .get('/api/v3/github/repos/')
+      .then(response => {
+        setRepos(response.data.data.repos);
+        setSelectedRepo(response.data.data.configured_repo || null);
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  }, []);
+
+  const handleRepoChange = repo => {
+    setSelectedRepo(repo);
+    axios.post('/api/v3/github/repos/', { repo_name: repo });
+  };
+
   const { mutateAsync: deleteMutation } = useMutation({
     mutationFn: deleteNoqGithubApp
   });
+
   const { refetch } = useQuery({
     queryFn: addNoqGithubApp,
     queryKey: ['installGithubLink'],
@@ -74,7 +96,7 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
       const err = error as AxiosError;
       const errorRes = err?.response;
       const errorMsg = extractErrorMessage(errorRes?.data);
-      toast.error(errorMsg || `Error when generating Github intsallation Link`);
+      toast.error(errorMsg || `Error when generating Github installation Link`);
       setIsLoading(false);
     }
   }, [setShowDialog, refetch]);
@@ -91,6 +113,28 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
       <Segment isLoading={isGettingIntegrations}>
         <div>Noq&apos;s Github App integrates with your IAMbic repository.</div>
         <LineBreak size="large" />
+
+        {isGithubConnected && (
+          <>
+            <label>
+              Select Repository:
+              <Select
+                id="repo"
+                name={selectedRepo}
+                value={selectedRepo}
+                onChange={handleRepoChange}
+              >
+                {repos.map(repo => (
+                  <SelectOption key={repo} value={repo}>
+                    {repo}
+                  </SelectOption>
+                ))}
+              </Select>
+            </label>
+            <LineBreak size="large" />
+          </>
+        )}
+
         {isGithubConnected ? (
           <Button
             color="error"
@@ -98,7 +142,7 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
             fullWidth
             disabled={isLoading}
           >
-            {isLoading ? 'Removing...' : 'Remove'}
+            {isLoading ? 'Removing...' : 'Remove GitHub Integration'}
           </Button>
         ) : (
           <Button
