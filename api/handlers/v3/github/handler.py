@@ -39,6 +39,18 @@ class GitHubOAuthHandler(BaseAdminHandler):
 
 
 class GitHubCallbackHandler(TornadoRequestHandler):
+    def on_finish(self):
+        if self.repo_specified:
+            from common.celery_tasks.celery_tasks import app as celery_app
+
+            celery_app.send_task(
+                "common.celery_tasks.celery_tasks.sync_iambic_templates_for_tenant",
+                kwargs={"tenant": self.ctx.tenant},
+            )
+
+    def initialize(self):
+        self.repo_specified = False
+
     async def get(self):
         state = self.get_argument("state")
         installation_id = self.get_argument("installation_id")
@@ -49,7 +61,7 @@ class GitHubCallbackHandler(TornadoRequestHandler):
         if not github_oauth_state:
             raise HTTPError(400, "Invalid state")
 
-        db_tenant = await Tenant.get_by_id(github_oauth_state.tenant_id)
+        db_tenant: Tenant = await Tenant.get_by_id(github_oauth_state.tenant_id)
 
         if not db_tenant:
             raise HTTPError(400, "Invalid tenant")
@@ -57,6 +69,17 @@ class GitHubCallbackHandler(TornadoRequestHandler):
         # Save the GitHub installation
         await GitHubInstall.create(tenant=db_tenant, installation_id=installation_id)
         await github_oauth_state.delete()
+        iambic_git = IambicGit(db_tenant.name)
+        repos = await iambic_git.get_repos()
+        repo_fullnames = [
+            repo.get("full_name") for repo in repos.get("repositories", [])
+        ]
+        if len(repo_fullnames) == 1:
+            iambic_repo = IambicRepoDetails(repo_name=repo_fullnames[0])
+            self.repo_specified = True
+            await save_iambic_repos(
+                db_tenant.name, iambic_repo, "GitHubCallbackHandler"
+            )
         self.write("GitHub integration complete")
 
 
@@ -142,6 +165,18 @@ class GithubStatusHandler(BaseAdminHandler):
 
 
 class GithubRepoHandler(BaseAdminHandler):
+    def on_finish(self):
+        if self.repo_specified:
+            from common.celery_tasks.celery_tasks import app as celery_app
+
+            celery_app.send_task(
+                "common.celery_tasks.celery_tasks.sync_iambic_templates_for_tenant",
+                kwargs={"tenant": self.ctx.tenant},
+            )
+
+    def initialize(self):
+        self.repo_specified = False
+
     async def get(self):
         self.set_header("Content-Type", "application/json")
         github_install = await GitHubInstall.get(self.ctx.db_tenant)
@@ -215,6 +250,7 @@ class GithubRepoHandler(BaseAdminHandler):
 
             iambic_repo = IambicRepoDetails(repo_name=body.repo_name)
             await save_iambic_repos(self.ctx.tenant, iambic_repo, self.user)
+            self.repo_specified = True
 
         self.set_header("Content-Type", "application/json")
         self.write(
