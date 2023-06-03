@@ -1,12 +1,12 @@
 import hashlib
 import hmac
-import json
 import uuid
 from typing import Optional
 
 from pydantic import ValidationError
 from tornado.web import HTTPError
 
+import common.lib.noq_json as json
 from common.config.globals import GITHUB_APP_URL, GITHUB_APP_WEBHOOK_SECRET
 from common.github.models import GitHubInstall, GitHubOAuthState
 from common.handlers.base import BaseAdminHandler, TornadoRequestHandler
@@ -16,7 +16,6 @@ from common.lib.pydantic import BaseModel
 from common.models import IambicRepoDetails, WebResponse
 from common.tenants.models import Tenant
 
-# TODO: Need to know which repos to use, in case they grant us access to more than necessary.
 # TODO: Event driven could route messages to SQS and then have a worker process them. Maybe for Slack too.
 
 
@@ -54,7 +53,6 @@ class GitHubCallbackHandler(TornadoRequestHandler):
     async def get(self):
         state = self.get_argument("state")
         installation_id = self.get_argument("installation_id")
-        # TODO: Try repository because it might come here.
 
         # Verify the state
         github_oauth_state = await GitHubOAuthState.get_by_state(state)
