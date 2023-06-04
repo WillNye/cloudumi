@@ -1,19 +1,43 @@
+import { useEffect, useState } from 'react';
+import axios from 'core/Axios/Axios';
 import { Segment } from 'shared/layout/Segment';
 import RequestCard from '../RequestCard';
-import identityIcon from '../../../../../assets/vendor/identity.svg';
-import accessIcon from '../../../../../assets/vendor/access.svg';
-import permissionsIcon from '../../../../../assets/vendor/permissions.svg';
+import identityIcon from 'assets/vendor/identity.svg';
+import accessIcon from 'assets/vendor/access.svg';
+import permissionsIcon from 'assets/vendor/permissions.svg';
 
 import styles from './SelectRequestType.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { useContext } from 'react';
-import SelfServiceContext from '../../SelfServiceContext';
+import SelfServiceContext, { RequestType } from '../../SelfServiceContext';
 import { SELF_SERICE_STEPS } from '../../constants';
+import { Button } from 'shared/elements/Button';
+
+interface ApiResponse {
+  status_code: number;
+  data: RequestType[];
+}
 
 const SelectRequestType = () => {
+  const [requestTypes, setRequestTypes] = useState<RequestType[]>([]);
+  const { selectedProvider } = useContext(SelfServiceContext).store;
+
   const {
-    actions: { setCurrentStep }
+    actions: { setCurrentStep, setSelectedRequestType, goBack }
   } = useContext(SelfServiceContext);
+
+  useEffect(() => {
+    if (selectedProvider) {
+      const fetchData = async () => {
+        const result = await axios.get<ApiResponse>(
+          `/api/v4/self-service/request-types?provider=${selectedProvider}`
+        );
+        setRequestTypes(result.data.data);
+      };
+
+      fetchData();
+    }
+  }, [selectedProvider]);
 
   return (
     <Segment>
@@ -23,26 +47,20 @@ const SelectRequestType = () => {
         <p className={styles.subText}>What would you like to do?</p>
         <LineBreak size="large" />
         <div className={styles.cardList}>
-          <RequestCard
-            title="Create a new Resource"
-            icon={identityIcon}
-            description="Submit a request to create an AWS IAM Role."
-            onClick={() => setCurrentStep(SELF_SERICE_STEPS.COMPLETION_FORM)}
-          />
-
-          <RequestCard
-            title="Request Access to an existing Resource"
-            icon={permissionsIcon}
-            description="Submit a request to add IAM permissions to a role."
-          />
-
-          <RequestCard
-            title="Request Permissions Change"
-            icon={accessIcon}
-            description="Submit a request to access short-lived AWS IAM role.
-            Examples: Update Tags, Add new inline policy"
-          />
+          {requestTypes.map(requestType => (
+            <RequestCard
+              key={requestType.id}
+              title={requestType.name}
+              icon={identityIcon} // replace with appropriate icon
+              description={requestType.description}
+              onClick={() => {
+                setCurrentStep(SELF_SERICE_STEPS.CHANGE_TYPE);
+                setSelectedRequestType(requestType);
+              }}
+            />
+          ))}
         </div>
+        <Button onClick={goBack}>Back</Button>
       </div>
     </Segment>
   );
