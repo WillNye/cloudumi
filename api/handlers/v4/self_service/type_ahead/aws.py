@@ -245,6 +245,7 @@ class AWSResourceTypeAheadHandler(BaseHandler):
         tenant_name = self.ctx.tenant
 
         try:
+            self.set_header("Content-Type", "application/json")
             self.write(
                 WebResponse(
                     success="success",
@@ -277,5 +278,12 @@ class AWSResourceTypeAheadHandler(BaseHandler):
                     errors=[repr(err)],
                     status_code=500,
                 ).json(exclude_unset=True, exclude_none=True)
+            )
+            log.error(
+                {
+                    "message": "Error in AWSResourceTypeAheadHandler",
+                    "error": repr(err),
+                },
+                exc_info=True,
             )
             raise tornado.web.Finish()

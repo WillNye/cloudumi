@@ -30,6 +30,7 @@ class NoqUserTypeAheadHandler(BaseHandler):
         )
 
         try:
+            self.set_header("Content-Type", "application/json")
             self.write(
                 WebResponse(
                     success="success",
@@ -68,6 +69,7 @@ class NoqGroupTypeAheadHandler(BaseHandler):
             **{k: self.get_argument(k) for k in self.request.arguments}
         )
         try:
+            self.set_header("Content-Type", "application/json")
             self.write(
                 WebResponse(
                     success="success",

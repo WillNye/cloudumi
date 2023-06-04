@@ -1,3 +1,5 @@
+import tornado.web
+
 from common.handlers.base import BaseHandler
 from common.models import BaseModel, WebResponse
 from common.request_types.utils import (
@@ -17,6 +19,7 @@ class SelfServiceRequestTypeHandler(BaseHandler):
         GET /api/v4/self-service/request-types
         List all supported request types as part of the self-service flow.
         """
+        self.set_header("Content-Type", "application/json")
         query_params = SelfServiceRequestTypeParams(
             **{k: self.get_argument(k) for k in self.request.arguments}
         )
@@ -46,10 +49,20 @@ class SelfServiceChangeTypeHandler(BaseHandler):
         List or retrieve the supported change type(s) for a request type.
         """
         tenant_id = self.ctx.db_tenant.id
+        self.set_header("Content-Type", "application/json")
 
         if change_type_id:
             tenant_url = self.get_tenant_url()
             change_type = await get_tenant_change_type(tenant_id, change_type_id)
+            if not change_type:
+                self.write(
+                    WebResponse(
+                        errors=["Change type not found"],
+                        status_code=404,
+                    ).json(exclude_unset=True, exclude_none=True)
+                )
+                self.set_status(404, reason="Change type not found")
+                raise tornado.web.Finish()
             data = change_type.dict()
             data["fields"] = [
                 field.self_service_dict(tenant_url)
