@@ -54,7 +54,7 @@ class ManageListUsersHandler(BaseAdminHandler):
         )
 
 
-# Define the handler for the create user route
+# Define the handler for the crate user route
 class ManageUsersHandler(BaseAdminHandler):
     async def get(self):
         users = User()

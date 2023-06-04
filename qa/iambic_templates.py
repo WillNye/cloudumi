@@ -2,7 +2,7 @@ import json
 from datetime import datetime, timedelta
 
 import requests
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 
 from common.config.globals import ASYNC_PG_SESSION
 from common.iambic.templates.models import (
@@ -20,9 +20,6 @@ import asyncio
 
 from qa import setup, TENANT_NAME
 asyncio.run(setup())
-
-# Change in validation script because it's still done globally and it isn't accidentally versioned.
-COOKIES["noq_auth"] = "my_token"
 
 from qa.iambic_templates import list_templates_api_request, sync_test_tenant_templates, teardown_refs
 
@@ -46,10 +43,18 @@ async def teardown_refs(tenant_name: str):
     await tenant.write()
 
     async with ASYNC_PG_SESSION() as session:
-        items = await session.execute(select(IambicTemplate))
-        iambic_templates = items.scalars().all()
+        stmt = delete(IambicTemplateContent).where(
+            IambicTemplateContent.tenant_id == tenant.id
+        )
+        await session.execute(stmt)
 
-    await bulk_delete(iambic_templates)
+        stmt = delete(IambicTemplateProviderDefinition).where(
+            IambicTemplateProviderDefinition.tenant_id == tenant.id
+        )
+        await session.execute(stmt)
+
+        stmt = delete(IambicTemplate).where(IambicTemplate.tenant_id == tenant.id)
+        await session.execute(stmt)
 
 
 async def force_change_resolution(tenant_name: str):

@@ -109,6 +109,7 @@ from common.lib.timeout import Timeout
 from common.lib.v2.notifications import cache_notifications_to_redis_s3
 from common.lib.workos import WorkOS
 from common.models import SpokeAccount
+from common.request_types.tasks import upsert_tenant_request_types
 from identity.lib.groups.groups import (
     cache_identity_groups_for_tenant,
     cache_identity_requests_for_tenant,
@@ -2871,6 +2872,33 @@ def sync_iambic_templates_all_tenants() -> Dict:
 
 
 @app.task(soft_time_limit=600, **default_retry_kwargs)
+def upsert_tenant_request_types_for_tenant(tenant: str) -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    log_data = {
+        "function": function,
+        "message": "Updating Request Type Templates",
+        "tenant": tenant,
+    }
+    log.debug(log_data)
+    async_to_sync(upsert_tenant_request_types)(tenant)
+    return log_data
+
+
+@app.task(soft_time_limit=600, **default_retry_kwargs)
+def upsert_tenant_request_types_for_all_tenants() -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    log_data = {
+        "function": function,
+        "message": "Updating Request Type Templates",
+    }
+    log.debug(log_data)
+    tenants = get_all_tenants()
+    for tenant in tenants:
+        upsert_tenant_request_types_for_tenant.delay(tenant)
+    return log_data
+
+
+@app.task(soft_time_limit=600, **default_retry_kwargs)
 def cache_iambic_data_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
@@ -3038,6 +3066,11 @@ schedule = {
     },
     "sync_iambic_templates_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.sync_iambic_templates_all_tenants",
+        "options": {"expires": 180},
+        "schedule": get_schedule(60),
+    },
+    "upsert_tenant_request_types_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.upsert_tenant_request_types_for_all_tenants",
         "options": {"expires": 180},
         "schedule": get_schedule(60),
     },

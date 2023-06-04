@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Integer, String, and_
+from sqlalchemy import ARRAY, Column, DateTime, Integer, String, and_
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import select
 
@@ -17,6 +17,7 @@ class Tenant(SoftDeleteMixin, Base):
     )
     users = relationship("User", back_populates="tenant", cascade="all, delete-orphan")
     iambic_templates_last_parsed = Column(DateTime, nullable=True)
+    supported_template_types = Column(ARRAY(String), nullable=True)
 
     @classmethod
     async def get_by_id(cls, tenant_id):

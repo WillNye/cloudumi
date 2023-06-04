@@ -13,7 +13,7 @@ class IambicTemplate(Base):
     __tablename__ = "iambic_template"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(Integer, ForeignKey("tenant.id"))
+    tenant_id = Column(Integer, ForeignKey("tenant.id"), nullable=False)
     repo_name = Column(String, nullable=False)
     file_path = Column(String, nullable=False)
     template_type = Column(String, nullable=False)
@@ -98,10 +98,11 @@ class IambicTemplateProviderDefinition(Base):
     __tablename__ = "iambic_template_provider_definition"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(Integer, ForeignKey("tenant.id"))
-    iambic_template_id = Column(UUID, ForeignKey("iambic_template.id"))
+    tenant_id = Column(Integer, ForeignKey("tenant.id"), nullable=False)
+    iambic_template_id = Column(UUID, ForeignKey("iambic_template.id"), nullable=False)
+    resource_id = Column(String, nullable=False)
     tenant_provider_definition_id = Column(
-        UUID, ForeignKey("tenant_provider_definition.id")
+        UUID, ForeignKey("tenant_provider_definition.id"), nullable=False
     )
 
     tenant = relationship("Tenant")
@@ -112,11 +113,13 @@ class IambicTemplateProviderDefinition(Base):
 
     __table_args__ = (
         Index("itpd_template_id_idx", "iambic_template_id"),
+        Index("itpd_template_resource_id_idx", "iambic_template_id", "resource_id"),
         Index("itpd_provider_def_idx", "tenant_provider_definition_id"),
         Index(
-            "itpd_template_and_provider_def_idx",
+            "itpd_template_and_provider_def_uix",
             "iambic_template_id",
             "tenant_provider_definition_id",
+            unique=True,
         ),
     )
 

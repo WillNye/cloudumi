@@ -1,7 +1,10 @@
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from common.config.globals import ASYNC_PG_SESSION
-from common.iambic.templates.models import IambicTemplate
+from common.iambic.templates.models import (
+    IambicTemplate,
+    IambicTemplateProviderDefinition,
+)
 
 
 async def list_tenant_templates(
@@ -17,16 +20,23 @@ async def list_tenant_templates(
         ), "template_type query param must be provided if resource_id is provided"
 
     async with ASYNC_PG_SESSION() as session:
-        stmt = select(IambicTemplate).filter(
-            IambicTemplate.tenant_id == tenant_id
-        )  # noqa: E712
+        stmt = select(IambicTemplate).filter(IambicTemplate.tenant_id == tenant_id)
         if template_type:
             stmt = stmt.filter(
                 IambicTemplate.template_type == template_type
             )  # noqa: E712
         if resource_id:
-            stmt = stmt.filter(
-                IambicTemplate.resource_id.ilike(f"%{resource_id}%")
+            stmt = stmt.join(
+                IambicTemplateProviderDefinition,
+                IambicTemplateProviderDefinition.iambic_template_id
+                == IambicTemplate.id,
+            ).filter(
+                or_(
+                    IambicTemplate.resource_id.ilike(f"%{resource_id}%"),
+                    IambicTemplateProviderDefinition.resource_id.ilike(
+                        f"%{resource_id}%"
+                    ),
+                )
             )  # noqa: E712
 
         if template_type:
@@ -41,4 +51,6 @@ async def list_tenant_templates(
 
         items = await session.execute(stmt)
 
+    if resource_id:
+        return items.scalars().unique().all()
     return items.scalars().all()
