@@ -1,4 +1,4 @@
-# We must import  models here for them to be recognized
+# We must import models here for them to be recognized
 
 from common.aws.accounts.models import AWSAccount  # noqa: F401,E402
 from common.github.models import GitHubInstall, GitHubOAuthState  # noqa: F401,E402
@@ -19,6 +19,13 @@ from common.lib.slack.models import (  # noqa: F401,E402
     BOTS_TABLE,
     INSTALLATIONS_TABLE,
     OAUTH_STATES_TABLE,
+)
+from common.request_types.models import (  # noqa: F401,E402
+    ChangeField,
+    ChangeType,
+    ChangeTypeTemplate,
+    RequestType,
+    TypeAheadFieldHelper,
 )
 from common.role_access.models import RoleAccess, RoleAccessTypes  # noqa: F401,E402
 from common.tenants.models import Tenant  # noqa: F401,E402

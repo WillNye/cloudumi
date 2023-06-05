@@ -32,6 +32,15 @@ from api.handlers.v4.iambic.iambic_templates import IambicTemplateHandler
 from api.handlers.v4.resources.datatable import ResourcesDataTableHandler
 from api.handlers.v4.scim.groups import ScimV2GroupHandler, ScimV2GroupsHandler
 from api.handlers.v4.scim.users import ScimV2UserHandler, ScimV2UsersHandler
+from api.handlers.v4.self_service.request_types import (
+    SelfServiceChangeTypeHandler,
+    SelfServiceRequestTypeHandler,
+)
+from api.handlers.v4.self_service.type_ahead.aws import AWSResourceTypeAheadHandler
+from api.handlers.v4.self_service.type_ahead.noq import (
+    NoqGroupTypeAheadHandler,
+    NoqUserTypeAheadHandler,
+)
 from api.handlers.v4.users.login import LoginHandler, MfaHandler
 from api.handlers.v4.users.manage_users import (
     ManageListUsersHandler,
@@ -177,8 +186,11 @@ from api.handlers.v4.groups.manage_groups import (
     ManageGroupsHandler,
     ManageListGroupsHandler,
 )
-from api.handlers.v4.requests import IambicRequestCommentHandler, IambicRequestHandler
 from api.handlers.v4.role_access.manage_role_access import ManageRoleAccessHandler
+from api.handlers.v4.self_service.requests import (
+    IambicRequestCommentHandler,
+    IambicRequestHandler,
+)
 from common.config import config
 from common.lib.sentry import before_send_event
 from common.lib.slack.app import get_slack_app
@@ -460,19 +472,37 @@ def make_app(jwt_validator=None):
         # (r"/api/v3/api_keys/remove", RemoveApiKeyHandler),
         # (r"/api/v3/api_keys/view", ViewApiKeysHandler),
         (r"/api/v2/.*", V2NotFoundHandler),
-        (r"/api/v4/requests/?", IambicRequestHandler),
+        (r"/api/v4/self-service/requests/?", IambicRequestHandler),
         (
-            rf"/api/v4/requests/(?P<request_id>{UUID_REGEX})/comments/?",
+            rf"/api/v4/self-service/requests/(?P<request_id>{UUID_REGEX})",
+            IambicRequestHandler,
+        ),
+        (
+            rf"/api/v4/self-service/requests/(?P<request_id>{UUID_REGEX})/comments/?",
             IambicRequestCommentHandler,
         ),
         (
-            rf"/api/v4/requests/(?P<request_id>{UUID_REGEX})/comments/(?P<comment_id>{UUID_REGEX})",
+            rf"/api/v4/self-service/requests/(?P<request_id>{UUID_REGEX})/comments/(?P<comment_id>{UUID_REGEX})",
             IambicRequestCommentHandler,
         ),
-        (rf"/api/v4/requests/(?P<request_id>{UUID_REGEX})", IambicRequestHandler),
+        (r"/api/v4/self-service/request-types/?", SelfServiceRequestTypeHandler),
+        (
+            rf"/api/v4/self-service/request-types/(?P<request_type_id>{UUID_REGEX})/change-types/?",
+            SelfServiceChangeTypeHandler,
+        ),
+        (
+            rf"/api/v4/self-service/request-types/(?P<request_type_id>{UUID_REGEX})/change-types/(?P<change_type_id>{UUID_REGEX})",
+            SelfServiceChangeTypeHandler,
+        ),
         (r"/api/v4/providers/?", IambicProviderHandler),
         (r"/api/v4/providers/definitions/?", IambicProviderDefinitionHandler),
         (r"/api/v4/templates/?", IambicTemplateHandler),
+        (
+            r"/api/v4/self-service/typeahead/aws/service/(?P<service>[\w-]+)",
+            AWSResourceTypeAheadHandler,
+        ),
+        (r"/api/v4/self-service/typeahead/noq/users", NoqUserTypeAheadHandler),
+        (r"/api/v4/self-service/typeahead/noq/groups", NoqGroupTypeAheadHandler),
         (r"/api/v4/groups/?", ManageGroupsHandler),
         (r"/api/v4/list_groups/?", ManageListGroupsHandler),
         (r"/api/v4/group_memberships/?", ManageGroupMembershipsHandler),

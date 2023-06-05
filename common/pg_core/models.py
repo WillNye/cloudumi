@@ -21,11 +21,25 @@ class Base(DECLARATIVE_BASE):
                 await session.commit()
             return True
 
+    async def delete(self):
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                if hasattr(self, "deleted"):
+                    self.deleted = True
+                    self.deleted_at = datetime.utcnow()
+                    session.add(self)
+                else:
+                    await session.delete(self)
+                await session.commit()
 
-class SoftDeleteMixin:
+
+class TrackedChangesMixin:
     created_by = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_by = Column(String)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class SoftDeleteMixin(TrackedChangesMixin):
     deleted = Column(Boolean, default=False)
     deleted_at = Column(DateTime, nullable=True)

@@ -1,6 +1,8 @@
 from itertools import chain, islice
 from typing import Iterable, List, TypeVar
 
+from sqlalchemy import delete
+
 from common.config.globals import ASYNC_PG_SESSION
 
 T = TypeVar("T")
@@ -26,14 +28,13 @@ async def bulk_add(instance_list: List[T]) -> List[T]:
     :param instance_list: A list of instances to be added to the database
     :return: The list of instances added to the database
     """
-    batch_size = 50
+    batch_size = 100
 
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
             for instance_batch in batch(instance_list, batch_size):
-                for instance in instance_batch:
-                    session.add(instance)
-            await session.commit()
+                session.add_all(instance_batch)
+                await session.commit()
 
     return instance_list
 
@@ -44,11 +45,14 @@ async def bulk_delete(instance_list: List[T]) -> None:
 
     :param instance_list: A list of instances to be deleted from the database
     """
-    batch_size = 50
+    batch_size = 100
+    instance_type = type(instance_list[0])
+    assert all(isinstance(instance, instance_type) for instance in instance_list)
 
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
             for instance_batch in batch(instance_list, batch_size):
-                for instance in instance_batch:
-                    await session.delete(instance)
-                await session.flush()
+                stmt = delete(instance_type).where(
+                    instance_type.id.in_([instance.id for instance in instance_batch])
+                )
+                await session.execute(stmt)

@@ -1,6 +1,7 @@
 from tornado.web import Finish
 
 import common.lib.noq_json as json
+from common.config import config
 from common.exceptions.exceptions import NoMatchingRequest, Unauthorized
 from common.handlers.base import BaseHandler
 from common.iambic_request.request_crud import (
@@ -16,14 +17,17 @@ from common.iambic_request.request_crud import (
 )
 from common.models import IambicRequest, WebResponse
 
+log = config.get_logger()
+
 
 class IambicRequestHandler(BaseHandler):
     async def get(self, request_id: str = None):
         """
-        GET /api/v4/request/{request_id} - Get a request by ID
-        GET /api/v4/request - List all tenant requests with optional filters
+        GET /api/v4/self-service/request/{request_id} - Get a request by ID
+        GET /api/v4/self-service/requests - List all tenant requests with optional filters
         """
         tenant = self.ctx.tenant
+        self.set_header("Content-Type", "application/json")
 
         if request_id:
             try:
@@ -59,9 +63,10 @@ class IambicRequestHandler(BaseHandler):
 
     async def post(self):
         """
-        POST /api/v4/requests - Create a new request
+        POST /api/v4/self-service/requests - Create a new request
         """
         await self.fte_check()
+        self.set_header("Content-Type", "application/json")
 
         db_tenant = self.ctx.db_tenant
         user = self.user
@@ -83,9 +88,10 @@ class IambicRequestHandler(BaseHandler):
 
     async def put(self, request_id: str):
         """
-        PUT /api/v4/request/{request_id} - Update a request
+        PUT /api/v4/self-service/request/{request_id} - Update a request
         """
         await self.fte_check()
+        self.set_header("Content-Type", "application/json")
 
         tenant = self.ctx.tenant
         user = self.user
@@ -119,9 +125,10 @@ class IambicRequestHandler(BaseHandler):
 
     async def patch(self, request_id: str):
         """
-        PATCH /api/v4/request/{request_id} - Update a request status
+        PATCH /api/v4/self-service/request/{request_id} - Update a request status
         """
         await self.fte_check()
+        self.set_header("Content-Type", "application/json")
 
         tenant = self.ctx.tenant
         user = self.user
@@ -173,19 +180,43 @@ class IambicRequestHandler(BaseHandler):
 class IambicRequestCommentHandler(BaseHandler):
     async def post(self, request_id: str):
         """
-        POST /api/v4/request/{request_id}/comment - Create a new request
+        POST /api/v4/self-service/request/{request_id}/comments - Create a new request
         """
-
+        self.set_header("Content-Type", "application/json")
         tenant = self.ctx.tenant
         user = self.user
-        request_data = json.loads(self.request.body)
+        try:
+            request_data = json.loads(self.request.body)
+        except Exception as e:
+            log.error(
+                {
+                    "message": "Error parsing request body",
+                    "error": str(e),
+                    "request_body": self.request.body,
+                },
+                exc_info=True,
+            )
+            self.write(
+                WebResponse(
+                    errors=["Error parsing request body"],
+                    status_code=400,
+                ).json(exclude_unset=True, exclude_none=True)
+            )
+            return
         await create_request_comment(tenant, request_id, user, request_data.get("body"))
+        return self.write(
+            WebResponse(
+                success="success",
+                status_code=200,
+            ).json(exclude_unset=True, exclude_none=True)
+        )
 
     async def patch(self, request_id: str, comment_id: str):
         """
-        PUT /api/v4/request/{request_id}/comment/{comment_id} - Update a request
+        PUT /api/v4/self-service/request/{request_id}/comments/{comment_id} - Update a request
         """
         tenant = self.ctx.tenant
+        self.set_header("Content-Type", "application/json")
         user = self.user
         request_data = json.loads(self.request.body)
         try:
@@ -203,8 +234,9 @@ class IambicRequestCommentHandler(BaseHandler):
 
     async def delete(self, request_id: str, comment_id: str):
         f"""
-        DELETE /api/v4/request/{request_id}/comment/{comment_id} - Delete a request
+        DELETE /api/v4/self-service/request/{request_id}/comments/{comment_id} - Delete a request
         """
+        self.set_header("Content-Type", "application/json")
         tenant = self.ctx.tenant
         user = self.user
         try:
