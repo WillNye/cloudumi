@@ -203,6 +203,7 @@ for task in preflight_task_definition_map:
             cluster=cluster_name,
             taskDefinition=task_definition_name,
             launchType='FARGATE',
+            enableExecuteCommand=True,
             networkConfiguration={
                 'awsvpcConfiguration': {
                     'subnets': subnets,
