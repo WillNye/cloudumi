@@ -51,8 +51,23 @@ class GitHubCallbackHandler(TornadoRequestHandler):
         self.repo_specified = False
 
     async def get(self):
-        state = self.get_argument("state")
-        installation_id = self.get_argument("installation_id")
+        state = self.get_argument("state", default=None)
+        installation_id = self.get_argument("installation_id", default=None)
+        setup_action = self.get_argument("setup_action")
+
+        if setup_action == "request":
+            # the user only request the Github Admin to approve the app installation
+            self.write(
+                f"Please save the query params to finish installation. Please check with your Github Admin to approve the installation request. <code>{state}</code>"
+            )
+            return
+        elif setup_action == "install" and not state:
+            # the Github Admin approve the app installation but is not the same requester
+            # not using self.request.full_uri() because our local dev will see http protocol
+            self.write(
+                f"Please share the url to the user requested the app installation. They will supply their own state query param. <code>https://{self.request.host}{self.request.uri}&state=SUPPLY_YOUR_OWN</code>"
+            )
+            return
 
         # Verify the state
         github_oauth_state = await GitHubOAuthState.get_by_state(state)
