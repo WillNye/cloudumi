@@ -475,8 +475,7 @@ class TenantSlackApp:
             slack_app_type = body["action_id"].split("/")[-1]
             if slack_app_type not in FRIENDLY_RESOURCE_TYPE_NAMES.keys():
                 slack_app_type = None
-
-        redis_key = f"{self.tenant}_IAMBIC_TEMPLATES"
+        redis_key = self.tenant_config.iambic_templates_redis_key
         template_dicts = await retrieve_json_data_from_redis_or_s3(
             redis_key=redis_key,
             tenant=self.tenant,

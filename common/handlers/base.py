@@ -96,6 +96,8 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
             "/api/v3/tenant_registration",
             "/api/v3/slack/oauth_redirect",
             "/api/v3/slack/events",
+            "/api/v3/github/callback/",
+            "/api/v3/github/events/",
         ]
         tenant = self.get_tenant_name()
         # Ensure request is for a valid tenant

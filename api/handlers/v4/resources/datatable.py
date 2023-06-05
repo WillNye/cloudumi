@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from pydantic.fields import Field
 
 from common.config import config
+from common.config.tenant_config import TenantConfig
 from common.handlers.base import BaseHandler
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.filter import filter_data
@@ -39,9 +40,10 @@ class ResourcesDataTableHandler(BaseHandler):
         POST /api/v4/resources/datatable/
         """
         tenant = self.ctx.tenant
+        tenant_config = TenantConfig(tenant)
         body = tornado.escape.json_decode(self.request.body or "{}")
 
-        redis_key = f"{tenant}_IAMBIC_TEMPLATES"
+        redis_key = tenant_config.iambic_templates_redis_key
         template_dicts = await retrieve_json_data_from_redis_or_s3(
             redis_key=redis_key,
             tenant=tenant,
