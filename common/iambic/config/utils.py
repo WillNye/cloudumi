@@ -94,6 +94,20 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
     # Unfortunately, we don't currently have a way to get providers that are stored in a secret
     tenant = await Tenant.get_by_name(tenant_name)
     iambic_git = IambicGit(tenant_name)
+
+    if not await iambic_git.is_github_app_connected():
+        # early return because github app is not even connected.
+        # this is a cascade problem if github app is not connected,
+        # the repo cannot be fetched.
+        log.debug(
+            {
+                "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+                "tenant": tenant_name,
+                "message": "github_app is not connected.",
+            }
+        )
+        return
+
     new_definitions = []
     deleted_definitions = []
     new_providers = []

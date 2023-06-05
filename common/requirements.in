@@ -2,6 +2,7 @@ aiocache
 aiofiles
 aiopath
 cryptography
+httpx
 locust
 humanfriendly
 jq

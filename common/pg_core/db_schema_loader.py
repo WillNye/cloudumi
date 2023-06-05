@@ -1,6 +1,7 @@
 # We must import models here for them to be recognized
 
 from common.aws.accounts.models import AWSAccount  # noqa: F401,E402
+from common.github.models import GitHubInstall, GitHubOAuthState  # noqa: F401,E402
 from common.group_memberships.models import GroupMembership  # noqa: F401,E402
 from common.groups.models import Group  # noqa: F401,E402
 from common.iambic.config.models import (  # noqa: F401,E402

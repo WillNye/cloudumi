@@ -27,6 +27,7 @@ async def get_data_for_template_type(
     tenant: str, template_type: str
 ) -> List[BaseTemplate]:
     iambic_git = IambicGit(tenant)
+    access_token = await iambic_git.get_access_token()
     iambic_repo_config = (
         ModelAdapter(IambicRepoDetails).load_config("iambic_repos", tenant).model
     )
@@ -36,13 +37,15 @@ async def get_data_for_template_type(
     iambic_repo = IambicRepo(
         tenant=tenant,
         repo_name=repo_name,
-        repo_uri=f"https://oauth:{iambic_repo_config.access_token}@github.com/{iambic_repo_config.repo_name}",
+        repo_uri=f"https://oauth:{access_token}@github.com/{iambic_repo_config.repo_name}",
     )
     await iambic_repo.set_repo()
     return iambic_git.load_templates(await iambic_git.gather_templates(repo_name))
 
 
 async def get_config_data_for_repo(tenant: Tenant):
+    iambic_git = IambicGit(tenant)
+    access_token = await iambic_git.get_access_token()
     iambic_repo_config = None
     iambic_repo_configs = (
         ModelAdapter(IambicRepoDetails)
@@ -56,7 +59,7 @@ async def get_config_data_for_repo(tenant: Tenant):
     iambic_repo = IambicRepo(
         tenant=tenant.name,
         repo_name=iambic_repo_config.repo_name,
-        repo_uri=f"https://oauth:{iambic_repo_config.access_token}@github.com/{iambic_repo_config.repo_name}",
+        repo_uri=f"https://oauth:{access_token}@github.com/{iambic_repo_config.repo_name}",
     )
     # Todo: This fails the entire celery task, if it fails for just one tenant.
 
