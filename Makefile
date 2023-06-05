@@ -198,6 +198,13 @@ tf-staging-plan:
 	terraform workspace select shared-staging-1; \
 	terraform plan $(STAGING_VAR_FILES)
 
+# Example usage: make tf-staging-unlock UUID=6c807c06-fefd-8b1d-06cc-d08631578533
+tf-staging-unlock:
+	@cd deploy/infrastructure && \
+	export AWS_PROFILE=$(AWS_PROFILE_STAGING) AWS_REGION=$(AWS_REGION_STAGING); \
+	terraform workspace select shared-staging-1; \
+	terraform force-unlock $(UUID)
+
 tf-staging-apply:
 	@cd deploy/infrastructure && \
 	export AWS_PROFILE=$(AWS_PROFILE_STAGING) AWS_REGION=$(AWS_REGION_STAGING); \
@@ -221,6 +228,13 @@ tf-prod-apply:
 	export AWS_PROFILE=$(AWS_PROFILE_PROD) AWS_REGION=$(AWS_REGION_PROD); \
 	terraform workspace select shared-prod-1; \
 	terraform apply $(PROD_VAR_FILES)
+
+# Example usage: make tf-prod-unlock UUID=6c807c06-fefd-8b1d-06cc-d08631578533
+tf-prod-unlock:
+	@cd deploy/infrastructure && \
+	export AWS_PROFILE=$(AWS_PROFILE_PROD) AWS_REGION=$(AWS_REGION_PROD); \
+	terraform workspace select shared-staging-1; \
+	terraform force-unlock $(UUID)
 
 .PHONY: deploy-staging
 deploy-staging:
