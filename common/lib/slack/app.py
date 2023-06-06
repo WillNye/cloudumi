@@ -180,7 +180,7 @@ class AsyncSQLAlchemyOAuthStateStore(AsyncOAuthStateStore):
 
 def get_installation_store():
     return AsyncSQLAlchemyInstallationStore(
-        client_id=config.get(config_globals.SLACK_CLIENT_ID),
+        client_id=config_globals.SLACK_CLIENT_ID,
         database_url=config_globals.ASYNC_PG_CONN_STR,
         logger=logger,
     )
@@ -211,8 +211,8 @@ def get_slack_app():
         logger=logger,
     )
     oauth_settings = AsyncOAuthSettings(
-        client_id=config.get(config_globals.SLACK_CLIENT_ID),
-        client_secret=config.get(config_globals.SLACK_CLIENT_SECRET),
+        client_id=config_globals.SLACK_CLIENT_ID,
+        client_secret=config_globals.SLACK_CLIENT_SECRET,
         state_store=oauth_state_store,
         installation_store=get_installation_store(),
         scopes=scopes,
@@ -224,7 +224,7 @@ def get_slack_app():
 
     slack_app = AsyncApp(
         logger=logger,
-        signing_secret=config.get(config_globals.SLACK_SIGNING_SECRET),
+        signing_secret=config_globals.SLACK_SIGNING_SECRET,
         oauth_settings=oauth_settings,
         process_before_response=True,
     )
@@ -279,7 +279,7 @@ class TenantSlackApp:
             name=self.tenant,
             logger=logger,
             installation_store=get_installation_store(),
-            signing_secret=config.get(config_globals.SLACK_SIGNING_SECRET),
+            signing_secret=config_globals.SLACK_SIGNING_SECRET,
             process_before_response=True,
         )
         self.tenant_slack_app.use(create_log_request_handler(self.tenant))
