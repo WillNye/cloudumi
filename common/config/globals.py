@@ -34,3 +34,30 @@ ASYNC_PG_SESSION = sessionmaker(
 AUTH_COOKIE_NAME: str = config.get("_global_.auth.cookie.name", "noq_auth")
 
 IAMBIC_REPOS_BASE_KEY = "iambic_repos"
+GITHUB_APP_URL = config.get("_global_.secrets.github_app.app_url")
+assert GITHUB_APP_URL
+GITHUB_APP_ID = config.get("_global_.secrets.github_app.app_id")
+assert GITHUB_APP_ID
+GITHUB_APP_CLIENT_ID = config.get("_global_.secrets.github_app.client_id")
+assert GITHUB_APP_CLIENT_ID
+GITHUB_APP_CLIENT_SECRET = config.get("_global_.secrets.github_app.client_secret")
+assert GITHUB_APP_CLIENT_SECRET
+GITHUB_APP_PRIVATE_KEY = config.get("_global_.secrets.github_app.private_key")
+assert GITHUB_APP_PRIVATE_KEY
+GITHUB_APP_WEBHOOK_SECRET = config.get("_global_.secrets.github_app.webhook_secret")
+assert GITHUB_APP_WEBHOOK_SECRET
+
+SLACK_CLIENT_ID = config.get("_global_.secrets.slack.client_id")
+assert SLACK_CLIENT_ID
+SLACK_CLIENT_SECRET = config.get("_global_.secrets.slack.client_secret")
+assert SLACK_CLIENT_SECRET
+SLACK_SIGNING_SECRET = config.get("_global_.secrets.slack.signing_secret")
+assert SLACK_SIGNING_SECRET
+SLACK_BOT_TOKEN = config.get("_global_.secrets.slack.bot_token")
+assert SLACK_BOT_TOKEN
+
+SENDGRID_FROM_ADDRESS = config.get("_global_.secrets.sendgrid.from_address")
+assert SENDGRID_FROM_ADDRESS
+
+REDIS_PASSWORD = config.get("_global_.secrets.redis.password")
+assert REDIS_PASSWORD

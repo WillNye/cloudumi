@@ -5,7 +5,8 @@ export const AZURE_CARD_DESCRIPTION =
 export const AWS_CARD_DESCRIPTION = 'Amazon Web Services (AWS)';
 export const SLACK_CARD_DESCRIPTION =
   'Receive real-time notifications with every upate';
-export const GITHUB_CARD_DESCRIPTION = 'Streamline your workflow with GitHub.';
+export const GITHUB_CARD_DESCRIPTION =
+  'Integrate with your GitHub-hosted IAMbic repository.';
 export const OKTA_CARD_DESCRIPTION =
   'Okta provides cloud-based identity and access management to secure your applications, data, and infrastructure.';
 export const CLOUD_PROVIDER_SECTION_DESCRIPTION =

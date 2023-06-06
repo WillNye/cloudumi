@@ -5,6 +5,13 @@ import slack_bolt
 from api.handlers.v3.automatic_policy_request_handler.aws import (
     AutomaticPolicyRequestHandler,
 )
+from api.handlers.v3.github.handler import (
+    GitHubCallbackHandler,
+    GitHubEventsHandler,
+    GitHubOAuthHandler,
+    GithubRepoHandler,
+    GithubStatusHandler,
+)
 from api.handlers.v3.slack.install import (
     AsyncSlackEventsHandler,
     AsyncSlackHandler,
@@ -420,6 +427,17 @@ def make_app(jwt_validator=None):
         ),
         (r"/api/v3/slack/events", AsyncSlackEventsHandler, dict(app=slack_app)),
         (
+            r"/api/v3/github/?",
+            GithubStatusHandler,
+        ),
+        (
+            r"/api/v3/github/install/?",
+            GitHubOAuthHandler,
+        ),
+        (r"/api/v3/github/events/?", GitHubEventsHandler),
+        (r"/api/v3/github/callback/?", GitHubCallbackHandler),
+        (r"/api/v3/github/repos/?", GithubRepoHandler),
+        (
             r"/api/v3/slack/install/?",
             AsyncSlackInstallHandler,
             dict(app=slack_app),
@@ -456,6 +474,10 @@ def make_app(jwt_validator=None):
         (r"/api/v2/.*", V2NotFoundHandler),
         (r"/api/v4/self-service/requests/?", IambicRequestHandler),
         (
+            rf"/api/v4/self-service/requests/(?P<request_id>{UUID_REGEX})",
+            IambicRequestHandler,
+        ),
+        (
             rf"/api/v4/self-service/requests/(?P<request_id>{UUID_REGEX})/comments/?",
             IambicRequestCommentHandler,
         ),
@@ -471,10 +493,6 @@ def make_app(jwt_validator=None):
         (
             rf"/api/v4/self-service/request-types/(?P<request_type_id>{UUID_REGEX})/change-types/(?P<change_type_id>{UUID_REGEX})",
             SelfServiceChangeTypeHandler,
-        ),
-        (
-            rf"/api/v4/self-service/requests/(?P<request_id>{UUID_REGEX})",
-            IambicRequestHandler,
         ),
         (r"/api/v4/providers/?", IambicProviderHandler),
         (r"/api/v4/providers/definitions/?", IambicProviderDefinitionHandler),

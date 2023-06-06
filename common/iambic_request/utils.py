@@ -24,6 +24,7 @@ from common.iambic.templates.utils import get_template_by_id
 from common.iambic.utils import get_iambic_repo
 from common.iambic_request.models import GitHubPullRequest, IambicTemplateChange
 from common.lib import noq_json as json
+from common.lib.iambic.git import IambicGit
 from common.models import (
     IambicRepoDetails,
     SelfServiceRequestChangeType,
@@ -402,7 +403,9 @@ async def get_allowed_approvers(
 async def get_iambic_pr_instance(
     tenant: str, request_id: str, requested_by: str, pull_request_id: int = None
 ):
+    iambic_git = IambicGit(tenant)
     iambic_repo: IambicRepoDetails = await get_iambic_repo(tenant)
+    access_token = await iambic_git.get_access_token()
 
     if iambic_repo.git_provider == "github":
         return GitHubPullRequest(
@@ -411,7 +414,7 @@ async def get_iambic_pr_instance(
             requested_by=requested_by,
             pull_request_id=pull_request_id,
             repo_name=iambic_repo.repo_name,
-            access_token=iambic_repo.access_token,
+            access_token=access_token,
             merge_on_approval=iambic_repo.merge_on_approval,
         )
 

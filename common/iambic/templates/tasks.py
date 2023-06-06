@@ -547,6 +547,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
         tenant_name (str): The name of the tenant.
     """
     tenant = await Tenant.get_by_name(tenant_name)
+    tenant_name = tenant.name
     iambic_git = IambicGit(tenant_name)
     provider_definition_map = defaultdict(dict)
     iambic_templates_last_parsed = datetime.utcnow()

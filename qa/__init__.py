@@ -17,7 +17,7 @@ async def setup():
     It will also load your DB models to prevent race conditions.
     """
     os.environ.setdefault(
-        "CONFIG_LOCATION", "configs/development_account/local_saas_development.yaml"
+        "CONFIG_LOCATION", "configs/development_account/saas_development.yaml"
     )
     os.environ.setdefault("AWS_PROFILE", "development/NoqSaasRoleLocalDev")
 

@@ -6,6 +6,7 @@ os.environ.setdefault(
 os.environ.setdefault("AWS_PROFILE", "development/NoqSaasRoleLocalDev")
 
 from common.config.globals import ASYNC_PG_ENGINE  # noqa: E402
+from common.github.models import GitHubInstall, GitHubOAuthState  # noqa: F401,E402
 from common.group_memberships.models import GroupMembership  # noqa: E402
 from common.groups.models import Group  # noqa: E402
 from common.tenants.models import Tenant  # noqa: E402

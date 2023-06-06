@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import AWSSignIn from '../AWSSignIn/AWSSignIn';
 
 const SignInToRole = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
+  const { search } = useLocation();
   const roleQuery = useParams()['*'];
 
   const roleParams = {
@@ -14,6 +14,7 @@ const SignInToRole = () => {
   return (
     <AWSSignIn
       role={roleParams}
+      extraParams={search}
       showDialogInitially={true}
       setErrorMessage={setErrorMessage}
     />

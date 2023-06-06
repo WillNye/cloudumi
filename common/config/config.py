@@ -564,6 +564,7 @@ class Configuration(metaclass=Singleton):
             "github.Requester": "WARNING",
             "slack_sdk.web.async_base_client": "WARNING",
             "root": "WARNING",
+            "httpx:": "WARNING",
         }
         for logger, level in self.get(
             "_global_.logging_levels", default_logging_levels
