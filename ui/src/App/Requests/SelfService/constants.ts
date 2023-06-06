@@ -1,3 +1,5 @@
+import { IRequest } from './types';
+
 export enum SELF_SERICE_STEPS {
   SELECT_PROVIDER,
   REQUEST_TYPE,
@@ -13,3 +15,11 @@ export enum SELF_SERICE_STEPS {
 //   REQUEST_CHANGE_DETAILS: ,
 //   COMPLETION_FORM; 4
 // }
+
+export const DEFAULT_REQUEST: IRequest = {
+  provider: '',
+  requestType: null,
+  changeType: null,
+  expirationDate: null,
+  justification: null
+};

@@ -19,7 +19,7 @@ const SelectProvider = () => {
     actions: { setCurrentStep, setSelectedProvider }
   } = useContext(SelfServiceContext);
 
-  useQuery({
+  const { isLoading } = useQuery({
     queryFn: getProviders,
     queryKey: ['getProviders'],
     onSuccess: ({ data }) => {
@@ -35,7 +35,7 @@ const SelectProvider = () => {
   });
 
   return (
-    <Segment>
+    <Segment isLoading={isLoading}>
       <div className={styles.container}>
         <h3>Select Provider</h3>
         <LineBreak />

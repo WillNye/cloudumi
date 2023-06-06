@@ -1,20 +1,17 @@
 import { useCallback, useMemo, useState } from 'react';
 import { SELF_SERICE_STEPS } from './constants';
 import RequestViewer from './components/RequestViewer';
-import SelfServiceContext, {
-  RequestType,
-  ChangeType,
-  ChangeTypeDetails
-} from './SelfServiceContext';
+import SelfServiceContext from './SelfServiceContext';
 import { Button } from 'shared/elements/Button';
 
 import styles from './SelfService.module.css';
-import { Divider } from 'shared/elements/Divider';
+import { ChangeType, ChangeTypeDetails, RequestType } from './types';
 
 const SelfService = () => {
   const [currentStep, setCurrentStep] = useState(
     SELF_SERICE_STEPS.SELECT_PROVIDER
   );
+  const [selfServiceRequest, setSelfServiceRequest] = useState();
   const [selectedProvider, setSelectedProvider] = useState('');
   const [selectedRequestType, setSelectedRequestType] =
     useState<RequestType | null>(null);
@@ -43,7 +40,7 @@ const SelfService = () => {
   );
 
   const handleNext = useCallback(() => {
-    setCurrentStep(SELF_SERICE_STEPS.REQUEST_CHANGE_DETAILS);
+    setCurrentStep(SELF_SERICE_STEPS.COMPLETION_FORM);
   }, []);
 
   const handleBack = useCallback(() => {
@@ -56,7 +53,7 @@ const SelfService = () => {
         setSelectedRequestType(null);
         setCurrentStep(SELF_SERICE_STEPS.REQUEST_TYPE);
         break;
-      case SELF_SERICE_STEPS.REQUEST_CHANGE_DETAILS:
+      case SELF_SERICE_STEPS.COMPLETION_FORM:
         setSelectedChangeType(null);
         setCurrentStep(SELF_SERICE_STEPS.CHANGE_TYPE);
         break;
@@ -92,7 +89,6 @@ const SelfService = () => {
       <div className={styles.container}>
         <div className={styles.content}>
           <RequestViewer />
-          <Divider />
           <div className={styles.actions}>
             {canClickBack && (
               <Button size="small" onClick={handleBack}>

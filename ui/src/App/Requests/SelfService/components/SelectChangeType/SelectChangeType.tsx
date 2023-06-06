@@ -1,58 +1,45 @@
-import { useEffect, useState } from 'react';
-import axios from 'core/Axios/Axios';
+import { useState } from 'react';
 import { Segment } from 'shared/layout/Segment';
 import styles from './SelectChangeType.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { useContext } from 'react';
-import SelfServiceContext, {
-  ChangeType as ChangeTypeContext
-} from '../../SelfServiceContext';
-import { SELF_SERICE_STEPS } from '../../constants';
+import SelfServiceContext from '../../SelfServiceContext';
 import { Select } from '@noqdev/cloudscape';
-import { Button } from 'shared/elements/Button';
-import { Dialog } from 'shared/layers/Dialog';
 import RequestChangeDetails from '../RequestChangeDetails';
-
-interface ChangeType {
-  id: string;
-  name: string;
-  description: string;
-  request_type_id: string;
-}
-
-interface ApiResponse {
-  status_code: number;
-  data: ChangeType[];
-}
+import { useQuery } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
+import { getChangeRequestType } from 'core/API/iambicRequest';
+import { Block } from 'shared/layout/Block';
+import { ChangeType } from '../../types';
 
 const SelectChangeType = () => {
   const [changeTypes, setChangeTypes] = useState<ChangeType[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const { selectedRequestType, selectedChangeType } =
-    useContext(SelfServiceContext).store;
-
   const {
-    actions: { setCurrentStep, setSelectedChangeType }
+    store: { selectedRequestType, selectedChangeType }
   } = useContext(SelfServiceContext);
 
-  useEffect(() => {
-    if (selectedRequestType) {
-      const fetchData = async () => {
-        const result = await axios.get<ApiResponse>(
-          `/api/v4/self-service/request-types/${selectedRequestType.id}/change-types/`
-        );
-        setChangeTypes(result.data.data);
-      };
+  const {
+    actions: { setSelectedChangeType }
+  } = useContext(SelfServiceContext);
 
-      fetchData();
+  const { data, isLoading } = useQuery({
+    queryFn: getChangeRequestType,
+    queryKey: ['getChangeRequestType', selectedRequestType.id],
+    onError: (error: AxiosError) => {
+      // const errorRes = error?.response;
+      // const errorMsg = extractErrorMessage(errorRes?.data);
+      // setErrorMessage(errorMsg || 'An error occurred fetching resource');
+    },
+    onSuccess: ({ data }) => {
+      setChangeTypes(data);
     }
-  }, [selectedRequestType]);
+  });
 
   const handleSelectChange = (detail: any) => {
     const selectedChange = changeTypes.find(
       changeType => changeType.id === detail.value
     );
-    setSelectedChangeType(selectedChange as ChangeTypeContext);
+    setSelectedChangeType(selectedChange);
     // Do something with the selected option
   };
 
@@ -63,14 +50,14 @@ const SelectChangeType = () => {
   }));
 
   return (
-    <Segment>
+    <Segment isLoading={isLoading}>
       <div className={styles.container}>
         <h3>Select Change Type</h3>
         <LineBreak />
         <p className={styles.subText}>Please select a change type</p>
         <LineBreak size="large" />
-        <label>
-          Change Type:
+        <div className={styles.content}>
+          <Block disableLabelPadding label="Change Type" />
           <Select
             selectedOption={
               selectedChangeType && {
@@ -84,13 +71,10 @@ const SelectChangeType = () => {
             filteringType="auto"
             selectedAriaLabel="Selected"
           />
-        </label>
-        <LineBreak size="large" />
-
-        {/* <Dialog setShowDialog={setShowModal} showDialog={showModal}> */}
-        {selectedChangeType && <RequestChangeDetails />}
-
-        {/* </Dialog> */}
+          <LineBreak size="large" />
+          {/* TODO: May use a popup dialog for change details */}
+          {selectedChangeType && <RequestChangeDetails />}
+        </div>
       </div>
     </Segment>
   );

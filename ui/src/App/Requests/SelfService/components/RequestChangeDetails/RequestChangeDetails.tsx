@@ -1,35 +1,16 @@
-import {
-  ChangeEvent,
-  FormEvent,
-  useEffect,
-  useState,
-  useMemo,
-  useContext
-} from 'react';
-import { Select, SelectOption } from 'shared/form/Select';
+import { useEffect, useState, useMemo, useContext } from 'react';
 import { Table } from 'shared/elements/Table';
 import { Button } from 'shared/elements/Button';
 import axios from 'axios';
 
-import SelfServiceContext, {
-  ChangeType,
-  ChangeTypeField,
-  ChangeTypeDetails
-} from '../../SelfServiceContext';
-import { TypeaheadBlock } from 'shared/form/TypeaheadBlock';
+import SelfServiceContext from '../../SelfServiceContext';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { Block } from 'shared/layout/Block';
-import { Input } from 'shared/form/Input';
+import RequestField from './RequestField';
+import { ChangeTypeDetails } from '../../types';
 
 interface SelectedOptions {
   [key: string]: string;
-}
-
-interface RequestChangeDetailsProps {
-  selectedChangeType: ChangeType;
-  addChange: (change: ChangeTypeDetails) => void;
-  requestedChanges: ChangeTypeDetails[];
-  removeChange: (index: number) => void;
 }
 
 const RequestChangeDetails = () => {
@@ -105,48 +86,6 @@ const RequestChangeDetails = () => {
     }
   }, [selectedChangeType, changeTypeDetails]);
 
-  const renderField = field => {
-    switch (field.field_type) {
-      case 'TextBox':
-        return (
-          <Input
-            type="text"
-            size-="small"
-            id={field.field_key}
-            name={field.field_key}
-            placeholder={field.field_key}
-            value={selectedOptions[field.field_key] || ''}
-            onChange={e => handleChange(field.field_key, e.target.value)}
-          />
-        );
-      case 'Choice':
-        return (
-          <Select
-            id={field.field_key}
-            name={field.field_key}
-            placeholder="Select from the list below"
-            value={selectedOptions[field.field_key] || ''}
-            onChange={value => handleChange(field.field_key, value)}
-          >
-            {field.options?.map(option => (
-              <SelectOption key={option} value={option}>
-                {option}
-              </SelectOption>
-            ))}
-          </Select>
-        );
-      case 'TypeAhead':
-        return null;
-      //   <TypeaheadBlock
-      //     defaultValue={selectedOptions[field.field_key] || ''}
-      //     handleInputUpdate={(value: string) => handleChange(field.field_key, value)}
-      //     resultsFormatter={(value) => ({ title: value })} // Use your own formatter if needed
-      //   />
-      default:
-        return null;
-    }
-  };
-
   const handleSubmit = e => {
     e.preventDefault();
     addChange({
@@ -171,11 +110,15 @@ const RequestChangeDetails = () => {
             key={field.field_key}
             label={field.field_text}
           ></Block>
-          {renderField(field)}
+          <RequestField
+            selectedOptions={selectedOptions}
+            handleChange={handleChange}
+            field={field}
+          />
           <LineBreak />
         </div>
       ))}
-      <Button color="secondary" type="submit">
+      <Button color="secondary" type="submit" size="small">
         Add Change
       </Button>
     </form>
