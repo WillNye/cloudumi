@@ -4,6 +4,7 @@ import sys
 from collections import defaultdict
 from typing import Optional
 
+from deepdiff import DeepDiff
 from sqlalchemy import and_, cast, delete, not_, select
 
 from common.config import config as saas_config
@@ -203,13 +204,19 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
                     "sub_type": sub_type,
                     "account_id": account.account_id,
                     "account_name": account.account_name,
+                    "variables": [
+                        {"key": "account_id", "value": account.account_id},
+                        {"key": "account_name", "value": account.account_name},
+                    ],
                 }
                 if account.org_id:
                     definition["org_id"] = account.org_id
                 if account.variables:
-                    definition["variables"] = [
-                        json.loads(var.json()) for var in account.variables
-                    ]
+                    definition["variables"].extend(
+                        [json.loads(var.json()) for var in account.variables]
+                    )
+                definition["preferred_identifier"] = account.preferred_identifier
+                definition["all_identifiers"] = list(account.all_identifiers)
 
                 repo_providers[base_key] = TenantProvider(
                     tenant_id=tenant.id, provider=provider, sub_type=sub_type
@@ -258,7 +265,8 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
         for name, definition in definitions.items():
             provider = definition.pop("provider")
             sub_type = definition.pop("sub_type", "")
-            if not existing_definitions.get(provider_full, {}).get(name):
+            existing_def = existing_definitions.get(provider_full, {}).get(name)
+            if not existing_def:
                 new_definitions.append(
                     TenantProviderDefinition(
                         tenant_id=tenant.id,
@@ -268,6 +276,9 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
                         definition=definition,
                     )
                 )
+            elif bool(DeepDiff(existing_def.definition, definition, ignore_order=True)):
+                existing_def.definition = definition
+                await existing_def.write()
 
     if deleted_definitions:
         await bulk_delete(deleted_definitions)
