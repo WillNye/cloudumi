@@ -221,6 +221,7 @@ class ChangeField(Base):
         Index(
             "uix_change_type_element", "change_type_id", "change_element", unique=True
         ),
+        Index("uix_change_type_field_key", "change_type_id", "field_key", unique=True),
     )
 
     def self_service_dict(self, tenant_url: str):
