@@ -10,7 +10,6 @@ import threading
 import time
 from collections import defaultdict
 from collections.abc import Mapping
-from functools import lru_cache
 from logging import LoggerAdapter, LogRecord
 from threading import Timer
 from typing import Any, Dict, List, Optional, Union
@@ -19,6 +18,7 @@ import boto3
 import botocore.exceptions
 import logmatic
 import sentry_sdk
+from cachetools import TTLCache, cached
 from pytz import timezone
 
 import common.lib.noq_json as json
@@ -383,7 +383,7 @@ class Configuration(metaclass=Singleton):
             return yaml_safe.load(tenant_config)
         return yaml.load(tenant_config)
 
-    @lru_cache(maxsize=128)
+    @cached(cache=TTLCache(maxsize=1024, ttl=30))
     def is_tenant_configured(self, tenant) -> bool:
         """
         Check if tenant is configured in DynamoDB.
