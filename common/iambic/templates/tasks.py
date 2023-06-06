@@ -143,7 +143,7 @@ async def create_tenant_templates_and_definitions(
         iambic_template_content = IambicTemplateContent(
             tenant=tenant,
             iambic_template=iambic_template,
-            content=raw_iambic_template.dict().get("properties", {}),
+            content=raw_iambic_template.dict(exclude_unset=False),
         )
         iambic_template_content_list.append(iambic_template_content)
 
@@ -575,7 +575,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
                 {
                     "function": f"{__name__}.{sys._getframe().f_code.co_name}",
                     "message": "Unable to create tenant templates and definitions.",
-                    "tenant": tenant.name,
+                    "tenant": tenant_name,
                     "error": str(err),
                 }
             )

@@ -20,8 +20,8 @@ from common.models import IambicRequest, WebResponse
 class IambicRequestHandler(BaseHandler):
     async def get(self, request_id: str = None):
         """
-        GET /api/v4/request/{request_id} - Get a request by ID
-        GET /api/v4/request - List all tenant requests with optional filters
+        GET /api/v4/self-service/request/{request_id} - Get a request by ID
+        GET /api/v4/self-service/request - List all tenant requests with optional filters
         """
         tenant = self.ctx.tenant
 
@@ -59,7 +59,7 @@ class IambicRequestHandler(BaseHandler):
 
     async def post(self):
         """
-        POST /api/v4/requests - Create a new request
+        POST /api/v4/self-service/requests - Create a new request
         """
         await self.fte_check()
 
@@ -83,7 +83,7 @@ class IambicRequestHandler(BaseHandler):
 
     async def put(self, request_id: str):
         """
-        PUT /api/v4/request/{request_id} - Update a request
+        PUT /api/v4/self-service/request/{request_id} - Update a request
         """
         await self.fte_check()
 
@@ -119,7 +119,7 @@ class IambicRequestHandler(BaseHandler):
 
     async def patch(self, request_id: str):
         """
-        PATCH /api/v4/request/{request_id} - Update a request status
+        PATCH /api/v4/self-service/request/{request_id} - Update a request status
         """
         await self.fte_check()
 
@@ -173,7 +173,7 @@ class IambicRequestHandler(BaseHandler):
 class IambicRequestCommentHandler(BaseHandler):
     async def post(self, request_id: str):
         """
-        POST /api/v4/request/{request_id}/comment - Create a new request
+        POST /api/v4/self-service/request/{request_id}/comment - Create a new request
         """
 
         tenant = self.ctx.tenant
@@ -183,7 +183,7 @@ class IambicRequestCommentHandler(BaseHandler):
 
     async def patch(self, request_id: str, comment_id: str):
         """
-        PUT /api/v4/request/{request_id}/comment/{comment_id} - Update a request
+        PUT /api/v4/self-service/request/{request_id}/comment/{comment_id} - Update a request
         """
         tenant = self.ctx.tenant
         user = self.user
@@ -203,7 +203,7 @@ class IambicRequestCommentHandler(BaseHandler):
 
     async def delete(self, request_id: str, comment_id: str):
         f"""
-        DELETE /api/v4/request/{request_id}/comment/{comment_id} - Delete a request
+        DELETE /api/v4/self-service/request/{request_id}/comment/{comment_id} - Delete a request
         """
         tenant = self.ctx.tenant
         user = self.user
