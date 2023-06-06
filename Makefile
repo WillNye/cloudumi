@@ -46,6 +46,9 @@ AWS_PROFILE_PROD = production/prod_admin
 AWS_REGION_PROD = us-west-2
 PROD_VAR_FILES = --var-file=live/shared/prod-1/noq.dev-prod.tfvars --var-file=live/shared/prod-1/secret.tfvars
 
+EMAIL? = engineering@noq.dev
+DOMAIN_PREFIX? = engineering
+
 .PHONY: tf-staging-refresh tf-staging-plan tf-staging-apply tf-prod-refresh tf-prod-plan tf-prod-apply
 
 .PHONY: docker_upload_volumes
@@ -272,3 +275,11 @@ generate_pydantic_models_from_swagger_spec:
 update_aws_service_definitions_frontend:
 	@echo "Updating Frontend AWS service Definitions from policyuniverse..."
 	python common/scripts/download_aws_services.py --output_location ui/src/assets/definitions/aws_services_simple.json
+
+# Example usage: make register_tenant_local EMAIL=curtis@noq.dev DOMAIN_PREFIX=test
+.PHONY: register_tenant_local
+register_tenant_local:
+	@if [ -z "$(EMAIL)" ]; then echo "EMAIL is not set"; exit 1; fi;
+	@if [ -z "$(DOMAIN_PREFIX)" ]; then echo "DOMAIN_PREFIX is not set"; exit 1; fi;
+	curl -X POST http://localhost:8092/api/v3/tenant_registration -H "Content-Type: application/json" -d '{"first_name": "Functional", "last_name": "Test", "email": "$(EMAIL)", "country": "USA", "marketing_consent": true, "registration_code": "", "domain": "$(DOMAIN_PREFIX).example.com"}'
+	@echo "\nPlease add the following entry to your /etc/hosts file:\n127.0.0.1 $(DOMAIN_PREFIX).example.com"
