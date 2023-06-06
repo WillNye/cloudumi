@@ -41,12 +41,23 @@ fi
 export UNTRACKED_FILES="$(git ls-files --others --exclude-standard)"
 # Stash untracked files if they exist
 if [ -n "$UNTRACKED_FILES" ]; then
-    echo "Untracked files: $UNTRACKED_FILES"
     echo "Stashing untracked files"
-    git stash save --include-untracked
+    git stash save --include-untracked >/dev/null
+    STATUS=$?
+    if [ $STATUS -ne 0 ]; then
+      exit $STATUS
+    fi
 fi
+
 # Catch exit signal to apply the stash
-trap 'if [ -n "$UNTRACKED_FILES" ]; then echo "Applying stash to bring back untracked files"; git stash apply; fi' EXIT
+trap 'if [ -n "$UNTRACKED_FILES" ]; then
+         echo "Applying stash to bring back untracked files";
+         git stash apply >/dev/null
+         STATUS=$?
+         if [ $STATUS -ne 0 ]; then
+            exit $STATUS
+         fi
+      fi' EXIT
 
 export VERSION=$(git describe --tags --abbrev=0)
 export GIT_HASH=$(git rev-parse --short HEAD)
