@@ -10,6 +10,8 @@ import SelfServiceContext, {
 import { SELF_SERICE_STEPS } from '../../constants';
 import { Select } from '@noqdev/cloudscape';
 import { Button } from 'shared/elements/Button';
+import { Dialog } from 'shared/layers/Dialog';
+import RequestChangeDetails from '../RequestChangeDetails';
 
 interface ChangeType {
   id: string;
@@ -25,11 +27,12 @@ interface ApiResponse {
 
 const SelectChangeType = () => {
   const [changeTypes, setChangeTypes] = useState<ChangeType[]>([]);
+  const [showModal, setShowModal] = useState(false);
   const { selectedRequestType, selectedChangeType } =
     useContext(SelfServiceContext).store;
 
   const {
-    actions: { setCurrentStep, setSelectedChangeType, goBack }
+    actions: { setCurrentStep, setSelectedChangeType }
   } = useContext(SelfServiceContext);
 
   useEffect(() => {
@@ -83,15 +86,11 @@ const SelectChangeType = () => {
           />
         </label>
         <LineBreak size="large" />
-        <Button onClick={goBack}>Back</Button>
-        <Button
-          onClick={() =>
-            setCurrentStep(SELF_SERICE_STEPS.REQUEST_CHANGE_DETAILS)
-          }
-          disabled={!selectedChangeType}
-        >
-          Next
-        </Button>
+
+        {/* <Dialog setShowDialog={setShowModal} showDialog={showModal}> */}
+        {selectedChangeType && <RequestChangeDetails />}
+
+        {/* </Dialog> */}
       </div>
     </Segment>
   );

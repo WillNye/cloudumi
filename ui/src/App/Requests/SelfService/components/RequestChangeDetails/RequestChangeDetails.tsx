@@ -17,6 +17,9 @@ import SelfServiceContext, {
   ChangeTypeDetails
 } from '../../SelfServiceContext';
 import { TypeaheadBlock } from 'shared/form/TypeaheadBlock';
+import { LineBreak } from 'shared/elements/LineBreak';
+import { Block } from 'shared/layout/Block';
+import { Input } from 'shared/form/Input';
 
 interface SelectedOptions {
   [key: string]: string;
@@ -32,7 +35,7 @@ interface RequestChangeDetailsProps {
 const RequestChangeDetails = () => {
   const {
     store: { selectedChangeType, requestedChanges },
-    actions: { addChange, removeChange, goBack }
+    actions: { addChange, removeChange }
   } = useContext(SelfServiceContext);
 
   const [changeTypeDetails, setChangeTypeDetails] =
@@ -100,16 +103,18 @@ const RequestChangeDetails = () => {
           console.error(err);
         });
     }
-  }, [selectedChangeType]);
+  }, [selectedChangeType, changeTypeDetails]);
 
   const renderField = field => {
     switch (field.field_type) {
       case 'TextBox':
         return (
-          <input
+          <Input
             type="text"
+            size-="small"
             id={field.field_key}
             name={field.field_key}
+            placeholder={field.field_key}
             value={selectedOptions[field.field_key] || ''}
             onChange={e => handleChange(field.field_key, e.target.value)}
           />
@@ -119,6 +124,7 @@ const RequestChangeDetails = () => {
           <Select
             id={field.field_key}
             name={field.field_key}
+            placeholder="Select from the list below"
             value={selectedOptions[field.field_key] || ''}
             onChange={value => handleChange(field.field_key, value)}
           >
@@ -141,9 +147,9 @@ const RequestChangeDetails = () => {
     }
   };
 
-  const handleSubmit = async e => {
+  const handleSubmit = e => {
     e.preventDefault();
-    await addChange({
+    addChange({
       id: changeTypeDetails.id,
       name: changeTypeDetails.name,
       description: changeTypeDetails.description,
@@ -153,7 +159,6 @@ const RequestChangeDetails = () => {
         value: selectedOptions[field.field_key]
       }))
     });
-    alert('Added Change: ' + JSON.stringify(selectedOptions, null, 2));
     setSelectedOptions({});
   };
 
@@ -161,19 +166,18 @@ const RequestChangeDetails = () => {
     <form onSubmit={handleSubmit}>
       {changeTypeDetails?.fields?.map(field => (
         <div key={field.id}>
-          <label htmlFor={field.field_key}>{field.field_text}</label>
+          <Block
+            disableLabelPadding
+            key={field.field_key}
+            label={field.field_text}
+          ></Block>
           {renderField(field)}
+          <LineBreak />
         </div>
       ))}
-      <Button onClick={goBack}>Back</Button>
-      <Button type="submit">Add Change</Button>
-      {/* TODO: we want a table of changes that users can add to / remove from before they go to the review page
-        <Table
-            data={tableRows}
-            columns={changesColumns}
-            border="row"
-            isLoading={false}
-        /> */}
+      <Button color="secondary" type="submit">
+        Add Change
+      </Button>
     </form>
   );
 };

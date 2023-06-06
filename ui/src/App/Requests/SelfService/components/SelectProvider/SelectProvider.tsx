@@ -1,41 +1,17 @@
-import { useState, useEffect, useContext } from 'react';
-import axios from 'core/Axios/Axios';
+import { useState, useContext } from 'react';
 
 import { Segment } from 'shared/layout/Segment';
 import RequestCard from '../RequestCard';
-import awsIcon from 'assets/integrations/awsIcon.svg';
-import gsuiteIcon from 'assets/integrations/gsuiteIcon.svg';
-import azureADIcon from 'assets/integrations/azureADIcon.svg';
-import oktaIcon from 'assets/integrations/oktaIcon.svg';
 import styles from './SelectProvider.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { Link } from 'react-router-dom';
 
 import SelfServiceContext from '../../SelfServiceContext';
 import { SELF_SERICE_STEPS } from '../../constants';
-
-interface ProviderData {
-  provider: string;
-  sub_type: string;
-}
-
-interface ApiResponse {
-  status_code: number;
-  data: ProviderData[];
-}
-
-interface ProviderDetails {
-  title: string;
-  icon: string;
-  description: string;
-}
-
-interface Provider {
-  provider: string;
-  title: string;
-  icon: string;
-  description: string;
-}
+import { useQuery } from '@tanstack/react-query';
+import { getProviders } from 'core/API/iambicRequest';
+import { Provider } from './types';
+import { providerDetails } from './constants';
 
 const SelectProvider = () => {
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -43,43 +19,20 @@ const SelectProvider = () => {
     actions: { setCurrentStep, setSelectedProvider }
   } = useContext(SelfServiceContext);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const result = await axios.get<ApiResponse>('/api/v4/providers');
-
+  useQuery({
+    queryFn: getProviders,
+    queryKey: ['getProviders'],
+    onSuccess: ({ data }) => {
       const uniqueProviders = [
-        ...new Set(result.data.data.map(item => item.provider))
-      ];
-
-      const providersData: Provider[] = uniqueProviders.map(provider => ({
+        ...new Set(data.map(item => item.provider))
+      ] as string[];
+      const providersData = uniqueProviders.map(provider => ({
         provider,
         ...providerDetails[provider]
       }));
-
       setProviders(providersData);
-    };
-
-    fetchData();
-  }, []);
-
-  const providerDetails: Record<string, ProviderDetails> = {
-    aws: {
-      title: 'AWS',
-      icon: awsIcon,
-      description: 'Amazon web services (AWS)'
-    },
-    okta: { title: 'Okta', icon: oktaIcon, description: 'Okta' },
-    azure_ad: {
-      title: 'Azure AD',
-      icon: azureADIcon,
-      description: 'Azure Active Directory'
-    },
-    google_workspace: {
-      title: 'Google Workspace',
-      icon: gsuiteIcon,
-      description: 'Google Workspace'
     }
-  };
+  });
 
   return (
     <Segment>

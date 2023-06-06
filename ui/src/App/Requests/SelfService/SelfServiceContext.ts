@@ -55,7 +55,6 @@ export interface ISelfServiceContext {
     setSelectedChangeType: Dispatch<ChangeType>;
     addChange: (change: ChangeTypeDetails) => void;
     removeChange: (change: ChangeTypeDetails) => void;
-    goBack: () => void;
   };
   store: {
     currentStep: SELF_SERICE_STEPS;

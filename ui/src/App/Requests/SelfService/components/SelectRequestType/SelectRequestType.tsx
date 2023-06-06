@@ -23,7 +23,7 @@ const SelectRequestType = () => {
   const { selectedProvider } = useContext(SelfServiceContext).store;
 
   const {
-    actions: { setCurrentStep, setSelectedRequestType, goBack }
+    actions: { setCurrentStep, setSelectedRequestType }
   } = useContext(SelfServiceContext);
 
   useEffect(() => {
@@ -60,7 +60,6 @@ const SelectRequestType = () => {
             />
           ))}
         </div>
-        <Button onClick={goBack}>Back</Button>
       </div>
     </Segment>
   );

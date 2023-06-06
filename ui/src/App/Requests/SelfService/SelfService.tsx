@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { SELF_SERICE_STEPS } from './constants';
 import RequestViewer from './components/RequestViewer';
 import SelfServiceContext, {
@@ -6,6 +6,10 @@ import SelfServiceContext, {
   ChangeType,
   ChangeTypeDetails
 } from './SelfServiceContext';
+import { Button } from 'shared/elements/Button';
+
+import styles from './SelfService.module.css';
+import { Divider } from 'shared/elements/Divider';
 
 const SelfService = () => {
   const [currentStep, setCurrentStep] = useState(
@@ -28,7 +32,21 @@ const SelfService = () => {
     setRequestedChanges(prev => prev.filter((_, i) => i !== index));
   };
 
-  const goBack = () => {
+  const canClickBack = useMemo(
+    () => currentStep !== SELF_SERICE_STEPS.SELECT_PROVIDER,
+    [currentStep]
+  );
+
+  const canClickNext = useMemo(
+    () => currentStep === SELF_SERICE_STEPS.CHANGE_TYPE,
+    [currentStep]
+  );
+
+  const handleNext = useCallback(() => {
+    setCurrentStep(SELF_SERICE_STEPS.REQUEST_CHANGE_DETAILS);
+  }, []);
+
+  const handleBack = useCallback(() => {
     switch (currentStep) {
       case SELF_SERICE_STEPS.REQUEST_TYPE:
         setSelectedProvider('');
@@ -49,7 +67,7 @@ const SelfService = () => {
       default:
         break;
     }
-  };
+  }, [currentStep]);
 
   return (
     <SelfServiceContext.Provider
@@ -67,12 +85,34 @@ const SelfService = () => {
           setSelectedRequestType,
           setSelectedChangeType,
           addChange,
-          removeChange,
-          goBack
+          removeChange
         }
       }}
     >
-      <RequestViewer />
+      <div className={styles.container}>
+        <div className={styles.content}>
+          <RequestViewer />
+          <Divider />
+          <div className={styles.actions}>
+            {canClickBack && (
+              <Button size="small" onClick={handleBack}>
+                Back
+              </Button>
+            )}
+            {canClickNext && (
+              <Button
+                size="small"
+                // color="secondary"
+                // variant="outline"
+                disabled={!selectedChangeType}
+                onClick={handleNext}
+              >
+                Next
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
     </SelfServiceContext.Provider>
   );
 };
