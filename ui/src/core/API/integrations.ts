@@ -18,3 +18,21 @@ export const deleteNoqSlackApp = async () => {
   const response = await axios.delete(url);
   return response.data;
 };
+
+export const getGithubInstallationStatus = async () => {
+  const url = `${V3_API_URL}/github`;
+  const response = await axios.get(url);
+  return response.data;
+};
+
+export const addNoqGithubApp = async () => {
+  const url = `${V3_API_URL}/github/install`;
+  const response = await axios.get(url);
+  return response.data;
+};
+
+export const deleteNoqGithubApp = async () => {
+  const url = `${V3_API_URL}/github`;
+  const response = await axios.delete(url);
+  return response.data;
+};

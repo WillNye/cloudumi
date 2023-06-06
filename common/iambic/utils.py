@@ -1,16 +1,40 @@
+from typing import Optional
+
+from common.config import config
 from common.config.globals import IAMBIC_REPOS_BASE_KEY
+from common.lib.dynamo import RestrictedDynamoHandler
+from common.lib.yaml import yaml
 from common.models import IambicRepoDetails
 
 
-async def save_iambic_repos(tenant: str, iambic_repos: list[IambicRepoDetails]):
-    from common.config import models
+async def save_iambic_repos(
+    tenant: str, iambic_repos: IambicRepoDetails, user: str
+) -> bool:
 
-    await models.ModelAdapter(IambicRepoDetails, "save_iambic_repos").load_config(
-        IAMBIC_REPOS_BASE_KEY, tenant
-    ).from_model(iambic_repos).store_list()
+    ddb = RestrictedDynamoHandler()
+    tenant_config = config.get_tenant_static_config_from_dynamo(tenant)
+    if not tenant_config:
+        raise KeyError(f"No tenant config found for {tenant}")
+
+    tenant_config["iambic_repos"] = [iambic_repos.dict()]
+
+    await ddb.update_static_config_for_tenant(yaml.dump(tenant_config), user, tenant)
+    return True
 
 
-async def get_iambic_repo(tenant: str) -> IambicRepoDetails:
+async def delete_iambic_repos(tenant: str, user: str):
+    ddb = RestrictedDynamoHandler()
+    tenant_config = config.get_tenant_static_config_from_dynamo(tenant)
+    if not tenant_config:
+        raise KeyError(f"No tenant config found for {tenant}")
+
+    tenant_config["iambic_repos"] = []
+
+    await ddb.update_static_config_for_tenant(yaml.dump(tenant_config), user, tenant)
+    return True
+
+
+async def get_iambic_repo(tenant: str) -> Optional[IambicRepoDetails]:
     """Retrieve the proper IAMbic repo.
     Currently, we really only support one repo per tenant.
     """
@@ -22,6 +46,6 @@ async def get_iambic_repo(tenant: str) -> IambicRepoDetails:
         .models
     )
     if not iambic_repos:
-        raise KeyError(f"No IAMbic repos configured for {tenant}")
+        return None
 
     return iambic_repos[0]

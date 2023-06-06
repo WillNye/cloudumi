@@ -5,6 +5,8 @@ import time
 from pathlib import Path
 from typing import Optional
 
+import httpx
+import jwt
 import pytz
 import ujson as json
 from git import Repo
@@ -35,13 +37,47 @@ from jinja2.environment import Environment
 from jinja2.loaders import BaseLoader
 
 from common.config import models
-from common.config.globals import TENANT_STORAGE_BASE_PATH
+from common.config.globals import (
+    GITHUB_APP_ID,
+    GITHUB_APP_PRIVATE_KEY,
+    TENANT_STORAGE_BASE_PATH,
+)
 from common.config.tenant_config import TenantConfig
+from common.github.models import GitHubInstall
 from common.lib.cache import store_json_results_in_redis_and_s3
 from common.lib.yaml import yaml
 from common.models import IambicRepoDetails
+from common.tenants.models import Tenant
 
 IAMBIC_REPOS_BASE_KEY = "iambic_repos"
+
+
+async def get_github_repos(access_token):
+    # maximum supported value is 100
+    # github default is 30
+    # to test, change this to 1 to test pagination stitching response
+    # why 100? with gzip compression, it's better to have
+    # more results in single response, and let's compression take advantage
+    # of repeated strings.
+    per_page = 100
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/vnd.github.v3+json",
+        "Accept-Encoding": "gzip, deflate, br",
+        "per_page": f"{per_page}",
+    }
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            "https://api.github.com/installation/repositories", headers=headers
+        )
+        response.raise_for_status()
+        content_so_far = response.json()
+        # handle pagination: https://docs.github.com/en/rest/guides/using-pagination-in-the-rest-api?apiVersion=2022-11-28
+        while "next" in response.links:
+            response = await client.get(response.links["next"]["url"], headers=headers)
+            response.raise_for_status()
+            content_so_far["repositories"].extend(response.json()["repositories"])
+    return content_so_far
 
 
 class IambicGit:
@@ -53,6 +89,55 @@ class IambicGit:
         )
         os.makedirs(os.path.dirname(self.tenant_repo_base_path), exist_ok=True)
         self.repos = {}
+        self.db_tenant = None
+        self.installation_id = None
+
+    async def is_github_app_connected(self):
+        """Use this function to handle the case github_app connectivity is missing
+
+        Note: This only checks against cloudumi database knowledge and does not
+        reach out to Github. Github side will have transient failure. The database
+        check is more repeatable.
+        """
+        # do not mutate the self object in this function
+        db_tenant = await Tenant.get_by_name(self.tenant)
+        gh_installation = await GitHubInstall.get(db_tenant)
+        return bool(gh_installation)
+
+    async def get_access_token(self):
+        if not self.db_tenant:
+            self.db_tenant = await Tenant.get_by_name(self.tenant)
+        if not self.installation_id:
+            self.gh_installation = await GitHubInstall.get(self.db_tenant)
+            self.installation_id = self.gh_installation.installation_id
+
+        # Generate the JWT
+        now = int(time.time())
+        payload = {
+            "iat": now,  # Issued at time
+            "exp": now + (10 * 60),  # JWT expiration time (10 minute maximum)
+            "iss": GITHUB_APP_ID,  # GitHub App's identifier
+        }
+        jwt_token = jwt.encode(payload, GITHUB_APP_PRIVATE_KEY, algorithm="RS256")
+
+        # Use the JWT to authenticate as the GitHub App
+        headers = {
+            "Authorization": f"Bearer {jwt_token}",
+            "Accept": "application/vnd.github.machine-man-preview+json",
+        }
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"https://api.github.com/app/installations/{self.installation_id}/access_tokens",
+                headers=headers,
+            )
+        response.raise_for_status()
+        access_token = response.json()["token"]
+
+        return access_token
+
+    async def get_repos(self):
+        access_token = await self.get_access_token()
+        return await get_github_repos(access_token)
 
     def get_iambic_repo_path(self, repo_name):
         return os.path.join(self.tenant_repo_base_path, repo_name)
@@ -143,7 +228,7 @@ class IambicGit:
         await self.set_git_repositories()
         for repository in self.git_repositories:
             repo_name = repository.repo_name
-            access_token = repository.access_token
+            access_token = await self.get_access_token()
             repo_path = self.get_iambic_repo_path(repository.repo_name)
             git_uri = f"https://oauth:{access_token}@github.com/{repo_name}"
             try:
@@ -157,7 +242,7 @@ class IambicGit:
                 self.repos[repo_name] = {
                     "repo": repo,
                     "path": repo_path,
-                    "gh": Github(repository.access_token),
+                    "gh": Github(access_token),
                     "default_branch": default_branch,
                 }
             except GitCommandError as e:
@@ -176,7 +261,7 @@ class IambicGit:
                 self.repos[repo_name] = {
                     "repo": repo,
                     "path": repo_path,
-                    "gh": Github(repository.access_token),
+                    "gh": Github(access_token),
                     "default_branch": default_branch,
                 }
         return

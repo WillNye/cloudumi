@@ -9,7 +9,11 @@ import githubIcon from 'assets/integrations/githubIcon.svg';
 import oktaIcon from 'assets/integrations/oktaIcon.svg';
 import SectionHeader from 'shared/elements/SectionHeader/SectionHeader';
 import SlackIntegrationModal from './components/SlackIntegrationsModal';
-import { getSlackInstallationStatus } from 'core/API/integrations';
+import GithubIntegrationModal from './components/GithubIntegrationsModal';
+import {
+  getSlackInstallationStatus,
+  getGithubInstallationStatus
+} from 'core/API/integrations';
 import {
   AWS_CARD_DESCRIPTION,
   // AZURE_CARD_DESCRIPTION,
@@ -24,17 +28,34 @@ import { useQuery } from '@tanstack/react-query';
 
 const IntegrationSettings = () => {
   const [showSlackModal, setShowSlackModal] = useState(false);
+  const [showGithubModal, setShowGithubModal] = useState(false);
 
   const {
     refetch: getIntegrationStatus,
     isLoading,
-    data
+    data: slackData
   } = useQuery({
     queryFn: getSlackInstallationStatus,
     queryKey: ['integrationsStatuses']
   });
 
-  const isSlackConnected = useMemo(() => data?.data?.installed, [data]);
+  const {
+    refetch: getGithubIntegrationStatus,
+    isLoading: githubIsLoading,
+    data: githubData
+  } = useQuery({
+    queryFn: getGithubInstallationStatus,
+    queryKey: ['githubIntegrationStatus']
+  });
+
+  const isSlackConnected = useMemo(
+    () => slackData?.data?.installed,
+    [slackData]
+  );
+  const isGithubConnected = useMemo(
+    () => githubData?.data?.installed,
+    [githubData]
+  );
 
   return (
     <div className={styles.container}>
@@ -80,7 +101,7 @@ const IntegrationSettings = () => {
             title="Connect to Github"
             icon={githubIcon}
             buttonText="Connect"
-            disableBtn
+            handleConnect={() => setShowGithubModal(true)}
           />
         </div>
         <SectionHeader
@@ -92,7 +113,7 @@ const IntegrationSettings = () => {
         <div className={styles.gridContainer}>
           <IntegrationCard
             description={OKTA_CARD_DESCRIPTION}
-            title="Connect to OKta"
+            title="Connect to Okta"
             icon={oktaIcon}
             buttonText="Connect"
             disableBtn
@@ -105,6 +126,13 @@ const IntegrationSettings = () => {
         isSlackConnected={isSlackConnected}
         checkStatus={getIntegrationStatus}
         isGettingIntegrations={isLoading}
+      />
+      <GithubIntegrationModal
+        showDialog={showGithubModal}
+        setShowDialog={setShowGithubModal}
+        isGithubConnected={isGithubConnected}
+        checkStatus={getGithubIntegrationStatus}
+        isGettingIntegrations={githubIsLoading}
       />
     </div>
   );

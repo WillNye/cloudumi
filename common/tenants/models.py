@@ -18,6 +18,12 @@ class Tenant(SoftDeleteMixin, Base):
     users = relationship("User", back_populates="tenant", cascade="all, delete-orphan")
     iambic_templates_last_parsed = Column(DateTime, nullable=True)
     supported_template_types = Column(ARRAY(String), nullable=True)
+    github_installs = relationship(
+        "GitHubInstall", back_populates="tenant", cascade="all, delete-orphan"
+    )
+    github_oauth_states = relationship(
+        "GitHubOAuthState", back_populates="tenant", cascade="all, delete-orphan"
+    )
 
     @classmethod
     async def get_by_id(cls, tenant_id):
