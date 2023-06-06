@@ -1,6 +1,6 @@
 import asyncio
 from collections import defaultdict
-from typing import get_origin
+from typing import Type, get_origin
 
 from deepdiff import DeepDiff
 from iambic.core.models import BaseModel as IambicBaseModel
@@ -29,7 +29,6 @@ from common.models import (
     IambicRepoDetails,
     SelfServiceRequestChangeType,
     SelfServiceRequestData,
-    Type,
 )
 from common.request_types.utils import list_tenant_change_types
 
