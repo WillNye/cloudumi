@@ -58,14 +58,14 @@ class GitHubCallbackHandler(TornadoRequestHandler):
         if setup_action == "request":
             # the user only request the Github Admin to approve the app installation
             self.write(
-                f"Please save the query params to finish installation. Please check with your Github Admin to approve the installation request. <code>{state}</code>"
+                f"Ask your GitHub administrator to approve the app installation. They’ll be redirected back to Noq to finalize it. Make sure they append state={state} to the Noq URL they are redirected back to, and to reload the page to finish the installation."
             )
             return
         elif setup_action == "install" and not state:
             # the Github Admin approve the app installation but is not the same requester
             # not using self.request.full_uri() because our local dev will see http protocol
             self.write(
-                f"Please share the url to the user requested the app installation. They will supply their own state query param. <code>https://{self.request.host}{self.request.uri}&state=SUPPLY_YOUR_OWN</code>"
+                "Please retrieve the state value that was provided during the initial installation request, and append it to the URL as state=UNIQUE_VALUE. Then, reload the page to finish the installation."
             )
             return
 
