@@ -1225,6 +1225,12 @@ class NoCacheStaticFileHandler(tornado.web.StaticFileHandler):
 
 
 class StaticFileHandler(tornado.web.StaticFileHandler):
+    def log_exception(self, typ, value, tb):
+        if isinstance(value, tornado.web.Finish):
+            # if Finish is raised, we want to ignore it.
+            return
+        super(StaticFileHandler, self).log_exception(typ, value, tb)
+
     def get_tenant(self):
         if config.get("_global_.development"):
             x_forwarded_host = self.request.headers.get("X-Forwarded-Host", "")
@@ -1236,7 +1242,7 @@ class StaticFileHandler(tornado.web.StaticFileHandler):
     def get_tenant_name(self):
         return self.get_tenant().split(":")[0].replace(".", "_")
 
-    def initialize(self, **kwargs) -> None:
+    async def prepare(self, **kwargs) -> None:
         tenant = self.get_tenant_name()
         if not config.is_tenant_configured(tenant):
             function: str = (

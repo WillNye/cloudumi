@@ -10,6 +10,7 @@ import threading
 import time
 from collections import defaultdict
 from collections.abc import Mapping
+from functools import lru_cache
 from logging import LoggerAdapter, LogRecord
 from threading import Timer
 from typing import Any, Dict, List, Optional, Union
@@ -66,6 +67,7 @@ class Configuration(metaclass=Singleton):
         self.config = {}
         self.log = None
         self.tenant_configs = defaultdict(dict)
+        self.dynamodb = None
 
     def raise_if_invalid_aws_credentials(self):
         try:
@@ -336,15 +338,16 @@ class Configuration(metaclass=Singleton):
             "tenant": tenant,
             "safe": safe,
         }
-        dynamodb = boto3.resource(
-            "dynamodb",
-            region_name=self.get_aws_region(),
-            endpoint_url=self.get(
-                "_global_.dynamodb_server",
-                self.get("_global_.boto3.client_kwargs.endpoint_url"),
-            ),
-        )
-        config_table = dynamodb.Table(
+        if not self.dynamodb:
+            self.dynamodb = boto3.resource(
+                "dynamodb",
+                region_name=self.get_aws_region(),
+                endpoint_url=self.get(
+                    "_global_.dynamodb_server",
+                    self.get("_global_.boto3.client_kwargs.endpoint_url"),
+                ),
+            )
+        config_table = self.dynamodb.Table(
             self.get_dynamo_table_name("tenant_static_configs")
         )
         current_config = {}
@@ -380,6 +383,7 @@ class Configuration(metaclass=Singleton):
             return yaml_safe.load(tenant_config)
         return yaml.load(tenant_config)
 
+    @lru_cache(maxsize=128)
     def is_tenant_configured(self, tenant) -> bool:
         """
         Check if tenant is configured in DynamoDB.
