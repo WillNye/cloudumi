@@ -712,7 +712,9 @@ class BaseHandler(TornadoRequestHandler):
             and not self.mfa_setup_required
         ):
             try:
-                self.eligible_accounts = await group_mapping.get_eligible_accounts(self)
+                self.eligible_accounts = await group_mapping.get_eligible_accounts(
+                    tenant, self.eligible_roles
+                )
                 log_data["eligible_accounts"] = len(self.eligible_accounts)
                 log_data["message"] = "Successfully authorized user."
                 log.debug(log_data)
@@ -730,6 +732,7 @@ class BaseHandler(TornadoRequestHandler):
         ):
             try:
                 red = await RedisHandler().redis(tenant)
+                # Expensive call
                 red.setex(
                     f"{tenant}_USER-{self.user}-CONSOLE-{console_only}",
                     config.get_tenant_specific_key(
@@ -1225,6 +1228,9 @@ class NoCacheStaticFileHandler(tornado.web.StaticFileHandler):
 
 
 class StaticFileHandler(tornado.web.StaticFileHandler):
+    def initialize(self, **kwargs) -> None:
+        super(StaticFileHandler, self).initialize(**kwargs)
+
     def log_exception(self, typ, value, tb):
         if isinstance(value, tornado.web.Finish):
             # if Finish is raised, we want to ignore it.

@@ -71,7 +71,7 @@ class Tenant(SoftDeleteMixin, Base):
             return True
 
     @classmethod
-    @cached(TTLCache(1024, 30))
+    @cached(cache=TTLCache(maxsize=1024, ttl=30))
     async def get_by_name(cls, tenant_name, session=None):
         async def _query(session):
             stmt = select(Tenant).where(
