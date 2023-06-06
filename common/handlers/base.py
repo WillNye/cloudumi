@@ -732,7 +732,6 @@ class BaseHandler(TornadoRequestHandler):
         ):
             try:
                 red = await RedisHandler().redis(tenant)
-                # Expensive call
                 red.setex(
                     f"{tenant}_USER-{self.user}-CONSOLE-{console_only}",
                     config.get_tenant_specific_key(
