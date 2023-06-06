@@ -22,7 +22,8 @@ from slack_sdk.oauth.state_store.async_state_store import AsyncOAuthStateStore
 from sqlalchemy import MetaData, Table, and_, desc
 from sqlalchemy.sql import insert, select
 
-from common.config import config, globals
+from common.config import config
+from common.config import globals as config_globals
 from common.config.globals import ASYNC_PG_SESSION
 from common.config.tenant_config import TenantConfig
 from common.iambic_request.request_crud import (
@@ -179,8 +180,8 @@ class AsyncSQLAlchemyOAuthStateStore(AsyncOAuthStateStore):
 
 def get_installation_store():
     return AsyncSQLAlchemyInstallationStore(
-        client_id=config.get("_global_.secrets.slack.client_id"),
-        database_url=globals.ASYNC_PG_CONN_STR,
+        client_id=config_globals.SLACK_CLIENT_ID,
+        database_url=config_globals.ASYNC_PG_CONN_STR,
         logger=logger,
     )
 
@@ -202,7 +203,7 @@ async def failure(args: FailureArgs) -> BoltResponse:
 
 
 def get_slack_app():
-    database_url = globals.ASYNC_PG_CONN_STR
+    database_url = config_globals.ASYNC_PG_CONN_STR
 
     oauth_state_store = AsyncSQLAlchemyOAuthStateStore(
         expiration_seconds=120,
@@ -210,8 +211,8 @@ def get_slack_app():
         logger=logger,
     )
     oauth_settings = AsyncOAuthSettings(
-        client_id=config.get("_global_.secrets.slack.client_id"),
-        client_secret=config.get("_global_.secrets.slack.client_secret"),
+        client_id=config_globals.SLACK_CLIENT_ID,
+        client_secret=config_globals.SLACK_CLIENT_SECRET,
         state_store=oauth_state_store,
         installation_store=get_installation_store(),
         scopes=scopes,
@@ -223,7 +224,7 @@ def get_slack_app():
 
     slack_app = AsyncApp(
         logger=logger,
-        signing_secret=config.get("_global_.secrets.slack.signing_secret"),
+        signing_secret=config_globals.SLACK_SIGNING_SECRET,
         oauth_settings=oauth_settings,
         process_before_response=True,
     )
@@ -278,7 +279,7 @@ class TenantSlackApp:
             name=self.tenant,
             logger=logger,
             installation_store=get_installation_store(),
-            signing_secret=config.get("_global_.secrets.slack.signing_secret"),
+            signing_secret=config_globals.SLACK_SIGNING_SECRET,
             process_before_response=True,
         )
         self.tenant_slack_app.use(create_log_request_handler(self.tenant))
