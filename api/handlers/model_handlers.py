@@ -101,7 +101,7 @@ class ConfigurationCrudHandler(BaseHandler):
             )
             sentry_sdk.capture_exception()
         # hub_account_data is a special structure, so we unroll it
-        if get_data:
+        if get_data is not None:
             res.data = get_data
 
         for trigger in self._triggers:
@@ -299,7 +299,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
             message="Success" if get_data else "Unable to retrieve data",
             count=len(get_data) if get_data else 0,
         )
-        if get_data:
+        if get_data is not None:
             res.data = get_data
 
         for trigger in self._triggers:
