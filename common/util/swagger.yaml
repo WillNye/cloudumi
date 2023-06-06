@@ -3481,6 +3481,63 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/IambicTemplateChange"
+    SelfServiceRequestChangeTypeField:
+      type: object
+      required:
+        - field_key
+        - field_value
+      properties:
+        field_key:
+          type: string
+          description: The field key as defined in the change type field.
+        field_value:
+          anyOf:
+            - type: string
+            - type: integer
+            - type: boolean
+            - type: object
+            - type: array
+    SelfServiceRequestChangeType:
+      type: object
+      required:
+        - change_type_id
+        - provider_definition_ids
+        - form_data
+      properties:
+        change_type_id:
+          type: string
+          description: The change type id
+        provider_definition_ids:
+          type: array
+          items:
+            type: string
+          description: The provider definition ids this change type is applicable to
+        fields:
+          type: array
+          description: The filled out form data for the change type
+          items:
+            $ref: "#/components/schemas/SelfServiceRequestChangeTypeField"
+    SelfServiceRequestData:
+      type: object
+      required:
+        - iambic_template_id
+      properties:
+        iambic_template_id:
+          type: string
+          description: The IAMbic template ID the request applies to.
+        justification:
+          type: string
+          description: The reason for the request.
+        template_body:
+          type: string
+          description: Used instead of changes + expires_at, this content will replace the current template body in its entirety.
+        expires_at:
+          type: string
+          description: When the granted access and/or permissions expire for the request.
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/SelfServiceRequestChangeType"
     RequestComment:
       type: object
       properties:
