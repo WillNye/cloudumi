@@ -62,6 +62,13 @@ def raise_if_key_doesnt_start_with_prefix(key: str, prefix: str):
         or not isinstance(prefix, str)
         or not key.startswith(prefix)
     ):
+        log.error(
+            {
+                "message": "Redis Key Name doesn't start with the required prefix.",
+                "key": key,
+                "prefix": prefix,
+            }
+        )
         raise Exception("Redis Key Name doesn't start with the required prefix.")
 
 
@@ -75,19 +82,21 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
     ConsoleMeRedis also supports writing/retrieving data from S3 if the data is not retrievable from Redis
     """
 
-    _instance = None
+    _instances = {}
     _lock = threading.Lock()
 
     def __new__(cls, *args, **kwargs):
-        if not cls._instance:
+        required_key_prefix = kwargs.get("required_key_prefix")
+        if required_key_prefix not in cls._instances:
             with cls._lock:
-                if not cls._instance:
-                    cls._instance = super().__new__(cls)
-        return cls._instance
+                if required_key_prefix not in cls._instances:
+                    instance = super().__new__(cls)
+                    cls._instances[required_key_prefix] = instance
+        return cls._instances[required_key_prefix]
 
     def __init__(self, *args, **kwargs):
+        self.required_key_prefix = kwargs.pop("required_key_prefix")
         if not hasattr(self, "initialized"):
-            self.required_key_prefix = kwargs.pop("required_key_prefix")
             self.enabled = True
             self.cache = TTLCache(maxsize=1024, ttl=5)
             if host := kwargs.pop("host", None):

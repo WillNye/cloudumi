@@ -1268,7 +1268,7 @@ class StaticFileHandler(tornado.web.StaticFileHandler):
             request_uuid=str(uuid.uuid4()),
             uri=self.request.uri,
         )
-        super(StaticFileHandler, self).initialize(**kwargs)
+        super(StaticFileHandler, self).prepare(**kwargs)
 
 
 class AuthenticatedStaticFileHandler(tornado.web.StaticFileHandler, BaseHandler):
