@@ -496,15 +496,6 @@ class BaseHandler(TornadoRequestHandler):
                 self.password_reset_required = res.get("password_reset_required", False)
                 self.sso_user = res.get("sso_user", False)
 
-        if not self.eula_signed:
-            try:
-                tenant_details = await TenantDetails.get(tenant)
-                self.eula_signed = bool(tenant_details.eula_info)
-            except Exception:
-                # TODO: Move this along with other tenant validator checks into dedicated method.
-                #   Also, this should redirect to a sign-up page per https://perimy.atlassian.net/browse/EN-930
-                self.eula_signed = False
-
         # if tenant in ["localhost", "127.0.0.1"] and not self.user:
         # Check for development mode and a configuration override that specify the user and their groups.
         if (
@@ -675,6 +666,15 @@ class BaseHandler(TornadoRequestHandler):
                 log.error(log_data)
                 self.write(log_data["message"])
                 raise tornado.web.Finish()
+
+        if not self.eula_signed:
+            try:
+                tenant_details = await TenantDetails.get(tenant)
+                self.eula_signed = bool(tenant_details.eula_info)
+            except Exception:
+                # TODO: Move this along with other tenant validator checks into dedicated method.
+                #   Also, this should redirect to a sign-up page per https://perimy.atlassian.net/browse/EN-930
+                self.eula_signed = False
 
         self.contractor = False  # TODO: Add functionality later for contractor detection via regex or something else
 
@@ -1225,6 +1225,12 @@ class NoCacheStaticFileHandler(tornado.web.StaticFileHandler):
 
 
 class StaticFileHandler(tornado.web.StaticFileHandler):
+    def log_exception(self, typ, value, tb):
+        if isinstance(value, tornado.web.Finish):
+            # if Finish is raised, we want to ignore it.
+            return
+        super(StaticFileHandler, self).log_exception(typ, value, tb)
+
     def get_tenant(self):
         if config.get("_global_.development"):
             x_forwarded_host = self.request.headers.get("X-Forwarded-Host", "")
@@ -1236,7 +1242,7 @@ class StaticFileHandler(tornado.web.StaticFileHandler):
     def get_tenant_name(self):
         return self.get_tenant().split(":")[0].replace(".", "_")
 
-    def initialize(self, **kwargs) -> None:
+    async def prepare(self, **kwargs) -> None:
         tenant = self.get_tenant_name()
         if not config.is_tenant_configured(tenant):
             function: str = (

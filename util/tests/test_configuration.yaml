@@ -22,9 +22,31 @@ _global_:
       data_folder_out: .pytest_cache/celery_data_folder_out
       data_folder_processed: .pytest_cache/celery_data_folder_processed
   secrets:
+    redis:
+      password: test_password
+    sendgrid:
+      from_address: notifications@noq.dev
     postgresql:
       username: postgres
       password: local_dev
+    slack:
+      app_id: APP_ID
+      app_token: APP_TOKEN
+      bot_token: BOT_TOKEN
+      client_id: "CLIENT_ID"
+      client_secret: CLIENT_SECRET
+      signing_secret: SIGNING_SECRET
+    github_app:
+      app_url: https://github.com/apps/fakeapp/
+      app_id: APP_ID
+      client_id: CLIENT_ID
+      client_secret: CLIENT_SECRET
+      webhook_secret: WEBHOOK_SECRET
+      private_key: |
+        -----BEGIN RSA...
+        PRIVATE
+        KEY
+        -----END RSA...
   noq_db:
     endpoint: "localhost"
     port: 5432

@@ -1,6 +1,7 @@
 aiocache
 aiofiles
 aiopath
+asyncache
 cryptography
 httpx
 locust

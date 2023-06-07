@@ -57,6 +57,7 @@ from common.aws.organizations.utils import (
 )
 from common.aws.service_config.utils import execute_query
 from common.config import config
+from common.config import globals as config_globals
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.iambic.config.utils import update_tenant_providers_and_definitions
@@ -159,7 +160,7 @@ def get_celery_app():
             "ssl_cert_reqs": ssl.CERT_REQUIRED,
         }
 
-    redis_password = config.get("_global_.secrets.redis.password", None)
+    redis_password = config_globals.REDIS_PASSWORD
 
     return Celery(
         "tasks",

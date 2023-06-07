@@ -7,6 +7,7 @@ from typing import List
 import sentry_sdk
 
 from common.config import config
+from common.config import globals as config_globals
 from common.lib.asyncio import aio_wrapper
 from common.lib.auth import get_extended_request_allowed_approvers
 from common.lib.aws.session import get_session_for_tenant
@@ -98,7 +99,7 @@ async def send_email_via_sendgrid(
 ):
     server = smtplib.SMTP_SSL("smtp.sendgrid.net", 465)
     key_space = "_global_.secrets.sendgrid"
-    sender = config.get(f"{key_space}.from_address")
+    sender = config_globals.SENDGRID_FROM_ADDRESS
     log_data = {
         "to_user": to_addresses,
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
