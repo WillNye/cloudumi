@@ -28,6 +28,7 @@ from common.lib.aws.utils import (
 from common.lib.generic import get_principal_friendly_name
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import send_communications_policy_change_request_v2
+from common.lib.singleton import Singleton
 from common.models import Action, ExtendedRequestModel
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -35,7 +36,7 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 log = config.get_logger(__name__)
 
 
-class Aws:
+class Aws(metaclass=Singleton):
     """The AWS class handles interactions with AWS."""
 
     async def call_user_lambda(

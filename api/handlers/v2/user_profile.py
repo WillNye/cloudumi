@@ -10,7 +10,7 @@ from common.lib.auth import (
     can_edit_dynamic_config,
     is_tenant_admin,
 )
-from common.lib.generic import get_random_security_logo, is_in_group
+from common.lib.generic import is_in_group
 from common.lib.plugins import get_plugin_by_name
 from common.lib.v2.user_profile import get_custom_page_header
 
@@ -34,7 +34,7 @@ class UserProfileHandler(BaseAPIV1Handler):
             landing_url = "/onboarding"
 
         site_config = {
-            "noq_logo": await get_random_security_logo(tenant),
+            "noq_logo": None,
             "google_analytics": {
                 "tracking_id": config.get("_global_.google_analytics.tracking_id"),
                 "options": config.get("_global_.google_analytics.options", {}),

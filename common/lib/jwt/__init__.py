@@ -4,6 +4,8 @@ from enum import Enum
 
 import jwt
 import sentry_sdk
+from asyncache import cached
+from cachetools import TTLCache
 
 from common.config import config
 from common.lib.asyncio import aio_wrapper
@@ -127,7 +129,7 @@ async def generate_jwt_token(
     return encoded_cookie
 
 
-# TODO: Implement 30s cache here?
+@cached(cache=TTLCache(maxsize=1024, ttl=60))
 async def validate_and_return_jwt_token(auth_cookie, tenant):
     jwt_secret = config.get_tenant_specific_key("secrets.jwt_secret", tenant)
     if not jwt_secret:

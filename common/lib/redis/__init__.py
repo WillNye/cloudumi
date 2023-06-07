@@ -6,6 +6,7 @@ from typing import Any, Optional
 import boto3
 import certifi
 import redis
+from cachetools import TTLCache
 from redis.client import Redis
 from redis.cluster import ClusterNode
 
@@ -13,6 +14,7 @@ import common.lib.noq_json as json
 from common.config import config
 from common.lib.asyncio import aio_wrapper
 from common.lib.plugins import get_plugin_by_name
+from common.lib.singleton import Singleton
 
 region = config.region
 
@@ -60,6 +62,13 @@ def raise_if_key_doesnt_start_with_prefix(key: str, prefix: str):
         or not isinstance(prefix, str)
         or not key.startswith(prefix)
     ):
+        log.error(
+            {
+                "message": "Redis Key Name doesn't start with the required prefix.",
+                "key": key,
+                "prefix": prefix,
+            }
+        )
         raise Exception("Redis Key Name doesn't start with the required prefix.")
 
 
@@ -73,23 +82,44 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
     ConsoleMeRedis also supports writing/retrieving data from S3 if the data is not retrievable from Redis
     """
 
+    _instances = {}
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        required_key_prefix = kwargs.get("required_key_prefix")
+        if required_key_prefix not in cls._instances:
+            with cls._lock:
+                if required_key_prefix not in cls._instances:
+                    instance = super().__new__(cls)
+                    cls._instances[required_key_prefix] = instance
+        return cls._instances[required_key_prefix]
+
     def __init__(self, *args, **kwargs):
         self.required_key_prefix = kwargs.pop("required_key_prefix")
-        self.enabled = True
-        if host := kwargs.pop("host", None):
-            kwargs["host"] = host
+        if not hasattr(self, "initialized"):
+            self.enabled = True
+            cache_ttl = 0 if config.get("_global_.environment") == "test" else 5
+            self.cache = TTLCache(maxsize=1024, ttl=cache_ttl)
+            if host := kwargs.pop("host", None):
+                kwargs["host"] = host
 
-        if not cluster_mode:
-            if kwargs["host"] is None or kwargs["port"] is None or kwargs["db"] is None:
-                self.enabled = False
-
-        super(ConsoleMeRedis, self).__init__(*args, **kwargs)
+            if not cluster_mode:
+                if (
+                    kwargs["host"] is None
+                    or kwargs["port"] is None
+                    or kwargs["db"] is None
+                ):
+                    self.enabled = False
+            self.initialized = True
+            super(ConsoleMeRedis, self).__init__(*args, **kwargs)
 
     def get(self, *args, **kwargs):
         if not self.enabled:
             return None
         raise_if_key_doesnt_start_with_prefix(args[0], self.required_key_prefix)
-
+        key = args[0]
+        if key in self.cache:
+            return self.cache[key]
         try:
             result = super(ConsoleMeRedis, self).get(*args, **kwargs)
         except (
@@ -128,6 +158,8 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
                     exc_info=True,
                 )
                 stats.count(f"{function}.error")
+        if result:
+            self.cache[key] = result
         return result
 
     def set(self, *args, **kwargs):
@@ -420,7 +452,7 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
         return result
 
 
-class RedisHandler:
+class RedisHandler(metaclass=Singleton):
     def __init__(
         self,
         host: str = config.get(
@@ -435,7 +467,7 @@ class RedisHandler:
         ssl_certfile: str = config.get("_global_.redis.ssl_certfile", None),
         ssl_ca_certs: str = config.get("_global_.redis.ssl_ca_certs", certifi.where()),
     ) -> None:
-        self.red = None
+        self.red = {}
         self.host = host
         self.port = port
         self.db = db
@@ -448,65 +480,48 @@ class RedisHandler:
             self.enabled = False
         self.password = password
 
-    async def redis(self, tenant, db: int = 0) -> Redis:
+    def _get_redis(self, tenant, is_async=False):
         if cluster_mode:
-            self.red = await aio_wrapper(
-                ConsoleMeRedis,
-                startup_nodes=cluster_mode_nodes,
-                decode_responses=True,
-                required_key_prefix=tenant,
-                skip_full_coverage_check=True,
-                ssl=self.ssl,
-                ssl_certfile=self.ssl_certfile,
-                ssl_keyfile=self.ssl_keyfile,
-                ssl_ca_certs=self.ssl_ca_certs,
-                password=self.password,
-            )
+            common_params = {
+                "startup_nodes": cluster_mode_nodes,
+                "decode_responses": True,
+                "required_key_prefix": tenant,
+                "skip_full_coverage_check": True,
+                "ssl": self.ssl,
+                "ssl_certfile": self.ssl_certfile,
+                "ssl_keyfile": self.ssl_keyfile,
+                "ssl_ca_certs": self.ssl_ca_certs,
+                "password": self.password,
+            }
         else:
-            self.red = await aio_wrapper(
-                ConsoleMeRedis,
-                host=self.host,
-                port=self.port,
-                db=self.db,
-                encoding="utf-8",
-                decode_responses=True,
-                required_key_prefix=tenant,
-                ssl=self.ssl,
-                ssl_certfile=self.ssl_certfile,
-                ssl_keyfile=self.ssl_keyfile,
-                ssl_ca_certs=self.ssl_ca_certs,
-                password=self.password,
-            )
-        return self.red
+            common_params = {
+                "host": self.host,
+                "port": self.port,
+                "db": self.db,
+                "encoding": "utf-8",
+                "decode_responses": True,
+                "required_key_prefix": tenant,
+                "ssl": self.ssl,
+                "ssl_certfile": self.ssl_certfile,
+                "ssl_keyfile": self.ssl_keyfile,
+                "ssl_ca_certs": self.ssl_ca_certs,
+                "password": self.password,
+            }
+
+        if is_async:
+            return aio_wrapper(ConsoleMeRedis, **common_params)
+        else:
+            return ConsoleMeRedis(**common_params)
+
+    async def redis(self, tenant, db: int = 0) -> Redis:
+        if tenant not in self.red:
+            self.red[tenant] = await self._get_redis(tenant, is_async=True)
+        return self.red[tenant]
 
     def redis_sync(self, tenant, db: int = 0) -> Redis:
-        if cluster_mode:
-            self.red = ConsoleMeRedis(
-                startup_nodes=cluster_mode_nodes,
-                decode_responses=True,
-                required_key_prefix=tenant,
-                skip_full_coverage_check=True,
-                ssl=self.ssl,
-                ssl_certfile=self.ssl_certfile,
-                ssl_keyfile=self.ssl_keyfile,
-                ssl_ca_certs=self.ssl_ca_certs,
-                password=self.password,
-            )
-        else:
-            self.red = ConsoleMeRedis(
-                host=self.host,
-                port=self.port,
-                db=self.db,
-                encoding="utf-8",
-                decode_responses=True,
-                required_key_prefix=tenant,
-                ssl=self.ssl,
-                ssl_certfile=self.ssl_certfile,
-                ssl_keyfile=self.ssl_keyfile,
-                ssl_ca_certs=self.ssl_ca_certs,
-                password=self.password,
-            )
-        return self.red
+        if tenant not in self.red:
+            self.red[tenant] = self._get_redis(tenant, is_async=False)
+        return self.red[tenant]
 
 
 async def redis_get(

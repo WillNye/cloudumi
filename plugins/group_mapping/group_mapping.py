@@ -1,15 +1,20 @@
 """Group mapping plugin."""
+import operator
 import sys
 from typing import List
 
 import sentry_sdk
+from asyncache import cachedmethod
+from cachetools import TTLCache
 
 from common.config import config
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.cloud_credential_authorization_mapping import (
     CredentialAuthorizationMapping,
 )
+from common.lib.generic import hash_key
 from common.lib.plugins import get_plugin_by_name
+from common.lib.singleton import Singleton
 
 log = config.get_logger("cloudumi")
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -18,12 +23,14 @@ credential_authz_mapping = CredentialAuthorizationMapping()
 # TODO: Docstrings should provide examples of the data that needs to be returned
 
 
-class GroupMapping:
+class GroupMapping(metaclass=Singleton):
     """Group mapping handles mapping groups to eligible roles and accounts."""
 
     def __init__(self):
-        pass
+        self._eligible_roles_cache = TTLCache(maxsize=1024, ttl=5)
+        self._eligible_accounts_cache = TTLCache(maxsize=1024, ttl=5)
 
+    @cachedmethod(cache=operator.attrgetter("_eligible_roles_cache"), key=hash_key)
     async def get_eligible_roles(
         self,
         roles: list[str],
@@ -61,10 +68,9 @@ class GroupMapping:
         # Override this with company-specific logic
         return authorization_mapping
 
-    async def get_eligible_accounts(self, request_object):
+    @cachedmethod(cache=operator.attrgetter("_eligible_accounts_cache"), key=hash_key)
+    async def get_eligible_accounts(self, tenant: str, role_arns: list[str]):
         """Get eligible accounts for user."""
-        tenant = request_object.get_tenant_name()
-        role_arns = request_object.eligible_roles
         stats.count("get_eligible_accounts")
         account_ids = {}
 
