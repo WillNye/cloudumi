@@ -34,7 +34,6 @@ async def bulk_add(instance_list: List[T]) -> List[T]:
         async with session.begin():
             for instance_batch in batch(instance_list, batch_size):
                 session.add_all(instance_batch)
-                await session.commit()
 
     return instance_list
 
