@@ -1225,6 +1225,9 @@ class NoCacheStaticFileHandler(tornado.web.StaticFileHandler):
 
 
 class StaticFileHandler(tornado.web.StaticFileHandler):
+    def initialize(self, **kwargs) -> None:
+        super(StaticFileHandler, self).initialize(**kwargs)
+
     def log_exception(self, typ, value, tb):
         if isinstance(value, tornado.web.Finish):
             # if Finish is raised, we want to ignore it.
@@ -1262,7 +1265,7 @@ class StaticFileHandler(tornado.web.StaticFileHandler):
             request_uuid=str(uuid.uuid4()),
             uri=self.request.uri,
         )
-        super(StaticFileHandler, self).initialize(**kwargs)
+        super(StaticFileHandler, self).prepare(**kwargs)
 
 
 class AuthenticatedStaticFileHandler(tornado.web.StaticFileHandler, BaseHandler):
