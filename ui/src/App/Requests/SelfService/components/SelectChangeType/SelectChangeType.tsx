@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Segment } from 'shared/layout/Segment';
 import styles from './SelectChangeType.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
@@ -11,20 +11,27 @@ import { AxiosError } from 'axios';
 import { getChangeRequestType } from 'core/API/iambicRequest';
 import { Block } from 'shared/layout/Block';
 import { ChangeType } from '../../types';
+import { Divider } from 'shared/elements/Divider';
+import { Button } from 'shared/elements/Button';
+import { Table } from 'shared/elements/Table';
 
 const SelectChangeType = () => {
+  const [selectedChangeType, setSelectedChangeType] =
+    useState<ChangeType | null>(null);
   const [changeTypes, setChangeTypes] = useState<ChangeType[]>([]);
   const {
-    store: { selectedRequestType, selectedChangeType }
+    store: { selfServiceRequest },
+    actions: { removeChange }
   } = useContext(SelfServiceContext);
 
-  const {
-    actions: { setSelectedChangeType }
-  } = useContext(SelfServiceContext);
+  const selectedRequestType = useMemo(
+    () => selfServiceRequest.requestType,
+    [selfServiceRequest]
+  );
 
   const { data, isLoading } = useQuery({
     queryFn: getChangeRequestType,
-    queryKey: ['getChangeRequestType', selectedRequestType.id],
+    queryKey: ['getChangeRequestType', selectedRequestType?.id],
     onError: (error: AxiosError) => {
       // const errorRes = error?.response;
       // const errorMsg = extractErrorMessage(errorRes?.data);
@@ -48,6 +55,57 @@ const SelectChangeType = () => {
     value: changeType.id,
     description: changeType.description
   }));
+
+  const tableRows = useMemo(
+    () => selfServiceRequest.requestedChanges,
+    [selfServiceRequest]
+  );
+
+  const changesColumns = useMemo(
+    () => [
+      {
+        Header: 'Change Name',
+        accessor: 'name',
+        sortable: false
+      },
+      {
+        Header: 'Description',
+        accessor: 'description',
+        sortable: true
+      },
+      // {
+      //   Header: 'Field Changes',
+      //   accessor: 'fields',
+      //   sortable: false,
+      //   Cell: ({ value }) => (
+      //     <ul>
+      //       {value.map(field => (
+      //         <li key={field.field_key}>
+      //           {field.field_key}: {field.value}
+      //         </li>
+      //       ))}
+      //     </ul>
+      //   )
+      // },
+      {
+        Header: 'Actions',
+        accessor: 'id',
+        sortable: false,
+        Cell: ({ row: { index } }) => {
+          return (
+            <Button
+              onClick={() => removeChange(index)}
+              color="secondary"
+              size="small"
+            >
+              Remove
+            </Button>
+          );
+        }
+      }
+    ],
+    [removeChange]
+  );
 
   return (
     <Segment isLoading={isLoading}>
@@ -73,7 +131,18 @@ const SelectChangeType = () => {
           />
           <LineBreak size="large" />
           {/* TODO: May use a popup dialog for change details */}
-          {selectedChangeType && <RequestChangeDetails />}
+          {selectedChangeType && (
+            <RequestChangeDetails selectedChangeType={selectedChangeType} />
+          )}
+          <LineBreak size="large" />
+          <h4>Selected Changes</h4>
+          <LineBreak size="small" />
+          <Table
+            data={tableRows}
+            columns={changesColumns}
+            noResultsComponent={<div>Please add changes to the request</div>}
+            border="row"
+          />
         </div>
       </div>
     </Segment>

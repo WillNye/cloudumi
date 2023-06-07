@@ -1,22 +1,28 @@
-import { useEffect, useState, useMemo, useContext } from 'react';
-import { Table } from 'shared/elements/Table';
+import { useState, useContext } from 'react';
 import { Button } from 'shared/elements/Button';
-import axios from 'axios';
+import { AxiosError } from 'axios';
 
 import SelfServiceContext from '../../SelfServiceContext';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { Block } from 'shared/layout/Block';
 import RequestField from './RequestField';
-import { ChangeTypeDetails } from '../../types';
+import { ChangeType, ChangeTypeDetails } from '../../types';
+import { useQuery } from '@tanstack/react-query';
+import { getRequestChangeDetails } from 'core/API/iambicRequest';
 
 interface SelectedOptions {
   [key: string]: string;
 }
 
-const RequestChangeDetails = () => {
+type RequestChangeDetailsProps = {
+  selectedChangeType: ChangeType;
+};
+
+const RequestChangeDetails = ({
+  selectedChangeType
+}: RequestChangeDetailsProps) => {
   const {
-    store: { selectedChangeType, requestedChanges },
-    actions: { addChange, removeChange }
+    actions: { addChange }
   } = useContext(SelfServiceContext);
 
   const [changeTypeDetails, setChangeTypeDetails] =
@@ -27,64 +33,22 @@ const RequestChangeDetails = () => {
     setSelectedOptions(prev => ({ ...prev, [fieldKey]: value }));
   };
 
-  const changesColumns = useMemo(
-    () => [
-      {
-        Header: 'Change Name',
-        accessor: 'name',
-        sortable: false
-      },
-      {
-        Header: 'Description',
-        accessor: 'description',
-        sortable: true
-      },
-      {
-        Header: 'Field Changes',
-        accessor: 'fields',
-        sortable: false,
-        Cell: ({ value }) => (
-          <ul>
-            {value.map(field => (
-              <li key={field.field_key}>
-                {field.field_key}: {field.value}
-              </li>
-            ))}
-          </ul>
-        )
-      },
-      {
-        Header: 'Actions',
-        accessor: 'id',
-        sortable: false,
-        Cell: ({ rowIndex }) => (
-          <Button onClick={() => removeChange(rowIndex)}>Remove</Button>
-        )
-      }
+  const { data, isLoading } = useQuery({
+    queryFn: getRequestChangeDetails,
+    queryKey: [
+      'getChangeRequestType',
+      selectedChangeType.request_type_id,
+      selectedChangeType.id
     ],
-    [removeChange]
-  );
-
-  const tableRows = useMemo(() => {
-    return requestedChanges;
-  }, [requestedChanges]);
-
-  useEffect(() => {
-    if (selectedChangeType) {
-      axios
-        .get(
-          `/api/v4/self-service/request-types/${selectedChangeType.request_type_id}` +
-            `/change-types/${selectedChangeType.id}`
-        )
-        .then(res => {
-          setChangeTypeDetails(res.data?.data);
-          console.log(changeTypeDetails);
-        })
-        .catch(err => {
-          console.error(err);
-        });
+    onError: (error: AxiosError) => {
+      // const errorRes = error?.response;
+      // const errorMsg = extractErrorMessage(errorRes?.data);
+      // setErrorMessage(errorMsg || 'An error occurred fetching resource');
+    },
+    onSuccess: ({ data }) => {
+      setChangeTypeDetails(data);
     }
-  }, [selectedChangeType, changeTypeDetails]);
+  });
 
   const handleSubmit = e => {
     e.preventDefault();
@@ -118,7 +82,12 @@ const RequestChangeDetails = () => {
           <LineBreak />
         </div>
       ))}
-      <Button color="secondary" type="submit" size="small">
+      <Button
+        color="secondary"
+        type="submit"
+        size="small"
+        disabled={!changeTypeDetails}
+      >
         Add Change
       </Button>
     </form>

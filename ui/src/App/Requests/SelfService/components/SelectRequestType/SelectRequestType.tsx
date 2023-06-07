@@ -16,7 +16,7 @@ import NoResults from '../NoResults/NoResults';
 
 const SelectRequestType = () => {
   const [requestTypes, setRequestTypes] = useState<RequestType[]>([]);
-  const { selectedProvider } = useContext(SelfServiceContext).store;
+  const { selfServiceRequest } = useContext(SelfServiceContext).store;
 
   const {
     actions: { setCurrentStep, setSelectedRequestType }
@@ -24,7 +24,7 @@ const SelectRequestType = () => {
 
   const { data, isLoading } = useQuery({
     queryFn: getRequestType,
-    queryKey: ['getRequestType', selectedProvider],
+    queryKey: ['getRequestType', selfServiceRequest.provider],
     onError: (error: AxiosError) => {
       // const errorRes = error?.response;
       // const errorMsg = extractErrorMessage(errorRes?.data);

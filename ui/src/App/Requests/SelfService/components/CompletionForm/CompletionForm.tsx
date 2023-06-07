@@ -6,10 +6,11 @@ import { Radio } from 'shared/form/Radio';
 import { Divider } from 'shared/elements/Divider';
 import { Button } from 'shared/elements/Button';
 import { DatePicker, TimeInput } from '@noqdev/cloudscape';
-import { useCallback, useState } from 'react';
+import { useCallback, useContext, useState } from 'react';
 import { Input } from 'shared/form/Input';
 import { Select, SelectOption } from 'shared/form/Select';
 import styles from './CompletionForm.module.css';
+import SelfServiceContext from '../../SelfServiceContext';
 
 const CompletionForm = () => {
   const [durationType, setDurationType] = useState('relative');
@@ -19,6 +20,10 @@ const CompletionForm = () => {
   const [absoluteValue, setAbsoluteValue] = useState(new Date());
   const [dateValue, setDateValue] = useState('');
   const [timeValue, setTimeValue] = useState('');
+
+  const {
+    store: { selfServiceRequest }
+  } = useContext(SelfServiceContext);
 
   const handleDurationTypeChange = useCallback(e => {
     setDurationType(e.target.value);
@@ -132,11 +137,15 @@ const CompletionForm = () => {
           <LineBreak size="large" />
           <Button fullWidth>Submit Request</Button>
         </div>
-        {/* <div className={styles.codeEditor}>
+        <div className={styles.codeEditor}>
           <h4>Preview</h4>
           <LineBreak />
-          <CodeEditor minHeight={650} />
-        </div> */}
+          <CodeEditor
+            language="json"
+            minHeight={650}
+            value={JSON.stringify(selfServiceRequest)}
+          />
+        </div>
       </div>
     </div>
   );

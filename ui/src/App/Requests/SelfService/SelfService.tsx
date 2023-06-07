@@ -1,32 +1,49 @@
 import { useCallback, useMemo, useState } from 'react';
-import { SELF_SERICE_STEPS } from './constants';
+import { DEFAULT_REQUEST, SELF_SERICE_STEPS } from './constants';
 import RequestViewer from './components/RequestViewer';
 import SelfServiceContext from './SelfServiceContext';
 import { Button } from 'shared/elements/Button';
 
 import styles from './SelfService.module.css';
-import { ChangeType, ChangeTypeDetails, RequestType } from './types';
+import { ChangeType, ChangeTypeDetails, IRequest, RequestType } from './types';
 
 const SelfService = () => {
   const [currentStep, setCurrentStep] = useState(
     SELF_SERICE_STEPS.SELECT_PROVIDER
   );
-  const [selfServiceRequest, setSelfServiceRequest] = useState();
-  const [selectedProvider, setSelectedProvider] = useState('');
-  const [selectedRequestType, setSelectedRequestType] =
-    useState<RequestType | null>(null);
-  const [selectedChangeType, setSelectedChangeType] =
-    useState<ChangeType | null>(null);
-  const [requestedChanges, setRequestedChanges] = useState<ChangeTypeDetails[]>(
-    []
-  );
+  const [selfServiceRequest, setSelfServiceRequest] =
+    useState<IRequest>(DEFAULT_REQUEST);
+
+  const setSelectedProvider = (provider: string) => {
+    setSelfServiceRequest(prev => {
+      const newRequest = { ...prev, provider };
+      return newRequest;
+    });
+  };
+
+  const setSelectedRequestType = (requestType: RequestType) => {
+    setSelfServiceRequest(prev => {
+      const newRequest = { ...prev, requestType };
+      return newRequest;
+    });
+  };
 
   const addChange = (change: ChangeTypeDetails) => {
-    setRequestedChanges(prev => [...prev, change]);
+    setSelfServiceRequest(prev => {
+      const requestedChanges = [...prev.requestedChanges, change];
+      const newRequest = { ...prev, requestedChanges };
+      return newRequest;
+    });
   };
 
   const removeChange = index => {
-    setRequestedChanges(prev => prev.filter((_, i) => i !== index));
+    setSelfServiceRequest(prev => {
+      const requestedChanges = prev.requestedChanges.filter(
+        (_, i) => i !== index
+      );
+      const newRequest = { ...prev, requestedChanges };
+      return newRequest;
+    });
   };
 
   const canClickBack = useMemo(
@@ -54,7 +71,7 @@ const SelfService = () => {
         setCurrentStep(SELF_SERICE_STEPS.REQUEST_TYPE);
         break;
       case SELF_SERICE_STEPS.COMPLETION_FORM:
-        setSelectedChangeType(null);
+        // setSelectedChangeType(null);
         setCurrentStep(SELF_SERICE_STEPS.CHANGE_TYPE);
         break;
       // case SELF_SERICE_STEPS.COMPLETION_FORM:
@@ -71,16 +88,13 @@ const SelfService = () => {
       value={{
         store: {
           currentStep,
-          selectedProvider,
-          selectedRequestType,
-          selectedChangeType,
-          requestedChanges
+          selfServiceRequest
         },
         actions: {
           setCurrentStep,
           setSelectedProvider,
           setSelectedRequestType,
-          setSelectedChangeType,
+          // setSelectedChangeType,
           addChange,
           removeChange
         }
@@ -88,7 +102,9 @@ const SelfService = () => {
     >
       <div className={styles.container}>
         <div className={styles.content}>
-          <RequestViewer />
+          <div className={styles.wrapper}>
+            <RequestViewer />
+          </div>
           <div className={styles.actions}>
             {canClickBack && (
               <Button size="small" onClick={handleBack}>
@@ -98,9 +114,7 @@ const SelfService = () => {
             {canClickNext && (
               <Button
                 size="small"
-                // color="secondary"
-                // variant="outline"
-                disabled={!selectedChangeType}
+                disabled={!selfServiceRequest.requestedChanges.length}
                 onClick={handleNext}
               >
                 Next

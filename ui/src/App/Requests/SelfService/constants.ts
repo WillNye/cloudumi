@@ -21,5 +21,6 @@ export const DEFAULT_REQUEST: IRequest = {
   requestType: null,
   changeType: null,
   expirationDate: null,
-  justification: null
+  justification: null,
+  requestedChanges: []
 };

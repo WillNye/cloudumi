@@ -48,6 +48,7 @@ export interface IRequest {
   provider: string;
   requestType: RequestType | null;
   changeType: ChangeType | null;
+  requestedChanges: ChangeTypeDetails[] | [];
   justification: string | null;
   expirationDate: string | null;
 }
