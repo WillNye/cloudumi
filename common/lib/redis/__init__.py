@@ -98,7 +98,8 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
         self.required_key_prefix = kwargs.pop("required_key_prefix")
         if not hasattr(self, "initialized"):
             self.enabled = True
-            self.cache = TTLCache(maxsize=1024, ttl=5)
+            cache_ttl = 0 if config.get("_global_.environment") == "test" else 5
+            self.cache = TTLCache(maxsize=1024, ttl=cache_ttl)
             if host := kwargs.pop("host", None):
                 kwargs["host"] = host
 

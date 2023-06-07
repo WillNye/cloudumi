@@ -652,6 +652,8 @@ dax_endpoints = CONFIG.get_dax_endpoints()
 dynamodb_host = CONFIG.dynamodb_host()
 hostname = socket.gethostname()
 is_test_environment = CONFIG.is_test_environment()
+if is_test_environment:
+    CONFIG.get_tenant_specific_key_cache = TTLCache(maxsize=1024, ttl=0)
 is_development = CONFIG.is_development()
 api_spec = {}
 dir_ref = dir
