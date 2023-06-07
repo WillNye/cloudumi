@@ -120,6 +120,21 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
       <Segment isLoading={isGettingIntegrations}>
         <div>Noq&apos;s Github App integrates with your IAMbic repository.</div>
         <LineBreak size="large" />
+        <div>
+          You will need GitHub App installation privilege to complete the
+          installation.
+        </div>
+        <div>
+          If you are not Github Administrator, installation will require
+          multiple pass and your GitHub administrator&apos;s approval.
+        </div>
+        <LineBreak size="large" />
+        <div>
+          When GitHub prompts you for repository selection, please select only
+          your organization&apos;s iambic-templates repository to achieve least
+          privilege granted to the integration.
+        </div>
+        <LineBreak size="large" />
 
         {isGithubConnected && (
           <>
