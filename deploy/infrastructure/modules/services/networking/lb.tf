@@ -26,6 +26,9 @@ resource "aws_lb_target_group" "noq_api_balancer_target_group" {
   protocol    = "HTTP"
   target_type = "ip"
   vpc_id      = aws_vpc.main_vpc.id
+  stickiness {
+    type = "lb_cookie"
+  }
   health_check {
     enabled             = true
     healthy_threshold   = 2

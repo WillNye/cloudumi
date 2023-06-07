@@ -17,7 +17,7 @@ if os.getenv("DEBUG"):
 def run_celery_worker(log_level: str = "DEBUG", concurrency: str = os.cpu_count()):
     celery_tasks.app.start(
         f"worker -l {log_level} -E --concurrency={concurrency} "
-        "--max-memory-per-child=1000000 --max-tasks-per-child=50 "
+        "--max-memory-per-child=4000000 --max-tasks-per-child=50 "
         "--soft-time-limit=3600 -O fair".split(" ")
     )
 
@@ -26,7 +26,7 @@ def run_celery_test_worker(log_level: str = "DEBUG", concurrency: str = os.cpu_c
     """Like the run_celery_worker but with beat scheduler integrated for testing."""
     celery_tasks.app.start(
         f"worker -l {log_level} -E --concurrency={concurrency} "
-        "--max-memory-per-child=1000000 --max-tasks-per-child=50 "
+        "--max-memory-per-child=4000000 --max-tasks-per-child=50 "
         "--soft-time-limit=3600 -O fair -B".split(" ")
     )
 

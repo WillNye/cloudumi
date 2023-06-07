@@ -199,20 +199,6 @@ site_configs:
       json_formatter:
         indent: 2
 
-    # You'll probably want to override FUNCTION to generate this data with your own business logic.
-    application_settings:
-      application_1:
-        owner: groupa@example.com
-        owner_url: https://www.example.com/groupa@example.com
-        app_url: https://www.example.com/ci_cd_pipeline/application_1
-        roles:
-          - arn:aws:iam::123456789012:role/application_1InstanceProfile
-          - arn:aws:iam::123456789013:role/application_1InstanceProfile
-      application_2:
-        owner: groupa@example.com
-        roles:
-          - arn:aws:iam::123456789012:role/application_2InstanceProfile
-
     api_auth:
       valid_entities:
         - user@example.com
@@ -407,20 +393,6 @@ site_configs:
     logging:
       json_formatter:
         indent: 2
-
-    # You'll probably want to override FUNCTION to generate this data with your own business logic.
-    application_settings:
-      application_1:
-        owner: groupa@example.com
-        owner_url: https://www.example.com/groupa@example.com
-        app_url: https://www.example.com/ci_cd_pipeline/application_1
-        roles:
-          - arn:aws:iam::123456789012:role/application_1InstanceProfile
-          - arn:aws:iam::123456789013:role/application_1InstanceProfile
-      application_2:
-        owner: groupa@example.com
-        roles:
-          - arn:aws:iam::123456789012:role/application_2InstanceProfile
 
     api_auth:
       valid_entities:

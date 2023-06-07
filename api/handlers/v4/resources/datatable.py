@@ -47,7 +47,14 @@ class ResourcesDataTableHandler(BaseHandler):
         template_dicts = await retrieve_json_data_from_redis_or_s3(
             redis_key=redis_key,
             tenant=tenant,
+            default=[],
         )
+        if not template_dicts:
+            from common.celery_tasks.celery_tasks import (
+                sync_iambic_templates_for_tenant,
+            )
+
+            sync_iambic_templates_for_tenant.apply_async((tenant,))
         filtered_templates: DataTableResponse = await filter_data(
             template_dicts, body, model=ResourceDataTableModel
         )

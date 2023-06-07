@@ -155,14 +155,18 @@ class IambicGit:
         repo_path = self.get_iambic_repo_path(repo_name)
         return await iambic_gather_templates(repo_path, *args, **kwargs)
 
-    def load_templates(self, template_paths, *args, **kwargs):
+    def load_templates(
+        self, template_paths, use_multiprocessing=False, *args, **kwargs
+    ):
         tenant_repo_base_path_posix = Path(self.tenant_repo_base_path)
         for template_path in template_paths:
             if tenant_repo_base_path_posix not in Path(template_path).parents:
                 raise Exception(
                     f"Template path {template_path} is not valid for this tenant."
                 )
-        return iambic_load_templates(template_paths, *args, **kwargs)
+        return iambic_load_templates(
+            template_paths, use_multiprocessing=use_multiprocessing, *args, **kwargs
+        )
 
     async def set_git_repositories(self) -> None:
         self.git_repositories: list[IambicRepoDetails] = (
@@ -251,7 +255,10 @@ class IambicGit:
                 # TODO: async
                 repo = Repo(repo_path)
                 for remote in repo.remotes:
-                    remote.fetch()
+                    if "origin" in remote.name:
+                        with remote.config_writer as cw:
+                            cw.set("url", git_uri)
+                        remote.fetch()
                 default_branch = await self.get_default_branch(repo)
                 default_branch_name = default_branch.split("/")[-1]
                 repo.git.checkout(default_branch_name)
@@ -276,7 +283,9 @@ class IambicGit:
             # for Iambic config and templates to load
             config_template = await self.load_iambic_config(repository.repo_name)
             template_paths = await iambic_gather_templates(repo_path)
-            self.templates = iambic_load_templates(template_paths)
+            self.templates = iambic_load_templates(
+                template_paths, use_multiprocessing=False
+            )
             template_dicts = []
 
             aws_account_specific_template_types = {

@@ -43,18 +43,22 @@ async def teardown_refs(tenant_name: str):
     await tenant.write()
 
     async with ASYNC_PG_SESSION() as session:
-        stmt = delete(IambicTemplateContent).where(
-            IambicTemplateContent.tenant_id == tenant.id
-        )
-        await session.execute(stmt)
+        async with session.begin():
+            stmt = delete(IambicTemplateContent).where(
+                IambicTemplateContent.tenant_id == tenant.id
+            )
+            await session.execute(stmt)
+            await session.flush()
 
-        stmt = delete(IambicTemplateProviderDefinition).where(
-            IambicTemplateProviderDefinition.tenant_id == tenant.id
-        )
-        await session.execute(stmt)
+            stmt = delete(IambicTemplateProviderDefinition).where(
+                IambicTemplateProviderDefinition.tenant_id == tenant.id
+            )
+            await session.execute(stmt)
+            await session.flush()
 
-        stmt = delete(IambicTemplate).where(IambicTemplate.tenant_id == tenant.id)
-        await session.execute(stmt)
+            stmt = delete(IambicTemplate).where(IambicTemplate.tenant_id == tenant.id)
+            await session.execute(stmt)
+            await session.flush()
 
 
 async def force_change_resolution(tenant_name: str):
