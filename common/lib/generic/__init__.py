@@ -2,7 +2,6 @@ import random
 import re
 import string
 from datetime import datetime
-from random import randint
 from typing import Any, Dict, List, Optional, Union
 from urllib.parse import unquote_plus
 
@@ -10,12 +9,15 @@ import pandas as pd
 from dateutil import parser
 
 import common.lib.noq_json as json
-from common.config import config
-from common.exceptions.exceptions import MissingRequestParameter
 from common.models import (
     AwsResourcePrincipalModel,
     HoneybeeAwsResourceTemplatePrincipalModel,
 )
+
+
+def hash_key(*args, **kwargs):
+    """Returns a hashable representation of the arguments."""
+    return hash(str(args) + str(kwargs))
 
 
 def str2bool(v: Optional[Union[bool, str]]) -> bool:
@@ -168,19 +170,6 @@ def is_in_time_range(t, time_range):
     if t < valid_start_time or t > valid_end_time:
         return False
     return True
-
-
-async def get_random_security_logo(tenant):
-    if not config.get_tenant_specific_key("noq_logo.enabled", tenant):
-        return None
-    if config.get_tenant_specific_key("noq_logo.image", tenant):
-        return config.get_tenant_specific_key("noq_logo.image", tenant)
-    month = datetime.now().month
-    summer = month in [6, 7, 8]
-
-    dir = "sunglasses" if summer else "nosunglasses"
-    file = f"{randint(1, 3)}.png"  # nosec
-    return f"/images/logos/{dir}/{file}"
 
 
 async def generate_random_string(string_length=4):
@@ -342,6 +331,8 @@ def un_wrap_json_and_dump_values(json_obj: Any) -> Any:
 
 
 async def get_principal_friendly_name(principal):
+    from common.exceptions.exceptions import MissingRequestParameter
+
     if isinstance(principal, HoneybeeAwsResourceTemplatePrincipalModel):
         return principal.resource_identifier
     if isinstance(principal, AwsResourcePrincipalModel):

@@ -712,7 +712,9 @@ class BaseHandler(TornadoRequestHandler):
             and not self.mfa_setup_required
         ):
             try:
-                self.eligible_accounts = await group_mapping.get_eligible_accounts(self)
+                self.eligible_accounts = await group_mapping.get_eligible_accounts(
+                    tenant, self.eligible_roles
+                )
                 log_data["eligible_accounts"] = len(self.eligible_accounts)
                 log_data["message"] = "Successfully authorized user."
                 log.debug(log_data)

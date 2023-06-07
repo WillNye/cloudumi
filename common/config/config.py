@@ -2,6 +2,7 @@
 import datetime
 import logging
 import logging.handlers
+import operator
 import os
 import pickle
 import socket
@@ -18,12 +19,13 @@ import boto3
 import botocore.exceptions
 import logmatic
 import sentry_sdk
-from cachetools import TTLCache, cached
+from cachetools import TTLCache, cached, cachedmethod
 from pytz import timezone
 
 import common.lib.noq_json as json
 from common.lib.aws.aws_secret_manager import get_aws_secret
 from common.lib.aws.split_s3_path import split_s3_path
+from common.lib.generic import hash_key
 from common.lib.singleton import Singleton
 from common.lib.yaml import yaml, yaml_safe
 
@@ -68,6 +70,7 @@ class Configuration(metaclass=Singleton):
         self.log = None
         self.tenant_configs = defaultdict(dict)
         self.dynamodb = None
+        self.get_tenant_specific_key_cache = TTLCache(maxsize=1024, ttl=5)
 
     def raise_if_invalid_aws_credentials(self):
         try:
@@ -421,7 +424,9 @@ class Configuration(metaclass=Singleton):
         red = RedisHandler().redis_sync(tenant)
         return json.loads(red.get(f"{tenant}_STATIC_CONFIGURATION") or "{}")
 
-    # @profile
+    @cachedmethod(
+        cache=operator.attrgetter("get_tenant_specific_key_cache"), key=hash_key
+    )
     def get_tenant_specific_key(
         self, key: str, tenant: str, default: Any = None
     ) -> Any:
@@ -647,6 +652,8 @@ dax_endpoints = CONFIG.get_dax_endpoints()
 dynamodb_host = CONFIG.dynamodb_host()
 hostname = socket.gethostname()
 is_test_environment = CONFIG.is_test_environment()
+if is_test_environment:
+    CONFIG.get_tenant_specific_key_cache = TTLCache(maxsize=1024, ttl=0)
 is_development = CONFIG.is_development()
 api_spec = {}
 dir_ref = dir

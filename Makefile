@@ -283,3 +283,13 @@ register_tenant_local:
 	@if [ -z "$(DOMAIN_PREFIX)" ]; then echo "DOMAIN_PREFIX is not set"; exit 1; fi;
 	curl -X POST http://localhost:8092/api/v3/tenant_registration -H "Content-Type: application/json" -d '{"first_name": "Functional", "last_name": "Test", "email": "$(EMAIL)", "country": "USA", "marketing_consent": true, "registration_code": "", "domain": "$(DOMAIN_PREFIX).example.com"}'
 	@echo "\nPlease add the following entry to your /etc/hosts file:\n127.0.0.1 $(DOMAIN_PREFIX).example.com"
+
+.PHONY: run_api_local
+run_api_local:
+	CONFIG_LOCATION=./configs/development_account/saas_development.yaml \
+	AWS_PROFILE=development/NoqSaasRoleLocalDev \
+	PYTHONPATH="$$PYTHONPATH:." \
+	AWS_REGION=us-west-2 \
+	RUNTIME_PROFILE=API \
+	PYTHON_PROFILE_ENABLE=true \
+	python ./api/__main__.py
