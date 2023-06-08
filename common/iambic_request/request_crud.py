@@ -7,16 +7,23 @@ from sqlalchemy import func as sql_func
 from sqlalchemy import select, update
 from sqlalchemy.orm import contains_eager
 
+from common import IambicTemplate
 from common.config.globals import ASYNC_PG_SESSION
 from common.exceptions.exceptions import NoMatchingRequest, Unauthorized
+from common.iambic.templates.utils import get_template_by_id
 from common.iambic_request.models import IambicTemplateChange, Request, RequestComment
-from common.iambic_request.utils import get_allowed_approvers, get_iambic_pr_instance
+from common.iambic_request.utils import (
+    generate_updated_iambic_template,
+    get_allowed_approvers,
+    get_iambic_pr_instance,
+)
 from common.lib import noq_json as json
+from common.models import SelfServiceRequestData
 from common.pg_core.filters import create_filter_from_url_params
 from common.tenants.models import Tenant
 
 
-async def list_requests(tenant: str, **filter_kwargs) -> list[Request]:
+async def list_requests(tenant_id: int, **filter_kwargs) -> list[Request]:
     filter_kwargs.setdefault("order_by", "-created_at")
 
     # Figure out filters and custom ordering
@@ -24,7 +31,7 @@ async def list_requests(tenant: str, **filter_kwargs) -> list[Request]:
         stmt = (
             select(Request)
             .filter(Request.deleted == False)  # noqa: E712
-            .filter(Request.tenant == tenant)
+            .filter(Request.tenant_id == tenant_id)
         )
 
         stmt = create_filter_from_url_params(stmt, **filter_kwargs)
@@ -36,6 +43,7 @@ async def get_request_response(
     request: Request, request_pr, include_comments: bool = True
 ) -> dict:
     pr_details = await request_pr.get_request_details()
+    pr_details["justification"] = pr_details.pop("description", "")
     pr_details["status"] = request.status
     pr_details["approved_by"] = request.approved_by
     pr_details["rejected_by"] = request.rejected_by
@@ -48,13 +56,13 @@ async def get_request_response(
     return json.loads(json.dumps(pr_details))
 
 
-async def get_request(tenant: str, request_id: Union[str, uuid.UUID]) -> Request:
+async def get_request(tenant_id: int, request_id: Union[str, uuid.UUID]) -> Request:
     try:
         async with ASYNC_PG_SESSION() as session:
             stmt = (
                 select(Request)
                 .filter(Request.id == request_id)
-                .filter(Request.tenant == tenant)
+                .filter(Request.tenant_id == tenant_id)
                 .outerjoin(
                     RequestComment,
                     and_(
@@ -72,8 +80,8 @@ async def get_request(tenant: str, request_id: Union[str, uuid.UUID]) -> Request
         raise NoMatchingRequest
 
 
-async def request_dict(tenant: str, request_id: Union[str, uuid.UUID]) -> dict:
-    request = await get_request(tenant, request_id)
+async def request_dict(tenant: Tenant, request_id: Union[str, uuid.UUID]) -> dict:
+    request = await get_request(tenant.id, request_id)
     request_pr = await get_iambic_pr_instance(
         tenant, request.id, request.created_by, request.pull_request_id
     )
@@ -81,6 +89,67 @@ async def request_dict(tenant: str, request_id: Union[str, uuid.UUID]) -> dict:
     response = await get_request_response(request, request_pr)
     del request_pr
     return response
+
+
+async def get_template_change_for_request(
+    tenant: Tenant, request_data: SelfServiceRequestData
+) -> IambicTemplateChange:
+    if request_data.template:
+        request_data.file_path = request_data.template.file_path
+
+    assert bool(
+        bool(request_data.iambic_template_id) ^ bool(request_data.file_path)
+    ), "iambic_template_id or file_path must be provided"
+    assert bool(
+        bool(request_data.changes)
+        ^ bool(request_data.template)
+        ^ bool(request_data.template_body)
+    ), "Must provide either changes or template or template_body in the request"
+    if request_data.expires_at:
+        assert (
+            request_data.changes
+        ), "The expires_at field can only be used with changes"
+
+    if not request_data.template and not request_data.iambic_template_id:
+        async with ASYNC_PG_SESSION() as session:
+            stmt = (
+                select(IambicTemplate.id)
+                .select_from(IambicTemplate)
+                .filter(
+                    IambicTemplate.tenant_id == tenant.id,
+                    IambicTemplate.file_path == request_data.file_path,
+                )
+            )
+
+            items = await session.execute(stmt)
+            request_data.iambic_template_id = items.scalars().one()
+            if not request_data.iambic_template_id:
+                raise AssertionError(
+                    f"No template found for the given file_path - {request_data.file_path}"
+                )
+
+    if request_data.template:
+        return IambicTemplateChange(
+            file_path=request_data.template.file_path,
+            template_body=request_data.template.get_body(exclude_unset=False),
+        )
+    elif request_data.changes:
+        iambic_template = await generate_updated_iambic_template(
+            tenant.id, request_data
+        )
+        return IambicTemplateChange(
+            file_path=iambic_template.file_path,
+            template_body=iambic_template.get_body(exclude_unset=False),
+        )
+
+    elif request_data.template_body:
+        db_template = await get_template_by_id(
+            tenant.id, request_data.iambic_template_id
+        )
+        return IambicTemplateChange(
+            file_path=db_template.file_path,
+            template_body=request_data.template_body,
+        )
 
 
 async def create_request(
@@ -98,7 +167,7 @@ async def create_request(
     slack_message_id: Optional[str] = None,
 ):
     request_id = str(uuid.uuid4())
-    request_pr = await get_iambic_pr_instance(tenant.name, request_id, created_by)
+    request_pr = await get_iambic_pr_instance(tenant, request_id, created_by)
     branch_name = await request_pr.create_request(
         justification, changes, request_notes=request_notes
     )
@@ -107,6 +176,7 @@ async def create_request(
         id=request_id,
         tenant=tenant,
         pull_request_id=request_pr.pull_request_id,
+        pull_request_url=request_pr.pull_request_url,
         repo_name=request_pr.repo_name,
         created_by=created_by,
         allowed_approvers=(
@@ -122,10 +192,7 @@ async def create_request(
         slack_message_id=slack_message_id,
         branch_name=branch_name,
     )
-
-    async with ASYNC_PG_SESSION() as session:
-        async with session.begin():
-            session.add(request)
+    await request.write()
 
     response = await get_request_response(request, request_pr, False)
     del request_pr
@@ -144,7 +211,7 @@ async def update_request(
     changes: Union[list[IambicTemplateChange], None] = None,
     request_notes: Optional[str] = None,
 ):
-    request = await get_request(tenant, request_id)
+    request = await get_request(tenant.id, request_id)
     if (
         (
             request.created_by != updated_by
@@ -159,7 +226,7 @@ async def update_request(
         raise Unauthorized("Unable to update this request")
 
     request_pr = await get_iambic_pr_instance(
-        tenant.name, request.id, request.created_by, request.pull_request_id
+        tenant, request.id, request.created_by, request.pull_request_id
     )
     await request_pr.update_request(
         updated_by,
@@ -186,12 +253,27 @@ async def update_request(
 
 
 async def approve_request(
-    tenant: str,
+    tenant: Tenant,
     request_id: Union[str, uuid.UUID],
     approved_by: str,
     approver_groups: list[str],
 ):
-    request = await get_request(tenant, request_id)
+    """
+    Approve as bot
+    Comment `iambic apply`
+    Need to add a Running status for applying
+    Rollback from Running to Approve if running > 10 minutes
+    Set status
+
+    Check on interval after comment
+    If merged, trigger iambic template db refresh and set status to `Applied`
+    If not check for failure footer, set status to `Failing`
+    Failing state should not be able to approve from Noq so now what?
+    Leave comment on Noq Request with failure comment
+    Consume message
+    """
+    request = await get_request(tenant.id, request_id)
+
     if (
         not any(
             approver_group in request.allowed_approvers
@@ -236,12 +318,12 @@ async def approve_request(
 
 
 async def reject_request(
-    tenant: str,
+    tenant: Tenant,
     request_id: Union[str, uuid.UUID],
     rejected_by: str,
     rejecter_groups: list[str],
 ):
-    request = await get_request(tenant, request_id)
+    request = await get_request(tenant.id, request_id)
     if (
         (
             request.created_by != rejected_by
@@ -285,7 +367,7 @@ async def reject_request(
 
 
 async def can_perform_comment_operation(
-    tenant: str,
+    tenant_id: int,
     request_id: uuid.UUID = None,
     comment_id: uuid.UUID = None,
     user: str = None,
@@ -295,18 +377,18 @@ async def can_perform_comment_operation(
     async with ASYNC_PG_SESSION() as session:
         if request_id:
             stmt = (
-                select([sql_func.count()])
+                select(sql_func.count())
                 .select_from(Request)
-                .filter(Request.tenant == tenant)
+                .filter(Request.tenant_id == tenant_id)
                 .filter(Request.id == request_id)
                 .filter(Request.deleted == False)  # noqa: E712
             )
         else:
             stmt = (
-                select([sql_func.count()])
+                select(sql_func.count())
                 .select_from(RequestComment)
                 .join(Request)
-                .filter(Request.tenant == tenant)
+                .filter(Request.tenant_id == tenant_id)
                 .filter(Request.deleted == False)  # noqa: E712
                 .filter(RequestComment.id == comment_id)
                 .filter(RequestComment.created_by == user)
@@ -317,9 +399,9 @@ async def can_perform_comment_operation(
 
 
 async def create_request_comment(
-    tenant: str, request_id: Union[str, uuid.UUID], created_by: str, body: str
+    tenant_id: int, request_id: Union[str, uuid.UUID], created_by: str, body: str
 ):
-    if not (await can_perform_comment_operation(tenant, request_id)):
+    if not (await can_perform_comment_operation(tenant_id, request_id)):
         raise Unauthorized
 
     async with ASYNC_PG_SESSION() as session:
@@ -330,10 +412,10 @@ async def create_request_comment(
 
 
 async def update_request_comment(
-    tenant: str, comment_id: Union[str, uuid.UUID], user: str, body: str
+    tenant_id: int, comment_id: Union[str, uuid.UUID], user: str, body: str
 ):
     if not (
-        await can_perform_comment_operation(tenant, comment_id=comment_id, user=user)
+        await can_perform_comment_operation(tenant_id, comment_id=comment_id, user=user)
     ):
         raise Unauthorized("Unable to update this comment")
 
@@ -349,10 +431,10 @@ async def update_request_comment(
 
 
 async def delete_request_comment(
-    tenant: str, comment_id: Union[str, uuid.UUID], user: str
+    tenant_id: int, comment_id: Union[str, uuid.UUID], user: str
 ):
     if not (
-        await can_perform_comment_operation(tenant, comment_id=comment_id, user=user)
+        await can_perform_comment_operation(tenant_id, comment_id=comment_id, user=user)
     ):
         raise Unauthorized("Unable to delete this comment")
 

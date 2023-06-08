@@ -15,6 +15,7 @@ from common import (
     ChangeField,
     ChangeType,
     IambicTemplateProviderDefinition,
+    Tenant,
     TenantProviderDefinition,
 )
 from common.config import config
@@ -389,26 +390,26 @@ async def generate_updated_iambic_template(
 
 
 async def get_allowed_approvers(
-    tenant: str, request_pr, changes: list[IambicTemplateChange]
+    tenant_name: str, request_pr, changes: list[IambicTemplateChange]
 ) -> list[str]:
     """Retrieve the list of allowed approvers from the template body.
 
     Not using template_bodies for now but may be used to resolve approvers in the future.
     The idea being that
     """
-    return config.get_tenant_specific_key("groups.can_admin", tenant)
+    return config.get_tenant_specific_key("groups.can_admin", tenant_name)
 
 
 async def get_iambic_pr_instance(
-    tenant: str, request_id: str, requested_by: str, pull_request_id: int = None
+    tenant: Tenant, request_id: str, requested_by: str, pull_request_id: int = None
 ):
-    iambic_git = IambicGit(tenant)
-    iambic_repo: IambicRepoDetails = await get_iambic_repo(tenant)
+    iambic_git = IambicGit(tenant.name)
+    iambic_repo: IambicRepoDetails = await get_iambic_repo(tenant.name)
     access_token = await iambic_git.get_access_token()
 
     if iambic_repo.git_provider == "github":
         return GitHubPullRequest(
-            tenant=tenant,
+            tenant=tenant.name,
             request_id=str(request_id),
             requested_by=requested_by,
             pull_request_id=pull_request_id,
