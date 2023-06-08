@@ -9,6 +9,7 @@ import RequestField from './RequestField';
 import { ChangeType, ChangeTypeDetails } from '../../types';
 import { useQuery } from '@tanstack/react-query';
 import { getRequestChangeDetails } from 'core/API/iambicRequest';
+import { Segment } from 'shared/layout/Segment';
 
 interface SelectedOptions {
   [key: string]: string;
@@ -33,7 +34,7 @@ const RequestChangeDetails = ({
     setSelectedOptions(prev => ({ ...prev, [fieldKey]: value }));
   };
 
-  const { data, isLoading } = useQuery({
+  const { isLoading } = useQuery({
     queryFn: getRequestChangeDetails,
     queryKey: [
       'getChangeRequestType',
@@ -66,31 +67,29 @@ const RequestChangeDetails = ({
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      {changeTypeDetails?.fields?.map(field => (
-        <div key={field.id}>
-          <Block
-            disableLabelPadding
-            key={field.field_key}
-            label={field.field_text}
-          ></Block>
-          <RequestField
-            selectedOptions={selectedOptions}
-            handleChange={handleChange}
-            field={field}
-          />
-          <LineBreak />
-        </div>
-      ))}
-      <Button
-        color="secondary"
-        type="submit"
-        size="small"
-        disabled={!changeTypeDetails}
-      >
-        Add Change
-      </Button>
-    </form>
+    <Segment isLoading={isLoading} disablePadding>
+      <form onSubmit={handleSubmit}>
+        {changeTypeDetails?.fields?.map(field => (
+          <div key={field.id}>
+            <Block
+              disableLabelPadding
+              key={field.field_key}
+              label={field.field_text}
+              required={!field.allow_none}
+            ></Block>
+            <RequestField
+              selectedOptions={selectedOptions}
+              handleChange={handleChange}
+              field={field}
+            />
+            <LineBreak />
+          </div>
+        ))}
+        <Button type="submit" size="small" disabled={!changeTypeDetails}>
+          Add Change
+        </Button>
+      </form>
+    </Segment>
   );
 };
 

@@ -15,7 +15,6 @@ import { getRequestTypeIcon } from './utils';
 import NoResults from '../NoResults/NoResults';
 
 const SelectRequestType = () => {
-  const [requestTypes, setRequestTypes] = useState<RequestType[]>([]);
   const { selfServiceRequest } = useContext(SelfServiceContext).store;
 
   const {
@@ -29,10 +28,6 @@ const SelectRequestType = () => {
       // const errorRes = error?.response;
       // const errorMsg = extractErrorMessage(errorRes?.data);
       // setErrorMessage(errorMsg || 'An error occurred fetching resource');
-    },
-    onSuccess: ({ data }) => {
-      console.log(data, '--------');
-      setRequestTypes(data);
     }
   });
 
@@ -44,8 +39,8 @@ const SelectRequestType = () => {
         <p className={styles.subText}>What would you like to do?</p>
         <LineBreak size="large" />
         <div className={styles.cardList}>
-          {requestTypes?.length ? (
-            requestTypes.map(requestType => (
+          {data?.data?.length ? (
+            data.data.map(requestType => (
               <RequestCard
                 key={requestType.id}
                 title={requestType.name}

@@ -18,7 +18,6 @@ import { Table } from 'shared/elements/Table';
 const SelectChangeType = () => {
   const [selectedChangeType, setSelectedChangeType] =
     useState<ChangeType | null>(null);
-  const [changeTypes, setChangeTypes] = useState<ChangeType[]>([]);
   const {
     store: { selfServiceRequest },
     actions: { removeChange }
@@ -29,32 +28,33 @@ const SelectChangeType = () => {
     [selfServiceRequest]
   );
 
-  const { data, isLoading } = useQuery({
+  const { data: changeTypes, isLoading } = useQuery({
     queryFn: getChangeRequestType,
     queryKey: ['getChangeRequestType', selectedRequestType?.id],
     onError: (error: AxiosError) => {
       // const errorRes = error?.response;
       // const errorMsg = extractErrorMessage(errorRes?.data);
       // setErrorMessage(errorMsg || 'An error occurred fetching resource');
-    },
-    onSuccess: ({ data }) => {
-      setChangeTypes(data);
     }
   });
 
   const handleSelectChange = (detail: any) => {
-    const selectedChange = changeTypes.find(
+    const selectedChange = changeTypes?.data.find(
       changeType => changeType.id === detail.value
     );
     setSelectedChangeType(selectedChange);
     // Do something with the selected option
   };
 
-  const options = changeTypes.map(changeType => ({
-    label: changeType.name,
-    value: changeType.id,
-    description: changeType.description
-  }));
+  const options = useMemo(
+    () =>
+      changeTypes?.data?.map(changeType => ({
+        label: changeType.name,
+        value: changeType.id,
+        description: changeType.description
+      })),
+    [changeTypes]
+  );
 
   const tableRows = useMemo(
     () => selfServiceRequest.requestedChanges,
@@ -128,6 +128,7 @@ const SelectChangeType = () => {
             options={options}
             filteringType="auto"
             selectedAriaLabel="Selected"
+            placeholder="Select change type"
           />
           <LineBreak size="large" />
           {/* TODO: May use a popup dialog for change details */}
@@ -140,7 +141,11 @@ const SelectChangeType = () => {
           <Table
             data={tableRows}
             columns={changesColumns}
-            noResultsComponent={<div>Please add changes to the request</div>}
+            noResultsComponent={
+              <div className={styles.subText}>
+                Please add changes to the request
+              </div>
+            }
             border="row"
           />
         </div>

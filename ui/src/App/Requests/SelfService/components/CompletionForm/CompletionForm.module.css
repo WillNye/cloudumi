@@ -7,14 +7,10 @@
   height: 100%;
   padding: var(--spacing-md);
 
-  .cardList {
-    max-width: 520px;
-    width: 100%;
-  }
-
   .radioGroup {
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
   }
 
   .radioInput {
@@ -36,24 +32,16 @@
     padding-bottom: var(--spacing-md);
   }
 
-  .section {
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    flex-direction: row;
-    width: 100%;
-    height: 100%;
-    max-width: 1000px;
-  }
-
   .content {
-    width: 520px;
+    width: 100%;
     padding: 0 var(--spacing-md);
   }
 
-  .codeEditor {
-    width: 480px;
-    height: 100%;
-    padding: 0 var(--spacing-md);
+  .preview {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--gray-100);
+    width: 100%;
   }
 }

@@ -8,7 +8,6 @@
   padding: var(--spacing-md);
 
   .cardList {
-    max-width: 520px;
     width: 100%;
   }
 
