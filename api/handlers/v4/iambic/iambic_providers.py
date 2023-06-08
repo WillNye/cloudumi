@@ -1,3 +1,5 @@
+from pydantic import Field
+
 from api.handlers.utils import get_paginated_typeahead_response
 from common.handlers.base import BaseHandler
 from common.iambic.config.utils import (
@@ -10,6 +12,7 @@ from common.models import PaginatedRequestQueryParams, WebResponse
 class ProviderDefinitionQueryParams(PaginatedRequestQueryParams):
     name: str = None
     provider: str = None
+    template_id: str = Field(alias="iambic_template_id")
 
 
 class IambicProviderHandler(BaseHandler):
