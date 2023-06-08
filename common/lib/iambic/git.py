@@ -251,7 +251,10 @@ class IambicGit:
                 # TODO: async
                 repo = Repo(repo_path)
                 for remote in repo.remotes:
-                    remote.fetch()
+                    if "origin" in remote.name:
+                        with remote.config_writer as cw:
+                            cw.set("url", git_uri)
+                        remote.fetch()
                 default_branch = await self.get_default_branch(repo)
                 default_branch_name = default_branch.split("/")[-1]
                 repo.git.checkout(default_branch_name)
