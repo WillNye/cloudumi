@@ -4,9 +4,9 @@ from datetime import datetime
 
 import sqlalchemy.exc
 
+from common.aws.role_access.models import AWSRoleAccess, RoleAccessTypes
 from common.config.globals import ASYNC_PG_SESSION
 from common.identity.models import AwsIdentityRole
-from common.role_access.models import RoleAccess, RoleAccessTypes
 from common.tenants.models import Tenant
 from common.users.models import User
 from functional_tests.conftest import TEST_USER_DOMAIN_US, FunctionalTest
@@ -39,7 +39,7 @@ async def setup_db():
                 pass
             user = await User.get_by_email(tenant, "test_role_access@noq.dev")
             try:
-                await RoleAccess.create(
+                await AWSRoleAccess.create(
                     tenant,
                     RoleAccessTypes.credential_access,
                     identity_role,
@@ -53,7 +53,7 @@ async def setup_db():
 
 async def teardown_db():
     tenant = await Tenant.get_by_name(TEST_USER_DOMAIN_US)
-    role_access = await RoleAccess.get_by_arn(
+    role_access = await AWSRoleAccess.get_by_arn(
         tenant, "arn:aws:iam::123456789012:role/test_role_access"
     )
     user = await User.get_by_email(tenant, "test_role_access@noq.dev")

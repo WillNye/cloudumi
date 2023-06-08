@@ -4,19 +4,21 @@ from datetime import datetime
 from typing import Optional, Union
 
 from sqlalchemy import (
+    UUID,
     Boolean,
     Column,
     DateTime,
+    Enum,
     ForeignKey,
     Integer,
     String,
     UniqueConstraint,
     and_,
+    select,
+    update,
 )
-from sqlalchemy.dialects.postgresql import UUID, insert
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import select, update
-from sqlalchemy.types import Enum
 
 from common.config.globals import ASYNC_PG_SESSION
 from common.exceptions.exceptions import NoMatchingRequest
@@ -33,7 +35,7 @@ class RoleAccessTypes(enum.Enum):
     tra_active_user = 3
 
 
-class RoleAccess(SoftDeleteMixin, Base):
+class AWSRoleAccess(SoftDeleteMixin, Base):
     __tablename__ = "role_access"
 
     id = Column(Integer(), primary_key=True, autoincrement=True)
@@ -51,18 +53,18 @@ class RoleAccess(SoftDeleteMixin, Base):
     signature = Column(String, nullable=True)
 
     user = relationship(
-        "User", lazy="joined", primaryjoin="User.id == RoleAccess.user_id"
+        "User", lazy="joined", primaryjoin="User.id == AWSRoleAccess.user_id"
     )
     group = relationship(
-        "Group", lazy="joined", primaryjoin="Group.id == RoleAccess.group_id"
+        "Group", lazy="joined", primaryjoin="Group.id == AWSRoleAccess.group_id"
     )
     identity_role = relationship(
         "AwsIdentityRole",
         lazy="joined",
-        primaryjoin="AwsIdentityRole.id == RoleAccess.identity_role_id",
+        primaryjoin="AwsIdentityRole.id == AWSRoleAccess.identity_role_id",
     )
     tenant = relationship(
-        "Tenant", primaryjoin="Tenant.id == RoleAccess.tenant_id"
+        "Tenant", primaryjoin="Tenant.id == AWSRoleAccess.tenant_id"
     )  # do not need to resolve tenant
 
     __table_args__ = (
@@ -178,9 +180,9 @@ class RoleAccess(SoftDeleteMixin, Base):
     #     async with ASYNC_PG_SESSION() as session:
     #         async with session.begin():
     #             await session.execute(
-    #                 delete(RoleAccess).where(
+    #                 delete(AWSRoleAccess).where(
     #                     and_(
-    #                         RoleAccess.id == role_access_id, RoleAccess.tenant == tenant
+    #                         AWSRoleAccess.id == role_access_id, AWSRoleAccess.tenant == tenant
     #                     )
     #                 )
     #             )
@@ -190,11 +192,11 @@ class RoleAccess(SoftDeleteMixin, Base):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 identity_role = await AwsIdentityRole.get_by_role_arn(tenant, role_arn)
-                stmt = select(RoleAccess).where(
+                stmt = select(AWSRoleAccess).where(
                     and_(
-                        RoleAccess.tenant == tenant,
-                        RoleAccess.user == user,
-                        RoleAccess.identity_role == identity_role,
+                        AWSRoleAccess.tenant == tenant,
+                        AWSRoleAccess.user == user,
+                        AWSRoleAccess.identity_role == identity_role,
                     )
                 )
                 role_access = await session.execute(stmt)
@@ -206,15 +208,15 @@ class RoleAccess(SoftDeleteMixin, Base):
             async with ASYNC_PG_SESSION() as session:
                 if role_access_id:
                     stmt = (
-                        select(RoleAccess)
-                        .filter(RoleAccess.id == role_access_id)
-                        .filter(RoleAccess.tenant == tenant)
+                        select(AWSRoleAccess)
+                        .filter(AWSRoleAccess.id == role_access_id)
+                        .filter(AWSRoleAccess.tenant == tenant)
                     )
                 else:
                     raise NoMatchingRequest
 
                 items = await session.execute(stmt)
-                request: RoleAccess = items.scalars().unique().one()
+                request: AWSRoleAccess = items.scalars().unique().one()
                 return request
         except Exception:
             raise NoMatchingRequest
@@ -226,15 +228,15 @@ class RoleAccess(SoftDeleteMixin, Base):
                 identity_role = await AwsIdentityRole.get_by_role_arn(tenant, role_arn)
                 if role_arn:
                     stmt = (
-                        select(RoleAccess)
-                        .filter(RoleAccess.identity_role == identity_role)
-                        .filter(RoleAccess.tenant == tenant)
+                        select(AWSRoleAccess)
+                        .filter(AWSRoleAccess.identity_role == identity_role)
+                        .filter(AWSRoleAccess.tenant == tenant)
                     )
                 else:
                     raise NoMatchingRequest
 
                 items = await session.execute(stmt)
-                request: RoleAccess = items.scalars().unique().one()
+                request: AWSRoleAccess = items.scalars().unique().one()
                 return request
         except Exception:
             raise NoMatchingRequest
@@ -242,14 +244,16 @@ class RoleAccess(SoftDeleteMixin, Base):
     @classmethod
     async def get_by_attr(cls, attribute, value):
         async with ASYNC_PG_SESSION() as session:
-            stmt = select(RoleAccess).filter(getattr(RoleAccess, attribute) == value)
+            stmt = select(AWSRoleAccess).filter(
+                getattr(AWSRoleAccess, attribute) == value
+            )
             items = await session.execute(stmt)
             return items.scalars().first()
 
     @classmethod
     async def list(cls, tenant):
         async with ASYNC_PG_SESSION() as session:
-            stmt = select(RoleAccess).filter(RoleAccess.tenant == tenant)
+            stmt = select(AWSRoleAccess).filter(AWSRoleAccess.tenant == tenant)
 
             # stmt = create_filter_from_url_params(stmt, **filter_kwargs)
             items = await session.execute(stmt)
@@ -259,9 +263,9 @@ class RoleAccess(SoftDeleteMixin, Base):
     async def list_by_user(cls, tenant: Tenant, user: User):
         async with ASYNC_PG_SESSION() as session:
             stmt = (
-                select(RoleAccess)
-                .filter(RoleAccess.tenant == tenant)
-                .filter(RoleAccess.user == user)
+                select(AWSRoleAccess)
+                .filter(AWSRoleAccess.tenant == tenant)
+                .filter(AWSRoleAccess.user == user)
             )
 
             # stmt = create_filter_from_url_params(stmt, **filter_kwargs)
@@ -277,17 +281,17 @@ class RoleAccess(SoftDeleteMixin, Base):
         identity_role: Optional[AwsIdentityRole],
     ):
         async with ASYNC_PG_SESSION() as session:
-            select_stmt = select(RoleAccess).filter(RoleAccess.tenant == tenant)
+            select_stmt = select(AWSRoleAccess).filter(AWSRoleAccess.tenant == tenant)
             if user:
-                select_stmt = select_stmt.filter(RoleAccess.user == user)
+                select_stmt = select_stmt.filter(AWSRoleAccess.user == user)
             if group:
-                select_stmt = select_stmt.filter(RoleAccess.group == group)
+                select_stmt = select_stmt.filter(AWSRoleAccess.group == group)
             if identity_role:
                 select_stmt = select_stmt.filter(
-                    RoleAccess.identity_role == identity_role
+                    AWSRoleAccess.identity_role == identity_role
                 )
             items = await session.execute(select_stmt)
-            role_access: RoleAccess = items.scalars().unique().all()
+            role_access: AWSRoleAccess = items.scalars().unique().all()
             return role_access
 
     @classmethod
@@ -307,7 +311,7 @@ class RoleAccess(SoftDeleteMixin, Base):
         signature: Optional[str] = None,
     ):
         arguments = locals()
-        role_access = await RoleAccess.get_by_id(tenant, role_access_id)
+        role_access = await AWSRoleAccess.get_by_id(tenant, role_access_id)
         if (
             updated_by not in role_access.allowed_approvers
         ) or role_access.status != "Pending":
@@ -322,7 +326,7 @@ class RoleAccess(SoftDeleteMixin, Base):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 await session.execute(
-                    update(RoleAccess)
-                    .where(RoleAccess.id == role_access_id)
+                    update(AWSRoleAccess)
+                    .where(AWSRoleAccess.id == role_access_id)
                     .values(*updates)
                 )

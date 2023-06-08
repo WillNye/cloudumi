@@ -3,11 +3,11 @@ from typing import List
 import tornado.escape
 import tornado.web
 
+from common.aws.role_access.models import AWSRoleAccess
 from common.config import config
 from common.handlers.base import BaseHandler
 from common.lib.filter import filter_data_with_sqlalchemy
 from common.models import WebResponse
-from common.role_access.models import RoleAccess
 
 log = config.get_logger()
 
@@ -20,7 +20,7 @@ class ManageRoleAccessHandler(BaseHandler):
 
         try:
             objects: List[objects] = await filter_data_with_sqlalchemy(
-                _filter, self.ctx.db_tenant, RoleAccess
+                _filter, self.ctx.db_tenant, AWSRoleAccess
             )
         except Exception as exc:
             errors = ["Error while retrieving role access data"]

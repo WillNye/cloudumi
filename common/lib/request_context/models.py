@@ -7,6 +7,7 @@ class RequestContext(BaseModel):
     tenant: str
     db_tenant: Any
     user: Optional[str]
+    db_user: Any
     groups: Optional[List[str]]
     request_uuid: str
     uri: str

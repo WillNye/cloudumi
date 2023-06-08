@@ -6,11 +6,12 @@ from itertools import chain
 
 from sqlalchemy import select
 
-from common import IambicTemplate, Tenant
 from common.config.globals import ASYNC_PG_SESSION
+from common.iambic.templates.models import IambicTemplate
 from common.pg_core.utils import bulk_add
 from common.request_types.defaults.aws import get_default_aws_request_types
 from common.request_types.utils import list_tenant_request_types
+from common.tenants.models import Tenant
 
 
 async def upsert_tenant_request_types(tenant_name: str):

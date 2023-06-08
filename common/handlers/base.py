@@ -429,6 +429,7 @@ class BaseHandler(TornadoRequestHandler):
         self.eligible_roles = []
         self.user_role_name = None
         self.eligible_accounts = []
+        self.validated_existing_auth_jwt = False
         self.request_uuid = str(uuid.uuid4())
         sso_signin_toggle = self.request.query_arguments.get("sso_signin") == [b"true"]
 
@@ -495,6 +496,7 @@ class BaseHandler(TornadoRequestHandler):
                 )
                 self.password_reset_required = res.get("password_reset_required", False)
                 self.sso_user = res.get("sso_user", False)
+                self.validated_existing_auth_jwt = True
 
         # if tenant in ["localhost", "127.0.0.1"] and not self.user:
         # Check for development mode and a configuration override that specify the user and their groups.
@@ -703,6 +705,7 @@ class BaseHandler(TornadoRequestHandler):
                 refreshed_user_roles_from_cache = True
         if not refreshed_user_roles_from_cache:
             await self.set_groups()
+
         self.is_admin = is_tenant_admin(self.user, self.groups, tenant)
         self.console_only = console_only
 

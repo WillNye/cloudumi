@@ -1,4 +1,5 @@
 import asyncio
+import re
 from typing import Dict, List, Optional
 
 from iambic.config.dynamic_config import Config
@@ -8,6 +9,7 @@ from iambic.core.models import BaseTemplate
 from iambic.plugins.v0_1_0.aws.iam.role.models import AwsIamRoleTemplate
 
 from common.aws.accounts.models import AWSAccount
+from common.aws.role_access.models import AWSRoleAccess, RoleAccessTypes
 from common.config import config
 from common.config.models import ModelAdapter
 from common.groups.models import Group
@@ -16,7 +18,6 @@ from common.identity.models import AwsIdentityRole
 from common.lib.iambic.git import IambicGit
 from common.lib.iambic.util import effective_accounts
 from common.models import IambicRepoDetails
-from common.role_access.models import RoleAccess, RoleAccessTypes
 from common.tenants.models import Tenant
 from common.users.models import User
 
@@ -28,11 +29,15 @@ async def get_data_for_template_type(
 ) -> List[BaseTemplate]:
     iambic_git = IambicGit(tenant)
     access_token = await iambic_git.get_access_token()
-    iambic_repo_config = (
-        ModelAdapter(IambicRepoDetails).load_config("iambic_repos", tenant).model
+    iambic_repo_configs = (
+        ModelAdapter(IambicRepoDetails).load_config("iambic_repos", tenant).list
     )
-    if not iambic_repo_config:
+
+    if not iambic_repo_configs:
         return []
+
+    iambic_repo_config = IambicRepoDetails.parse_obj(iambic_repo_configs[0])
+
     repo_name = iambic_repo_config.repo_name
     iambic_repo = IambicRepo(
         tenant=tenant,
@@ -40,7 +45,9 @@ async def get_data_for_template_type(
         repo_uri=f"https://oauth:{access_token}@github.com/{iambic_repo_config.repo_name}",
     )
     await iambic_repo.set_repo()
-    return iambic_git.load_templates(await iambic_git.gather_templates(repo_name))
+    return iambic_git.load_templates(
+        await iambic_git.gather_templates(repo_name, template_type=template_type)
+    )
 
 
 async def get_config_data_for_repo(tenant: Tenant):
@@ -78,7 +85,12 @@ def get_role_arn(account_id: str, role_name: str) -> str:
 def get_aws_account_from_template(
     aws_accounts: AWSAccount, account_name
 ) -> Optional[AWSAccount]:
-    aws_account = [x for x in aws_accounts if x.name == account_name]
+    aws_account = [
+        x
+        for x in aws_accounts
+        if re.search(re.escape(account_name), x.name) or x.name == "*"
+    ]
+
     if len(aws_account) == 0:
         # TODO: how should this be handled?
         log.warning(
@@ -115,27 +127,8 @@ async def explode_role_templates_for_accounts(
     return arn_mappings
 
 
-async def sync_aws_accounts(tenant: Tenant, config_template: Config):
-
-    aws_accounts = config_template.aws.accounts
-    known_accounts = await AWSAccount.get_by_tenant(tenant)
-    remove_accounts = [
-        x
-        for x in known_accounts
-        if x.name not in [x.account_name for x in aws_accounts]
-    ]
-
-    await AWSAccount.delete(tenant, [x.account_id for x in remove_accounts])
-
-    # for account in aws_accounts:
-    await AWSAccount.bulk_create(
-        tenant,
-        [{"name": x.account_name, "account_id": x.account_id} for x in aws_accounts],
-    )
-
-
 async def __help_get_role_mappings(tenant: Tenant) -> Dict[str, AwsIamRoleTemplate]:
-    template_type = "Role"
+    template_type = "NOQ::AWS::IAM::Role"
 
     aws_accounts = await AWSAccount.get_by_tenant(tenant)
     iambic_template_rules = await get_data_for_template_type(
@@ -229,38 +222,27 @@ async def sync_role_access(tenant: Tenant, config_template: Config):
                         log.warning(
                             f"Could not find identity role for arn {role_arn} in tenant {tenant.name}"
                         )
-            await RoleAccess.bulk_create(tenant, upserts)
+            await AWSRoleAccess.bulk_create(tenant, upserts)
 
 
 async def sync_all_iambic_data():
     async def _sync_all_iambic_data(tenant: Tenant):
+        iambic_git = IambicGit(tenant.name)
+        if not iambic_git.db_tenant:
+            iambic_git.db_tenant = tenant
         try:
-            config_template = await get_config_data_for_repo(tenant)
-        except Exception:
-            config_template = None
-            # TODO: Log here?
-        if not config_template:
-            # TODO: Message should be renamed because tenant will not see it, we will, and
-            # message provides no context as to what tenant, repo, etc.
+            await iambic_git.clone_or_pull_git_repos()
+            await iambic_git.sync_aws_accounts()
+            await iambic_git.sync_identity_roles()
+        except Exception as e:
             log.error(
-                "Iambic config template could not be loaded; check your tenant configuration - you should have an iambic_repos key defined."
+                f"Error syncing iambic data for tenant {tenant.name}: {e}",
+                exc_info=True,
             )
-            return
-
-        try:
-            await sync_aws_accounts(tenant, config_template)
-        except Exception as e:
-            log.exception(f"Error syncing aws accounts for tenant {tenant.name}: {e}")
-        try:
-            await sync_identity_roles(tenant, config_template)
-        except Exception as e:
-            log.exception(
-                f"Error synching identity roles for tenant {tenant.name}: {e}"
-            )
-        try:
-            await sync_role_access(tenant, config_template)
-        except Exception as e:
-            log.exception(f"Error synching role access for tenant {tenant.name}: {e}")
+            # TODO: Most likely they don't have Git app installed
 
     tenants = await Tenant.get_all()
-    await asyncio.gather(*[_sync_all_iambic_data(t) for t in tenants])
+    # TODO: Remove filter
+    await asyncio.gather(
+        *[_sync_all_iambic_data(t) for t in tenants if t.name == "curtis_example_com"]
+    )

@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 
 import pytz
 
+from common.lib.auth.user_management import maybe_create_users_groups_in_database
+
 try:
     from onelogin.saml2.utils import OneLogin_Saml2_Utils
 except ImportError:
@@ -91,6 +93,13 @@ class SamlHandler(BaseHandler):
                     and self_url
                     != self.request.arguments["RelayState"][0].decode("utf-8")
                 ):
+                    await maybe_create_users_groups_in_database(
+                        self.ctx.db_tenant,
+                        email,
+                        groups,
+                        description="Created by SSO Sign-In",
+                        managed_by="SSO",
+                    )
                     return self.redirect(
                         auth.redirect_to(
                             self.request.arguments["RelayState"][0].decode("utf-8")

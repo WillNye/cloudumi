@@ -14,13 +14,16 @@ from common.pg_core.filters import (
     determine_page_from_offset,
 )
 from common.pg_core.models import Base, SoftDeleteMixin
+from common.pg_core.utils import bulk_add
 from common.tenants.models import Tenant  # noqa: F401
 
 
 class Group(SoftDeleteMixin, Base):
     __tablename__ = "groups"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    managed_by = Column(Enum("MANUAL", "SCIM", name="managed_by_enum"), nullable=True)
+    managed_by = Column(
+        Enum("MANUAL", "SCIM", "SSO", name="managed_by_enum"), nullable=True
+    )
     name = Column(String, index=True)
     description = Column(String)
     tenant_id = Column(Integer(), ForeignKey("tenant.id"))
@@ -165,3 +168,38 @@ class Group(SoftDeleteMixin, Base):
             "displayName": self.name,
             "members": users,
         }
+
+
+async def upsert_groups_by_name(
+    tenant: Tenant, group_names: list[str], description: str, managed_by: str, **kwargs
+):
+    async with ASYNC_PG_SESSION() as session:
+        async with session.begin():
+            stmt = select(Group).where(
+                and_(Group.tenant_id == tenant.id, Group.name.in_(group_names))
+            )
+            result = await session.execute(stmt)
+            existing_groups = result.unique().scalars().all()
+
+    existing_group_names = {group.name for group in existing_groups}
+
+    # Create new groups that do not exist yet
+    new_group_names = set(group_names) - existing_group_names
+    new_groups = [
+        Group(
+            managed_by=managed_by,
+            name=group,
+            description=description,
+            tenant_id=tenant.id,
+            **kwargs,
+        )
+        for group in new_group_names
+    ]
+    if new_groups:
+        await bulk_add(new_groups)
+
+    return {
+        "existing_groups": existing_groups,
+        "new_groups": new_groups,
+        "all_groups": existing_groups + new_groups,
+    }
