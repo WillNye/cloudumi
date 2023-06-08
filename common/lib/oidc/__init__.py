@@ -19,7 +19,8 @@ from tornado import httputil
 import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import MissingConfigurationValue, UnableToAuthenticate
-from common.lib.cognito.identity import CognitoUserClient
+
+# from common.lib.cognito.identity import CognitoUserClient
 from common.lib.generic import should_force_redirect
 from common.lib.jwt import generate_jwt_token
 
@@ -243,7 +244,7 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
             if client_scope:
                 client_scope = " ".join(client_scope)
             try:
-                client_id = oidc_config.get("client_id")
+                # client_id = oidc_config.get("client_id")
                 client_secret = oidc_config.get("client_secret")
                 headers = {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -258,9 +259,10 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
                     url,
                     method="POST",
                     headers=headers,
-                    body=f"grant_type={grant_type}&client_id={client_id}&code={code}&redirect_uri={oidc_redirect_uri}&scope={client_scope}",
+                    body=f"grant_type={grant_type}&code={code}&redirect_uri={oidc_redirect_uri}&scope={client_scope}",
                 )
-            except tornado.httpclient.HTTPError:
+            except tornado.httpclient.HTTPError as e:
+                log.error(e)
                 raise
 
             token_exchange_response_body_dict = json.loads(token_exchange_response.body)
@@ -308,17 +310,17 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
         )
         mfa_setup_required = None
 
-        if not decoded_id_token.get("identities"):
-            user_client = CognitoUserClient.tenant_client(tenant)
-            mfa_configured = user_client.user_mfa_enabled(email)
-            if not mfa_configured and config.get_tenant_specific_key(
-                "get_user_by_oidc_settings.enable_mfa", tenant, True
-            ):
-                # If MFA isn't enabled for the user, begin the setup process
-                mfa_setup_required = await user_client.get_mfa_secret(
-                    email, access_token=access_token, tenant=tenant
-                )
-                after_redirect_uri = f"{protocol}://{full_host}/mfa"
+        # if not decoded_id_token.get("identities"):
+        #     user_client = CognitoUserClient.tenant_client(tenant)
+        #     mfa_configured = user_client.user_mfa_enabled(email)
+        #     if not mfa_configured and config.get_tenant_specific_key(
+        #         "get_user_by_oidc_settings.enable_mfa", tenant, True
+        #     ):
+        #         # If MFA isn't enabled for the user, begin the setup process
+        #         mfa_setup_required = await user_client.get_mfa_secret(
+        #             email, access_token=access_token, tenant=tenant
+        #         )
+        #         after_redirect_uri = f"{protocol}://{full_host}/mfa"
 
         # For google auth, the access_token does not contain JWT-parsable claims.
         if config.get_tenant_specific_key(
