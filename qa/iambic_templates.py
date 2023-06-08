@@ -2,7 +2,7 @@ import json
 from datetime import datetime, timedelta
 
 import requests
-from sqlalchemy import delete, select, update
+from sqlalchemy import select, update
 
 from common.config.globals import ASYNC_PG_SESSION
 from common.iambic.templates.models import (
@@ -10,7 +10,10 @@ from common.iambic.templates.models import (
     IambicTemplateContent,
     IambicTemplateProviderDefinition,
 )
-from common.iambic.templates.tasks import sync_tenant_templates_and_definitions
+from common.iambic.templates.tasks import (
+    rollback_full_create,
+    sync_tenant_templates_and_definitions,
+)
 from common.pg_core.utils import bulk_delete
 from common.tenants.models import Tenant
 from qa import COOKIES, TENANT_API, TENANT_NAME
@@ -39,26 +42,24 @@ async def teardown_refs(tenant_name: str):
     This will result in a full reparse of all templates.
     """
     tenant = await Tenant.get_by_name(tenant_name)
+    await rollback_full_create(tenant)
+
+
+async def desync_on_full_create(tenant_name: str):
+    """Used to check that the update functionality of the sync iambic templates function works.
+
+    Sets the last parsed date to 16 weeks ago
+    Deletes 50 templates
+    Sets the content of every template to junk
+    Removes every other template provider definition
+    """
+    tenant = await Tenant.get_by_name(tenant_name)
     tenant.iambic_templates_last_parsed = None
     await tenant.write()
 
-    async with ASYNC_PG_SESSION() as session:
-        async with session.begin():
-            stmt = delete(IambicTemplateContent).where(
-                IambicTemplateContent.tenant_id == tenant.id
-            )
-            await session.execute(stmt)
-            await session.flush()
-
-            stmt = delete(IambicTemplateProviderDefinition).where(
-                IambicTemplateProviderDefinition.tenant_id == tenant.id
-            )
-            await session.execute(stmt)
-            await session.flush()
-
-            stmt = delete(IambicTemplate).where(IambicTemplate.tenant_id == tenant.id)
-            await session.execute(stmt)
-            await session.flush()
+    # Attempt to perform full create with templates in the DB.
+    # Expected behavior: All templates deleted
+    await sync_test_tenant_templates()
 
 
 async def force_change_resolution(tenant_name: str):

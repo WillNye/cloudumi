@@ -20,6 +20,44 @@ from common.tenants.models import Tenant
 from qa import TENANT_NAME
 from qa.utils import generic_api_get_request
 
+"""Example script
+import asyncio
+
+
+async def run_all_tests():
+    from qa.request_types import (
+        add_new_request_type,
+        add_change_field,
+        add_new_change_type_to_request_type,
+        reinitialize_request_type,
+        update_change_type,
+        update_request_type,
+        update_change_type_template,
+        update_change_field,
+        no_update_tenant_modified_change_type,
+        no_update_tenant_modified_request_type,
+        delete_request_type,
+        delete_change_type,
+        delete_change_field,
+    )
+
+    await add_new_request_type()
+    await add_change_field()
+    await add_new_change_type_to_request_type()
+    await reinitialize_request_type()
+    await update_change_type()
+    await update_request_type()
+    await update_change_type_template()
+    await update_change_field()
+    await no_update_tenant_modified_change_type()
+    await no_update_tenant_modified_request_type()
+    await delete_request_type()
+    await delete_change_type()
+    await delete_change_field()
+
+asyncio.run(run_all_tests())
+"""
+
 
 async def get_request_type_by_id(request_type_id):
     async with ASYNC_PG_SESSION() as session:
