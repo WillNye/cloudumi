@@ -1,4 +1,4 @@
-from common.group_memberships.models import upsert_group_memberships
+from common.group_memberships.models import upsert_and_remove_group_memberships
 from common.groups.models import upsert_groups_by_name
 from common.tenants.models import Tenant
 from common.users.models import User
@@ -27,6 +27,6 @@ async def maybe_create_users_groups_in_database(
         )
         all_groups = res.get("all_groups")
         new_groups = res.get("new_groups")
-        await upsert_group_memberships([db_user], all_groups)
+        await upsert_and_remove_group_memberships([db_user], all_groups)
     if new_groups:
         pass  # TODO: Need to refresh role mapping for this user if they have new group memberships
