@@ -38,6 +38,7 @@ from celery.signals import (
     task_success,
     task_unknown,
 )
+from celery_singleton import Singleton
 from more_itertools import chunked
 
 # from celery_progress.backend import ProgressRecorder
@@ -120,13 +121,16 @@ from identity.lib.users.users import cache_identity_users_for_tenant
 asynpool.PROC_ALIVE_TIMEOUT = config.get(
     "_global_.celery.asynpool_proc_alive_timeout", 60.0
 )
-default_retry_kwargs = {
+default_celery_task_kwargs = {
     "autoretry_for": (Exception,),
     "retry_backoff": True,
     "retry_kwargs": {
         "max_retries": config.get("_global_.celery.default_max_retries", 5)
     },
 }
+
+if not config.get("_global_.environment") == "test":
+    default_celery_task_kwargs["base"] = Singleton
 
 
 class Celery(celery.Celery):
@@ -204,7 +208,7 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 REDIS_IAM_COUNT = 1000
 
 
-@app.task(soft_time_limit=20)
+@app.task(soft_time_limit=20, **default_celery_task_kwargs)
 def report_celery_last_success_metrics() -> bool:
     """
     For each celery task, this will determine the number of seconds since it has last been successful.
@@ -557,7 +561,7 @@ def _add_role_to_redis(redis_key: str, role_entry: Dict, tenant: str) -> None:
         raise
 
 
-@app.task(soft_time_limit=3600)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_cloudtrail_errors_by_arn_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -572,7 +576,7 @@ def cache_cloudtrail_errors_by_arn_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=7200)
+@app.task(soft_time_limit=7200, **default_celery_task_kwargs)
 def cache_cloudtrail_errors_by_arn(tenant=None) -> Dict:
     if not tenant:
         raise Exception("`tenant` must be passed to this task.")
@@ -605,7 +609,7 @@ def cache_cloudtrail_errors_by_arn(tenant=None) -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=3600)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_policies_table_details_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -620,7 +624,7 @@ def cache_policies_table_details_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=1800)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_policies_table_details(tenant=None) -> bool:
     if not tenant:
         raise Exception("`tenant` must be passed to this task.")
@@ -939,7 +943,7 @@ def cache_policies_table_details(tenant=None) -> bool:
     return True
 
 
-@app.task(bind=True, soft_time_limit=2700, **default_retry_kwargs)
+@app.task(bind=True, soft_time_limit=2700, **default_celery_task_kwargs)
 def cache_iam_resources_for_account(
     self, account_id: str, tenant=None
 ) -> Dict[str, Any]:
@@ -1089,7 +1093,7 @@ def cache_iam_resources_for_account(
     return log_data
 
 
-@app.task(soft_time_limit=3600)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_access_advisor_for_account(tenant: str, account_id: str) -> Dict[str, Any]:
     """Caches AWS access advisor data for an account that belongs to a tenant.
     This tells us which services each role has used.
@@ -1116,7 +1120,7 @@ def cache_access_advisor_for_account(tenant: str, account_id: str) -> Dict[str, 
     return log_data
 
 
-@app.task(soft_time_limit=3600)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_access_advisor_across_accounts(tenant: str) -> Dict:
     """Triggers `cache_access_advisor_for_account` tasks on each AWS account that belongs to a tenant.
 
@@ -1158,7 +1162,7 @@ def cache_access_advisor_across_accounts(tenant: str) -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=3600)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_access_advisor_across_accounts_for_all_tenants() -> Dict:
     """Triggers `cache_access_advisor_across_accounts` task for each tenant.
 
@@ -1183,7 +1187,7 @@ def cache_access_advisor_across_accounts_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=3600)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_iam_resources_across_accounts_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -1201,7 +1205,7 @@ def cache_iam_resources_across_accounts_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=3600)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_iam_resources_across_accounts(
     tenant=None, run_subtasks: bool = True, wait_for_subtask_completion: bool = True
 ) -> Dict:
@@ -1303,7 +1307,7 @@ def cache_iam_resources_across_accounts(
     return log_data
 
 
-@app.task(soft_time_limit=1800, **default_retry_kwargs)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_managed_policies_for_account(
     account_id: str, tenant=None
 ) -> Dict[str, Union[str, int]]:
@@ -1383,7 +1387,7 @@ def cache_managed_policies_for_account(
     return log_data
 
 
-@app.task(soft_time_limit=3600)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_managed_policies_across_accounts_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -1398,7 +1402,7 @@ def cache_managed_policies_across_accounts_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=3600)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_managed_policies_across_accounts(tenant=None) -> bool:
     if not tenant:
         raise Exception("`tenant` must be passed to this task.")
@@ -1419,7 +1423,7 @@ def cache_managed_policies_across_accounts(tenant=None) -> bool:
     return True
 
 
-@app.task(soft_time_limit=3600)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_s3_buckets_across_accounts_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -1436,7 +1440,7 @@ def cache_s3_buckets_across_accounts_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=3600)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_s3_buckets_across_accounts(
     tenant=None, run_subtasks: bool = True, wait_for_subtask_completion: bool = True
 ) -> Dict[str, Any]:
@@ -1515,7 +1519,7 @@ def cache_s3_buckets_across_accounts(
     return log_data
 
 
-@app.task(soft_time_limit=3600)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_sqs_queues_across_accounts_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -1532,7 +1536,7 @@ def cache_sqs_queues_across_accounts_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=3600)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_sqs_queues_across_accounts(
     tenant=None, run_subtasks: bool = True, wait_for_subtask_completion: bool = True
 ) -> Dict[str, Any]:
@@ -1605,7 +1609,7 @@ def cache_sqs_queues_across_accounts(
     return log_data
 
 
-@app.task(soft_time_limit=3600)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_sns_topics_across_accounts_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -1622,7 +1626,7 @@ def cache_sns_topics_across_accounts_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=3600)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_sns_topics_across_accounts(
     tenant=None, run_subtasks: bool = True, wait_for_subtask_completion: bool = True
 ) -> Dict[str, Any]:
@@ -1701,7 +1705,7 @@ def cache_sns_topics_across_accounts(
     return log_data
 
 
-@app.task(soft_time_limit=1800, **default_retry_kwargs)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_sqs_queues_for_account(
     account_id: str, tenant=None
 ) -> Dict[str, Union[str, int]]:
@@ -1807,7 +1811,7 @@ def cache_sqs_queues_for_account(
     return log_data
 
 
-@app.task(soft_time_limit=1800, **default_retry_kwargs)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_sns_topics_for_account(
     account_id: str, tenant=None
 ) -> Dict[str, Union[str, int]]:
@@ -1905,7 +1909,7 @@ def cache_sns_topics_for_account(
     return log_data
 
 
-@app.task(soft_time_limit=1800, **default_retry_kwargs)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_s3_buckets_for_account(
     account_id: str, tenant=None
 ) -> Dict[str, Union[str, int]]:
@@ -1997,7 +2001,7 @@ def _scan_redis_iam_cache(
     return red.hscan(cache_key, index, count=count)
 
 
-@app.task(soft_time_limit=3600, **default_retry_kwargs)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_resources_from_aws_config_for_account(account_id, tenant=None) -> dict:
     from common.lib.dynamo import UserDynamoHandler
 
@@ -2102,7 +2106,7 @@ def cache_resources_from_aws_config_for_account(account_id, tenant=None) -> dict
     return log_data
 
 
-@app.task(soft_time_limit=3600)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_resources_from_aws_config_across_accounts_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -2119,7 +2123,7 @@ def cache_resources_from_aws_config_across_accounts_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=3600)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_resources_from_aws_config_across_accounts(
     tenant=None,
     run_subtasks: bool = True,
@@ -2222,7 +2226,7 @@ def cache_resources_from_aws_config_across_accounts(
     return log_data
 
 
-@app.task(soft_time_limit=300)
+@app.task(soft_time_limit=300, **default_celery_task_kwargs)
 def cache_cloud_account_mapping_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -2237,7 +2241,7 @@ def cache_cloud_account_mapping_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=300)
+@app.task(soft_time_limit=300, **default_celery_task_kwargs)
 def cache_cloud_account_mapping(tenant=None) -> Dict:
     if not tenant:
         raise Exception("`tenant` must be passed to this task.")
@@ -2256,7 +2260,7 @@ def cache_cloud_account_mapping(tenant=None) -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=1800, **default_retry_kwargs)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_credential_authorization_mapping_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -2271,7 +2275,7 @@ def cache_credential_authorization_mapping_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=1800, **default_retry_kwargs)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_credential_authorization_mapping(tenant=None) -> Dict:
     if not tenant:
         raise Exception("`tenant` must be passed to this task.")
@@ -2304,7 +2308,7 @@ def cache_credential_authorization_mapping(tenant=None) -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=1800, **default_retry_kwargs)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_scps_across_organizations_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -2319,7 +2323,7 @@ def cache_scps_across_organizations_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=1800, **default_retry_kwargs)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_scps_across_organizations(tenant=None) -> Dict:
     if not tenant:
         raise Exception("`tenant` must be passed to this task.")
@@ -2335,7 +2339,7 @@ def cache_scps_across_organizations(tenant=None) -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=1800, **default_retry_kwargs)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_organization_structure_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -2350,7 +2354,7 @@ def cache_organization_structure_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=1800, **default_retry_kwargs)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_organization_structure(tenant=None) -> Dict:
     if not tenant:
         raise Exception("`tenant` must be passed to this task.")
@@ -2404,7 +2408,7 @@ def cache_organization_structure(tenant=None) -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=1800, **default_retry_kwargs)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_resource_templates_task_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -2419,7 +2423,7 @@ def cache_resource_templates_task_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=1800, **default_retry_kwargs)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_resource_templates_task(tenant=None) -> Dict:
     if not tenant:
         raise Exception("`tenant` must be passed to this task.")
@@ -2435,7 +2439,7 @@ def cache_resource_templates_task(tenant=None) -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=1800, **default_retry_kwargs)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_terraform_resources_task(tenant=None) -> Dict:
     if not tenant:
         raise Exception("`tenant` must be passed to this task.")
@@ -2451,7 +2455,7 @@ def cache_terraform_resources_task(tenant=None) -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=1800, **default_retry_kwargs)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_terraform_resources_task_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -2466,7 +2470,7 @@ def cache_terraform_resources_task_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=1800, **default_retry_kwargs)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_self_service_typeahead_task_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -2481,7 +2485,7 @@ def cache_self_service_typeahead_task_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=1800, **default_retry_kwargs)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_self_service_typeahead_task(tenant=None) -> Dict:
     if not tenant:
         raise Exception("`tenant` must be passed to this task.")
@@ -2497,7 +2501,7 @@ def cache_self_service_typeahead_task(tenant=None) -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=1800, **default_retry_kwargs)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def trigger_credential_mapping_refresh_from_role_changes_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -2516,7 +2520,7 @@ def trigger_credential_mapping_refresh_from_role_changes_for_all_tenants() -> Di
     return log_data
 
 
-@app.task(soft_time_limit=1800, **default_retry_kwargs)
+@app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def trigger_credential_mapping_refresh_from_role_changes(tenant=None):
     """
     This task triggers a role cache refresh for any role that a change was detected for. This feature requires an
@@ -2552,7 +2556,7 @@ def trigger_credential_mapping_refresh_from_role_changes(tenant=None):
     return log_data
 
 
-@app.task(soft_time_limit=3600, **default_retry_kwargs)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_cloudtrail_denies_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -2570,7 +2574,7 @@ def cache_cloudtrail_denies_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=3600, **default_retry_kwargs)
+@app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_cloudtrail_denies(tenant=None, max_number_to_process=None):
     """
     This task caches access denies reported by Cloudtrail. This feature requires an
@@ -2607,7 +2611,7 @@ def cache_cloudtrail_denies(tenant=None, max_number_to_process=None):
     return log_data
 
 
-@app.task(soft_time_limit=60, **default_retry_kwargs)
+@app.task(soft_time_limit=60, **default_celery_task_kwargs)
 def refresh_iam_role(role_arn, tenant=None):
     """
     This task is called on demand to asynchronously refresh an AWS IAM role in Redis/DDB
@@ -2621,7 +2625,7 @@ def refresh_iam_role(role_arn, tenant=None):
     )
 
 
-@app.task(soft_time_limit=600, **default_retry_kwargs)
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def cache_notifications_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -2636,7 +2640,7 @@ def cache_notifications_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=600, **default_retry_kwargs)
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def cache_notifications(tenant=None) -> Dict[str, Any]:
     """
     This task caches notifications to be shown to end-users based on their identity or group membership.
@@ -2651,7 +2655,7 @@ def cache_notifications(tenant=None) -> Dict[str, Any]:
     return log_data
 
 
-@app.task(soft_time_limit=600, **default_retry_kwargs)
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def cache_identity_groups_for_tenant_t(tenant: str = None) -> Dict:
     if not tenant:
         raise Exception("tenant not provided")
@@ -2667,7 +2671,7 @@ def cache_identity_groups_for_tenant_t(tenant: str = None) -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=600, **default_retry_kwargs)
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def cache_identity_users_for_tenant_t(tenant: str = None) -> Dict:
     if not tenant:
         raise Exception("tenant not provided")
@@ -2683,7 +2687,7 @@ def cache_identity_users_for_tenant_t(tenant: str = None) -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=600, **default_retry_kwargs)
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def cache_identities_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -2700,7 +2704,7 @@ def cache_identities_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=600, **default_retry_kwargs)
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def cache_identity_requests_for_tenant_t(tenant: str = None) -> Dict:
     if not tenant:
         raise Exception("tenant not provided")
@@ -2716,7 +2720,7 @@ def cache_identity_requests_for_tenant_t(tenant: str = None) -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=600, **default_retry_kwargs)
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def cache_identity_requests_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -2731,7 +2735,7 @@ def cache_identity_requests_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=600, **default_retry_kwargs)
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def handle_tenant_aws_integration_queue() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
@@ -2744,7 +2748,7 @@ def handle_tenant_aws_integration_queue() -> Dict:
     log.debug({**log_data, "num_events": res.get("num_events")})
 
 
-@app.task(soft_time_limit=600, **default_retry_kwargs)
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def get_current_celery_tasks(tenant: str = None, status: str = None) -> List[Any]:
     # TODO: We may need to build a custom DynamoDB backend to segment tasks by tenant and maintain task status
     if not tenant:
@@ -2779,7 +2783,7 @@ def get_current_celery_tasks(tenant: str = None, status: str = None) -> List[Any
     return filtered_tasks
 
 
-@app.task(soft_time_limit=2700, **default_retry_kwargs)
+@app.task(soft_time_limit=2700, **default_celery_task_kwargs)
 def remove_expired_requests_for_tenant(tenant: str = None):
     if not tenant:
         raise Exception("`tenant` must be passed to this task.")
@@ -2787,7 +2791,7 @@ def remove_expired_requests_for_tenant(tenant: str = None):
     async_to_sync(remove_expired_tenant_requests)(tenant)
 
 
-@app.task(soft_time_limit=600, **default_retry_kwargs)
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def remove_expired_requests_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -2803,14 +2807,14 @@ def remove_expired_requests_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=2700, **default_retry_kwargs)
+@app.task(soft_time_limit=2700, **default_celery_task_kwargs)
 def update_providers_and_provider_definitions_for_tenant(tenant: str = None):
     if not tenant:
         raise Exception("`tenant` must be passed to this task.")
     async_to_sync(update_tenant_providers_and_definitions)(tenant)
 
 
-@app.task(soft_time_limit=600, **default_retry_kwargs)
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def update_providers_and_provider_definitions_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = get_all_tenants()
@@ -2826,7 +2830,7 @@ def update_providers_and_provider_definitions_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=600, **default_retry_kwargs)
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def workos_cache_users_from_directory() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
@@ -2842,7 +2846,7 @@ def workos_cache_users_from_directory() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=600, **default_retry_kwargs)
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def sync_iambic_templates_for_tenant(tenant: str) -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
@@ -2866,7 +2870,7 @@ def sync_iambic_templates_for_tenant(tenant: str) -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=600, **default_retry_kwargs)
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def sync_iambic_templates_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
@@ -2880,7 +2884,7 @@ def sync_iambic_templates_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=600, **default_retry_kwargs)
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def upsert_tenant_request_types_for_tenant(tenant: str) -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
@@ -2893,7 +2897,7 @@ def upsert_tenant_request_types_for_tenant(tenant: str) -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=600, **default_retry_kwargs)
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def upsert_tenant_request_types_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
@@ -2907,7 +2911,7 @@ def upsert_tenant_request_types_for_all_tenants() -> Dict:
     return log_data
 
 
-@app.task(soft_time_limit=600, **default_retry_kwargs)
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def cache_iambic_data_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
