@@ -8,6 +8,8 @@ from uuid import uuid4
 
 import pyotp
 import ujson as json
+from asyncache import cached
+from cachetools import TTLCache
 from sqlalchemy import (
     Boolean,
     Column,
@@ -297,6 +299,7 @@ class User(SoftDeleteMixin, Base):
                 return user.scalars().first()
 
     @classmethod
+    @cached(cache=TTLCache(maxsize=1024, ttl=600))
     async def get_by_email(cls, tenant, email, get_groups=False):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():

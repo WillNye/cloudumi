@@ -3,6 +3,8 @@ import uuid
 from datetime import datetime
 from typing import Optional, Union
 
+from asyncache import cached
+from cachetools import TTLCache
 from sqlalchemy import (
     UUID,
     Boolean,
@@ -14,6 +16,7 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
     and_,
+    or_,
     select,
     update,
 )
@@ -89,6 +92,36 @@ class AWSRoleAccess(SoftDeleteMixin, Base):
             cloud_provider=self.cloud_provider,
             signature=self.signature,
         )
+
+    @classmethod
+    @cached(cache=TTLCache(maxsize=1024, ttl=30))
+    async def get_roles_by_user_email(cls, email):
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                # Get the user by email
+                user_stmt = select(User).where(User.email == email)
+                user_result = await session.execute(user_stmt)
+                user = user_result.scalar()
+
+                # Get the groups of the user
+                groups_stmt = select(Group).where(Group.users.contains(user))
+                groups_result = await session.execute(groups_stmt)
+                groups = groups_result.scalars().all()
+
+                # Get the AWSRoleAccess instances related to the user and their groups
+                aws_role_access_stmt = select(AWSRoleAccess).where(
+                    or_(
+                        AWSRoleAccess.user_id == user.id,
+                        AWSRoleAccess.group_id.in_([group.id for group in groups]),
+                    )
+                )
+                aws_role_access_result = await session.execute(aws_role_access_stmt)
+                aws_role_accesses = aws_role_access_result.scalars().all()
+
+                # Return the role names from the AWSRoleAccess instances
+                return [
+                    aws_role_access.role_name for aws_role_access in aws_role_accesses
+                ]
 
     @classmethod
     async def create(
