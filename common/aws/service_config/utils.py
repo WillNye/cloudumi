@@ -17,6 +17,7 @@ from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.session import get_session_for_tenant
+from common.lib.aws.utils import get_enabled_regions_for_account
 from common.lib.generic import un_wrap_json
 from common.models import SpokeAccount
 
@@ -96,10 +97,12 @@ async def execute_query(query: str, tenant: str, account_id: str) -> List:
         finally:
             return resources_for_region
 
-    session = get_session_for_tenant(tenant)
-    available_regions = session.get_available_regions("config")
+    available_regions = await get_enabled_regions_for_account(account_id, tenant)
+    if not available_regions:
+        session = get_session_for_tenant(tenant)
+        available_regions = session.get_available_regions("config")
     excluded_regions = config.get(
-        "_global_.api_protect.exclude_regions",
+        "_global_.aws.config.exclude_regions",
         [
             "af-south-1",
             "ap-east-1",
