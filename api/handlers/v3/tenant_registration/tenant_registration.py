@@ -116,21 +116,23 @@ class TenantRegistrationHandler(TornadoRequestHandler):
             return
 
         log_data["email"] = data["email"]
+        dev_mode = config.get("_global_.development")
 
         # Validate registration code
         valid_registration_code = hashlib.sha256(
             "noq_tenant_{}".format(data.get("email")).encode()
         ).hexdigest()[0:20]
 
-        if data.get("registration_code") != valid_registration_code:
-            self.set_status(400)
-            self.write(
-                {
-                    "error": "Invalid registration code",
-                    "error_description": "The registration code is invalid",
-                }
-            )
-            return
+        if not dev_mode:
+            if data.get("registration_code") != valid_registration_code:
+                self.set_status(400)
+                self.write(
+                    {
+                        "error": "Invalid registration code",
+                        "error_description": "The registration code is invalid",
+                    }
+                )
+                return
 
         # Validate tenant
         try:
@@ -146,7 +148,6 @@ class TenantRegistrationHandler(TornadoRequestHandler):
             sentry_sdk.capture_exception(e)
             return
 
-        dev_mode = config.get("_global_.development")
         dev_domain = data.get("domain", "").replace(".", "_")
 
         if dev_domain:

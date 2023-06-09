@@ -22,9 +22,31 @@ _global_:
       data_folder_out: .pytest_cache/celery_data_folder_out
       data_folder_processed: .pytest_cache/celery_data_folder_processed
   secrets:
+    redis:
+      password: test_password
+    sendgrid:
+      from_address: notifications@noq.dev
     postgresql:
       username: postgres
       password: local_dev
+    slack:
+      app_id: APP_ID
+      app_token: APP_TOKEN
+      bot_token: BOT_TOKEN
+      client_id: "CLIENT_ID"
+      client_secret: CLIENT_SECRET
+      signing_secret: SIGNING_SECRET
+    github_app:
+      app_url: https://github.com/apps/fakeapp/
+      app_id: APP_ID
+      client_id: CLIENT_ID
+      client_secret: CLIENT_SECRET
+      webhook_secret: WEBHOOK_SECRET
+      private_key: |
+        -----BEGIN RSA...
+        PRIVATE
+        KEY
+        -----END RSA...
   noq_db:
     endpoint: "localhost"
     port: 5432
@@ -176,20 +198,6 @@ site_configs:
     logging:
       json_formatter:
         indent: 2
-
-    # You'll probably want to override FUNCTION to generate this data with your own business logic.
-    application_settings:
-      application_1:
-        owner: groupa@example.com
-        owner_url: https://www.example.com/groupa@example.com
-        app_url: https://www.example.com/ci_cd_pipeline/application_1
-        roles:
-          - arn:aws:iam::123456789012:role/application_1InstanceProfile
-          - arn:aws:iam::123456789013:role/application_1InstanceProfile
-      application_2:
-        owner: groupa@example.com
-        roles:
-          - arn:aws:iam::123456789012:role/application_2InstanceProfile
 
     api_auth:
       valid_entities:
@@ -385,20 +393,6 @@ site_configs:
     logging:
       json_formatter:
         indent: 2
-
-    # You'll probably want to override FUNCTION to generate this data with your own business logic.
-    application_settings:
-      application_1:
-        owner: groupa@example.com
-        owner_url: https://www.example.com/groupa@example.com
-        app_url: https://www.example.com/ci_cd_pipeline/application_1
-        roles:
-          - arn:aws:iam::123456789012:role/application_1InstanceProfile
-          - arn:aws:iam::123456789013:role/application_1InstanceProfile
-      application_2:
-        owner: groupa@example.com
-        roles:
-          - arn:aws:iam::123456789012:role/application_2InstanceProfile
 
     api_auth:
       valid_entities:

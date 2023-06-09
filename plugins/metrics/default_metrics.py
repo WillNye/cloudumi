@@ -1,9 +1,10 @@
 from typing import Dict, Optional, Union
 
+from common.lib.singleton import Singleton
 from plugins.metrics.base_metric import Metric
 
 
-class DefaultMetric(Metric):
+class DefaultMetric(Metric, metaclass=Singleton):
     def count(self, metric_name, tags=None):
         # TODO(ccastrapel): Having Cloudwatch, Graphite, or other configurtable default metric sources here would be a
         # good idea.

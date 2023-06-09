@@ -1,3 +1,5 @@
+from asyncache import cached
+from cachetools import TTLCache
 from sqlalchemy import ARRAY, Column, DateTime, Integer, String, and_
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import select
@@ -69,6 +71,7 @@ class Tenant(SoftDeleteMixin, Base):
             return True
 
     @classmethod
+    @cached(cache=TTLCache(maxsize=1024, ttl=30))
     async def get_by_name(cls, tenant_name, session=None):
         async def _query(session):
             stmt = select(Tenant).where(

@@ -75,6 +75,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
 
 COPY configs/fluent-bit/fluent-bit.conf /etc/fluent-bit/fluent-bit.conf
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+ENV PYTHONPATH="/app:$PYTHONPATH"
 
 COPY frontend frontend
 COPY ui ui

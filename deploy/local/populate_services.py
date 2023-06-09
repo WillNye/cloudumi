@@ -165,6 +165,9 @@ account_ids_to_name:
 celery:
   cache_cloudtrail_denies:
     enabled: true
+  sync_regions:
+    - us-east-1
+    - us-west-2
 policy_request_autoapprove_rules:
   enabled: true
   rules:
@@ -364,6 +367,9 @@ aws:
 celery:
   cache_cloudtrail_denies:
     enabled: true
+  sync_regions:
+    - us-east-1
+    - us-west-2
 policy_request_autoapprove_rules:
   enabled: true
   rules:
@@ -555,6 +561,9 @@ aws:
 celery:
   cache_cloudtrail_denies:
     enabled: true
+  sync_regions:
+    - us-east-1
+    - us-west-2
 policy_request_autoapprove_rules:
   enabled: true
   rules:

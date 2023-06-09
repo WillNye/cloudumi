@@ -1259,11 +1259,9 @@ def populate_caches(
 
     from common.celery_tasks import celery_tasks as celery
     from common.lib.account_indexers import get_account_id_to_name_mapping
-    from plugins.celery_tasks import celery_tasks as default_celery_tasks
 
     celery.cache_cloud_account_mapping(tenant)
     accounts_d = async_to_sync(get_account_id_to_name_mapping)(tenant)
-    default_celery_tasks.cache_application_information(tenant)
 
     for account_id in accounts_d.keys():
         celery.cache_iam_resources_for_account(account_id, tenant=tenant)

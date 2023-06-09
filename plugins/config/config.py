@@ -2,6 +2,7 @@ import os
 from typing import List
 
 from common.lib.aws.aws_secret_manager import get_aws_secret
+from common.lib.singleton import Singleton
 
 
 def split_s3_path(s3_path):
@@ -11,7 +12,7 @@ def split_s3_path(s3_path):
     return b, k
 
 
-class Config:
+class Config(metaclass=Singleton):
     @staticmethod
     def get_config_location():
         # TODO: This is only called once, so I need to pull a massive configuration for all customers after
