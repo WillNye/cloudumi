@@ -2957,6 +2957,15 @@ components:
         mfa:
           $ref: "#/components/schemas/MfaDetails"
           is_secret: true
+        jwt_secret:
+          title: Jwt Secret
+          is_secret: true
+          type: string
+        auth:
+          title: Auth
+          is_secret: true
+          allOf:
+            - $ref: "#/components/schemas/SecretAuthSettings"
 
     SpokeAccount:
       type: object
@@ -3664,3 +3673,115 @@ components:
         token:
           type: string
           description: Only required if command=reset
+    SecretOIDCSettings:
+      title: SecretOIDCSettings
+      description: BaseModel adds CamelCase aliases to a Pydantic model
+      type: object
+      properties:
+        client_id:
+          title: Client Id
+          is_secret: true
+          type: string
+        client_secret:
+          title: Client Secret
+          is_secret: true
+          type: string
+    SecretAuthSettings:
+      title: SecretAuthSettings
+      description: BaseModel adds CamelCase aliases to a Pydantic model
+      type: object
+      properties:
+        oidc:
+          title: Oidc
+          is_secret: true
+          allOf:
+            - $ref: "#/components/schemas/SecretOIDCSettings"
+    GetUserByOIDCSettings:
+      title: GetUserByOIDCSettings
+      description: BaseModel adds CamelCase aliases to a Pydantic model
+      type: object
+      properties:
+        metadata_url:
+          title: Metadata Url
+          type: string
+        client_scopes:
+          title: Client Scopes
+          default: []
+          type: array
+          items:
+            type: string
+        include_admin_scope:
+          title: Include Admin Scope
+          default: false
+          type: boolean
+        grant_type:
+          title: Grant Type
+          default: authorization_code
+          type: string
+        id_token_response_key:
+          title: Id Token Response Key
+          default: id_token
+          type: string
+        access_token_response_key:
+          title: Access Token Response Key
+          default: access_token
+          type: string
+        jwt_email_key:
+          title: Jwt Email Key
+          default: email
+          type: string
+        enable_mfa:
+          title: Enable Mfa
+          default: false
+          type: boolean
+        get_groups_from_access_token:
+          title: Get Groups From Access Token
+          default: true
+          type: boolean
+        access_token_audience:
+          title: Access Token Audience
+          default: consoleme
+          type: string
+        get_groups_from_userinfo_endpoint:
+          title: Get Groups From Userinfo Endpoint
+          default: true
+          type: boolean
+        user_info_groups_key:
+          title: User Info Groups Key
+          default: groups
+          type: string
+      required:
+        - metadata_url
+    AuthSettings:
+      title: AuthSettings
+      description: BaseModel adds CamelCase aliases to a Pydantic model
+      type: object
+      properties:
+        get_user_by_oidc:
+          title: Get User By Oidc
+          default: false
+          type: boolean
+        extra_auth_cookies:
+          title: Extra Auth Cookies
+          default: []
+          type: array
+          items:
+            type: string
+        force_redirect_to_identity_provider:
+          title: Force Redirect To Identity Provider
+          default: false
+          type: boolean
+    OIDCSettingsDto:
+      title: OIDCSettingsDto
+      description: BaseModel adds CamelCase aliases to a Pydantic model
+      type: object
+      properties:
+        get_user_by_oidc_settings:
+          $ref: "#/components/schemas/GetUserByOIDCSettings"
+        secrets:
+          $ref: "#/components/schemas/SecretAuthSettings"
+        auth:
+          $ref: "#/components/schemas/AuthSettings"
+      required:
+        - get_user_by_oidc_settings
+        - auth

@@ -9,21 +9,15 @@ from common.lib.dynamo import (  # filter_config_secrets,
     RestrictedDynamoHandler,
     decode_config_secrets,
 )
-from common.lib.pydantic import BaseModel
 from common.models import (
     AuthSettings,
     GetUserByOIDCSettings,
+    OIDCSettingsDto,
     SecretAuthSettings,
     WebResponse,
 )
 
 log = config.get_logger()
-
-
-class OIDCSettingsDto(BaseModel):
-    get_user_by_oidc_settings: GetUserByOIDCSettings
-    secrets: SecretAuthSettings
-    auth: AuthSettings
 
 
 class ManageOIDCSettingsCrudHandler(BaseHandler):
@@ -57,10 +51,6 @@ class ManageOIDCSettingsCrudHandler(BaseHandler):
             return_format="dict",
             filter_secrets=True,
         )
-
-        secrets = SecretAuthSettings(
-            **dynamic_config.get("secrets", {}).get("auth", {})
-        )
         auth = AuthSettings(**dynamic_config.get("auth", {}))
         get_user_by_oidc_settings = GetUserByOIDCSettings(
             **dynamic_config.get("get_user_by_oidc_settings", {})
@@ -69,7 +59,6 @@ class ManageOIDCSettingsCrudHandler(BaseHandler):
         oidc_settings = OIDCSettingsDto.parse_obj(
             {
                 "get_user_by_oidc_settings": get_user_by_oidc_settings,
-                "secrets": secrets,
                 "auth": auth,
             }
         )
@@ -80,7 +69,7 @@ class ManageOIDCSettingsCrudHandler(BaseHandler):
                 status_code=200,
                 data=oidc_settings.dict(
                     exclude_unset=False,
-                    exclude_none=False,
+                    exclude_none=True,
                     exclude_secrets=False,
                 ),
             ).dict(exclude_unset=True, exclude_none=True)
@@ -106,6 +95,7 @@ class ManageOIDCSettingsCrudHandler(BaseHandler):
                 adapter.model.dict(exclude_secrets=False),
                 obj.dict(exclude_secrets=False),
             )
+            decoded_data = adapter.mode.dict(exclude_secrets=False).update(decoded_data)
             await adapter.from_dict(decoded_data).store_item()
 
         return self.write(
