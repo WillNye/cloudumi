@@ -879,8 +879,40 @@ class IambicRepoDetails(BaseModel):
     )
 
 
+class SecretOIDCSettings(BaseModel):
+    client_id: str = Field(None, is_secret=True)
+    client_secret: str = Field(None, is_secret=True)
+
+
+class SecretAuthSettings(BaseModel):
+    oidc: Optional[SecretOIDCSettings] = Field(None, is_secret=True)
+
+
 class Secrets(BaseModel):
     mfa: Optional[MfaDetails] = Field(None, is_secret=True)
+    jwt_secret: Optional[str] = Field(None, is_secret=True)
+    auth: Optional[SecretAuthSettings] = Field(None, is_secret=True)
+
+
+class AuthSettings(BaseModel):
+    get_user_by_oidc: bool = Field(False)
+    extra_auth_cookies: Optional[list[str]] = Field([])
+    force_redirect_to_identity_provider: bool = Field(False)
+
+
+class GetUserByOIDCSettings(BaseModel):
+    metadata_url: str
+    client_scopes: list[str] = Field([])
+    include_admin_scope: bool = Field(False)
+    grant_type: str = Field("authorization_code")
+    id_token_response_key: str = Field("id_token")
+    access_token_response_key: str = Field("access_token")
+    jwt_email_key: str = Field("email")
+    enable_mfa: bool = Field(False)
+    get_groups_from_access_token: bool = Field(True)
+    access_token_audience: str = Field("consoleme")
+    get_groups_from_userinfo_endpoint: bool = Field(True)
+    user_info_groups_key: str = Field("groups")
 
 
 class SpokeAccount(BaseModel):
