@@ -3139,3 +3139,17 @@ app.conf.timezone = "UTC"
 
 # TODO: Message user with information about this being reviewed
 # TODO: Determine how to map IdP groups to Slack channels
+# from qa.request_types import hard_delete_request_type
+# from common.tenants.models import Tenant
+# from qa.request_types import hard_delete_request_type
+# async def reset_request_type_tables():
+#     tenant = await Tenant.get_by_name("localhost")
+#     request_types = await list_tenant_request_types(tenant.id, exclude_deleted=False)
+#     await asyncio.gather(
+#         *[hard_delete_request_type(req_type) for req_type in request_types]
+#     )
+
+#     await upsert_tenant_request_types(tenant.name)
+
+# import asyncio
+# asyncio.run(reset_request_type_tables())
