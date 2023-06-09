@@ -10,8 +10,7 @@ from git import Repo
 from iambic.core.models import BaseTemplate as IambicBaseTemplate
 from iambic.core.utils import sanitize_string
 from jinja2 import BaseLoader, Environment
-from psycopg2 import IntegrityError
-from psycopg.errors import UniqueViolation
+from psycopg.errors import IntegrityError, UniqueViolation
 from sqlalchemy import and_, cast, delete, select, update
 from sqlalchemy.orm import contains_eager
 
