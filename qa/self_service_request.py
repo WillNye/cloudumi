@@ -32,7 +32,7 @@ from common.models import (
     SelfServiceRequestData,
 )
 from common.request_types.utils import list_tenant_request_types
-from qa import TENANT_NAME
+from qa import TENANT_SUMMARY
 from qa.utils import generic_api_create_or_update_request, generic_api_get_request
 
 
@@ -87,11 +87,8 @@ async def get_template_and_provider_definition_by_template_type(
         return template, tenant_provider_definitions
 
 
-async def get_s3_permission_template_for_role_request_data(
-    tenant: Tenant = None,
-) -> SelfServiceRequestData:
-    if not tenant:
-        tenant = await Tenant.get_by_name(TENANT_NAME)
+async def get_s3_permission_template_for_role_request_data() -> SelfServiceRequestData:
+    tenant = TENANT_SUMMARY.tenant
     (
         template,
         tenant_provider_definitions,
@@ -140,7 +137,7 @@ async def get_s3_permission_template_for_role_request_data(
 
 
 async def generate_s3_permission_template_for_role():
-    tenant = await Tenant.get_by_name(TENANT_NAME)
+    tenant = TENANT_SUMMARY.tenant
     self_service_request = await get_s3_permission_template_for_role_request_data(
         tenant
     )
@@ -151,8 +148,7 @@ async def generate_s3_permission_template_for_role():
 
 
 async def generate_s3_permission_template_for_managed_policy():
-    tenant = await Tenant.get_by_name(TENANT_NAME)
-
+    tenant = TENANT_SUMMARY.tenant
     (
         template,
         tenant_provider_definitions,
@@ -205,8 +201,7 @@ async def generate_s3_permission_template_for_managed_policy():
 
 
 async def generate_request_role_access_template():
-    tenant = await Tenant.get_by_name(TENANT_NAME)
-
+    tenant = TENANT_SUMMARY.tenant
     (
         template,
         tenant_provider_definitions,
@@ -257,19 +252,24 @@ async def generate_request_role_access_template():
 async def api_self_service_request_create():
     request_data = await get_s3_permission_template_for_role_request_data()
 
-    return generic_api_create_or_update_request(
+    validated_data = generic_api_create_or_update_request(
         "post",
-        "v4/self-service/requests",
+        "v4/self-service/requests/validate",
         **request_data.dict(
             exclude_unset=False, exclude_defaults=False, exclude_none=True
         ),
+    )
+    return generic_api_create_or_update_request(
+        "post",
+        "v4/self-service/requests",
+        **validated_data["data"],
     )
 
 
 async def get_or_create_self_service_request() -> Request:
     # List Pending self-service requests
     # If none, call api_create_self_service_request and use that
-    tenant = await Tenant.get_by_name(TENANT_NAME)
+    tenant = TENANT_SUMMARY.tenant
     requests = await list_requests(tenant.id, status__exact="Pending")
     if requests:
         return random.choice(requests)

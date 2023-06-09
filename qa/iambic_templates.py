@@ -1,7 +1,6 @@
 import json
 from datetime import datetime, timedelta
 
-import requests
 from sqlalchemy import select, update
 
 from common.config.globals import ASYNC_PG_SESSION
@@ -15,8 +14,8 @@ from common.iambic.templates.tasks import (
     sync_tenant_templates_and_definitions,
 )
 from common.pg_core.utils import bulk_delete
-from common.tenants.models import Tenant
-from qa import COOKIES, TENANT_API, TENANT_NAME
+from qa import TENANT_SUMMARY
+from qa.utils import generic_api_get_request
 
 """Example script
 import asyncio
@@ -35,17 +34,16 @@ list_templates_api_request("NOQ::AWS::IAM::Role")
 """
 
 
-async def teardown_refs(tenant_name: str):
+async def teardown_refs():
     """Will 'reset' the iambic templates for a tenant.
 
     Sets the last parsed date to None, and deletes all templates.
     This will result in a full reparse of all templates.
     """
-    tenant = await Tenant.get_by_name(tenant_name)
-    await rollback_full_create(tenant)
+    await rollback_full_create(TENANT_SUMMARY.tenant)
 
 
-async def desync_on_full_create(tenant_name: str):
+async def desync_on_full_create():
     """Used to check that the update functionality of the sync iambic templates function works.
 
     Sets the last parsed date to 16 weeks ago
@@ -53,7 +51,7 @@ async def desync_on_full_create(tenant_name: str):
     Sets the content of every template to junk
     Removes every other template provider definition
     """
-    tenant = await Tenant.get_by_name(tenant_name)
+    tenant = TENANT_SUMMARY.tenant
     tenant.iambic_templates_last_parsed = None
     await tenant.write()
 
@@ -62,7 +60,7 @@ async def desync_on_full_create(tenant_name: str):
     await sync_test_tenant_templates()
 
 
-async def force_change_resolution(tenant_name: str):
+async def force_change_resolution():
     """Used to check that the update functionality of the sync iambic templates function works.
 
     Sets the last parsed date to 16 weeks ago
@@ -70,7 +68,7 @@ async def force_change_resolution(tenant_name: str):
     Sets the content of every template to junk
     Removes every other template provider definition
     """
-    tenant = await Tenant.get_by_name(tenant_name)
+    tenant = TENANT_SUMMARY.tenant
     tenant.iambic_templates_last_parsed = datetime.utcnow() - timedelta(weeks=16)
 
     async with ASYNC_PG_SESSION() as session:
@@ -98,7 +96,7 @@ async def force_change_resolution(tenant_name: str):
 
 
 async def sync_test_tenant_templates():
-    await sync_tenant_templates_and_definitions(TENANT_NAME)
+    await sync_tenant_templates_and_definitions(TENANT_SUMMARY.tenant_name)
 
 
 def list_templates_api_request(
@@ -113,9 +111,8 @@ def list_templates_api_request(
         "page": page,
         "page_size": page_size,
     }
-    response = requests.get(
-        f"{TENANT_API}/v4/templates",
-        cookies=COOKIES,
+    response = generic_api_get_request(
+        "v4/templates",
         params={k: v for k, v in params.items() if v is not None},
     )
     if not response.ok:

@@ -1,9 +1,19 @@
 import json
 from json import JSONDecodeError
+from urllib.parse import urljoin
 
 import requests
 
-from qa import COOKIES, TENANT_API
+from qa import TENANT_SUMMARY
+
+
+def sanitize_endpoint(endpoint: str) -> str:
+    if not any(endpoint.startswith(prefix) for prefix in ["/api", "api"]):
+        if endpoint.startswith("/"):
+            endpoint = endpoint[1:]
+        endpoint = f"api/{endpoint}"
+
+    return endpoint
 
 
 def handle_response(response):
@@ -22,8 +32,8 @@ def handle_response(response):
 
 def generic_api_get_request(endpoint: str, **kwargs):
     response = requests.get(
-        f"{TENANT_API}/{endpoint}",
-        cookies=COOKIES,
+        urljoin(TENANT_SUMMARY.tenant_url, sanitize_endpoint(endpoint)),
+        cookies=TENANT_SUMMARY.cookies,
         params=kwargs,
     )
     return handle_response(response)
@@ -32,8 +42,8 @@ def generic_api_get_request(endpoint: str, **kwargs):
 def generic_api_create_or_update_request(http_method: str, endpoint: str, **kwargs):
     # Handles POST, PUT, PATCH
     response = getattr(requests, http_method)(
-        f"{TENANT_API}/{endpoint}",
-        cookies=COOKIES,
+        urljoin(TENANT_SUMMARY.tenant_url, sanitize_endpoint(endpoint)),
+        cookies=TENANT_SUMMARY.cookies,
         json=kwargs,
     )
     return handle_response(response)
@@ -41,7 +51,7 @@ def generic_api_create_or_update_request(http_method: str, endpoint: str, **kwar
 
 def generic_api_delete_request(endpoint: str):
     response = requests.delete(
-        f"{TENANT_API}/{endpoint}",
-        cookies=COOKIES,
+        urljoin(TENANT_SUMMARY.tenant_url, sanitize_endpoint(endpoint)),
+        cookies=TENANT_SUMMARY.cookies,
     )
     return handle_response(response)

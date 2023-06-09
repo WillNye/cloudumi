@@ -16,8 +16,7 @@ from common.request_types.models import (
 )
 from common.request_types.tasks import upsert_tenant_request_types
 from common.request_types.utils import list_tenant_request_types
-from common.tenants.models import Tenant
-from qa import TENANT_NAME
+from qa import TENANT_SUMMARY
 from qa.utils import generic_api_get_request
 
 """Example script
@@ -141,7 +140,8 @@ async def hard_delete_change_type(change_type: ChangeType):
     await bulk_delete([change_type])
 
 
-async def reset_request_type_tables(tenant: Tenant):
+async def reset_request_type_tables():
+    tenant = TENANT_SUMMARY.tenant
     request_types = await list_tenant_request_types(tenant.id, exclude_deleted=False)
     await asyncio.gather(
         *[hard_delete_request_type(req_type) for req_type in request_types]
@@ -151,8 +151,8 @@ async def reset_request_type_tables(tenant: Tenant):
 
 
 async def add_new_request_type():
-    tenant = await Tenant.get_by_name(TENANT_NAME)
-    await reset_request_type_tables(tenant)
+    tenant = TENANT_SUMMARY.tenant
+    await reset_request_type_tables()
 
     tenant_request_types = await list_tenant_request_types(tenant.id)
     init_count = len(tenant_request_types)
@@ -162,14 +162,14 @@ async def add_new_request_type():
     tenant_request_types = await list_tenant_request_types(tenant.id)
     assert len(tenant_request_types) == init_count - 1
 
-    await upsert_tenant_request_types(TENANT_NAME)
+    await upsert_tenant_request_types(tenant.name)
     tenant_request_types = await list_tenant_request_types(tenant.id)
     assert len(tenant_request_types) == init_count
 
 
 async def update_request_type():
-    tenant = await Tenant.get_by_name(TENANT_NAME)
-    await reset_request_type_tables(tenant)
+    tenant = TENANT_SUMMARY.tenant
+    await reset_request_type_tables()
 
     tenant_request_types = await list_tenant_request_types(tenant.id)
     rt = tenant_request_types[0]
@@ -181,15 +181,15 @@ async def update_request_type():
     request_type = await get_request_type_by_id(rt.id)
     assert request_type.description == new_description
 
-    await upsert_tenant_request_types(TENANT_NAME)
+    await upsert_tenant_request_types(tenant.name)
 
     request_type = await get_request_type_by_id(rt.id)
     assert request_type.description == original_description
 
 
 async def no_update_tenant_modified_request_type():
-    tenant = await Tenant.get_by_name(TENANT_NAME)
-    await reset_request_type_tables(tenant)
+    tenant = TENANT_SUMMARY.tenant
+    await reset_request_type_tables()
 
     tenant_request_types = await list_tenant_request_types(tenant.id)
     rt = tenant_request_types[0]
@@ -203,15 +203,15 @@ async def no_update_tenant_modified_request_type():
 
     assert any(trt.description == new_description for trt in tenant_request_types)
 
-    await upsert_tenant_request_types(TENANT_NAME)
+    await upsert_tenant_request_types(tenant.name)
 
     tenant_request_types = await list_tenant_request_types(tenant.id)
     assert any(trt.description == new_description for trt in tenant_request_types)
 
 
 async def delete_request_type():
-    tenant = await Tenant.get_by_name(TENANT_NAME)
-    await reset_request_type_tables(tenant)
+    tenant = TENANT_SUMMARY.tenant
+    await reset_request_type_tables()
 
     tenant_request_types = await list_tenant_request_types(tenant.id)
     init_count = len(tenant_request_types)
@@ -223,7 +223,7 @@ async def delete_request_type():
     updated_rt = await get_request_type_by_id(rt.id)
     assert updated_rt.name == new_name
 
-    await upsert_tenant_request_types(TENANT_NAME)
+    await upsert_tenant_request_types(tenant.name)
 
     tenant_request_types = await list_tenant_request_types(tenant.id)
     assert len(tenant_request_types) == init_count
@@ -233,8 +233,8 @@ async def delete_request_type():
 
 
 async def reinitialize_request_type():
-    tenant = await Tenant.get_by_name(TENANT_NAME)
-    await reset_request_type_tables(tenant)
+    tenant = TENANT_SUMMARY.tenant
+    await reset_request_type_tables()
 
     tenant_request_types = await list_tenant_request_types(tenant.id)
     init_active_count = len(tenant_request_types)
@@ -247,7 +247,7 @@ async def reinitialize_request_type():
     tenant_request_types = await list_tenant_request_types(tenant.id)
     assert len(tenant_request_types) == init_active_count - 1
 
-    await upsert_tenant_request_types(TENANT_NAME)
+    await upsert_tenant_request_types(tenant.name)
 
     tenant_request_types = await list_tenant_request_types(tenant.id)
     assert len(tenant_request_types) == init_active_count
@@ -257,8 +257,8 @@ async def reinitialize_request_type():
 
 
 async def add_new_change_type_to_request_type():
-    tenant = await Tenant.get_by_name(TENANT_NAME)
-    await reset_request_type_tables(tenant)
+    tenant = TENANT_SUMMARY.tenant
+    await reset_request_type_tables()
 
     tenant_request_types = await list_tenant_request_types(
         tenant.id, summary_only=False
@@ -275,7 +275,7 @@ async def add_new_change_type_to_request_type():
     assert len(rt.change_types) == init_count - 1
     assert removed_change_type.name not in [ct.name for ct in rt.change_types]
 
-    await upsert_tenant_request_types(TENANT_NAME)
+    await upsert_tenant_request_types(tenant.name)
     rt = await get_request_type_by_id(rt.id)
     # Confirm change type was added back
     assert len(rt.change_types) == init_count
@@ -283,8 +283,8 @@ async def add_new_change_type_to_request_type():
 
 
 async def update_change_type():
-    tenant = await Tenant.get_by_name(TENANT_NAME)
-    await reset_request_type_tables(tenant)
+    tenant = TENANT_SUMMARY.tenant
+    await reset_request_type_tables()
 
     tenant_request_types = await list_tenant_request_types(
         tenant.id, summary_only=False
@@ -300,15 +300,15 @@ async def update_change_type():
     # Confirm description was properly applied
     assert new_description in [ct.description for ct in rt.change_types]
 
-    await upsert_tenant_request_types(TENANT_NAME)
+    await upsert_tenant_request_types(tenant.name)
     rt = await get_request_type_by_id(rt.id)
     # Verify it was updated because this is a Noq managed template
     assert original_description in [ct.description for ct in rt.change_types]
 
 
 async def no_update_tenant_modified_change_type():
-    tenant = await Tenant.get_by_name(TENANT_NAME)
-    await reset_request_type_tables(tenant)
+    tenant = TENANT_SUMMARY.tenant
+    await reset_request_type_tables()
 
     tenant_request_types = await list_tenant_request_types(
         tenant.id, summary_only=False
@@ -325,15 +325,15 @@ async def no_update_tenant_modified_change_type():
     # Confirm description was properly applied
     assert new_description in [ct.description for ct in rt.change_types]
 
-    await upsert_tenant_request_types(TENANT_NAME)
+    await upsert_tenant_request_types(tenant.name)
     rt = await get_request_type_by_id(rt.id)
     # Verify it was not updated because this is a tenant managed template
     assert new_description in [ct.description for ct in rt.change_types]
 
 
 async def update_change_type_template():
-    tenant = await Tenant.get_by_name(TENANT_NAME)
-    await reset_request_type_tables(tenant)
+    tenant = TENANT_SUMMARY.tenant
+    await reset_request_type_tables()
 
     tenant_request_types = await list_tenant_request_types(
         tenant.id, summary_only=False
@@ -350,15 +350,15 @@ async def update_change_type_template():
     updated_change_type = await get_change_type_by_id(updated_change_type.id)
     assert updated_change_type.change_template.template == new_template
 
-    await upsert_tenant_request_types(TENANT_NAME)
+    await upsert_tenant_request_types(tenant.name)
     # Verify it was updated because this is a Noq managed template
     updated_change_type = await get_change_type_by_id(updated_change_type.id)
     assert updated_change_type.change_template.template == original_template
 
 
 async def delete_change_type():
-    tenant = await Tenant.get_by_name(TENANT_NAME)
-    await reset_request_type_tables(tenant)
+    tenant = TENANT_SUMMARY.tenant
+    await reset_request_type_tables()
 
     tenant_request_types = await list_tenant_request_types(
         tenant.id, summary_only=False
@@ -374,7 +374,7 @@ async def delete_change_type():
     # Confirm name was properly applied
     assert new_name in [ct.name for ct in rt.change_types]
 
-    await upsert_tenant_request_types(TENANT_NAME)
+    await upsert_tenant_request_types(tenant.name)
 
     # Verify it was soft deleted because this is a Noq managed template
     rt = await get_request_type_by_id(rt.id)
@@ -384,8 +384,8 @@ async def delete_change_type():
 
 
 async def add_change_field():
-    tenant = await Tenant.get_by_name(TENANT_NAME)
-    await reset_request_type_tables(tenant)
+    tenant = TENANT_SUMMARY.tenant
+    await reset_request_type_tables()
 
     tenant_request_types = await list_tenant_request_types(
         tenant.id, summary_only=False
@@ -403,7 +403,7 @@ async def add_change_field():
     ]
     assert len(updated_change_type.change_fields) == original_change_field_count - 1
 
-    await upsert_tenant_request_types(TENANT_NAME)
+    await upsert_tenant_request_types(tenant.name)
 
     # Verify it was added back because this is a Noq managed template
     updated_change_type = await get_change_type_by_id(updated_change_type.id)
@@ -414,8 +414,8 @@ async def add_change_field():
 
 
 async def update_change_field():
-    tenant = await Tenant.get_by_name(TENANT_NAME)
-    await reset_request_type_tables(tenant)
+    tenant = TENANT_SUMMARY.tenant
+    await reset_request_type_tables()
 
     tenant_request_types = await list_tenant_request_types(
         tenant.id, summary_only=False
@@ -435,7 +435,7 @@ async def update_change_field():
     ]
     assert new_field_text in [cf.field_text for cf in updated_change_type.change_fields]
 
-    await upsert_tenant_request_types(TENANT_NAME)
+    await upsert_tenant_request_types(tenant.name)
 
     # Verify the change field text was updated because this is a Noq managed template
     updated_change_type = await get_change_type_by_id(updated_change_type.id)
@@ -448,8 +448,8 @@ async def update_change_field():
 
 
 async def delete_change_field():
-    tenant = await Tenant.get_by_name(TENANT_NAME)
-    await reset_request_type_tables(tenant)
+    tenant = TENANT_SUMMARY.tenant
+    await reset_request_type_tables()
 
     tenant_request_types = await list_tenant_request_types(
         tenant.id, summary_only=False
@@ -479,7 +479,7 @@ async def delete_change_field():
     ]
     assert len(updated_change_type.change_fields) == original_change_field_count + 1
 
-    await upsert_tenant_request_types(TENANT_NAME)
+    await upsert_tenant_request_types(tenant.name)
 
     # Verify it was soft deleted because this is a Noq managed template
     updated_change_type = await get_change_type_by_id(updated_change_type.id)
@@ -497,7 +497,7 @@ async def api_list_providers():
 
 async def api_list_change_types(request_type_id: Optional[str] = None):
     if not request_type_id:
-        tenant = await Tenant.get_by_name(TENANT_NAME)
+        tenant = TENANT_SUMMARY.tenant
         all_request_types = await list_tenant_request_types(tenant.id)
         request_type = random.choice(list(all_request_types))
         request_type_id = request_type.id
@@ -515,7 +515,7 @@ async def api_get_change_type(
     if change_type_id:
         assert request_type_id
     else:
-        tenant = await Tenant.get_by_name(TENANT_NAME)
+        tenant = TENANT_SUMMARY.tenant
         all_request_types = await list_tenant_request_types(
             tenant.id, summary_only=False
         )
