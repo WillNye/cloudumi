@@ -24,6 +24,58 @@ from common.models import SelfServiceRequestData, WebResponse
 log = config.get_logger()
 
 
+class IambicRequestValidationHandler(BaseHandler):
+    async def post(self):
+        """
+        POST /api/v4/self-service/requests/validate - Create a new request
+        """
+        await self.fte_check()
+        self.set_header("Content-Type", "application/json")
+
+        db_tenant = self.ctx.db_tenant
+        request_data = SelfServiceRequestData(**json.loads(self.request.body))
+        try:
+            template_change = await get_template_change_for_request(
+                db_tenant, request_data
+            )
+        except (AssertionError, TypeError, ValidationError) as err:
+            self.write(
+                WebResponse(
+                    error=str(err),
+                    status_code=400,
+                ).json(exclude_unset=True, exclude_none=True)
+            )
+            self.set_status(400, reason=str(err))
+            return
+        except Exception as err:
+            log.exception(
+                {
+                    "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+                    "error": str(err),
+                    "tenant_name": db_tenant.name,
+                },
+                exc_info=True,
+            )
+            self.write(
+                WebResponse(
+                    error=str(err),
+                    status_code=500,
+                ).json(exclude_unset=True, exclude_none=True)
+            )
+            self.set_status(500, reason=str(err))
+            raise tornado.web.Finish()
+        else:
+            request_data.template_body = template_change.template_body
+            request_data.changes = None
+            return self.write(
+                WebResponse(
+                    success="success",
+                    status_code=200,
+                    data=request_data.dict(exclude_none=True),
+                ).json(exclude_unset=True, exclude_none=True)
+            )
+
+
 class IambicRequestHandler(BaseHandler):
     async def get(self, request_id: str = None):
         """
