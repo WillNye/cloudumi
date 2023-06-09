@@ -12,7 +12,7 @@ from common.celery_tasks import celery_tasks as celery
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.tenant import get_all_tenants
 
-start_time = int(time.time())
+total_start_time = int(time.time())
 
 parallel = True
 
@@ -168,5 +168,5 @@ else:
                 start_time,
             )
 
-total_time = int(time.time()) - start_time
+total_time = int(time.time()) - total_start_time
 print(f"Done caching data in Redis. It took {total_time} seconds")
