@@ -28,7 +28,10 @@ from api.handlers.v4.iambic.iambic_providers import (
     IambicProviderDefinitionHandler,
     IambicProviderHandler,
 )
-from api.handlers.v4.iambic.iambic_templates import IambicTemplateHandler
+from api.handlers.v4.iambic.iambic_templates import (
+    IambicTemplateHandler,
+    IambicTemplateTypeHandler,
+)
 from api.handlers.v4.resources.datatable import ResourcesDataTableHandler
 from api.handlers.v4.scim.groups import ScimV2GroupHandler, ScimV2GroupsHandler
 from api.handlers.v4.scim.users import ScimV2UserHandler, ScimV2UsersHandler
@@ -496,7 +499,8 @@ def make_app(jwt_validator=None):
         ),
         (r"/api/v4/providers/?", IambicProviderHandler),
         (r"/api/v4/providers/definitions/?", IambicProviderDefinitionHandler),
-        (r"/api/v4/templates/?", IambicTemplateHandler),
+        (r"/api/v4/templates", IambicTemplateHandler),
+        (r"/api/v4/template-types", IambicTemplateTypeHandler),
         (
             r"/api/v4/self-service/typeahead/aws/service/(?P<service>[\w-]+)",
             AWSResourceTypeAheadHandler,

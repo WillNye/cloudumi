@@ -6,7 +6,7 @@ from common.lib.pydantic import BaseModel
 
 class RequestContext(BaseModel):
     tenant: str
-    db_tenant: Tenant
+    db_tenant: Optional[Tenant]
     user: Optional[str]
     groups: Optional[List[str]]
     request_uuid: str
@@ -16,3 +16,6 @@ class RequestContext(BaseModel):
     needs_to_sign_eula: Optional[bool]
     mfa_verification_required: Optional[bool]
     is_admin: Optional[bool]
+
+    class Config:
+        arbitrary_types_allowed = True
