@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import uuid
 from typing import Optional
+from urllib.parse import urljoin
 
 from pydantic import ValidationError
 from tornado.web import HTTPError
@@ -28,7 +29,7 @@ class GitHubOAuthHandler(BaseAdminHandler):
         state = str(uuid.uuid4())
         # Save the state to the database
         await GitHubOAuthState.create(self.ctx.db_tenant, state=state)
-        url = f"{GITHUB_APP_URL}/installations/new?state={state}"
+        url = urljoin(GITHUB_APP_URL, f"/installations/new?state={state}")
         self.write(
             WebResponse(success="success", data={"github_install_url": url}).dict(
                 exclude_unset=True, exclude_none=True

@@ -1,3 +1,6 @@
+import sys
+
+import tornado.web
 from pydantic import ValidationError
 
 import common.lib.noq_json as json
@@ -95,7 +98,14 @@ class IambicRequestHandler(BaseHandler):
             self.set_status(400, reason=str(err))
             return
         except Exception as err:
-            log.exception(err)
+            log.exception(
+                {
+                    "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+                    "error": str(err),
+                    "tenant_name": db_tenant.name,
+                },
+                exc_info=True,
+            )
             self.write(
                 WebResponse(
                     error=str(err),
@@ -103,7 +113,7 @@ class IambicRequestHandler(BaseHandler):
                 ).json(exclude_unset=True, exclude_none=True)
             )
             self.set_status(500, reason=str(err))
-            raise
+            raise tornado.web.Finish()
         else:
             return self.write(
                 WebResponse(
@@ -170,7 +180,7 @@ class IambicRequestHandler(BaseHandler):
                 ).json(exclude_unset=True, exclude_none=True)
             )
             self.set_status(500, reason=str(err))
-            raise
+            raise tornado.web.Finish()
 
     async def patch(self, request_id: str):
         """
@@ -234,7 +244,7 @@ class IambicRequestHandler(BaseHandler):
                 ).json(exclude_unset=True, exclude_none=True)
             )
             self.set_status(500, reason=str(err))
-            return
+            raise tornado.web.Finish()
         else:
             return self.write(
                 WebResponse(
