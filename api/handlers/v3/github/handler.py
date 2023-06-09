@@ -51,8 +51,23 @@ class GitHubCallbackHandler(TornadoRequestHandler):
         self.repo_specified = False
 
     async def get(self):
-        state = self.get_argument("state")
-        installation_id = self.get_argument("installation_id")
+        state = self.get_argument("state", default=None)
+        installation_id = self.get_argument("installation_id", default=None)
+        setup_action = self.get_argument("setup_action")
+
+        if setup_action == "request":
+            # the user only request the Github Admin to approve the app installation
+            self.write(
+                f"Ask your GitHub administrator to approve the app installation. They’ll be redirected back to Noq to finalize it. Make sure they append state={state} to the Noq URL they are redirected back to, and to reload the page to finish the installation."
+            )
+            return
+        elif setup_action == "install" and not state:
+            # the Github Admin approve the app installation but is not the same requester
+            # not using self.request.full_uri() because our local dev will see http protocol
+            self.write(
+                "Please retrieve the state value that was provided during the initial installation request, and append it to the URL as state=UNIQUE_VALUE. Then, reload the page to finish the installation."
+            )
+            return
 
         # Verify the state
         github_oauth_state = await GitHubOAuthState.get_by_state(state)

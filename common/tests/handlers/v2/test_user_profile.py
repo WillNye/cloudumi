@@ -37,7 +37,7 @@ class TestUserProfile(NOQAsyncHTTPTestCase):
         response = self.fetch("/api/v2/user_profile", headers=headers)
         self.assertEqual(response.code, 200)
         response_j = json.loads(response.body)
-        response_j["site_config"].pop("noq_logo")
+        response_j["site_config"].pop("noq_logo", None)
         self.assertEqual(
             response_j,
             {

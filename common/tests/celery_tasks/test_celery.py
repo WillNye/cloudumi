@@ -9,9 +9,6 @@ from unittest.mock import patch
 import pytest
 from asgiref.sync import async_to_sync
 
-from common.aws.iam.role.models import IAMRole
-from common.lib.aws.access_undenied.access_undenied_aws import common, result_details
-from common.lib.aws.access_undenied.access_undenied_aws.results import AnalysisResult
 from util.tests.fixtures.globals import tenant
 
 APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -34,6 +31,7 @@ class TestCelerySync(TestCase):
 
     @pytest.mark.skip(reason="EN-637")
     def cache_iam_resources_for_account(self):
+        from common.aws.iam.role.models import IAMRole
         from common.config.config import CONFIG
         from common.lib.redis import RedisHandler
 
@@ -143,6 +141,14 @@ class TestCelerySync(TestCase):
         )
 
     def test_cache_cloudtrail_denies(self):
+        from common.lib.aws.access_undenied.access_undenied_aws import (
+            common,
+            result_details,
+        )
+        from common.lib.aws.access_undenied.access_undenied_aws.results import (
+            AnalysisResult,
+        )
+
         with patch(
             "common.lib.aws.access_undenied.access_undenied_aws.simulate_custom_policy_helper.simulate_custom_policies",
             return_value=AnalysisResult(

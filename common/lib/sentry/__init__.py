@@ -14,6 +14,7 @@ from common.lib.slack import send_slack_notification_sync
 
 log = config.get_logger()
 global_slack_webhook_url = config.get("_global_.slack_webhook_url", None)
+send_events_to_slack = config.get("_global_.send_exceptions_to_slack", False)
 
 timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
@@ -47,7 +48,8 @@ def before_send_event(event, hint):
         for exc in [TenantNoCentralRoleConfigured, Finish]:
             if isinstance(exc_value, exc):
                 return None
-        if not global_slack_webhook_url:
+        if not (global_slack_webhook_url and send_events_to_slack):
+            # S3/Slack are too performance heavy for normal usage
             return event
 
         formatted_traceback = "".join(traceback.format_exception(*exc_info))

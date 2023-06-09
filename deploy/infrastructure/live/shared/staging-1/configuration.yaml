@@ -53,8 +53,6 @@ _global_:
     namespace: shared
     zone: staging.noq.dev
     cluster_id: staging-noq-dev-shared-staging-1
-  logging:
-    file: ~/logs/cloudumi/cloudumi_tornado.log
   web:
     path: "/app/frontend/dist"
   docs:

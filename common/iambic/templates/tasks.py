@@ -662,7 +662,8 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
                     "message": "Unable to create tenant templates and definitions.",
                     "tenant": tenant_name,
                     "error": str(err),
-                }
+                },
+                exc_info=True,
             )
         return
 

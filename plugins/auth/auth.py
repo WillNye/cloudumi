@@ -11,6 +11,7 @@ from common.exceptions.exceptions import (
 )
 from common.lib.generic import str2bool
 from common.lib.plugins import get_plugin_by_name
+from common.lib.singleton import Singleton
 
 log = config.get_logger("cloudumi")
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -114,7 +115,7 @@ class ExtendedAttribute(object):
         return json.dumps(d)
 
 
-class Auth:
+class Auth(metaclass=Singleton):
     """The Auth class authenticates the user and provides the user's groups."""
 
     def __init__(self, headers: dict = None):

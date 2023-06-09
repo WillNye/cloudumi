@@ -1,7 +1,9 @@
 from typing import Dict, Optional, Union
 
+from common.lib.singleton import Singleton
 
-class Metric:
+
+class Metric(metaclass=Singleton):
     def count(self, metric_name, tags=None):
         raise NotImplementedError
 

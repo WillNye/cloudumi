@@ -3,13 +3,11 @@ This module controls defines internal-only celery tasks and their applicable sch
 the external tasks
 
 """
-import json
 from datetime import timedelta
+from typing import Any
 
 from common.celery_tasks.celery_tasks import get_celery_app
 from common.config import config
-from common.lib.noq_json import SetEncoder
-from common.lib.redis import RedisHandler
 from common.lib.timeout import Timeout
 
 region = config.region
@@ -32,57 +30,9 @@ if config.get("_global_.celery.purge"):
         app.control.purge()
 
 
-@app.task(soft_time_limit=600)
-def cache_application_information(tenant):
-    """
-    This task retrieves application information from configuration. You may want to override this function to
-    utilize your organization's CI/CD pipeline for this information.
-    :return:
-    """
-    apps_to_roles = {}
-    for k, v in config.get_tenant_specific_key(
-        "application_settings", tenant, {}
-    ).items():
-        apps_to_roles[k] = v.get("roles", [])
-
-    red = RedisHandler().redis_sync(tenant)
-    red.set(
-        config.get_tenant_specific_key(
-            "celery.apps_to_roles.redis_key",
-            tenant,
-            f"{tenant}_APPS_TO_ROLES",
-        ),
-        json.dumps(apps_to_roles, cls=SetEncoder),
-    )
-
-
-@app.task
-def generate_consoleme_saas_configuration():
-    """
-    This task combines all customer configurations into a single configuration for consoleme saas, segmented by
-    customer. If last known configuration for customer is invalid, we make noise, and load the one we can find that is
-    valid.
-    # _ configs are first, followed in alphabetical order by org
-    :return:
-    """
-    # TODO
-    pass
-
-
 schedule = timedelta(seconds=1800)
 
-internal_schedule = {
-    # "generate_consoleme_saas_configuration": {
-    #     "task": "cloudumi_plugins.plugins.celery_tasks.generate_consoleme_saas_configuration",
-    #     "options": {"expires": 4000},
-    #     "schedule": schedule,
-    # },
-    # "cache_application_information": {
-    #     "task": "cloudumi_plugins.plugins.celery_tasks.celery_tasks.cache_application_information",
-    #     "options": {"expires": 4000},
-    #     "schedule": schedule,
-    # },
-}
+internal_schedule: dict[str, Any] = {}
 
 
 def init():

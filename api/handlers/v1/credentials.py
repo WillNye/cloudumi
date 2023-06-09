@@ -378,7 +378,21 @@ class GetCredentialsHandler(BaseMtlsHandler):
             )
         elif requester_type == "user":
             user_email = self.requester.get("email")
-            await self.get_credentials_user_flow(user_email, request, stats, log_data)
+            try:
+                await self.get_credentials_user_flow(
+                    user_email, request, stats, log_data
+                )
+            except Exception as e:
+                log.error(e)
+                error = {
+                    "code": "905",
+                    "message": "Error getting credentials.",
+                    "request_id": self.request_uuid,
+                }
+                self.set_status(400)
+                self.write(error)
+                await self.finish()
+                return
         else:
             raise tornado.web.HTTPError(403, "Unauthorized entity.")
         return
