@@ -67,6 +67,7 @@ class IambicRequestValidationHandler(BaseHandler):
         else:
             request_data.template_body = template_change.template_body
             request_data.changes = None
+            request_data.expires_at = None
             return self.write(
                 WebResponse(
                     success="success",
