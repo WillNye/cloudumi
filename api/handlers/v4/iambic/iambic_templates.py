@@ -53,7 +53,7 @@ class IambicTemplateHandler(BaseHandler):
                     ),
                 ).json(exclude_unset=True, exclude_none=True)
             )
-        except ValidationError as e:
+        except (ValidationError, AssertionError) as e:
             self.set_status(400)
             self.write(
                 WebResponse(
@@ -128,7 +128,7 @@ class IambicTemplateTypeHandler(BaseHandler):
                     data=sorted(response_data, key=lambda d: d["name"]),
                 ).json(exclude_unset=True, exclude_none=True)
             )
-        except ValidationError as e:
+        except (ValidationError, AssertionError) as e:
             self.set_status(400)
             self.write(
                 WebResponse(

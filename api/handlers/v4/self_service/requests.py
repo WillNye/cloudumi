@@ -33,7 +33,7 @@ class IambicRequestValidationHandler(BaseHandler):
         self.set_header("Content-Type", "application/json")
 
         db_tenant = self.ctx.db_tenant
-        request_data = SelfServiceRequestData(**json.loads(self.request.body))
+        request_data = SelfServiceRequestData.parse_raw(self.request.body)
         try:
             template_change = await get_template_change_for_request(
                 db_tenant, request_data
@@ -41,7 +41,7 @@ class IambicRequestValidationHandler(BaseHandler):
         except (AssertionError, TypeError, ValidationError) as err:
             self.write(
                 WebResponse(
-                    error=str(err),
+                    errors=[str(err)],
                     status_code=400,
                 ).json(exclude_unset=True, exclude_none=True)
             )
@@ -58,7 +58,7 @@ class IambicRequestValidationHandler(BaseHandler):
             )
             self.write(
                 WebResponse(
-                    error=str(err),
+                    errors=[str(err)],
                     status_code=500,
                 ).json(exclude_unset=True, exclude_none=True)
             )
@@ -128,8 +128,7 @@ class IambicRequestHandler(BaseHandler):
 
         db_tenant = self.ctx.db_tenant
         user = self.user
-        request_data = SelfServiceRequestData(**json.loads(self.request.body))
-
+        request_data = SelfServiceRequestData.parse_raw(self.request.body)
         try:
             template_change = await get_template_change_for_request(
                 db_tenant, request_data
@@ -144,7 +143,7 @@ class IambicRequestHandler(BaseHandler):
         except (AssertionError, TypeError, ValidationError) as err:
             self.write(
                 WebResponse(
-                    error=str(err),
+                    errors=[str(err)],
                     status_code=400,
                 ).json(exclude_unset=True, exclude_none=True)
             )
@@ -161,7 +160,7 @@ class IambicRequestHandler(BaseHandler):
             )
             self.write(
                 WebResponse(
-                    error=str(err),
+                    errors=[str(err)],
                     status_code=500,
                 ).json(exclude_unset=True, exclude_none=True)
             )
@@ -182,11 +181,14 @@ class IambicRequestHandler(BaseHandler):
         """
         await self.fte_check()
         self.set_header("Content-Type", "application/json")
-
+        log_data = {
+            "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+            "tenant": self.ctx.db_tenant.name,
+        }
         db_tenant = self.ctx.db_tenant
         user = self.user
         groups = self.groups
-        request_data = SelfServiceRequestData(**json.loads(self.request.body))
+        request_data = SelfServiceRequestData.parse_raw(self.request.body)
 
         try:
             template_change = await get_template_change_for_request(
@@ -218,17 +220,17 @@ class IambicRequestHandler(BaseHandler):
         except (AssertionError, TypeError, ValidationError) as err:
             self.write(
                 WebResponse(
-                    error=str(err),
+                    errors=[str(err)],
                     status_code=400,
                 ).json(exclude_unset=True, exclude_none=True)
             )
             self.set_status(400, reason=str(err))
             return
         except Exception as err:
-            log.exception(err)
+            log.error({**log_data, "error": str(err)}, exc_info=True)
             self.write(
                 WebResponse(
-                    error=str(err),
+                    errors=[str(err)],
                     status_code=500,
                 ).json(exclude_unset=True, exclude_none=True)
             )
@@ -241,7 +243,10 @@ class IambicRequestHandler(BaseHandler):
         """
         await self.fte_check()
         self.set_header("Content-Type", "application/json")
-
+        log_data = {
+            "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+            "tenant": self.ctx.db_tenant.name,
+        }
         db_tenant = self.ctx.db_tenant
         user = self.user
         groups = self.groups
@@ -282,17 +287,17 @@ class IambicRequestHandler(BaseHandler):
         except (AssertionError, TypeError, ValidationError) as err:
             self.write(
                 WebResponse(
-                    error=str(err),
+                    errors=[str(err)],
                     status_code=400,
                 ).json(exclude_unset=True, exclude_none=True)
             )
             self.set_status(400, reason=str(err))
             return
         except Exception as err:
-            log.exception(err)
+            log.error({**log_data, "error": str(err)}, exc_info=True)
             self.write(
                 WebResponse(
-                    error=str(err),
+                    errors=[str(err)],
                     status_code=500,
                 ).json(exclude_unset=True, exclude_none=True)
             )
