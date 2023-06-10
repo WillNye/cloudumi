@@ -36,8 +36,8 @@ AUTH_COOKIE_NAME: str = config.get("_global_.auth.cookie.name", "noq_auth")
 IAMBIC_REPOS_BASE_KEY = "iambic_repos"
 GITHUB_APP_URL = config.get("_global_.secrets.github_app.app_url")
 assert GITHUB_APP_URL
-if GITHUB_APP_URL.endswith("/"):
-    GITHUB_APP_URL = GITHUB_APP_URL[:-1]
+if not GITHUB_APP_URL.endswith("/"):
+    GITHUB_APP_URL = GITHUB_APP_URL + "/"
 GITHUB_APP_ID = config.get("_global_.secrets.github_app.app_id")
 assert GITHUB_APP_ID
 GITHUB_APP_CLIENT_ID = config.get("_global_.secrets.github_app.client_id")

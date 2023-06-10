@@ -29,7 +29,7 @@ class GitHubOAuthHandler(BaseAdminHandler):
         state = str(uuid.uuid4())
         # Save the state to the database
         await GitHubOAuthState.create(self.ctx.db_tenant, state=state)
-        url = urljoin(GITHUB_APP_URL, f"/installations/new?state={state}")
+        url = urljoin(GITHUB_APP_URL, f"installations/new?state={state}")
         self.write(
             WebResponse(success="success", data={"github_install_url": url}).dict(
                 exclude_unset=True, exclude_none=True

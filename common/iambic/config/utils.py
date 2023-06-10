@@ -150,7 +150,7 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
     for repo in iambic_repos:
         repo_dir = iambic_git.get_iambic_repo_path(repo.repo_name)
         try:
-            config = await iambic_git.load_iambic_config(repo.repo_name)
+            iambic_config = await iambic_git.load_iambic_config(repo.repo_name)
         except ValueError as err:
             log.error(
                 {
@@ -164,14 +164,17 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
         # Collect provider definitions from the template repo
         azure_ad_templates = iambic_git.load_templates(
             await iambic_git.gather_templates(repo_dir, "AzureAD"),
+            iambic_config.template_map,
             use_multiprocessing=False,
         )
         okta_templates = iambic_git.load_templates(
             await iambic_git.gather_templates(repo_dir, "Okta"),
+            iambic_config.template_map,
             use_multiprocessing=False,
         )
         google_workspace_templates = iambic_git.load_templates(
             await iambic_git.gather_templates(repo_dir, "GoogleWorkspace"),
+            iambic_config.template_map,
             use_multiprocessing=False,
         )
 
@@ -208,9 +211,9 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
             )
 
         # Handling AWS accounts and orgs
-        if config.aws and config.aws.accounts:
+        if iambic_config.aws and iambic_config.aws.accounts:
             provider = "aws"
-            for account in config.aws.accounts:
+            for account in iambic_config.aws.accounts:
                 sub_type = "accounts"
                 base_key = f"{provider}-{sub_type}"
                 definition = {
@@ -237,7 +240,7 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
                 )
                 template_repo_definitions[base_key][str(account)] = definition
 
-            for org in config.aws.organizations:
+            for org in iambic_config.aws.organizations:
                 sub_type = "organizations"
                 base_key = f"{provider}-{sub_type}"
                 definition = {

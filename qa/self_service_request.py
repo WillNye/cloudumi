@@ -1,3 +1,4 @@
+import asyncio
 import functools
 import json
 import random
@@ -376,3 +377,8 @@ async def api_self_service_request_comment_update(request: Optional[Request]):
         body=f"This is my updated test comment - {random.randint(0, 1000)}",
     )
     return await api_self_service_request_get(request)
+
+
+if __name__ == "__main__":
+    asyncio.run(TENANT_SUMMARY.setup())
+    asyncio.run(get_or_create_self_service_request())

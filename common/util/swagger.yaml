@@ -1,5 +1,6 @@
 # After modifying this file, run the following command to regenerate the Pydantic models file stored at
 # noq/models.py:
+# pip install "datamodel-code-generator==0.13.1"
 # `datamodel-codegen --input swagger.yaml  --output ../models.py --base-class common.lib.pydantic.BaseModel --field-extra-keys 'is_secret' ; black ../models.py`
 # To exclude a property from being returned when calling model.dict() by default add the property is_secret: true
 

@@ -81,12 +81,15 @@ class IambicTemplateTypeHandler(BaseHandler):
                     "id": template_type,
                     "name": template_type.replace(
                         trusted_provider.template_type_prefix, ""
-                    ).replace("::", " "),
+                    )
+                    .replace("::", " ")
+                    .strip(),
                 }
                 for template_type in provider_template_types
             ]
 
         db_tenant = self.ctx.db_tenant
+        self.set_header("Content-Type", "application/json")
         try:
             query_params = IambicTemplateTypeQueryParams(
                 **{k: self.get_argument(k) for k in self.request.arguments}
@@ -118,8 +121,6 @@ class IambicTemplateTypeHandler(BaseHandler):
                     for template_type in all_template_types
                     if template_type["id"] in supported_template_types
                 ]
-
-            self.set_header("Content-Type", "application/json")
             self.write(
                 WebResponse(
                     success="success",

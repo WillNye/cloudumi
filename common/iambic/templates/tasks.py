@@ -99,7 +99,9 @@ async def create_tenant_templates_and_definitions(
     )
 
     # Collect provider definitions from the template repo
-    for raw_iambic_template in iambic_git.load_templates(template_paths):
+    for raw_iambic_template in iambic_git.load_templates(
+        template_paths, iambic_config.template_map
+    ):
         provider = template_type_provider_map.get(raw_iambic_template.template_type)
 
         # If provider not already mapped, find and map the provider
@@ -415,7 +417,9 @@ async def upsert_tenant_templates_and_definitions(
 
     # Collect provider definitions from the template repo
     messages = []
-    for raw_iambic_template in iambic_git.load_templates(template_paths):
+    for raw_iambic_template in iambic_git.load_templates(
+        template_paths, iambic_config.template_map
+    ):
         provider = template_type_provider_map.get(raw_iambic_template.template_type)
 
         # If provider not already mapped, find and map the provider
@@ -687,6 +691,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
     # Iterate the tenants iambic repos
     for repo in iambic_repos:
         repo_dir = iambic_git.get_iambic_repo_path(repo.repo_name)
+        iambic_config = await iambic_git.load_iambic_config(repo.repo_name)
 
         # Get all changes since last parsed
         git_repo = Repo(repo_dir)
@@ -702,7 +707,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
                 from_sha = commit.hexsha
 
         template_changes = await iambic_git.retrieve_git_changes(
-            repo.repo_name, from_sha=from_sha, to_sha=to_sha
+            repo.repo_name, iambic_config.template_map, from_sha=from_sha, to_sha=to_sha
         )
         create_template_paths = []
         upsert_template_paths = []
@@ -718,7 +723,6 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
             deleted_template_paths.append(git_diff.path)
 
         try:
-            iambic_config = await iambic_git.load_iambic_config(repo.repo_name)
             if create_template_paths:
                 await create_tenant_templates_and_definitions(
                     tenant,
