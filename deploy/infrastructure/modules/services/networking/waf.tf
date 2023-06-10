@@ -115,7 +115,7 @@ resource "aws_wafv2_web_acl_association" "web-acl-cloudumi-association" {
 
 resource "aws_cloudwatch_log_group" "web-acl" {
   name              = "aws-waf-logs-cloudumi-${var.cluster_id}"
-  retention_in_days = 120
+  retention_in_days = 365
 }
 
 resource "aws_wafv2_web_acl_logging_configuration" "web-acl" {
