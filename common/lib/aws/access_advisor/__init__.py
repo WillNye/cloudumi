@@ -15,7 +15,7 @@ from common.lib.aws.cached_resources.iam import (
 from common.lib.cache import store_json_results_in_redis_and_s3
 from common.models import SpokeAccount
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 def get_epoch_authenticated(service_authenticated: int) -> Tuple[int, bool]:

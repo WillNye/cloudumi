@@ -10,7 +10,7 @@ from common.lib.change_request import generate_change_model_array
 from common.lib.plugins import get_plugin_by_name
 from common.models import ChangeGeneratorModelArray
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
 

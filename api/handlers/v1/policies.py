@@ -13,7 +13,7 @@ from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.redis import redis_get
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class AutocompleteHandler(BaseAPIV1Handler):

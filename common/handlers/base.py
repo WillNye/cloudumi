@@ -48,7 +48,7 @@ from common.lib.workos import WorkOS
 from common.models import WebResponse
 from common.tenants.models import Tenant
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 def maybe_set_security_headers(req):

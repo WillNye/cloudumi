@@ -12,9 +12,10 @@ if os.getenv("DEBUG"):
     os.system("systemctl start ssh")
 #############
 
+# Config must be loaded before routes are imported, to set logging levels early.
 import asyncio
-import logging
 
+import structlog
 import tornado.autoreload
 import tornado.httpserver
 import tornado.ioloop
@@ -22,10 +23,10 @@ import uvloop
 from tornado.platform.asyncio import AsyncIOMainLoop
 
 from api.routes import make_app
-from common.config import config
+from common.config import config  # noqa
 from common.lib.plugins import fluent_bit, get_plugin_by_name
 
-log = config.get_logger()
+log = structlog.get_logger(__name__)
 
 configured_profiler = config.get("_global_.profiler")
 if configured_profiler:
@@ -72,15 +73,15 @@ if config.get("_global_.elastic_apn.enabled"):
 
 async def shutdown(signal, loop):
     """Cleanup tasks tied to the service's shutdown."""
-    logging.info(f"Received exit signal {signal.name}...")
-    logging.info("Closing database connections")
+    log.info(f"Received exit signal {signal.name}...")
+    log.info("Closing database connections")
     tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
 
     [task.cancel() for task in tasks]
 
-    logging.info(f"Cancelling {len(tasks)} outstanding tasks")
+    log.info(f"Cancelling {len(tasks)} outstanding tasks")
     await asyncio.gather(*tasks)
-    logging.info("Flushing metrics")
+    log.info("Flushing metrics")
     loop.stop()
 
 
@@ -126,7 +127,7 @@ def init():
                     stats = yappi.get_func_stats()
                     stats.save("/tmp/yappi.callgrind", type="callgrind")
                     print("Saved callgrind data to /tmp/yappi.callgrind")
-            logging.info("Successfully shutdown the service.")
+            log.info("Successfully shutdown the service.")
 
 
 if os.getenv("RUNTIME_PROFILE", "API") == "API":

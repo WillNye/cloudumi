@@ -23,7 +23,7 @@ from common.lib.cognito.identity import CognitoUserClient
 from common.lib.generic import should_force_redirect
 from common.lib.jwt import generate_jwt_token
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def populate_oidc_config(tenant):

@@ -72,7 +72,7 @@ from common.user_request.utils import (
 )
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def validate_create_resource_change(

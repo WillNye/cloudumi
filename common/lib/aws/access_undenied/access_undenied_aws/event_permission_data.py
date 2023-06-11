@@ -13,7 +13,7 @@ from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.access_undenied.access_undenied_aws import common, event, utils
 from common.models import SpokeAccount
 
-logger = config.get_logger()
+logger = config.get_logger(__name__)
 
 ACCESS_DENIED_MESSAGES = json.load(
     open(

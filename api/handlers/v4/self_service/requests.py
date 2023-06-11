@@ -22,7 +22,7 @@ from common.iambic_request.request_crud import (
 )
 from common.models import SelfServiceRequestData, WebResponse
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class IambicRequestValidationHandler(BaseHandler):

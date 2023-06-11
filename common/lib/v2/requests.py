@@ -114,7 +114,7 @@ from common.user_request.utils import (
     validate_custom_credentials,
 )
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def update_changes_meta_data(extended_request: ExtendedRequestModel, tenant: str):

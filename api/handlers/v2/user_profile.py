@@ -15,7 +15,7 @@ from common.lib.plugins import get_plugin_by_name
 from common.lib.v2.user_profile import get_custom_page_header
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class UserProfileHandler(BaseAPIV1Handler):

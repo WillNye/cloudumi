@@ -18,7 +18,7 @@ import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import MissingConfigurationValue, UnableToAuthenticate
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def populate_oidc_config(tenant):

@@ -13,7 +13,7 @@ from common.lib.aws.access_undenied.access_undenied_aws import (
     organizations,
 )
 
-logger = config.get_logger()
+logger = config.get_logger(__name__)
 
 
 def initialize_config_from_user_input(

@@ -5,7 +5,7 @@ from common.exceptions.exceptions import MustBeFte
 from common.handlers.base import BaseHandler
 from common.models import WebResponse
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class ResourceHistoryHandler(BaseHandler):

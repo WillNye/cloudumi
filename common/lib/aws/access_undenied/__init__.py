@@ -19,4 +19,4 @@ from common.lib.aws.access_undenied.access_undenied_aws import (
     utils,
 )
 
-logger = config.get_logger()
+logger = config.get_logger(__name__)

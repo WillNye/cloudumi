@@ -42,7 +42,7 @@ from common.lib.yaml import yaml
 from common.models import IambicTemplateChange
 from common.tenants.models import Tenant
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 scopes = """app_mentions:read,channels:history,channels:join,channels:read,chat:write,chat:write.public,emoji:read,groups:history,groups:read,groups:write,im:history,im:read,im:write,mpim:history,mpim:read,mpim:write,pins:read,pins:write,reactions:read,reactions:write,users:read,users:read.email,channels:manage,chat:write.customize,dnd:read,files:read,files:write,links:read,links:write,metadata.message:read,usergroups:read,usergroups:write,users.profile:read,users:write""".split(
     ","
 )

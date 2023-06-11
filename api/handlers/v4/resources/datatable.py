@@ -13,7 +13,7 @@ from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.filter import filter_data
 from common.models import DataTableResponse
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 # TODO: Rebrand as a generic resource provider

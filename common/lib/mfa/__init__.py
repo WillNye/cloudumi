@@ -3,7 +3,7 @@ from typing import Union
 from common.config import config
 from common.lib.mfa.okta import okta_verify
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def mfa_verify(tenant: str, user: str, **kwargs) -> tuple[bool, Union[None, str]]:

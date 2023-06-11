@@ -21,7 +21,7 @@ from common.models import AWSCredentials, SpokeAccount
 
 CACHE = {}
 
-log = noq_config.get_logger()
+log = noq_config.get_logger(__name__)
 
 
 class ConsoleMeCloudAux:

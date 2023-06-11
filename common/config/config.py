@@ -67,31 +67,49 @@ def positional_to_keyword_processor(logger, method_name, event_dict):
     if event_dict.get("event") and isinstance(event_dict["event"], dict):
         event_dict = {**event_dict["event"], **event_dict}
         del event_dict["event"]
+    if not event_dict.get("event"):
+        if event_dict.get("message"):
+            event_dict["event"] = event_dict["message"]
+            del event_dict["message"]
+        elif event_dict.get("error"):
+            event_dict["event"] = event_dict["error"]
+            del event_dict["error"]
     return event_dict
 
 
-# def get_logging_renderer():
-#     # get value from configuration
-#     json_enabled = self.get("_global_.logging.json_enabled", False)
-#     if json_enabled:
-#         return structlog.processors.JSONRenderer()
-#     else:
-#         return structlog.dev.ConsoleRenderer()
+# TODOs:
+# 1. Figure out how to log to disk in JSON for prod
+
+# logging.basicConfig(level=logging.DEBUG, format="%(message)s")
+# root_logger = logging.getLogger()
+# root_logger.setLevel(logging.DEBUG)
+
+# for handler in root_logger.handlers:
+#     handler.setFormatter(logging.Formatter("%(message)s"))
 
 structlog.configure(
     processors=[
         positional_to_keyword_processor,
-        structlog.stdlib.add_log_level,
         structlog.stdlib.add_logger_name,
+        structlog.stdlib.filter_by_level,
+        structlog.contextvars.merge_contextvars,
+        structlog.processors.add_log_level,
+        structlog.processors.StackInfoRenderer(),
+        structlog.dev.set_exc_info,
         structlog.processors.TimeStamper(fmt="iso"),
-        # structlog.processors.JSONRenderer()
-        structlog.dev.ConsoleRenderer(pad_event=False, event_key="message"),
+        structlog.dev.ConsoleRenderer(),
     ],
-    context_class=dict,
-    logger_factory=structlog.stdlib.LoggerFactory(),
+    # wrapper_class=structlog.make_filtering_bound_logger(logging.DEBUG),
     wrapper_class=structlog.stdlib.BoundLogger,
+    context_class=dict,
+    # logger_factory=structlog.PrintLoggerFactory(),
+    logger_factory=structlog.stdlib.LoggerFactory(),
     cache_logger_on_first_use=True,
 )
+log = structlog.get_logger()
+log.debug("Logging configured")
+log.debug("Logging configured", lol=True)
+log.debug({"message": "Logging configured", "lol": True})
 
 
 class Configuration(metaclass=Singleton):
@@ -225,7 +243,7 @@ class Configuration(metaclass=Singleton):
                     with open(extend_path, "r") as ymlfile:
                         extend_config = yaml.load(ymlfile)
                 except FileNotFoundError:
-                    logging.error(f"Unable to open file: {s}", exc_info=True)
+                    log.error(f"Unable to open file: {s}", exc_info=True)
 
             dict_merge(self.config, extend_config)
             if extend_config.get("extends"):
@@ -514,10 +532,92 @@ class Configuration(metaclass=Singleton):
                 return default
         return value
 
-    def get_logger(self, name: Optional[str] = None) -> LoggerAdapter:
+    def get_logger(self, name: Optional[str] = None):
+        if not name:
+            name = self.get("_global_.application_name", "noq")
+        level_c = self.get("_global_.logging.level", "debug")
+        if level_c == "info":
+            level = logging.INFO
+        elif level_c == "critical":
+            level = logging.CRITICAL
+        elif level_c == "error":
+            level = logging.ERROR
+        elif level_c == "warning":
+            level = logging.WARNING
+        elif level_c == "debug":
+            level = logging.DEBUG
+        else:
+            # default
+            level = logging.DEBUG
+
+        logging.basicConfig(level=level, format="%(name)s - %(message)s")
+        return structlog.get_logger(name)
+        # Configure logging
+        # logging.basicConfig(level=logging.DEBUG, format="%(message)s")
+
+        # for handler in root_logger.handlers:
+        #     handler.setFormatter(logging.Formatter("%(message)s"))
+
+        # # Get the logger
+        # native_logger = logging.getLogger(name)
+        # native_logger.setLevel(logging.DEBUG)
+        # # Add a StreamHandler explicitly
+        # stream_handler = logging.StreamHandler()
+        # stream_handler.setFormatter(logging.Formatter("%(message)s"))
+        # native_logger.addHandler(stream_handler)
+        # log = structlog.wrap_logger(native_logger)
+        # return log
+
+    def get_logger_3(self, name: Optional[str] = None) -> LoggerAdapter:
+        if self.log:
+            return structlog.get_logger(name=name)
+        if not name:
+            name = self.get("_global_.application_name", "noq")
+        level_c = self.get("_global_.logging.level", "debug")
+        if level_c == "info":
+            level = logging.INFO
+        elif level_c == "critical":
+            level = logging.CRITICAL
+        elif level_c == "error":
+            level = logging.ERROR
+        elif level_c == "warning":
+            level = logging.WARNING
+        elif level_c == "debug":
+            level = logging.DEBUG
+        else:
+            # default
+            level = logging.DEBUG
+
+        logging.basicConfig(level=level)
+        root_logger = logging.getLogger(name)
+        root_logger.setLevel(level)
+        root_logger.addHandler(logging.StreamHandler())
+
+        structlog.configure(
+            processors=[
+                structlog.stdlib.add_logger_name,
+                structlog.stdlib.add_log_level,
+                structlog.stdlib.PositionalArgumentsFormatter(),
+                structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M.%S"),
+                structlog.processors.StackInfoRenderer(),
+                structlog.dev.ConsoleRenderer(),
+            ],
+            context_class=dict,
+            logger_factory=structlog.stdlib.LoggerFactory(),
+            wrapper_class=structlog.stdlib.BoundLogger,
+            cache_logger_on_first_use=True,
+        )
+
+        logger = structlog.get_logger(name)
+        logger.debug("I don't see this!")
+        logger.error("I see this!")
+        self.log = logger
+        return self.log
+
+    def get_logger_2(self, name: Optional[str] = None) -> LoggerAdapter:
         """Get logger."""
-        # if self.log:
-        #     return self.log
+        if self.log:
+            return self.log
         if not name:
             name = self.get("_global_.application_name", "noq")
         level_c = self.get("_global_.logging.level", "debug")
@@ -548,24 +648,24 @@ class Configuration(metaclass=Singleton):
 
         # Log to stdout and disk
         if self.get("_global_.logging.stdout_enabled", True):
-            # handler = logging.StreamHandler(sys.stdout)
-            # handler.setFormatter(
-            #     structlog.stdlib.ProcessorFormatter(
-            #         processor=structlog.dev.ConsoleRenderer(),
-            #         foreign_pre_chain=[
-            #             structlog.stdlib.add_log_level,
-            #             structlog.stdlib.add_logger_name,
-            #             structlog.stdlib.PositionalArgumentsFormatter(),
-            #         ],
-            #     )
-            # )
+            handler = logging.StreamHandler(sys.stdout)
+            handler.setFormatter(
+                structlog.stdlib.ProcessorFormatter(
+                    processor=structlog.dev.ConsoleRenderer(),
+                    foreign_pre_chain=[
+                        structlog.stdlib.add_log_level,
+                        structlog.stdlib.add_logger_name,
+                        structlog.stdlib.PositionalArgumentsFormatter(),
+                    ],
+                )
+            )
             # handler.setFormatter(
             #     logmatic.JsonFormatter(
             #         json_indent=self.get("_global_.logging.json_formatter.indent")
             #     )
             # )
-            # handler.setLevel(self.get("_global_.logging.stdout.level", "DEBUG"))
-            # logger.addHandler(handler)
+            handler.setLevel(self.get("_global_.logging.stdout.level", "DEBUG"))
+            logger.addHandler(handler)
             logging_file = self.get("_global_.logging.file")
             if logging_file:
                 if "~" in logging_file:
@@ -595,40 +695,48 @@ class Configuration(metaclass=Singleton):
                 #     )
                 # )
                 # logger.addHandler(file_handler)
-        self.log = logging.LoggerAdapter(logger)
+        self.log = structlog.get_logger()
+        # self.log = logging.LoggerAdapter(logger)
         # self.log = logging.LoggerAdapter(original_logger)
+        self.log.debug("I don't see this!")
+        self.log.error("I see this!!")
         return self.log
 
     def set_logging_levels(self):
         default_logging_levels = {
             "amazondax": "WARNING",
             "asyncio": "WARNING",
-            "boto3": "CRITICAL",
             "boto": "CRITICAL",
+            "boto3": "CRITICAL",
+            "botocore.hooks": "WARNING",
             "botocore": "CRITICAL",
+            "elasticapm.conf": "WARNING",
+            "elasticapm.metrics": "WARNING",
+            "elasticapm.transport.http": "WARNING",
+            "elasticapm.transport": "WARNING",
             "elasticsearch.trace": "ERROR",
             "elasticsearch": "ERROR",
+            "git.cmd": "WARNING",
+            "git": "WARNING",
+            "github.Requester": "WARNING",
+            "httpcore": "WARNING",
+            "httpx": "WARNING",
             "nose": "CRITICAL",
             "parso.python.diff": "WARNING",
+            "policy_sentry": "WARNING",
             "pynamodb": "WARNING",
             "raven.base.client": "WARNING",
+            "rediscluster.client": "WARNING",
+            "rediscluster.connection": "WARNING",
+            "rediscluster.nodemanager": "WARNING",
+            "root": "WARNING",
             "s3transfer": "CRITICAL",
+            "slack_sdk.web.async_base_client": "WARNING",
             "spectator.HttpClient": "WARNING",
             "spectator.Registry": "WARNING",
             "urllib3": "ERROR",
-            "rediscluster.nodemanager": "WARNING",
-            "rediscluster.connection": "WARNING",
-            "rediscluster.client": "WARNING",
-            "git.cmd": "WARNING",
-            "elasticapm.metrics": "WARNING",
-            "elasticapm.conf": "WARNING",
-            "elasticapm.transport": "WARNING",
-            "elasticapm.transport.http": "WARNING",
-            "github.Requester": "WARNING",
-            "slack_sdk.web.async_base_client": "WARNING",
-            "root": "WARNING",
-            "httpx:": "WARNING",
         }
+        logging.getLogger().setLevel("WARNING")  # For the root logger
         for logger, level in self.get(
             "_global_.logging_levels", default_logging_levels
         ).items():

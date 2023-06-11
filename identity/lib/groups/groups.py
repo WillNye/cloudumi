@@ -10,7 +10,7 @@ from common.lib.s3_helpers import get_s3_bucket_for_tenant
 from identity.lib.groups.models import Group, OktaIdentityProvider, User
 from identity.lib.groups.plugins.okta.plugin import OktaGroupManagementPlugin
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def get_identity_provider_plugin(tenant: str, idp_name: str):

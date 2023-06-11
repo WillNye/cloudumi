@@ -17,7 +17,7 @@ from common.lib.redis import RedisHandler, redis_get
 from common.models import ArnArray, PaginatedRequestQueryParams, WebResponse
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def handle_aws_resource_type_ahead_request_for_all(

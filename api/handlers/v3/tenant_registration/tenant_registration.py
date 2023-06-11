@@ -28,7 +28,7 @@ from common.lib.tenant.models import TenantDetails
 from common.tenants.models import Tenant
 from common.users.models import User
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class TenantRegistrationAwsMarketplaceHandler(TornadoRequestHandler):
