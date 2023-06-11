@@ -8,6 +8,8 @@ python -m api.__main__"""
 import os
 import signal
 
+from common.config import config
+
 if os.getenv("DEBUG"):
     os.system("systemctl start ssh")
 #############
@@ -15,7 +17,6 @@ if os.getenv("DEBUG"):
 # Config must be loaded before routes are imported, to set logging levels early.
 import asyncio
 
-import structlog
 import tornado.autoreload
 import tornado.httpserver
 import tornado.ioloop
@@ -23,10 +24,9 @@ import uvloop
 from tornado.platform.asyncio import AsyncIOMainLoop
 
 from api.routes import make_app
-from common.config import config  # noqa
 from common.lib.plugins import fluent_bit, get_plugin_by_name
 
-log = structlog.get_logger(__name__)
+log = config.get_logger(__name__)
 
 configured_profiler = config.get("_global_.profiler")
 if configured_profiler:

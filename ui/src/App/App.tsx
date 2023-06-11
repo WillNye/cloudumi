@@ -42,8 +42,6 @@ export const App: FC = () => (
             element={<ChallengeValidator />}
           />
           <Route path="*" element={<NotFound />} />
-          {/* <Route path="/challenge_validator/:challengeToken"
-            element={<ChallengeValidator />} /> */}
         </Route>
       </Route>
 
