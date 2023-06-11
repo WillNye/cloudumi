@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     fluent_bit.add_fluent_bit_service()
 
-    match os.getenv("RUNTIME_PROFILE", "CELERY_WORKER"):
+    match runtime_profile:
         case "CELERY_WORKER":
             run_celery_worker(log_level, concurrency)
         case "CELERY_WORKER_TEST":
