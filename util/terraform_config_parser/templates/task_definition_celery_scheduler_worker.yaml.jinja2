@@ -7,6 +7,10 @@ containerDefinitions:
         awslogs-group: {{ ecs_cluster_name }}
         awslogs-region: {{ region }}
         awslogs-stream-prefix: celery-scheduler
+    portMappings:
+      - hostPort: 7071
+        protocol: tcp
+        containerPort: 7071
     entryPoint:
       - /bin/sh
       - "-c"
