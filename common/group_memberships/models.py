@@ -78,16 +78,17 @@ async def upsert_and_remove_group_memberships(
         bool: True if successful, False otherwise.
     """
     memberships = []
+    memberships_to_remove = []
     for user in users:
         if remove_other_group_memberships:
             existing_memberships = await GroupMembership.get_by_user(user)
-            memberships_to_remove = []
             for membership in existing_memberships:
                 if membership.group_id not in [group.id for group in groups]:
                     memberships_to_remove.append(membership)
-            await bulk_delete(memberships_to_remove)
         for group in groups:
             memberships.append(GroupMembership(user_id=user.id, group_id=group.id))
+    if memberships_to_remove:
+        await bulk_delete(memberships_to_remove)
     if memberships:
         return await bulk_add(memberships)
     return memberships

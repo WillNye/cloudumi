@@ -259,7 +259,4 @@ async def sync_all_iambic_data():
             # TODO: Most likely they don't have Git app installed
 
     tenants = await Tenant.get_all()
-    # TODO: Remove filter
-    await asyncio.gather(
-        *[_sync_all_iambic_data(t) for t in tenants if t.name == "curtis_example_com"]
-    )
+    await asyncio.gather(*[_sync_all_iambic_data(t) for t in tenants])

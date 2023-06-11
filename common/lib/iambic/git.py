@@ -234,7 +234,11 @@ class IambicGit:
         return f"https://github.com/{org_name}/{repo_name}/blob/{default_branch}/{file_path}"
 
     async def clone_or_pull_git_repos(self) -> None:
-        return  # TODO: Remove this
+        return  # TODO: Remove this. For testing purposes only.
+        # To set role access, modify a template manually in tenant local storage
+        # and CloudUmi will honor it because of this bypass. Needs official fix in
+        # https://noqdev.atlassian.net/browse/EN-2148
+
         # TODO: Formalize the model for secrets
         await self.set_git_repositories()
         for repository in self.git_repositories:
