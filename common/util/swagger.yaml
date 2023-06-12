@@ -3530,6 +3530,16 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SelfServiceRequestChangeType"
+    SelfServiceValidateRequestData:
+      type: object
+      required:
+        - request_data
+      properties:
+        current_template_body:
+          type: string
+          description: The current state of the IAMbic template as a yaml string.
+        request_data:
+          $ref: "#/components/schemas/SelfServiceRequestData"
     RequestComment:
       type: object
       properties:

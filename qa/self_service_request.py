@@ -263,7 +263,7 @@ async def api_self_service_request_create():
     return generic_api_create_or_update_request(
         "post",
         "v4/self-service/requests",
-        **validated_data["data"],
+        **validated_data["data"]["request_data"],
     )
 
 

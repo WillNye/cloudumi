@@ -7,9 +7,10 @@ from sqlalchemy import func as sql_func
 from sqlalchemy import select, update
 from sqlalchemy.orm import contains_eager
 
-from common import IambicTemplate
+from common import IambicTemplate, IambicTemplateContent
 from common.config.globals import ASYNC_PG_SESSION
 from common.exceptions.exceptions import NoMatchingRequest, Unauthorized
+from common.iambic.config.models import TRUSTED_PROVIDER_RESOLVER_MAP
 from common.iambic.templates.utils import get_template_by_id
 from common.iambic_request.models import IambicTemplateChange, Request, RequestComment
 from common.iambic_request.utils import (
@@ -18,7 +19,7 @@ from common.iambic_request.utils import (
     get_iambic_pr_instance,
 )
 from common.lib import noq_json as json
-from common.models import SelfServiceRequestData
+from common.models import SelfServiceRequestData, SelfServiceValidateRequestData
 from common.pg_core.filters import create_filter_from_url_params
 from common.tenants.models import Tenant
 
@@ -447,3 +448,40 @@ async def delete_request_comment(
             )
 
             await session.execute(stmt)
+
+
+async def run_request_validation(
+    tenant: Tenant, request_data: SelfServiceRequestData
+) -> SelfServiceValidateRequestData:
+    template_change = await get_template_change_for_request(tenant, request_data)
+    current_template_body = None
+    async with ASYNC_PG_SESSION() as session:
+        stmt = (
+            select(IambicTemplate)
+            .filter(
+                IambicTemplate.tenant_id == tenant.id,
+                IambicTemplate.file_path == template_change.file_path,
+            )
+            .join(
+                IambicTemplateContent,
+                IambicTemplateContent.iambic_template_id == IambicTemplate.id,
+            )
+            .options(contains_eager(IambicTemplate.content))
+        )
+        items = await session.execute(stmt)
+        if db_iambic_template := items.scalars().one_or_none():
+            provider_ref = TRUSTED_PROVIDER_RESOLVER_MAP[db_iambic_template.provider]
+            template_cls = provider_ref.template_map[db_iambic_template.template_type]
+            current_template_obj = template_cls(
+                file_path=db_iambic_template.file_path,
+                **db_iambic_template.content.content,
+            )
+            current_template_body = current_template_obj.get_body(exclude_unset=False)
+
+    request_data.changes = None
+    request_data.expires_at = None
+    request_data.template_body = template_change.template_body
+
+    return SelfServiceValidateRequestData(
+        current_template_body=current_template_body, request_data=request_data
+    )

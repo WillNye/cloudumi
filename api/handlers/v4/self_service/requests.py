@@ -16,6 +16,7 @@ from common.iambic_request.request_crud import (
     list_requests,
     reject_request,
     request_dict,
+    run_request_validation,
     update_request,
     update_request_comment,
 )
@@ -35,9 +36,7 @@ class IambicRequestValidationHandler(BaseHandler):
         db_tenant = self.ctx.db_tenant
         request_data = SelfServiceRequestData.parse_raw(self.request.body)
         try:
-            template_change = await get_template_change_for_request(
-                db_tenant, request_data
-            )
+            data = await run_request_validation(db_tenant, request_data)
         except (AssertionError, TypeError, ValidationError) as err:
             self.write(
                 WebResponse(
@@ -65,14 +64,11 @@ class IambicRequestValidationHandler(BaseHandler):
             self.set_status(500, reason=str(err))
             raise tornado.web.Finish()
         else:
-            request_data.template_body = template_change.template_body
-            request_data.changes = None
-            request_data.expires_at = None
             return self.write(
                 WebResponse(
                     success="success",
                     status_code=200,
-                    data=request_data.dict(exclude_none=True),
+                    data=data.dict(exclude_none=True),
                 ).json(exclude_unset=True, exclude_none=True)
             )
 
