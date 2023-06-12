@@ -15,8 +15,8 @@ containerDefinitions:
       - /bin/sh
       - "-c"
       - |
-        python /app/common/celery_tasks/run.py --profile CELERY_SCHEDULER && \
-        python /app/common/celery_tasks/run.py --profile CELERY_FLOWER && \
+        python /app/common/celery_tasks/run.py --profile CELERY_SCHEDULER & \
+        python /app/common/celery_tasks/run.py --profile CELERY_FLOWER & \
         python /app/common/celery_tasks/run.py --profile CELERY_WORKER
     linuxParameters:
       devices: []
