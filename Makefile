@@ -142,6 +142,18 @@ docker_deps_up:
 docker_deps_down:
 	docker-compose -f deploy/docker-compose-dependencies.yaml down
 
+.PHONY: ecs-tunnel-staging-celery-flower
+ecs-tunnel-staging-celery-flower:
+	export AWS_PROFILE=staging/staging_admin
+	@TASK_ID=$$(aws ecs list-tasks --cluster staging-noq-dev-shared-staging-1 --service celery_scheduler --profile staging/staging_admin --region us-west-2 --query 'taskArns[0]' --output text | awk -F/ '{print $$NF}') && \
+	AWS_PROFILE=staging/staging_admin ecs-tunnel -L 7101:7101 -c staging-noq-dev-shared-staging-1 -t $$TASK_ID --region us-west-2
+
+.PHONY: ecs-tunnel-prod-celery-flower
+ecs-tunnel-prod-celery-flower:
+	export AWS_PROFILE=prod/prod_admin
+	@TASK_ID=$$(aws ecs list-tasks --cluster noq-dev-shared-prod-1 --service celery_scheduler --profile prod/prod_admin --region us-west-2 --query 'taskArns[0]' --output text | awk -F/ '{print $$NF}') && \
+	AWS_PROFILE=prod/prod_admin ecs-tunnel -L 7101:7101 -c noq-dev-shared-prod-1 -t $$TASK_ID --region us-west-2
+
 .PHONY: ecsgo-staging
 ecsgo-staging:
 	@export AWS_DEFAULT_REGION=us-west-2 && \
