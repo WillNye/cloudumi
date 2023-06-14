@@ -2,13 +2,13 @@ import tornado.escape
 import tornado.web
 
 from common.config import config
-from common.config.models import ModelAdapter
 from common.handlers.base import BaseHandler
 from common.lib.asyncio import aio_wrapper
 from common.lib.dynamo import (  # filter_config_secrets,
     RestrictedDynamoHandler,
     decode_config_secrets,
 )
+from common.lib.yaml import yaml
 from common.models import (
     AuthSettings,
     GetUserByOIDCSettings,
@@ -78,9 +78,18 @@ class ManageOIDCSettingsCrudHandler(BaseHandler):
     async def post(self):
         """Update OIDC settings for tenant"""
 
-        tenant = self.ctx.tenant
+        # tenant = self.ctx.tenant
         body = tornado.escape.json_decode(self.request.body or "{}")
         body = OIDCSettingsDto.parse_obj(body)
+
+        ddb = RestrictedDynamoHandler()
+        dynamic_config = await aio_wrapper(
+            ddb.get_static_config_for_tenant_sync,
+            self.ctx.tenant,
+            return_format="dict",
+            filter_secrets=True,
+        )
+
         for obj, model, key in [
             (
                 body.get_user_by_oidc_settings,
@@ -90,13 +99,25 @@ class ManageOIDCSettingsCrudHandler(BaseHandler):
             (body.auth, AuthSettings, "auth"),
             (body.secrets, SecretAuthSettings, "secrets.auth"),
         ]:
-            adapter = ModelAdapter(model).load_config(key, tenant, {})
-            decoded_data: dict = decode_config_secrets(
-                adapter.model.dict(exclude_secrets=False),
-                obj.dict(exclude_secrets=False),
+            adapter = model(**dynamic_config.get(key, {}))
+
+            upsert = decode_config_secrets(
+                adapter.dict(
+                    exclude_secrets=False, exclude_unset=False, exclude_none=False
+                ),
+                adapter.dict(
+                    exclude_secrets=False, exclude_unset=False, exclude_none=False
+                )
+                | obj.dict(
+                    exclude_secrets=False, exclude_unset=False, exclude_none=False
+                ),
             )
-            decoded_data = adapter.mode.dict(exclude_secrets=False).update(decoded_data)
-            await adapter.from_dict(decoded_data).store_item()
+
+            dynamic_config.update({key: upsert})
+
+        await ddb.update_static_config_for_tenant(
+            yaml.dump(dynamic_config), self.user, self.ctx.tenant
+        )
 
         return self.write(
             WebResponse(
