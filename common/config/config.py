@@ -106,7 +106,7 @@ structlog.configure(
     logger_factory=structlog.stdlib.LoggerFactory(),
     cache_logger_on_first_use=True,
 )
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 log.debug("Logging configured")
 log.debug("Logging configured", lol=True)
 log.debug({"message": "Logging configured", "lol": True})
@@ -173,12 +173,6 @@ class Configuration(metaclass=Singleton):
             self.get_tenant_specific_key("dynamic_config", tenant, {})
             != dynamic_config_j
         ):
-            self.get_logger("config").debug(
-                {
-                    **log_data,
-                    "message": "Refreshing dynamic configuration from Redis",
-                }
-            )
             self.config["site_configs"][tenant]["dynamic_config"] = dynamic_config_j
 
     def load_tenant_configurations_from_redis_or_s3(self):
@@ -532,6 +526,7 @@ class Configuration(metaclass=Singleton):
                 return default
         return value
 
+    @cached(cache=TTLCache(maxsize=1024, ttl=120))
     def get_logger(self, name: Optional[str] = None):
         if not name:
             name = self.get("_global_.application_name", "noq")
