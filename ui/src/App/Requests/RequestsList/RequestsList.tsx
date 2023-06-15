@@ -8,19 +8,15 @@ import { PropertyFilter, PropertyFilterProps } from '@noqdev/cloudscape';
 import { useRef, useState } from 'react';
 import styles from './RequestsList.module.css';
 import { Icon } from 'shared/elements/Icon';
-import { Select, SelectOption } from 'shared/form/Select';
 import { Menu } from 'shared/layers/Menu';
-import { Checkbox } from 'shared/form/Checkbox';
 import { useNavigate } from 'react-router-dom';
 
 const RequestsList = () => {
   const statusRef = useRef();
-  const columnsRef = useRef();
 
   const navigate = useNavigate();
 
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
-  const [isColumnMenuOpen, setIsColumnMenuOpen] = useState(false);
   const [filter, setFilter] = useState<PropertyFilterProps.Query>({
     tokens: [],
     operation: 'and'
@@ -84,7 +80,6 @@ const RequestsList = () => {
                 `Remove token ${token.propertyKey} ${token.operator} ${token.value}`,
               enteredTextLabel: text => `Use: "${text}"`
             }}
-            countText="5 matches"
             filteringOptions={[]}
             filteringProperties={[
               {
@@ -108,7 +103,6 @@ const RequestsList = () => {
             ]}
           />
           <LineBreak size="large" />
-
           <div className={styles.actionsBar}>
             <div>
               <Button
@@ -129,37 +123,6 @@ const RequestsList = () => {
                 <div>Expired</div>
                 <div>Pending</div>
                 <div>Closed</div>
-              </Menu>
-
-              <Button
-                size="small"
-                color="secondary"
-                variant="text"
-                ref={columnsRef}
-                onClick={() => setIsColumnMenuOpen(statusValue => !statusValue)}
-              >
-                Columns <Icon name="chevron-down" size="large" />
-              </Button>
-              <Menu
-                open={isColumnMenuOpen}
-                onClose={() => setIsColumnMenuOpen(false)}
-                reference={columnsRef}
-              >
-                <div>
-                  <Checkbox defaultChecked /> User
-                </div>
-                <div>
-                  <Checkbox defaultChecked /> Request ID
-                </div>
-                <div>
-                  <Checkbox defaultChecked /> ARN
-                </div>
-                <div>
-                  <Checkbox defaultChecked /> Status
-                </div>
-                <div>
-                  <Checkbox defaultChecked /> Created At
-                </div>
               </Menu>
             </div>
             <div className={styles.exportActions}>

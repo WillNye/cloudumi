@@ -20,16 +20,16 @@ const data = [
 
 const columns = [
   {
-    Header: 'ID',
-    accessor: 'id'
+    header: 'ID',
+    accessorKey: 'id'
   },
   {
-    Header: 'Name',
-    accessor: 'name'
+    header: 'Name',
+    accessorKey: 'name'
   },
   {
-    Header: 'Age',
-    accessor: 'age'
+    header: 'Age',
+    accessorKey: 'age'
   }
 ];
 
@@ -57,37 +57,37 @@ export const Filter = () => {
   const columns = useMemo(
     () => [
       {
-        Header: 'Name',
+        header: 'Name',
         columns: [
           {
-            Header: 'First Name',
-            accessor: 'firstName',
+            header: 'First Name',
+            accessorKey: 'firstName',
             sortable: true
           },
           {
-            Header: 'Last Name',
-            accessor: 'lastName'
+            header: 'Last Name',
+            accessorKey: 'lastName'
           }
         ]
       },
       {
-        Header: 'Info',
+        header: 'Info',
         columns: [
           {
-            Header: 'Age',
-            accessor: 'age',
+            header: 'Age',
+            accessorKey: 'age',
             Filter: SliderColumnFilter,
             filter: 'equals'
           },
           {
-            Header: 'Visits',
-            accessor: 'visits',
+            header: 'Visits',
+            accessorKey: 'visits',
             Filter: NumberRangeColumnFilter,
             filter: 'between'
           },
           {
-            Header: 'Status',
-            accessor: 'status',
+            header: 'Status',
+            accessorKey: 'status',
             Filter: SelectColumnFilter,
             filter: 'includes'
           }
@@ -177,7 +177,7 @@ export const Filter = () => {
       striped
       border="basic"
       spacing="expanded"
-      selectable
+      enableRowSelection
     />
   );
 };

@@ -5,46 +5,46 @@ export enum REQUESTS_SECTIONS {
 
 export const recentRequestsColumns = [
   {
-    Header: 'User',
-    accessor: 'user',
+    header: 'User',
+    accessorKey: 'user',
     sortable: true
   },
   {
-    Header: 'Request ID',
-    accessor: 'requestId',
+    header: 'Request ID',
+    accessorKey: 'requestId',
     sortable: true
   },
   {
-    Header: 'ARN',
-    accessor: 'arn',
+    header: 'ARN',
+    accessorKey: 'arn',
     sortable: false
   },
   {
-    Header: 'Created At',
-    accessor: 'createdAt',
+    header: 'Created At',
+    accessorKey: 'createdAt',
     sortable: false
   }
 ];
 
 export const myRequestsColumns = [
   {
-    Header: 'User',
-    accessor: 'user',
+    header: 'User',
+    accessorKey: 'user',
     sortable: true
   },
   {
-    Header: 'Request ID',
-    accessor: 'requestId',
+    header: 'Request ID',
+    accessorKey: 'requestId',
     sortable: true
   },
   {
-    Header: 'ARN',
-    accessor: 'arn',
+    header: 'ARN',
+    accessorKey: 'arn',
     sortable: false
   },
   {
-    Header: 'Created At',
-    accessor: 'createdAt',
+    header: 'Created At',
+    accessorKey: 'createdAt',
     sortable: false
   }
 ];
