@@ -23,8 +23,10 @@ const HubAccounts = ({ aws }) => {
     queryFn: getHubAccounts,
     queryKey: ['getHubAccounts'],
     onSuccess: ({ data }) => {
-      setHubAccounts([data]);
-      setDefaultData(data);
+      if (data?.account_id) {
+        setHubAccounts([data]);
+        setDefaultData(data);
+      }
     },
     onError: (err: AxiosError) => {
       const errorRes = err?.response;

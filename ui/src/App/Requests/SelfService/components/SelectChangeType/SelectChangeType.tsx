@@ -64,18 +64,18 @@ const SelectChangeType = () => {
   const changesColumns = useMemo(
     () => [
       {
-        Header: 'Change Name',
-        accessor: 'name',
+        header: 'Change Name',
+        accessorKey: 'name',
         sortable: false
       },
       {
-        Header: 'Description',
-        accessor: 'description',
+        header: 'Description',
+        accessorKey: 'description',
         sortable: true
       },
       // {
-      //   Header: 'Field Changes',
-      //   accessor: 'fields',
+      //   header: 'Field Changes',
+      //   accessorKey: 'fields',
       //   sortable: false,
       //   Cell: ({ value }) => (
       //     <ul>
@@ -88,8 +88,8 @@ const SelectChangeType = () => {
       //   )
       // },
       {
-        Header: 'Actions',
-        accessor: 'id',
+        header: 'Actions',
+        accessorKey: 'id',
         sortable: false,
         Cell: ({ row: { index } }) => {
           return (
