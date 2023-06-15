@@ -24,7 +24,7 @@ log = config.get_logger()
 
 
 async def get_data_for_template_type(
-    tenant: str, template_type: str
+    tenant: str, template_type: str, config_template: Config
 ) -> List[BaseTemplate]:
     iambic_git = IambicGit(tenant)
     access_token = await iambic_git.get_access_token()
@@ -40,7 +40,10 @@ async def get_data_for_template_type(
         repo_uri=f"https://oauth:{access_token}@github.com/{iambic_repo_config.repo_name}",
     )
     await iambic_repo.set_repo()
-    return iambic_git.load_templates(await iambic_git.gather_templates(repo_name))
+    return iambic_git.load_templates(
+        await iambic_git.gather_templates(repo_name),
+        config_template.template_map,
+    )
 
 
 async def get_config_data_for_repo(tenant: Tenant):
@@ -134,12 +137,16 @@ async def sync_aws_accounts(tenant: Tenant, config_template: Config):
     )
 
 
-async def __help_get_role_mappings(tenant: Tenant) -> Dict[str, AwsIamRoleTemplate]:
+async def __help_get_role_mappings(
+    tenant: Tenant, config_template: Config
+) -> Dict[str, AwsIamRoleTemplate]:
     template_type = "Role"
 
     aws_accounts = await AWSAccount.get_by_tenant(tenant)
     iambic_template_rules = await get_data_for_template_type(
-        str(tenant.name), template_type
+        str(tenant.name),
+        template_type,
+        config_template,
     )
     return await explode_role_templates_for_accounts(
         aws_accounts, iambic_template_rules
@@ -157,7 +164,7 @@ async def __get_groups(tenant: Tenant) -> dict[str, Group]:
 
 
 async def sync_identity_roles(tenant: Tenant, config_template: Config):
-    role_mappings = await __help_get_role_mappings(tenant)
+    role_mappings = await __help_get_role_mappings(tenant, config_template)
 
     known_roles = await AwsIdentityRole.get_all(tenant)
     remove_roles = [x for x in known_roles if x.role_arn not in role_mappings.keys()]

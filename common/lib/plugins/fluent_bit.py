@@ -1,6 +1,7 @@
 from common.config import config
 from common.handlers.external_processes import kill_proc, launch_proc
-from util.log import logger
+
+log = config.get_logger(__name__)
 
 
 def add_fluent_bit_service():
@@ -15,13 +16,13 @@ def add_fluent_bit_service():
         try:
             launch_proc("fluent-bit", f"{exe} -c {config_path}")
         except ValueError:
-            logger.warning("Fluent-bit already running")
+            log.warning("Fluent-bit already running")
     else:
-        logger.info("Fluent-bit not enabled")
+        log.info("Fluent-bit not enabled")
 
 
 def remove_fluent_bit_service():
     try:
         kill_proc("fluent-bit")
     except ValueError:
-        logger.warning("Fluent-bit not running")
+        log.warning("Fluent-bit not running")

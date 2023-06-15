@@ -221,9 +221,10 @@ class ChangeField(Base):
         Index(
             "uix_change_type_element", "change_type_id", "change_element", unique=True
         ),
+        Index("uix_change_type_field_key", "change_type_id", "field_key", unique=True),
     )
 
-    def self_service_dict(self, tenant_url: str):
+    def self_service_dict(self):
         response = {
             "id": str(self.id),
             "change_type_id": str(self.change_type_id),
@@ -239,7 +240,7 @@ class ChangeField(Base):
             response["options"] = [option["option_text"] for option in self.options]
         if self.typeahead:
             response["typeahead"] = {
-                "url": f"{tenant_url}{self.typeahead.endpoint}",
+                "endpoint": self.typeahead.endpoint,
                 "query_param_key": self.typeahead.query_param_key,
             }
         for optional_field in ["default_value", "max_char", "validation_regex"]:

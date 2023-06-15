@@ -1,4 +1,7 @@
-from tornado.web import Finish
+import sys
+
+import tornado.web
+from pydantic import ValidationError
 
 import common.lib.noq_json as json
 from common.config import config
@@ -9,24 +12,74 @@ from common.iambic_request.request_crud import (
     create_request,
     create_request_comment,
     delete_request_comment,
+    get_template_change_for_request,
     list_requests,
     reject_request,
     request_dict,
+    run_request_validation,
     update_request,
     update_request_comment,
 )
-from common.models import IambicRequest, WebResponse
+from common.models import SelfServiceRequestData, WebResponse
 
 log = config.get_logger()
+
+
+class IambicRequestValidationHandler(BaseHandler):
+    async def post(self):
+        """
+        POST /api/v4/self-service/requests/validate - Create a new request
+        """
+        await self.fte_check()
+        self.set_header("Content-Type", "application/json")
+
+        db_tenant = self.ctx.db_tenant
+        request_data = SelfServiceRequestData.parse_raw(self.request.body)
+        try:
+            data = await run_request_validation(db_tenant, request_data)
+        except (AssertionError, TypeError, ValidationError) as err:
+            self.write(
+                WebResponse(
+                    errors=[str(err)],
+                    status_code=400,
+                ).json(exclude_unset=True, exclude_none=True)
+            )
+            self.set_status(400, reason=str(err))
+            return
+        except Exception as err:
+            log.exception(
+                {
+                    "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+                    "error": str(err),
+                    "tenant_name": db_tenant.name,
+                },
+                exc_info=True,
+            )
+            self.write(
+                WebResponse(
+                    errors=[str(err)],
+                    status_code=500,
+                ).json(exclude_unset=True, exclude_none=True)
+            )
+            self.set_status(500, reason=str(err))
+            raise tornado.web.Finish()
+        else:
+            return self.write(
+                WebResponse(
+                    success="success",
+                    status_code=200,
+                    data=data.dict(exclude_none=True),
+                ).json(exclude_unset=True, exclude_none=True)
+            )
 
 
 class IambicRequestHandler(BaseHandler):
     async def get(self, request_id: str = None):
         """
-        GET /api/v4/self-service/request/{request_id} - Get a request by ID
+        GET /api/v4/self-service/requests/{request_id} - Get a request by ID
         GET /api/v4/self-service/requests - List all tenant requests with optional filters
         """
-        tenant = self.ctx.tenant
+        db_tenant = self.ctx.db_tenant
         self.set_header("Content-Type", "application/json")
 
         if request_id:
@@ -35,7 +88,7 @@ class IambicRequestHandler(BaseHandler):
                     WebResponse(
                         success="success",
                         status_code=200,
-                        data=(await request_dict(tenant, request_id)),
+                        data=(await request_dict(db_tenant, request_id)),
                     ).json(exclude_unset=True, exclude_none=True)
                 )
             except NoMatchingRequest as e:
@@ -46,7 +99,7 @@ class IambicRequestHandler(BaseHandler):
                     ).json(exclude_unset=True, exclude_none=True)
                 )
                 self.set_status(404, reason=str(e))
-                raise Finish()
+                return
         else:
             arguments = {k: self.get_argument(k) for k in self.request.arguments}
             filters_url_param = arguments.get("filters", None)
@@ -56,7 +109,8 @@ class IambicRequestHandler(BaseHandler):
                     success="success",
                     status_code=200,
                     data=[
-                        item.dict() for item in (await list_requests(tenant, **filters))
+                        item.dict()
+                        for item in (await list_requests(db_tenant.id, **filters))
                     ],
                 ).json(exclude_unset=True, exclude_none=True)
             )
@@ -70,48 +124,85 @@ class IambicRequestHandler(BaseHandler):
 
         db_tenant = self.ctx.db_tenant
         user = self.user
-        request_data = IambicRequest(**json.loads(self.request.body))
-        response = await create_request(
-            tenant=db_tenant,
-            created_by=user,
-            justification=request_data.justification,
-            changes=request_data.changes,
-            request_method="WEB",
-        )
-        return self.write(
-            WebResponse(
-                success="success",
-                status_code=200,
-                data=response.get("friendly_request"),
-            ).json(exclude_unset=True, exclude_none=True)
-        )
+        request_data = SelfServiceRequestData.parse_raw(self.request.body)
+        try:
+            template_change = await get_template_change_for_request(
+                db_tenant, request_data
+            )
+            response = await create_request(
+                tenant=db_tenant,
+                created_by=user,
+                justification=request_data.justification,
+                changes=[template_change],
+                request_method="WEB",
+            )
+        except (AssertionError, TypeError, ValidationError) as err:
+            self.write(
+                WebResponse(
+                    errors=[str(err)],
+                    status_code=400,
+                ).json(exclude_unset=True, exclude_none=True)
+            )
+            self.set_status(400, reason=str(err))
+            return
+        except Exception as err:
+            log.exception(
+                {
+                    "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+                    "error": str(err),
+                    "tenant_name": db_tenant.name,
+                },
+                exc_info=True,
+            )
+            self.write(
+                WebResponse(
+                    errors=[str(err)],
+                    status_code=500,
+                ).json(exclude_unset=True, exclude_none=True)
+            )
+            self.set_status(500, reason=str(err))
+            raise tornado.web.Finish()
+        else:
+            return self.write(
+                WebResponse(
+                    success="success",
+                    status_code=200,
+                    data=response.get("friendly_request"),
+                ).json(exclude_unset=True, exclude_none=True)
+            )
 
     async def put(self, request_id: str):
         """
-        PUT /api/v4/self-service/request/{request_id} - Update a request
+        PUT /api/v4/self-service/requests/{request_id} - Update a request
         """
         await self.fte_check()
         self.set_header("Content-Type", "application/json")
-
-        tenant = self.ctx.tenant
+        log_data = {
+            "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+            "tenant": self.ctx.db_tenant.name,
+        }
+        db_tenant = self.ctx.db_tenant
         user = self.user
         groups = self.groups
-        request_data = IambicRequest(**json.loads(self.request.body))
+        request_data = SelfServiceRequestData.parse_raw(self.request.body)
 
         try:
+            template_change = await get_template_change_for_request(
+                db_tenant, request_data
+            )
             response = await update_request(
-                tenant=tenant,
+                tenant=db_tenant,
                 request_id=request_id,
                 updated_by=user,
                 updater_groups=groups,
                 justification=request_data.justification,
-                changes=request_data.changes,
+                changes=[template_change],
             )
             return self.write(
                 WebResponse(
                     success="success",
                     status_code=200,
-                    data=response,
+                    data=response["friendly_request"],
                 ).json(exclude_unset=True, exclude_none=True)
             )
         except Unauthorized as e:
@@ -122,15 +213,37 @@ class IambicRequestHandler(BaseHandler):
                     status_code=403,
                 ).json(exclude_unset=True, exclude_none=True)
             )
+        except (AssertionError, TypeError, ValidationError) as err:
+            self.write(
+                WebResponse(
+                    errors=[str(err)],
+                    status_code=400,
+                ).json(exclude_unset=True, exclude_none=True)
+            )
+            self.set_status(400, reason=str(err))
+            return
+        except Exception as err:
+            log.error({**log_data, "error": str(err)}, exc_info=True)
+            self.write(
+                WebResponse(
+                    errors=[str(err)],
+                    status_code=500,
+                ).json(exclude_unset=True, exclude_none=True)
+            )
+            self.set_status(500, reason=str(err))
+            raise tornado.web.Finish()
 
     async def patch(self, request_id: str):
         """
-        PATCH /api/v4/self-service/request/{request_id} - Update a request status
+        PATCH /api/v4/self-service/requests/{request_id} - Update a request status
         """
         await self.fte_check()
         self.set_header("Content-Type", "application/json")
-
-        tenant = self.ctx.tenant
+        log_data = {
+            "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+            "tenant": self.ctx.db_tenant.name,
+        }
+        db_tenant = self.ctx.db_tenant
         user = self.user
         groups = self.groups
         request_data = json.loads(self.request.body)
@@ -147,9 +260,9 @@ class IambicRequestHandler(BaseHandler):
 
         try:
             if status.lower() == "approved":
-                response = await approve_request(tenant, request_id, user, groups)
+                response = await approve_request(db_tenant, request_id, user, groups)
             elif status.lower() == "rejected":
-                response = await reject_request(tenant, request_id, user, groups)
+                response = await reject_request(db_tenant, request_id, user, groups)
             else:
                 err = "The status must be either approved or rejected"
                 self.set_status(400, reason=err)
@@ -167,6 +280,25 @@ class IambicRequestHandler(BaseHandler):
                     status_code=403,
                 ).json(exclude_unset=True, exclude_none=True)
             )
+        except (AssertionError, TypeError, ValidationError) as err:
+            self.write(
+                WebResponse(
+                    errors=[str(err)],
+                    status_code=400,
+                ).json(exclude_unset=True, exclude_none=True)
+            )
+            self.set_status(400, reason=str(err))
+            return
+        except Exception as err:
+            log.error({**log_data, "error": str(err)}, exc_info=True)
+            self.write(
+                WebResponse(
+                    errors=[str(err)],
+                    status_code=500,
+                ).json(exclude_unset=True, exclude_none=True)
+            )
+            self.set_status(500, reason=str(err))
+            raise tornado.web.Finish()
         else:
             return self.write(
                 WebResponse(
@@ -180,10 +312,10 @@ class IambicRequestHandler(BaseHandler):
 class IambicRequestCommentHandler(BaseHandler):
     async def post(self, request_id: str):
         """
-        POST /api/v4/self-service/request/{request_id}/comments - Create a new request
+        POST /api/v4/self-service/requests/{request_id}/comments - Create a new request
         """
         self.set_header("Content-Type", "application/json")
-        tenant = self.ctx.tenant
+        db_tenant = self.ctx.db_tenant
         user = self.user
         try:
             request_data = json.loads(self.request.body)
@@ -203,25 +335,33 @@ class IambicRequestCommentHandler(BaseHandler):
                 ).json(exclude_unset=True, exclude_none=True)
             )
             return
-        await create_request_comment(tenant, request_id, user, request_data.get("body"))
+        await create_request_comment(
+            db_tenant.id, request_id, user, request_data.get("body")
+        )
+        self.set_status(204)
         return self.write(
             WebResponse(
-                success="success",
-                status_code=200,
+                status_code=204,
             ).json(exclude_unset=True, exclude_none=True)
         )
 
     async def patch(self, request_id: str, comment_id: str):
         """
-        PUT /api/v4/self-service/request/{request_id}/comments/{comment_id} - Update a request
+        PUT /api/v4/self-service/requests/{request_id}/comments/{comment_id} - Update a request
         """
-        tenant = self.ctx.tenant
         self.set_header("Content-Type", "application/json")
+        db_tenant = self.ctx.db_tenant
         user = self.user
         request_data = json.loads(self.request.body)
         try:
             await update_request_comment(
-                tenant, comment_id, user, request_data.get("body")
+                db_tenant.id, comment_id, user, request_data.get("body")
+            )
+            self.set_status(204)
+            return self.write(
+                WebResponse(
+                    status_code=204,
+                ).json(exclude_unset=True, exclude_none=True)
             )
         except Unauthorized as e:
             self.set_status(403, reason=str(e))
@@ -234,13 +374,19 @@ class IambicRequestCommentHandler(BaseHandler):
 
     async def delete(self, request_id: str, comment_id: str):
         f"""
-        DELETE /api/v4/self-service/request/{request_id}/comments/{comment_id} - Delete a request
+        DELETE /api/v4/self-service/requests/{request_id}/comments/{comment_id} - Delete a request
         """
         self.set_header("Content-Type", "application/json")
-        tenant = self.ctx.tenant
+        db_tenant = self.ctx.db_tenant
         user = self.user
         try:
-            await delete_request_comment(tenant, comment_id, user)
+            await delete_request_comment(db_tenant.id, comment_id, user)
+            self.set_status(204)
+            return self.write(
+                WebResponse(
+                    status_code=204,
+                ).json(exclude_unset=True, exclude_none=True)
+            )
         except Unauthorized as e:
             self.set_status(403, reason=str(e))
             return self.write(
