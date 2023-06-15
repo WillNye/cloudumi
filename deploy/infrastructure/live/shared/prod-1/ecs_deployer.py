@@ -25,18 +25,13 @@ service_task_definition_map = [
     },
     {
         "service": "celery_scheduler",
-        "task_definition": f"{current_path}/task_definition_celery_scheduler.yaml",
+        "task_definition": f"{current_path}/task_definition_celery_scheduler_worker.yaml",
         "desiredCount": 1,
     },
     {
         "service": "celery_worker",
         "task_definition": f"{current_path}/task_definition_celery_worker.yaml",
         "desiredCount": 2,
-    },
-    {
-        "service": "celery_flower",
-        "task_definition": f"{current_path}/task_definition_celery_flower.yaml",
-        "desiredCount": 1,
     },
 ]
 

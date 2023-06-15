@@ -7,10 +7,17 @@ containerDefinitions:
         awslogs-group: staging-noq-dev-shared-staging-1
         awslogs-region: us-west-2
         awslogs-stream-prefix: celery-scheduler
+    portMappings:
+      - hostPort: 7071
+        protocol: tcp
+        containerPort: 7071
     entryPoint:
       - /bin/sh
       - "-c"
-      - "python /app/common/celery_tasks/run.py"
+      - |
+        python /app/common/celery_tasks/run.py --profile CELERY_SCHEDULER & \
+        python /app/common/celery_tasks/run.py --profile CELERY_FLOWER & \
+        python /app/common/celery_tasks/run.py --profile CELERY_WORKER
     linuxParameters:
       devices: []
       initProcessEnabled: true
@@ -25,7 +32,9 @@ containerDefinitions:
       - name: STAGE
         value: staging
     dnsServers: []
-    mountPoints: []
+    mountPoints:
+      - containerPath: /data
+        sourceVolume: efs-server-AP
     dockerSecurityOptions: []
     volumesFrom: []
     image: 259868150464.dkr.ecr.us-west-2.amazonaws.com/shared-staging-registry-api:latest
@@ -37,11 +46,21 @@ containerDefinitions:
     privileged: false
     name: staging-noq-dev-shared-staging-1-celery-scheduler
 placementConstraints: []
-memory: "2048"
+memory: "8192"
 taskRoleArn: arn:aws:iam::259868150464:role/staging-noq-dev-shared-staging-1-ecsTaskRole
 family: staging-noq-dev-shared-staging-1-celery-scheduler
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
-cpu: "1024"
-volumes: []
+cpu: "2048"
+runtimePlatform:
+  operatingSystemFamily: LINUX
+  cpuArchitecture: X86_64
+volumes:
+  - name: efs-server-AP
+    efsVolumeConfiguration:
+      fileSystemId: fs-00d025e10faa53ff6
+      transitEncryption: ENABLED
+      authorizationConfig:
+        accessPointId: fsap-05a781c2b23d8ef89
+        iam: ENABLED
