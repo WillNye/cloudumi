@@ -1,0 +1,47 @@
+.container {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: var(--spacing-md);
+
+  .radioGroup {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .radioInput {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-sm) var(--spacing-lg);
+  }
+
+  .subText {
+    color: var(--gray-200);
+    font-size: var(--font-size-sm);
+  }
+
+  .text {
+    color: var(--gray-200);
+    font-size: var(--font-size-md);
+    padding-top: var(--spacing-sm);
+    padding-bottom: var(--spacing-md);
+  }
+
+  .content {
+    width: 100%;
+    padding: 0 var(--spacing-md);
+  }
+
+  .preview {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--gray-100);
+    width: 100%;
+  }
+}

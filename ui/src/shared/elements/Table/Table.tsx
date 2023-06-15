@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo } from 'react';
+import { Fragment, ReactNode, useEffect, useMemo } from 'react';
 import classNames from 'classnames';
 import {
   useTable,
@@ -24,6 +24,7 @@ interface TableProps<T, D> {
   selectable?: boolean;
   isLoading?: boolean;
   showPagination?: boolean;
+  noResultsComponent?: ReactNode;
   totalCount?: number;
   pageSize?: number;
   pageIndex?: number;
@@ -43,6 +44,7 @@ export const Table = <T, D>({
   totalCount,
   pageSize,
   pageIndex,
+  noResultsComponent,
   handleSelectRows,
   handleOnPageChange
 }: TableProps<T, D>) => {
@@ -196,7 +198,7 @@ export const Table = <T, D>({
             <tr>
               <td colSpan={columns.length}>
                 <div className={styles.tableEmpty}>
-                  <EmptyState />
+                  {noResultsComponent || <EmptyState />}
                 </div>
               </td>
             </tr>
