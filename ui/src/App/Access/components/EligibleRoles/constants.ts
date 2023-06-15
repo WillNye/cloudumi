@@ -1,46 +1,58 @@
+import { ColumnDef } from '@tanstack/react-table';
+
 export const eligibleRolesColumns = [
   {
-    Header: 'AWS Console Sign-In',
-    accessor: 'arn',
+    header: 'AWS Console Sign-In',
+    accessorKey: 'arn',
+    id: 'arn',
     width: '220px',
     sortable: false
   },
   {
-    Header: 'Account Details',
-    accessor: 'name',
+    header: 'Account Details',
+    accessorKey: 'name',
     sortable: true
   },
   {
-    Header: 'Role Name',
-    accessor: 'roleName',
+    header: 'Role Name',
+    accessorKey: 'roleName',
     sortable: true
   },
   {
-    accessor: 'viewDetails',
+    header: 'View Details',
+    accessorKey: 'viewDetails',
     width: '50px',
     sortable: false
   },
   {
-    accessor: 'moreActions',
+    header: 'More Actions',
+    accessorKey: 'moreActions',
     width: '50px',
     sortable: false
   }
 ];
 
-export const allRolesColumns = [
+export const allRolesColumns: ColumnDef<any, any>[] = [
   {
-    Header: 'Account Details',
-    accessor: 'name',
-    sortable: true
+    header: 'Account Details',
+    accessorKey: 'name',
+    id: 'name',
+    footer: props => props.column.id
+    // sortable: true
   },
   {
-    Header: 'Role Name',
-    accessor: 'roleName',
-    sortable: true
+    header: 'Role Name',
+    accessorKey: 'roleName',
+    id: 'roleName',
+    // sortable: true,
+    footer: props => props.column.id
   },
   {
-    accessor: 'moreActions',
-    width: '50px',
-    sortable: false
+    header: 'More Actions',
+    accessorKey: 'moreActions',
+    id: 'moreActions',
+    // width: '50px',
+    // sortable: false,
+    footer: props => props.column.id
   }
 ];

@@ -1,27 +1,27 @@
 export const resourcesColumns = [
   {
-    Header: 'Template Type',
-    accessor: 'template_type',
+    header: 'Template Type',
+    accessorKey: 'template_type',
     sortable: true
   },
   {
-    Header: 'identifier',
-    accessor: 'identifier',
+    header: 'identifier',
+    accessorKey: 'identifier',
     sortable: true
   },
   {
-    Header: 'Repository Name',
-    accessor: 'repo_name',
+    header: 'Repository Name',
+    accessorKey: 'repo_name',
     sortable: true
   },
   {
-    Header: 'File Path',
-    accessor: 'file_path',
+    header: 'File Path',
+    accessorKey: 'file_path',
     width: '50px',
     sortable: true
   },
   {
-    accessor: 'Provider',
+    accessorKey: 'Provider',
     width: '50px',
     sortable: true
   }

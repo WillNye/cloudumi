@@ -1,22 +1,22 @@
 export const SpokeAccountsColumns = [
   {
-    Header: 'Account Name',
-    accessor: 'account_name'
+    header: 'Account Name',
+    accessorKey: 'account_name'
   },
   {
-    Header: 'Account ID',
-    accessor: 'account_id'
+    header: 'Account ID',
+    accessorKey: 'account_id'
   },
   {
-    Header: 'Spoke Role ARN',
-    accessor: 'role_arn'
+    header: 'Spoke Role ARN',
+    accessorKey: 'role_arn'
   },
   {
-    Header: 'Status',
-    accessor: 'status'
+    header: 'Status',
+    accessorKey: 'status'
   },
   {
-    Header: 'Actions',
-    accessor: 'actions'
+    header: 'Actions',
+    accessorKey: 'actions'
   }
 ];

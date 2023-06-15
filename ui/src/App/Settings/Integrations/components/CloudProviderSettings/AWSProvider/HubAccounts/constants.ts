@@ -1,26 +1,26 @@
 export const HubAccountsColumns = [
   {
-    Header: 'Account Name',
-    accessor: 'account_name'
+    header: 'Account Name',
+    accessorKey: 'account_name'
   },
   {
-    Header: 'Account ID',
-    accessor: 'account_id'
+    header: 'Account ID',
+    accessorKey: 'account_id'
   },
   {
-    Header: 'Hub Role ARN',
-    accessor: 'role_arn'
+    header: 'Hub Role ARN',
+    accessorKey: 'role_arn'
   },
   {
-    Header: 'External ID',
-    accessor: 'external_id'
+    header: 'External ID',
+    accessorKey: 'external_id'
   },
   {
-    Header: 'Status',
-    accessor: 'status'
+    header: 'Status',
+    accessorKey: 'status'
   },
   {
-    Header: 'Actions',
-    accessor: 'actions'
+    header: 'Actions',
+    accessorKey: 'actions'
   }
 ];

@@ -10,6 +10,7 @@ import { Table } from 'shared/elements/Table';
 import { Icon } from 'shared/elements/Icon';
 import { useNavigate } from 'react-router-dom';
 import awsIcon from '../../../assets/integrations/awsIcon.svg';
+import oktaIcon from '../../../assets/integrations/oktaIcon.svg';
 
 const RequestsMenu = () => {
   const [currentTab, setCurrentTab] = useState(
@@ -53,15 +54,42 @@ const RequestsMenu = () => {
           streamline your cloud permissions today.
         </p>
         <LineBreak size="large" />
-        <h3>Recently Accessed Providers</h3>
+        <h4>Recently Accessed Providers</h4>
         <LineBreak />
-        <Card variant="outlined" color="primary">
-          <div>
+        <div className={styles.providers}>
+          <Card
+            variant="outlined"
+            color="secondary"
+            className={styles.card}
+            contentClassName={styles.cardContent}
+          >
             <img className={styles.cardImg} src={awsIcon} />
-            <p>AWS</p>
-          </div>
-        </Card>
-
+            <LineBreak />
+            <h4>AWS</h4>
+            <LineBreak size="small" />
+            <p>Amazon Web Services</p>
+            <LineBreak size="small" />
+            <Button size="small" fullWidth>
+              Continue
+            </Button>
+          </Card>
+          <Card
+            variant="outlined"
+            color="secondary"
+            className={styles.card}
+            contentClassName={styles.cardContent}
+          >
+            <img className={styles.cardImg} src={oktaIcon} />
+            <LineBreak />
+            <h4>Okta</h4>
+            <LineBreak size="small" />
+            <p>Okta</p>
+            <LineBreak size="small" />
+            <Button size="small" fullWidth>
+              Continue
+            </Button>
+          </Card>
+        </div>
         <LineBreak />
         <Divider />
         <LineBreak />

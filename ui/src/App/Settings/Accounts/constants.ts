@@ -16,56 +16,56 @@ export enum UPDATE_USER_ACTIONS {
 
 export const userTableColumns = [
   {
-    Header: 'Email',
-    accessor: 'email',
+    header: 'Email',
+    accessorKey: 'email',
     sortable: true
   },
   {
-    Header: 'Status',
-    accessor: 'status'
+    header: 'Status',
+    accessorKey: 'status'
   },
   {
-    Header: 'Managed By',
-    accessor: 'managed_by'
+    header: 'Managed By',
+    accessorKey: 'managed_by'
   },
   {
-    Header: 'Groups',
-    accessor: 'groups'
+    header: 'Groups',
+    accessorKey: 'groups'
   },
   {
-    accessor: 'edit',
+    accessorKey: 'edit',
     width: '50px'
   },
   {
-    accessor: 'delete',
+    accessorKey: 'delete',
     width: '50px'
   }
 ];
 
 export const groupsTableColumns = [
   {
-    Header: 'Name',
-    accessor: 'name',
+    header: 'Name',
+    accessorKey: 'name',
     sortable: true
   },
   {
-    Header: 'Description',
-    accessor: 'description'
+    header: 'Description',
+    accessorKey: 'description'
   },
   {
-    Header: 'Managed By',
-    accessor: 'managed_by'
+    header: 'Managed By',
+    accessorKey: 'managed_by'
   },
   {
-    Header: 'Users',
-    accessor: 'users'
+    header: 'Users',
+    accessorKey: 'users'
   },
   {
-    accessor: 'edit',
+    accessorKey: 'edit',
     width: '50px'
   },
   {
-    accessor: 'delete',
+    accessorKey: 'delete',
     width: '50px'
   }
 ];

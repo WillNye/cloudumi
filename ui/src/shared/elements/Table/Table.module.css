@@ -107,9 +107,24 @@
     padding: 8px;
   }
 
-  Table thead {
+  .columnsDropdown {
     position: sticky;
-    top: 0px;
-    margin: 0 0 0 0;
+    top: 50%;
+    right: 0;
+    background-color: var(--gray-800);
+    z-index: 12;
+  }
+
+  .columnsDropdownIcon {
+    cursor: pointer;
+    padding: var(--spacing-md);
+  }
+}
+
+.columnsDropdownItem {
+  padding: var(--spacing-xs) 0;
+
+  .itemLabel {
+    padding-left: var(--spacing-md);
   }
 }

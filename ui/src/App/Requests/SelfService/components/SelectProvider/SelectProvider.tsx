@@ -1,17 +1,43 @@
+import { useContext, useMemo } from 'react';
+
 import { Segment } from 'shared/layout/Segment';
 import RequestCard from '../RequestCard';
-import awsIcon from '../../../../../assets/integrations/awsIcon.svg';
-import gsuiteIcon from '../../../../../assets/integrations/gsuiteIcon.svg';
-import azureADIcon from '../../../../../assets/integrations/azureADIcon.svg';
-import oktaIcon from '../../../../../assets/integrations/oktaIcon.svg';
-
 import styles from './SelectProvider.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { Link } from 'react-router-dom';
 
+import SelfServiceContext from '../../SelfServiceContext';
+import { SELF_SERICE_STEPS } from '../../constants';
+import { useQuery } from '@tanstack/react-query';
+import { getProviders } from 'core/API/iambicRequest';
+import { providerDetails } from './constants';
+
 const SelectProvider = () => {
+  const {
+    actions: { setCurrentStep, setSelectedProvider }
+  } = useContext(SelfServiceContext);
+
+  const { data: responseData, isLoading } = useQuery({
+    queryFn: getProviders,
+    queryKey: ['getProviders']
+  });
+
+  const providers = useMemo(() => {
+    if (responseData?.data) {
+      const uniqueProviders = [
+        ...new Set(responseData.data.map(item => item.provider))
+      ] as string[];
+      const providersData = uniqueProviders.map(provider => ({
+        provider,
+        ...providerDetails[provider]
+      }));
+      return providersData;
+    }
+    return [];
+  }, [responseData]);
+
   return (
-    <Segment>
+    <Segment isLoading={isLoading}>
       <div className={styles.container}>
         <h3>Select Provider</h3>
         <LineBreak />
@@ -20,25 +46,18 @@ const SelectProvider = () => {
         </p>
         <LineBreak size="large" />
         <div className={styles.cardList}>
-          <RequestCard
-            title="AWS"
-            icon={awsIcon}
-            description="Amazon web services (AWS)"
-          />
-
-          <RequestCard title="Okta" icon={oktaIcon} description="Okta" />
-
-          <RequestCard
-            title="Azure AD"
-            icon={azureADIcon}
-            description="Azure Active Directory"
-          />
-
-          <RequestCard
-            title="Google Workspace"
-            icon={gsuiteIcon}
-            description="Google Workspace"
-          />
+          {providers.map(provider => (
+            <RequestCard
+              key={provider.provider}
+              title={provider.title}
+              icon={provider.icon}
+              description={provider.description}
+              onClick={() => {
+                setCurrentStep(SELF_SERICE_STEPS.REQUEST_TYPE);
+                setSelectedProvider(provider.provider);
+              }}
+            />
+          ))}
         </div>
         <LineBreak size="large" />
         <p className={styles.subText}>

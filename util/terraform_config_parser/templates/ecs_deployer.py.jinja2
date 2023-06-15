@@ -24,7 +24,7 @@ service_task_definition_map = [
     },
     {
         "service": "celery_scheduler",
-        "task_definition": f"{current_path}/task_definition_celery_scheduler.yaml",
+        "task_definition": f"{current_path}/task_definition_celery_scheduler_worker.yaml",
         "desiredCount": 1
     },
     {
@@ -32,12 +32,6 @@ service_task_definition_map = [
         "task_definition": f"{current_path}/task_definition_celery_worker.yaml",
         "desiredCount": {{ worker_count }}
     },
-    {
-        "service": "celery_flower",
-        "task_definition": f"{current_path}/task_definition_celery_flower.yaml",
-        "desiredCount": 1
-    },
-
 ]
 
 preflight_task_definition_map = [

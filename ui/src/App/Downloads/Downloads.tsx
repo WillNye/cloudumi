@@ -105,17 +105,19 @@ const Downloads: FC = () => {
           <Table
             columns={[
               {
-                Header: 'Official Downloads (OS Name)',
-                accessor: 'os_name',
-                Cell: ({ cell: { value }, row: { original } }) => (
-                  <Link
-                    to={original.download_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {value}
-                  </Link>
-                )
+                header: 'Official Downloads (OS Name)',
+                accessorKey: 'os_name',
+                accessorFn: ({ download_url, os_name }) => {
+                  return (
+                    <Link
+                      to={download_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {os_name}
+                    </Link>
+                  );
+                }
               }
             ]}
             data={noqDownloadTable}

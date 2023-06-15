@@ -1,27 +1,27 @@
 export const AWSOrganizationCoulumns = [
   {
-    Header: 'Organization ID',
-    accessor: 'org_id'
+    header: 'Organization ID',
+    accessorKey: 'org_id'
   },
   {
-    Header: 'Account ID',
-    accessor: 'account_id'
+    header: 'Account ID',
+    accessorKey: 'account_id'
   },
   {
-    Header: 'Account Name',
-    accessor: 'account_name'
+    header: 'Account Name',
+    accessorKey: 'account_name'
   },
   {
-    Header: 'Owner',
-    accessor: 'owner'
+    header: 'Owner',
+    accessorKey: 'owner'
   },
   {
-    Header: 'Status',
-    accessor: 'status'
+    header: 'Status',
+    accessorKey: 'status'
   },
   {
-    Header: 'Actions',
-    accessor: 'actions'
+    header: 'Actions',
+    accessorKey: 'actions'
   }
 ];
 

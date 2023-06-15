@@ -7,10 +7,17 @@ containerDefinitions:
         awslogs-group: {{ ecs_cluster_name }}
         awslogs-region: {{ region }}
         awslogs-stream-prefix: celery-scheduler
+    portMappings:
+      - hostPort: 7071
+        protocol: tcp
+        containerPort: 7071
     entryPoint:
       - /bin/sh
       - "-c"
-      - 'python /app/common/celery_tasks/run.py'
+      - |
+         python /app/common/celery_tasks/run.py --profile CELERY_SCHEDULER & \
+         python /app/common/celery_tasks/run.py --profile CELERY_FLOWER & \
+         python /app/common/celery_tasks/run.py --profile CELERY_WORKER
     linuxParameters:
       devices: [ ]
       initProcessEnabled: true
@@ -25,7 +32,9 @@ containerDefinitions:
       - name: STAGE
         value: {{ stage }}
     dnsServers: [ ]
-    mountPoints: [ ]
+    mountPoints:
+      - containerPath: /data
+        sourceVolume: efs-server-AP
     dockerSecurityOptions: [ ]
     volumesFrom: [ ]
     image: {{ registry_repository_url_api }}:latest
@@ -37,11 +46,21 @@ containerDefinitions:
     privileged: false
     name: {{ ecs_cluster_name }}-celery-scheduler
 placementConstraints: [ ]
-memory: '2048'
+memory: '8192'
 taskRoleArn: {{ ecs_task_role_arn }}
 family: {{ ecs_cluster_name }}-celery-scheduler
 requiresCompatibilities:
   - FARGATE
 networkMode: awsvpc
-cpu: '1024'
-volumes: [ ]
+cpu: '2048'
+runtimePlatform:
+  operatingSystemFamily: LINUX
+  cpuArchitecture: X86_64
+volumes:
+ - name: efs-server-AP
+   efsVolumeConfiguration:
+    fileSystemId: {{ aws_efs_data_storage_file_system_id }}
+    transitEncryption: ENABLED
+    authorizationConfig:
+      accessPointId: {{ aws_efs_data_storage_access_point_id }}
+      iam: ENABLED

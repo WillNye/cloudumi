@@ -330,14 +330,8 @@ if __name__ == "__main__":
         config_output_path,
     )
     write_file(
-        "task_definition_celery_flower.yaml.jinja2",
-        "task_definition_celery_flower.yaml",
-        terraform_config,
-        config_output_path,
-    )
-    write_file(
-        "task_definition_celery_scheduler.yaml.jinja2",
-        "task_definition_celery_scheduler.yaml",
+        "task_definition_celery_scheduler_worker.yaml.jinja2",
+        "task_definition_celery_scheduler_worker.yaml",
         terraform_config,
         config_output_path,
     )

@@ -1,3 +1,4 @@
+import argparse
 import os
 
 from common.celery_tasks import celery_tasks
@@ -48,9 +49,17 @@ if __name__ == "__main__":
     log_level = os.getenv("CELERY_LOG_LEVEL", "DEBUG")
     concurrency = os.getenv("CELERY_CONCURRENCY", os.cpu_count())
 
+    # Argument parsing
+    parser = argparse.ArgumentParser(description="Process runtime profile.")
+    parser.add_argument("--profile", dest="profile", help="runtime profile to be used")
+    args = parser.parse_args()
+    runtime_profile = (
+        args.profile if args.profile else os.getenv("RUNTIME_PROFILE", "CELERY_WORKER")
+    )
+
     fluent_bit.add_fluent_bit_service()
 
-    match os.getenv("RUNTIME_PROFILE", "CELERY_WORKER"):
+    match runtime_profile:
         case "CELERY_WORKER":
             run_celery_worker(log_level, concurrency)
         case "CELERY_WORKER_TEST":
