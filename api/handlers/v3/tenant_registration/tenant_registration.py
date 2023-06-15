@@ -181,6 +181,8 @@ class TenantRegistrationHandler(TornadoRequestHandler):
                 )
                 return
 
+        # TODO: Validate domain ends in a valid suffix / or just the prefix, just get the subdomain
+
         dev_domain_url = f'https://{dev_domain.replace("_", ".")}'
         log_data["dev_domain"] = dev_domain
         log_data["dev_domain_url"] = dev_domain_url

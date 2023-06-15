@@ -34,10 +34,11 @@ def dumps(
     **kwargs
 ) -> str:
     try:
+        option = orjson.OPT_NON_STR_KEYS
+        if indent > 0:
+            option = option | orjson.OPT_INDENT_2
         # Try orjson first
-        result = orjson.dumps(
-            obj, indent=indent, option=orjson.OPT_NON_STR_KEYS
-        ).decode()
+        result = orjson.dumps(obj, option=option).decode()
     except TypeError:
         try:
             # Try ujson next
