@@ -133,7 +133,7 @@ const OnBoarding = () => {
       {isConnected ? (
         connectedComponent
       ) : (
-        <div>
+        <>
           <div className={styles.documentation}>
             <Link to="/docs" target="_blank" rel="noopener noreferrer">
               <Icon name="file outline" /> Documentation
@@ -146,21 +146,23 @@ const OnBoarding = () => {
             <Loader className={overLayClasses} />
             {activeSection}
           </div>
-          <div className={styles.actions}>
-            {activeId !== CONNECTION_METHOD.id && (
-              <Button onClick={() => setActiveId(activeId - 1)}>Back</Button>
-            )}
-            {activeId !== STATUS.id && (
-              <Button
-                color="primary"
-                onClick={() => setActiveId(activeId + 1)}
-                disabled={isNextDisabled}
-              >
-                Next
-              </Button>
-            )}
+          <div className={styles.actionsWrapper}>
+            <div className={styles.actions}>
+              {activeId !== CONNECTION_METHOD.id && (
+                <Button onClick={() => setActiveId(activeId - 1)}>Back</Button>
+              )}
+              {activeId !== STATUS.id && (
+                <Button
+                  color="primary"
+                  onClick={() => setActiveId(activeId + 1)}
+                  disabled={isNextDisabled}
+                >
+                  Next
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
