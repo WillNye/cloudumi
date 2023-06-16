@@ -3752,6 +3752,117 @@ components:
           type: string
       required:
         - metadata_url
+    JWTSAMLSettings:
+      title: JWTSAMLSettings
+      description: BaseModel adds CamelCase aliases to a Pydantic model
+      type: object
+      properties:
+        expiration_hours:
+          title: Expiration Hours
+          default: 1
+          type: integer
+        email_key:
+          title: Email Key
+          default: email
+          type: string
+        group_key:
+          title: Group Key
+          default: groups
+          type: string
+    AttributesSAMLSettings:
+      title: AttributesSAMLSettings
+      description: BaseModel adds CamelCase aliases to a Pydantic model
+      type: object
+      properties:
+        user:
+          title: USER
+          default: user
+          type: string
+        groups:
+          title: GROUPS
+          default: groups
+          type: string
+        email:
+          title: EMAIL
+          default: email
+          type: string
+    BindingSAMLSettings:
+      title: BindingSAMLSettings
+      description: BaseModel adds CamelCase aliases to a Pydantic model
+      type: object
+      properties:
+        binding:
+          title: Binding
+          type: string
+        url:
+          title: Url
+          type: string
+      required:
+        - binding
+        - url
+    IdpSAMLSettings:
+      title: IdpSAMLSettings
+      description: BaseModel adds CamelCase aliases to a Pydantic model
+      type: object
+      properties:
+        entityId:
+          title: Entity Id
+          type: string
+        singleSignOnService:
+          title: Single Sign On Service
+          allOf:
+            - $ref: "#/components/schemas/BindingSAMLSettings"
+        singleLogoutService:
+          title: Single Sign On Service
+          allOf:
+            - $ref: "#/components/schemas/BindingSAMLSettings"
+        x509cert:
+          title: X509cert
+          type: string
+      required:
+        - entityId
+        - x509cert
+    SpSAMLSettings:
+      title: SpSAMLSettings
+      description: BaseModel adds CamelCase aliases to a Pydantic model
+      type: object
+      properties:
+        Assertionconsumerservice:
+          title: Single Logout Service
+          allOf:
+            - $ref: "#/components/schemas/BindingSAMLSettings"
+        Singlelogoutservice:
+          title: Single Logout Service
+          allOf:
+            - $ref: "#/components/schemas/BindingSAMLSettings"
+        Entityid:
+          title: Entity Id
+          type: string
+    GetUserBySAMLSettings:
+      title: GetUserBySAMLSettings
+      description: BaseModel adds CamelCase aliases to a Pydantic model
+      type: object
+      properties:
+        jwt:
+          $ref: "#/components/schemas/JWTSAMLSettings"
+        attributes:
+          $ref: "#/components/schemas/AttributesSAMLSettings"
+        idp:
+          $ref: "#/components/schemas/IdpSAMLSettings"
+        sp:
+          $ref: "#/components/schemas/SpSAMLSettings"
+        idp_metadata_url:
+          title: Idp Metadata Url
+          type: string
+    ChallengeSamlSettings:
+      title: ChallengeSamlSettings
+      description: BaseModel adds CamelCase aliases to a Pydantic model
+      type: object
+      properties:
+        enabled:
+          title: Enabled
+          default: true
+          type: boolean
     AuthSettings:
       title: AuthSettings
       description: BaseModel adds CamelCase aliases to a Pydantic model
@@ -3759,6 +3870,10 @@ components:
       properties:
         get_user_by_oidc:
           title: Get User By Oidc
+          default: false
+          type: boolean
+        get_user_by_saml:
+          title: Get User By Saml
           default: false
           type: boolean
         extra_auth_cookies:
@@ -3771,6 +3886,25 @@ components:
           title: Force Redirect To Identity Provider
           default: false
           type: boolean
+        challenge_url:
+          title: Challenge Url
+          allOf:
+            - $ref: "#/components/schemas/ChallengeSamlSettings"
+        logout_redirect_url:
+          title: Logout Redirect Url
+          type: string
+    SAMLSettingsDto:
+      title: SAMLSettingsDto
+      description: BaseModel adds CamelCase aliases to a Pydantic model
+      type: object
+      properties:
+        get_user_by_saml_settings:
+          $ref: "#/components/schemas/GetUserBySAMLSettings"
+        auth:
+          $ref: "#/components/schemas/AuthSettings"
+      required:
+        - get_user_by_saml_settings
+        - auth
     OIDCSettingsDto:
       title: OIDCSettingsDto
       description: BaseModel adds CamelCase aliases to a Pydantic model

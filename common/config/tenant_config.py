@@ -204,6 +204,11 @@ class TenantConfig:
             _saml_config["idp"] = idp_config
             if not _saml_config["idp"].get("entityId"):
                 _saml_config["idp"]["entityId"] = self.tenant_url
+
+        if sp_config := config.get_tenant_specific_key(
+            "get_user_by_saml_settings.sp", self.tenant
+        ):
+            _saml_config["sp"] = _saml_config["sp"] | sp_config
         return _saml_config
 
     @property

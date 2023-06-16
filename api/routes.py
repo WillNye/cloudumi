@@ -36,6 +36,9 @@ from api.handlers.v4.oidc_settings.manage_oidc_settings import (
     ManageOIDCSettingsCrudHandler,
 )
 from api.handlers.v4.resources.datatable import ResourcesDataTableHandler
+from api.handlers.v4.saml_settings.manage_saml_settings import (
+    ManageSAMLSettingsCrudHandler,
+)
 from api.handlers.v4.scim.groups import ScimV2GroupHandler, ScimV2GroupsHandler
 from api.handlers.v4.scim.users import ScimV2UserHandler, ScimV2UsersHandler
 from api.handlers.v4.self_service.request_types import (
@@ -405,6 +408,10 @@ def make_app(jwt_validator=None):
         (
             r"/api/v4/auth/sso/oidc/?",
             ManageOIDCSettingsCrudHandler,
+        ),
+        (
+            r"/api/v4/auth/sso/saml/?",
+            ManageSAMLSettingsCrudHandler,
         ),
         (
             r"/api/v3/auth/sso/?",
