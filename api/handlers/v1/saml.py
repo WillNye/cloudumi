@@ -19,6 +19,8 @@ log = config.get_logger()
 
 
 class SamlHandler(BaseHandler):
+    """Handler for /saml/(sso|acs))."""
+
     def check_xsrf_cookie(self):
         pass
 
@@ -38,7 +40,6 @@ class SamlHandler(BaseHandler):
                 await self.finish()
                 return
             if len(errors) == 0:
-
                 saml_attributes = await aio_wrapper(auth.get_attributes)
                 email = saml_attributes[
                     config.get_tenant_specific_key(

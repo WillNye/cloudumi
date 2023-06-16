@@ -112,8 +112,11 @@ class ManageOIDCSettingsCrudHandler(BaseHandler):
                     exclude_secrets=False, exclude_unset=False, exclude_none=False
                 ),
             )
-
-            dynamic_config.update({key: upsert})
+            # update deep keys
+            dc = dynamic_config
+            for k in key.split("."):
+                dc = dc.get(k, {})
+            dc.update(upsert)
 
         await ddb.update_static_config_for_tenant(
             yaml.dump(dynamic_config), self.user, self.ctx.tenant

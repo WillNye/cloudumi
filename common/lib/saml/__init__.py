@@ -32,13 +32,15 @@ async def init_saml_auth(request, tenant):
     if idp_metadata_url:
         idp_metadata = OneLogin_Saml2_IdPMetadataParser.parse_remote(idp_metadata_url)
 
+    # NOTE: if it is dev environment, please check the port number at assertionConsumerService.url
     saml_config = dict_merge(tenant_config.saml_config, idp_metadata)
 
+    # If we don't have a cert or key, generate them.
+    # Then, upload them to the service provider
     if not (
         await tenant_storage.tenant_file_exists(tenant_config.saml_key_path)
         and await tenant_storage.tenant_file_exists(tenant_config.saml_cert_path)
     ):
-
         key = rsa.generate_private_key(
             public_exponent=65537,
             key_size=2048,

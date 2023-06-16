@@ -49,6 +49,7 @@ def validate_config(dct: Dict):
 
 def dict_merge(dct: dict, merge_dct: dict):
     """Recursively merge two dictionaries, including nested dicts"""
+
     for k, v in merge_dct.items():
 
         if k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], Mapping):
