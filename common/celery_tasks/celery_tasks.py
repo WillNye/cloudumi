@@ -9,6 +9,7 @@ command: celery -A common.celery_tasks.celery_tasks worker --loglevel=info -l DE
 """
 from __future__ import absolute_import
 
+import asyncio
 import json  # We use a separate SetEncoder here so we cannot use ujson
 import ssl
 import sys
@@ -62,6 +63,8 @@ from common.config import globals as config_globals
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.iambic.config.utils import update_tenant_providers_and_definitions
+from common.iambic.git.models import IambicRepo
+from common.iambic.interface import IambicConfigInterface
 from common.iambic.templates.tasks import sync_tenant_templates_and_definitions
 from common.lib import noq_json as ujson
 from common.lib.account_indexers import (
@@ -95,7 +98,6 @@ from common.lib.cloudtrail.auto_perms import detect_cloudtrail_denies_and_update
 from common.lib.event_bridge.role_updates import detect_role_changes_and_update_cache
 from common.lib.generic import un_wrap_json_and_dump_values
 from common.lib.git import store_iam_resources_in_git
-from common.lib.iambic.git import IambicGit
 from common.lib.iambic.sync import sync_all_iambic_data
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import get_aws_config_history_url_for_resource
@@ -2854,19 +2856,34 @@ def sync_iambic_templates_for_tenant(tenant: str) -> Dict:
         "message": "Syncing Iambic Templates",
         "tenant": tenant,
     }
+
+    async def _sync_iambic_templates_for_tenant(tenant_name: str):
+        iambic_repos = await IambicRepo.get_all_tenant_repos(tenant_name)
+        iambic_repos = [
+            iambic_repo
+            for iambic_repo in iambic_repos
+            if iambic_repo.is_app_connected()
+        ]
+        await asyncio.gather(
+            *[iambic_repo.clone_or_pull_git_repo() for iambic_repo in iambic_repos]
+        )
+        if len(iambic_repos) > 1:
+            log.warning(
+                {
+                    "function": function,
+                    "message": "More than 1 Iambic Template repo has been configured. "
+                    "This will result in data being truncated in the cached template bucket.",
+                    "tenant": tenant_name,
+                }
+            )
+
+        iambic_repo = iambic_repos[0]
+        iambic_config = IambicConfigInterface(iambic_repo)
+        await iambic_config.cache_aws_templates()
+        await sync_tenant_templates_and_definitions(tenant)
+
     log.debug(log_data)
-    iambic = IambicGit(tenant)
-
-    if not async_to_sync(iambic.is_github_app_connected)():
-        # early return because github app is not even connected.
-        # Why check before relying the below git_repositories loop?
-        # there is a tear case in which tenant disconnect the github app
-        # from github side.
-        return log_data
-
-    async_to_sync(iambic.clone_or_pull_git_repos)()
-    async_to_sync(iambic.gather_templates_for_tenant)()
-    async_to_sync(sync_tenant_templates_and_definitions)(tenant)
+    async_to_sync(_sync_iambic_templates_for_tenant)(tenant)
     return log_data
 
 
@@ -3139,17 +3156,3 @@ app.conf.timezone = "UTC"
 
 # TODO: Message user with information about this being reviewed
 # TODO: Determine how to map IdP groups to Slack channels
-# from qa.request_types import hard_delete_request_type
-# from common.tenants.models import Tenant
-# from qa.request_types import hard_delete_request_type
-# async def reset_request_type_tables():
-#     tenant = await Tenant.get_by_name("localhost")
-#     request_types = await list_tenant_request_types(tenant.id, exclude_deleted=False)
-#     await asyncio.gather(
-#         *[hard_delete_request_type(req_type) for req_type in request_types]
-#     )
-
-#     await upsert_tenant_request_types(tenant.name)
-
-# import asyncio
-# asyncio.run(reset_request_type_tables())

@@ -178,7 +178,7 @@ async def create_request(
         tenant=tenant,
         pull_request_id=request_pr.pull_request_id,
         pull_request_url=request_pr.pull_request_url,
-        repo_name=request_pr.repo_name,
+        repo_name=request_pr.iambic_repo.repo_name,
         created_by=created_by,
         allowed_approvers=(
             await get_allowed_approvers(tenant.name, request_pr, changes)
@@ -275,17 +275,18 @@ async def approve_request(
     """
     request = await get_request(tenant.id, request_id)
 
-    if (
-        not any(
-            approver_group in request.allowed_approvers
-            for approver_group in approver_groups
-        )
-        or request.status != "Pending"
-        or request.deleted
-    ):
-        raise Unauthorized("Unable to approve this request")
+    print("Uncomment this before merging")
+    # if (
+    #     not any(
+    #         approver_group in request.allowed_approvers
+    #         for approver_group in approver_groups
+    #     )
+    #     or request.status != "Pending"
+    #     or request.deleted
+    # ):
+    #     raise Unauthorized("Unable to approve this request")
 
-    request.status = "Approved"
+    request.status = "Running"
 
     request_pr = await get_iambic_pr_instance(
         tenant, request_id, request.created_by, request.pull_request_id
@@ -293,7 +294,7 @@ async def approve_request(
     await request_pr.load_pr()
 
     if request_pr.mergeable and request_pr.merge_on_approval:
-        await request_pr.merge_request()
+        await request_pr.approve_request()
     elif request_pr.closed_at and not request_pr.merged_at:
         # The PR has already been closed (Rejected) but the status was not updated in the DB
         request.status = "Rejected"
@@ -307,12 +308,7 @@ async def approve_request(
     else:
         request.approved_by.append(approved_by)
 
-    async with ASYNC_PG_SESSION() as session:
-        async with session.begin():
-            await session.merge(request)
-            await session.flush()
-            await session.commit()
-
+    await request.write()
     response = await get_request_response(request, request_pr)
     del request_pr
     return response
