@@ -46,8 +46,11 @@ const RequestField = ({ field, selectedOptions, handleChange }) => {
         handleInputUpdate={(value: string) =>
           handleChange(field.field_key, value)
         }
-        resultsFormatter={value => ({ title: value })} // Use your own formatter if needed
+        resultsFormatter={result => <p>{result.title}</p>}
+        // resultsFormatter={value => ({ title: value })} // Use your own formatter if needed
         defaultValues={[]}
+        endpoint={field.typeahead.endpoint}
+        queryParam={field.typeahead.query_param_key}
       />
     );
   }

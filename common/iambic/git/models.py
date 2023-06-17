@@ -347,9 +347,22 @@ class IambicRepo:
     async def get_all_tenant_repos(cls, tenant_name: str) -> list["IambicRepo"]:
         tenant = await Tenant.get_by_name(tenant_name)
         repo_details = list_tenant_repo_details(tenant_name)
-        return await asyncio.gather(
-            *[cls.setup(tenant, repo_detail.repo_name) for repo_detail in repo_details]
+        res = await asyncio.gather(
+            *[cls.setup(tenant, repo_detail.repo_name) for repo_detail in repo_details],
+            return_exceptions=True,
         )
+        for repo in res:
+            if isinstance(repo, Exception):
+                log.error(
+                    dict(
+                        message="Error setting up repo",
+                        tenant=tenant_name,
+                        repo_details=repo_details,
+                        error=repo.__class__.__name__,
+                    ),
+                    exc_info=True,
+                )
+        return [repo for repo in res if not isinstance(repo, Exception)]
 
     @classmethod
     async def setup(

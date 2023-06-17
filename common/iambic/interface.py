@@ -213,7 +213,7 @@ class IambicConfigInterface:
             if arns:
                 d["arns"] = arns
             d["repo_name"] = repo_name
-            d["file_path"] = d["file_path"].replace(self.tenant_repo_base_path, "")
+            d["file_path"] = d["file_path"].replace(self.iambic_repo.file_path, "")
             d["repo_relative_file_path"] = d["file_path"].replace("/" + repo_name, "")
             d["hash"] = hashlib.md5(d["file_path"].encode("utf-8")).hexdigest()
             reverse_hash_for_templates[d["hash"]] = d

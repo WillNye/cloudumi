@@ -2864,6 +2864,8 @@ def sync_iambic_templates_for_tenant(tenant: str) -> Dict:
             for iambic_repo in iambic_repos
             if iambic_repo.is_app_connected()
         ]
+        if not iambic_repos:
+            return
         await asyncio.gather(
             *[iambic_repo.clone_or_pull_git_repo() for iambic_repo in iambic_repos]
         )
