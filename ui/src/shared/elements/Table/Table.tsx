@@ -148,14 +148,15 @@ export const Table = <T, D>({
                   </th>
                 );
               })}
-              <div className={styles.columnsDropdown}>
-                <div
-                  className={styles.columnsDropdownIcon}
-                  onClick={() => setIsColumnMenuOpen(isOpen => !isOpen)}
-                  ref={columnsRef}
-                >
-                  <Icon name="list-view" size="large" />
-                </div>
+              <th className={styles.columnsDropdown}>
+                <span ref={columnsRef}>
+                  <Icon
+                    className={styles.columnsDropdownIcon}
+                    onClick={() => setIsColumnMenuOpen(isOpen => !isOpen)}
+                    name="list-view"
+                    size="large"
+                  />
+                </span>
                 <Menu
                   open={isColumnMenuOpen}
                   onClose={() => setIsColumnMenuOpen(false)}
@@ -178,7 +179,7 @@ export const Table = <T, D>({
                     );
                   })}
                 </Menu>
-              </div>
+              </th>
             </tr>
           ))}
         </thead>

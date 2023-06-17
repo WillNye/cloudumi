@@ -29,6 +29,10 @@
     flex-direction: row;
   }
 
+  .actionsWrapper {
+    height: 100px;
+  }
+
   .actions {
     display: flex;
     width: 98%;

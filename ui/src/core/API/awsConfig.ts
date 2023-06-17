@@ -20,7 +20,7 @@ export const updateHubAccount = data => {
 };
 
 export const deleteHubAccount = data => {
-  const url = `${V3_API_URL}/services/aws/account/org`;
+  const url = `${V3_API_URL}/services/aws/account/hub`;
   return axios.delete(url, { data });
 };
 

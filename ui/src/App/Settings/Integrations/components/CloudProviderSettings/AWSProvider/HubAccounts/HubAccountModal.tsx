@@ -8,16 +8,17 @@ import { Input } from 'shared/form/Input';
 import { updateHubAccount } from 'core/API/awsConfig';
 import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
-import useCopyToClipboard from 'core/hooks/useCopyToClipboard';
 import { Notification, NotificationType } from 'shared/elements/Notification';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { useMutation } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 
 export const HubAccountModal = ({ onClose, defaultValues, aws }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [copiedText, setCopyText] = useCopyToClipboard();
+
+  const navigate = useNavigate();
 
   const { register, handleSubmit, watch } = useForm({ defaultValues });
 
@@ -58,12 +59,9 @@ export const HubAccountModal = ({ onClose, defaultValues, aws }) => {
   );
 
   const handleClick = useCallback(() => {
-    window.open(
-      aws.data?.read_write?.central_account_role?.cloudformation_url,
-      '_blank'
-    );
     onClose();
-  }, [aws, onClose]);
+    navigate('/settings/integrations/aws/onboarding');
+  }, [navigate, onClose]);
 
   if (defaultValues) {
     return (
@@ -133,21 +131,9 @@ export const HubAccountModal = ({ onClose, defaultValues, aws }) => {
               successfully executed.
             </li>
           </ol>
-
-          <Button onClick={handleClick} fullWidth>
-            Execute CloudFormation
-          </Button>
           <LineBreak />
-          <Button
-            fullWidth
-            color={copiedText ? 'secondary' : 'primary'}
-            onClick={() =>
-              setCopyText(
-                aws.data?.read_write?.central_account_role?.cloudformation_url
-              )
-            }
-          >
-            {copiedText ? 'URL Copied!' : 'Copy URL'}
+          <Button onClick={handleClick} fullWidth>
+            Proceed
           </Button>
         </>
       )}
