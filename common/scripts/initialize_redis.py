@@ -77,13 +77,13 @@ else:
             tenant, force_sync=True
         )
         tasks = [
-            # celery.cache_iam_resources_for_account,
-            # celery.cache_s3_buckets_for_account,
-            # celery.cache_sns_topics_for_account,
-            # celery.cache_sqs_queues_for_account,
-            # celery.cache_managed_policies_for_account,
-            # celery.cache_access_advisor_for_account,
-            # celery.cache_resources_from_aws_config_for_account,
+            celery.cache_iam_resources_for_account,
+            celery.cache_s3_buckets_for_account,
+            celery.cache_sns_topics_for_account,
+            celery.cache_sqs_queues_for_account,
+            celery.cache_managed_policies_for_account,
+            celery.cache_access_advisor_for_account,
+            celery.cache_resources_from_aws_config_for_account,
         ]
         if parallel:
             executor = ThreadPoolExecutor(max_workers=os.cpu_count())
@@ -114,37 +114,37 @@ else:
                     log_end(f"{task.__name__} for account {account_id}", start_time)
 
         post_tasks = [
-            # partial(
-            #     celery.cache_iam_resources_across_accounts,
-            #     run_subtasks=False,
-            #     wait_for_subtask_completion=False,
-            # ),
-            # partial(
-            #     celery.cache_s3_buckets_across_accounts,
-            #     run_subtasks=False,
-            #     wait_for_subtask_completion=False,
-            # ),
-            # partial(
-            #     celery.cache_sns_topics_across_accounts,
-            #     run_subtasks=False,
-            #     wait_for_subtask_completion=False,
-            # ),
-            # partial(
-            #     celery.cache_sqs_queues_across_accounts,
-            #     run_subtasks=False,
-            #     wait_for_subtask_completion=False,
-            # ),
-            # partial(
-            #     celery.cache_resources_from_aws_config_across_accounts,
-            #     run_subtasks=False,
-            #     wait_for_subtask_completion=False,
-            # ),
-            # celery.cache_resource_templates_task,
-            # celery.cache_self_service_typeahead_task,
-            # celery.cache_policies_table_details,
-            # celery.cache_credential_authorization_mapping,
-            # celery.cache_organization_structure,
-            # celery.cache_scps_across_organizations,
+            partial(
+                celery.cache_iam_resources_across_accounts,
+                run_subtasks=False,
+                wait_for_subtask_completion=False,
+            ),
+            partial(
+                celery.cache_s3_buckets_across_accounts,
+                run_subtasks=False,
+                wait_for_subtask_completion=False,
+            ),
+            partial(
+                celery.cache_sns_topics_across_accounts,
+                run_subtasks=False,
+                wait_for_subtask_completion=False,
+            ),
+            partial(
+                celery.cache_sqs_queues_across_accounts,
+                run_subtasks=False,
+                wait_for_subtask_completion=False,
+            ),
+            partial(
+                celery.cache_resources_from_aws_config_across_accounts,
+                run_subtasks=False,
+                wait_for_subtask_completion=False,
+            ),
+            celery.cache_resource_templates_task,
+            celery.cache_self_service_typeahead_task,
+            celery.cache_policies_table_details,
+            celery.cache_credential_authorization_mapping,
+            celery.cache_organization_structure,
+            celery.cache_scps_across_organizations,
             celery.sync_iambic_templates_for_tenant,
             celery.update_providers_and_provider_definitions_for_tenant,
             celery.upsert_tenant_request_types_for_tenant,
