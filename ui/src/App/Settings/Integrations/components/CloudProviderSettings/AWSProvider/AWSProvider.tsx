@@ -35,6 +35,8 @@ const AWSProvider = () => {
     onSuccess: ({ data }) => {
       if (data?.account_id) {
         setHubAccounts([data]);
+      } else {
+        setHubAccounts([]);
       }
     },
     onError: (err: AxiosError) => {
