@@ -52,7 +52,6 @@ class SelfServiceChangeTypeHandler(BaseHandler):
         self.set_header("Content-Type", "application/json")
 
         if change_type_id:
-            tenant_url = self.get_tenant_url()
             change_type = await get_tenant_change_type(tenant_id, change_type_id)
             if not change_type:
                 self.write(
@@ -65,8 +64,7 @@ class SelfServiceChangeTypeHandler(BaseHandler):
                 raise tornado.web.Finish()
             data = change_type.dict()
             data["fields"] = [
-                field.self_service_dict(tenant_url)
-                for field in change_type.change_fields
+                field.self_service_dict() for field in change_type.change_fields
             ]
 
         else:

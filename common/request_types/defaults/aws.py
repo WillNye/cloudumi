@@ -54,7 +54,6 @@ def get_services_permissions() -> dict[dict[list[str]]]:
 def _get_default_aws_request_permission_request_types(
     field_helper_map: dict[str:TypeAheadFieldHelper],
 ) -> list[RequestType]:
-
     # Formatted like this to catch all RDS variants
     permission_changes = [
         ChangeType(
@@ -63,7 +62,7 @@ def _get_default_aws_request_permission_request_types(
             change_fields=[
                 ChangeField(
                     change_element=0,
-                    field_key="rds_resource_arn",
+                    field_key="resource_arn",
                     field_type="TextBox",
                     field_text="RDS Resource ARN",
                     description="The RDS Resource ARN the selected identity requires permissions to. "
@@ -73,7 +72,7 @@ def _get_default_aws_request_permission_request_types(
                 ),
                 ChangeField(
                     change_element=1,
-                    field_key="rds_permissions",
+                    field_key="resource_permissions",
                     field_type="Choice",
                     field_text="Permission Options",
                     description="The RDS permissions to add",
@@ -95,16 +94,11 @@ def _get_default_aws_request_permission_request_types(
             ],
             change_template=ChangeTypeTemplate(
                 template="""
-    {
-      "Statement":[
         {
-          "Action": {{form.rds_permissions}},
+          "Action": {{form.resource_permissions}},
           "Effect":"Allow",
-          "Resource": ["{{form.rds_resource_arn}}"]
-        }
-      ],
-      "Version":"2012-10-17"
-    }"""
+          "Resource": ["{{form.resource_arn}}"]
+        }"""
             ),
             created_by="Noq",
         ),
@@ -172,16 +166,11 @@ def _get_default_aws_request_permission_request_types(
             ],
             change_template=ChangeTypeTemplate(
                 template="""
-    {
-      "Statement":[
         {
           "Action":{{form.s3_permissions}},
           "Effect":"Allow",
           "Resource": ["{{form.s3_bucket}}","{{form.s3_bucket}}/*"]
-        }
-      ],
-      "Version":"2012-10-17"
-    }"""
+        }"""
             ),
             created_by="Noq",
         ),
@@ -240,16 +229,11 @@ def _get_default_aws_request_permission_request_types(
             ],
             change_template=ChangeTypeTemplate(
                 template="""
-    {
-      "Statement":[
         {
           "Action": {{form.sqs_permissions}},
           "Effect":"Allow",
           "Resource": ["{{form.sqs_queue}}"]
-        }
-      ],
-      "Version":"2012-10-17"
-    }"""
+        }"""
             ),
             created_by="Noq",
         ),
@@ -301,16 +285,11 @@ def _get_default_aws_request_permission_request_types(
             ],
             change_template=ChangeTypeTemplate(
                 template="""
-    {
-      "Statement":[
         {
           "Action": {{form.sns_permissions}},
           "Effect":"Allow",
           "Resource": ["{{form.sns_topic}}"]
-        }
-      ],
-      "Version":"2012-10-17"
-    }"""
+        }"""
             ),
             created_by="Noq",
         ),
@@ -362,14 +341,9 @@ def _get_default_aws_request_permission_request_types(
                 change_template=ChangeTypeTemplate(
                     template="""
         {
-            "Statement":[
-                {
-                    "Action": {{form.service_permissions}},
-                    "Effect":"Allow",
-                    "Resource": ["{{form.resource_arn}}"]
-                }
-            ],
-            "Version":"2012-10-17"
+          "Action": {{form.service_permissions}},
+          "Effect":"Allow",
+          "Resource": ["{{form.resource_arn}}"]
         }"""
                 ),
                 created_by="Noq",
@@ -391,6 +365,32 @@ def _get_default_aws_request_permission_request_types(
         created_by="Noq",
     )
     add_permission_to_identity_request.change_types = deepcopy(permission_changes)
+    for elem, change_type in enumerate(add_permission_to_identity_request.change_types):
+        for change_field in change_type.change_fields:
+            change_field.change_element += 1
+        change_type.change_fields.append(
+            ChangeField(
+                change_element=0,
+                field_key="policy_name",
+                field_type="TextBox",
+                field_text="Policy Name",
+                description="The name of the policy to be created containing the requested permissions.",
+                allow_none=False,
+                allow_multiple=False,
+            )
+        )
+
+        init_template = change_type.change_template.template.replace("\n", "\n    ")
+        template = f"""
+        {{
+          "PolicyName": "{{{{form.policy_name}}}}",
+          "Statement":[{init_template}
+          ],
+          "Version":"2012-10-17"
+        }}"""
+        add_permission_to_identity_request.change_types[
+            elem
+        ].change_template.template = template
 
     add_permission_to_mp_request = RequestType(
         name="Add permissions to managed policy",

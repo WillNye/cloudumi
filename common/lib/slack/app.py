@@ -681,28 +681,28 @@ class TenantSlackApp:
             iambic_template_details = reverse_hash_for_templates[hash]
             template_type = iambic_template_details["template_type"]
             repo_name = iambic_template_details["repo_name"]
-            path = iambic_template_details["repo_relative_file_path"]
+            file_path = iambic_template_details["repo_relative_file_path"]
             if template_type == "NOQ::Google::Group":
                 template = await iambic.google_add_user_to_group(
-                    template_type, repo_name, path, user_email, duration
+                    template_type, repo_name, file_path, user_email, duration
                 )
                 resources[template_type].append(template.properties.name)
 
             elif template_type == "NOQ::Okta::Group":
                 template = await iambic.okta_add_user_to_group(
-                    template_type, repo_name, path, user_email, duration
+                    template_type, repo_name, file_path, user_email, duration
                 )
                 resources[template_type].append(template.properties.name)
             elif template_type == "NOQ::Okta::App":
                 template = await iambic.okta_add_user_to_app(
-                    template_type, repo_name, path, user_email, duration
+                    template_type, repo_name, file_path, user_email, duration
                 )
                 resources[template_type].append(template.properties.name)
             elif template_type == "NOQ::AWS::IdentityCenter::PermissionSet":
                 template = await iambic.aws_add_user_to_permission_set(
                     template_type,
                     repo_name,
-                    path,
+                    file_path,
                     user_email,
                     duration,
                     selected_aws_accounts,
@@ -726,7 +726,7 @@ class TenantSlackApp:
             #     raise Exception("Unsupported template type")
             template_changes.append(
                 IambicTemplateChange(
-                    path=path, body=template.get_body(exclude_unset=False)
+                    file_path=file_path, body=template.get_body(exclude_unset=False)
                 )
             )
         if not template_changes:
@@ -1266,7 +1266,7 @@ class TenantSlackApp:
                 )
                 resources[template_type].append(template.identifier)
             template_changes[repo_relative_file_path] = IambicTemplateChange(
-                path=repo_relative_file_path,
+                file_path=repo_relative_file_path,
                 body=template.get_body(exclude_unset=False),
                 template=template,
             )
@@ -1498,7 +1498,7 @@ class TenantSlackApp:
                     existing_template=template,
                 )
             template_changes[repo_relative_file_path] = IambicTemplateChange(
-                path=repo_relative_file_path,
+                file_path=repo_relative_file_path,
                 body=template.get_body(exclude_unset=False),
                 template=template,
             )

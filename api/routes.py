@@ -28,7 +28,10 @@ from api.handlers.v4.iambic.iambic_providers import (
     IambicProviderDefinitionHandler,
     IambicProviderHandler,
 )
-from api.handlers.v4.iambic.iambic_templates import IambicTemplateHandler
+from api.handlers.v4.iambic.iambic_templates import (
+    IambicTemplateHandler,
+    IambicTemplateTypeHandler,
+)
 from api.handlers.v4.resources.datatable import ResourcesDataTableHandler
 from api.handlers.v4.scim.groups import ScimV2GroupHandler, ScimV2GroupsHandler
 from api.handlers.v4.scim.users import ScimV2UserHandler, ScimV2UsersHandler
@@ -190,6 +193,7 @@ from api.handlers.v4.role_access.manage_role_access import ManageRoleAccessHandl
 from api.handlers.v4.self_service.requests import (
     IambicRequestCommentHandler,
     IambicRequestHandler,
+    IambicRequestValidationHandler,
 )
 from common.config import config
 from common.lib.sentry import before_send_event
@@ -473,6 +477,7 @@ def make_app(jwt_validator=None):
         # (r"/api/v3/api_keys/view", ViewApiKeysHandler),
         (r"/api/v2/.*", V2NotFoundHandler),
         (r"/api/v4/self-service/requests/?", IambicRequestHandler),
+        (r"/api/v4/self-service/requests/validate?", IambicRequestValidationHandler),
         (
             rf"/api/v4/self-service/requests/(?P<request_id>{UUID_REGEX})",
             IambicRequestHandler,
@@ -497,12 +502,13 @@ def make_app(jwt_validator=None):
         (r"/api/v4/providers/?", IambicProviderHandler),
         (r"/api/v4/providers/definitions/?", IambicProviderDefinitionHandler),
         (r"/api/v4/templates/?", IambicTemplateHandler),
+        (r"/api/v4/template-types/?", IambicTemplateTypeHandler),
         (
             r"/api/v4/self-service/typeahead/aws/service/(?P<service>[\w-]+)",
             AWSResourceTypeAheadHandler,
         ),
-        (r"/api/v4/self-service/typeahead/noq/users", NoqUserTypeAheadHandler),
-        (r"/api/v4/self-service/typeahead/noq/groups", NoqGroupTypeAheadHandler),
+        (r"/api/v4/self-service/typeahead/noq/users/?", NoqUserTypeAheadHandler),
+        (r"/api/v4/self-service/typeahead/noq/groups/?", NoqGroupTypeAheadHandler),
         (r"/api/v4/groups/?", ManageGroupsHandler),
         (r"/api/v4/list_groups/?", ManageListGroupsHandler),
         (r"/api/v4/group_memberships/?", ManageGroupMembershipsHandler),

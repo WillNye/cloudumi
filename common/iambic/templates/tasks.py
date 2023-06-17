@@ -10,6 +10,7 @@ from git import Repo
 from iambic.core.models import BaseTemplate as IambicBaseTemplate
 from iambic.core.utils import sanitize_string
 from jinja2 import BaseLoader, Environment
+from psycopg.errors import IntegrityError, UniqueViolation
 from sqlalchemy import and_, cast, delete, select, update
 from sqlalchemy.orm import contains_eager
 
@@ -82,6 +83,7 @@ async def create_tenant_templates_and_definitions(
     iambic_templates = []
     iambic_template_content_list = []
     iambic_template_provider_definitions = []
+    is_full_create = not bool(template_paths)
 
     # If no template paths provided, gather all templates from the repository directory
     if not template_paths:
@@ -97,7 +99,9 @@ async def create_tenant_templates_and_definitions(
     )
 
     # Collect provider definitions from the template repo
-    for raw_iambic_template in iambic_git.load_templates(template_paths):
+    for raw_iambic_template in iambic_git.load_templates(
+        template_paths, iambic_config.template_map
+    ):
         provider = template_type_provider_map.get(raw_iambic_template.template_type)
 
         # If provider not already mapped, find and map the provider
@@ -128,10 +132,13 @@ async def create_tenant_templates_and_definitions(
             continue
 
         # Create a new IambicTemplate instance and append to list
+        file_path = str(raw_iambic_template.file_path).replace(repo_dir, "")
+        if file_path.startswith("/"):
+            file_path = file_path[1:]
         iambic_template = IambicTemplate(
             tenant=tenant,
             repo_name=repo.repo_name,
-            file_path=str(raw_iambic_template.file_path).replace(repo_dir, ""),
+            file_path=file_path,
             template_type=raw_iambic_template.template_type,
             provider=provider,
             resource_type=raw_iambic_template.resource_type,
@@ -143,7 +150,7 @@ async def create_tenant_templates_and_definitions(
         iambic_template_content = IambicTemplateContent(
             tenant=tenant,
             iambic_template=iambic_template,
-            content=raw_iambic_template.dict().get("properties", {}),
+            content=raw_iambic_template.dict(exclude_unset=False),
         )
         iambic_template_content_list.append(iambic_template_content)
 
@@ -190,12 +197,56 @@ async def create_tenant_templates_and_definitions(
                         )
                     )
 
-    if iambic_templates:
-        await bulk_add(iambic_templates)
-    if iambic_template_content_list:
-        await bulk_add(iambic_template_content_list)
-    if iambic_template_provider_definitions:
-        await bulk_add(iambic_template_provider_definitions)
+    try:
+        if iambic_templates:
+            await bulk_add(iambic_templates)
+        if iambic_template_content_list:
+            await bulk_add(iambic_template_content_list)
+        if iambic_template_provider_definitions:
+            await bulk_add(iambic_template_provider_definitions)
+    except (IntegrityError, UniqueViolation):
+        if is_full_create:
+            # Rollback everything and try again if the tenant is new
+            await rollback_full_create(tenant)
+        else:
+            # Desync has occurred and needs to be remediated
+            # This is a fallback where we delete the templates that shouldn't exist and try again
+            async with ASYNC_PG_SESSION() as session:
+                stmt = (
+                    select(IambicTemplate)
+                    .filter(
+                        IambicTemplate.tenant_id == tenant.id,
+                        IambicTemplate.repo_name == repo.repo_name,
+                        IambicTemplate.file_path.in_(
+                            [t.file_path for t in iambic_templates]
+                        ),
+                    )
+                    .join(
+                        IambicTemplateContent,
+                        IambicTemplateContent.iambic_template_id == IambicTemplate.id,
+                    )
+                    .join(
+                        IambicTemplateProviderDefinition,
+                        IambicTemplateProviderDefinition.iambic_template_id,
+                    )
+                    .options(
+                        contains_eager(IambicTemplate.iambic_template_content),
+                        contains_eager(
+                            IambicTemplate.iambic_template_provider_definitions
+                        ),
+                    )
+                )
+                items = await session.execute(stmt)
+                existing_templates = items.scalars().all()
+                # Deletes templates, their content, and their definitions
+                await bulk_delete(existing_templates, False)
+
+        if iambic_templates:
+            await bulk_add(iambic_templates)
+        if iambic_template_content_list:
+            await bulk_add(iambic_template_content_list)
+        if iambic_template_provider_definitions:
+            await bulk_add(iambic_template_provider_definitions)
 
 
 async def update_tenant_template(
@@ -270,7 +321,7 @@ async def update_tenant_template(
                     IambicTemplateContent.tenant_id == tenant.id,
                 )
             )
-            .values(content=raw_iambic_template.dict().get("properties", {}))
+            .values(content=raw_iambic_template.dict(exclude_unset=False))
         )
         await session.execute(stmt)
 
@@ -366,7 +417,9 @@ async def upsert_tenant_templates_and_definitions(
 
     # Collect provider definitions from the template repo
     messages = []
-    for raw_iambic_template in iambic_git.load_templates(template_paths):
+    for raw_iambic_template in iambic_git.load_templates(
+        template_paths, iambic_config.template_map
+    ):
         provider = template_type_provider_map.get(raw_iambic_template.template_type)
 
         # If provider not already mapped, find and map the provider
@@ -462,9 +515,13 @@ async def delete_tenant_templates_and_definitions(
         }
     )
 
-    deleted_template_paths = [
-        str(template_path).replace(repo_dir, "") for template_path in template_paths
-    ]
+    deleted_template_paths = []
+    for template_path in template_paths:
+        template_path = str(template_path).replace(repo_dir, "")
+        if template_path.startswith("/"):
+            template_path = template_path[1:]
+        deleted_template_paths.append(template_path)
+
     if deleted_template_paths:
         # Get the existing template with its provider definition references
         async with ASYNC_PG_SESSION() as session:
@@ -539,6 +596,31 @@ async def full_create_tenant_templates_and_definitions(
         )
 
 
+async def rollback_full_create(tenant: Tenant):
+    """Deletes all template data for a tenant in the event of a failure on create.
+
+    Args:
+        tenant (Tenant): The tenant object for which templates and definitions are to be deleted.
+    """
+    async with ASYNC_PG_SESSION() as session:
+        async with session.begin():
+            stmt = delete(IambicTemplateContent).where(
+                IambicTemplateContent.tenant_id == tenant.id
+            )
+            await session.execute(stmt)
+            await session.flush()
+
+            stmt = delete(IambicTemplateProviderDefinition).where(
+                IambicTemplateProviderDefinition.tenant_id == tenant.id
+            )
+            await session.execute(stmt)
+            await session.flush()
+
+            stmt = delete(IambicTemplate).where(IambicTemplate.tenant_id == tenant.id)
+            await session.execute(stmt)
+            await session.flush()
+
+
 async def sync_tenant_templates_and_definitions(tenant_name: str):
     """
     Sync the IAMbic templates and template provider definitions for a tenant.
@@ -547,10 +629,15 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
         tenant_name (str): The name of the tenant.
     """
     tenant = await Tenant.get_by_name(tenant_name)
+    iambic_templates_last_parsed = tenant.iambic_templates_last_parsed
+    if iambic_templates_last_parsed:
+        iambic_templates_last_parsed = pytz.UTC.localize(iambic_templates_last_parsed)
+    # Written up here to prevent request spamming causing multiple full creates
+    tenant.iambic_templates_last_parsed = datetime.utcnow()
+    await tenant.write()
     tenant_name = tenant.name
     iambic_git = IambicGit(tenant_name)
     provider_definition_map = defaultdict(dict)
-    iambic_templates_last_parsed = datetime.utcnow()
 
     # Populate the provider definition map where
     # k1 is the provider name, k2 is the provider definition str repr and the value is the provider definition
@@ -564,14 +651,15 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
         ] = existing_definition
 
     # New tenant so perform a full create
-    if not tenant.iambic_templates_last_parsed:
+    if not iambic_templates_last_parsed:
         try:
             await full_create_tenant_templates_and_definitions(
                 tenant, provider_definition_map
             )
-            tenant.iambic_templates_last_parsed = iambic_templates_last_parsed
-            await tenant.write()
         except Exception as err:
+            tenant.iambic_templates_last_parsed = None
+            await tenant.write()
+            await rollback_full_create(tenant)
             log.error(
                 {
                     "function": f"{__name__}.{sys._getframe().f_code.co_name}",
@@ -581,11 +669,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
                 },
                 exc_info=True,
             )
-
         return
-
-    templates_last_parsed = pytz.UTC.localize(tenant.iambic_templates_last_parsed)
-    iambic_templates_last_parsed = datetime.utcnow()
 
     try:
         # At some point we will support multiple repos and this is a way to futureproof
@@ -593,6 +677,8 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
         if not isinstance(iambic_repos, list):
             iambic_repos = [iambic_repos]
     except KeyError as err:
+        tenant.iambic_templates_last_parsed = iambic_templates_last_parsed
+        await tenant.write()
         log.error(
             {
                 "function": f"{__name__}.{sys._getframe().f_code.co_name}",
@@ -605,13 +691,14 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
     # Iterate the tenants iambic repos
     for repo in iambic_repos:
         repo_dir = iambic_git.get_iambic_repo_path(repo.repo_name)
+        iambic_config = await iambic_git.load_iambic_config(repo.repo_name)
 
         # Get all changes since last parsed
         git_repo = Repo(repo_dir)
         from_sha = None
         to_sha = None
         for commit in git_repo.iter_commits("main"):  # Correctly resolve default branch
-            if commit.committed_datetime < templates_last_parsed:
+            if commit.committed_datetime < iambic_templates_last_parsed:
                 break
 
             if not to_sha:
@@ -620,7 +707,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
                 from_sha = commit.hexsha
 
         template_changes = await iambic_git.retrieve_git_changes(
-            repo.repo_name, from_sha=from_sha, to_sha=to_sha
+            repo.repo_name, iambic_config.template_map, from_sha=from_sha, to_sha=to_sha
         )
         create_template_paths = []
         upsert_template_paths = []
@@ -636,8 +723,34 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
             deleted_template_paths.append(git_diff.path)
 
         try:
-            iambic_config = await iambic_git.load_iambic_config(repo.repo_name)
-        except ValueError as err:
+            if create_template_paths:
+                await create_tenant_templates_and_definitions(
+                    tenant,
+                    iambic_config,
+                    repo,
+                    repo_dir,
+                    provider_definition_map,
+                    create_template_paths,
+                )
+            if upsert_template_paths:
+                await upsert_tenant_templates_and_definitions(
+                    tenant,
+                    iambic_config,
+                    repo,
+                    repo_dir,
+                    provider_definition_map,
+                    upsert_template_paths,
+                )
+            if deleted_template_paths:
+                await delete_tenant_templates_and_definitions(
+                    tenant,
+                    repo,
+                    repo_dir,
+                    deleted_template_paths,
+                )
+        except Exception as err:
+            tenant.iambic_templates_last_parsed = iambic_templates_last_parsed
+            await tenant.write()
             log.error(
                 {
                     "function": f"{__name__}.{sys._getframe().f_code.co_name}",
@@ -646,33 +759,4 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
                     "error": str(err),
                 }
             )
-            continue
-
-        if create_template_paths:
-            await create_tenant_templates_and_definitions(
-                tenant,
-                iambic_config,
-                repo,
-                repo_dir,
-                provider_definition_map,
-                create_template_paths,
-            )
-        if upsert_template_paths:
-            await upsert_tenant_templates_and_definitions(
-                tenant,
-                iambic_config,
-                repo,
-                repo_dir,
-                provider_definition_map,
-                upsert_template_paths,
-            )
-        if deleted_template_paths:
-            await delete_tenant_templates_and_definitions(
-                tenant,
-                repo,
-                repo_dir,
-                deleted_template_paths,
-            )
-
-    tenant.iambic_templates_last_parsed = iambic_templates_last_parsed
-    await tenant.write()
+            return

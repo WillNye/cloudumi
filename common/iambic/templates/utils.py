@@ -1,10 +1,31 @@
 from sqlalchemy import or_, select
+from sqlalchemy.orm import contains_eager
 
 from common.config.globals import ASYNC_PG_SESSION
 from common.iambic.templates.models import (
     IambicTemplate,
+    IambicTemplateContent,
     IambicTemplateProviderDefinition,
 )
+
+
+async def get_template_by_id(tenant_id: int, template_id: str) -> IambicTemplate:
+    async with ASYNC_PG_SESSION() as session:
+        stmt = (
+            select(IambicTemplate)
+            .filter(
+                IambicTemplate.id == template_id,
+                IambicTemplate.tenant_id == tenant_id,
+            )
+            .join(
+                IambicTemplateContent,
+                IambicTemplateContent.iambic_template_id == IambicTemplate.id,
+            )
+            .options(contains_eager(IambicTemplate.content))
+        )
+
+        items = await session.execute(stmt)
+        return items.scalars().one()
 
 
 async def list_tenant_templates(

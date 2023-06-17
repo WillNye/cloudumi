@@ -50,9 +50,8 @@ class IambicRepo:
         self.request_id = request_id
         self.requested_by = requested_by
         self.use_request_branch = use_request_branch
-        self._default_file_path = IambicGit(self.tenant).get_iambic_repo_path(
-            self.repo_name
-        )
+        self._iambic_git = IambicGit(self.tenant)
+        self._default_file_path = self._iambic_git.get_iambic_repo_path(self.repo_name)
         self.remote_name = remote_name
         self.repo = None
         self._default_branch_name = None
@@ -74,6 +73,11 @@ class IambicRepo:
             "add", "--track", f"-b{self.request_branch_name}", self.request_file_path
         )
         self.repo = Repo(self.request_file_path)
+        for remote in self.repo.remotes:
+            if "origin" in remote.name:
+                with remote.config_writer as cw:
+                    cw.set("url", self.repo_uri)
+                remote.fetch()
 
     async def set_repo(self, **env):
         if os.path.exists(self.file_path):
@@ -103,6 +107,12 @@ class IambicRepo:
                 dict(tenant=self.tenant, request_id=self.request_id),
             )
             await self.set_request_branch()
+        else:
+            for remote in self.repo.remotes:
+                if "origin" in remote.name:
+                    with remote.config_writer as cw:
+                        cw.set("url", self.repo_uri)
+                    remote.fetch()
 
     async def _commit_and_push_changes(
         self,
@@ -112,16 +122,15 @@ class IambicRepo:
         reset_branch: bool = False,
     ) -> str:
         async def _apply_template_change(change: IambicTemplateChange):
-            file_path = os.path.join(self.request_file_path, change.path)
-            file_body = change.body
+            file_path = os.path.join(self.request_file_path, change.file_path)
+            file_body = change.template_body
 
             if not file_body and os.path.exists(file_path):
                 await aiofiles.os.remove(file_path)
             elif file_body:
                 await self._storage_handler.write_file(file_path, "w", file_body)
 
-        await aio_wrapper(self.repo.git.pull)
-        await aio_wrapper(self.repo.git.pull, "origin", self.default_branch_name)
+        await self._iambic_git.clone_or_pull_git_repos()
         if reset_branch:
             changed_files = self.repo.git.diff(
                 "--name-only", self.default_branch_name
@@ -137,13 +146,13 @@ class IambicRepo:
             ]
         )
         for template_change in template_changes:
-            if template_change.body:
+            if template_change.template_body:
                 self.repo.index.add(
-                    [os.path.join(self.request_file_path, template_change.path)]
+                    [os.path.join(self.request_file_path, template_change.file_path)]
                 )
             else:
                 self.repo.git.rm(
-                    [os.path.join(self.request_file_path, template_change.path)]
+                    [os.path.join(self.request_file_path, template_change.file_path)]
                 )
 
         requesting_actor = Actor("Iambic", changed_by)
@@ -279,10 +288,10 @@ class GitComment(PydanticBaseModel):
 
 
 class PullRequestFile(PydanticBaseModel):
-    filename: str
+    file_path: str
     status: str
     additions: int
-    body: str
+    template_body: str
     previous_body: Optional[str] = None
 
 
@@ -507,15 +516,17 @@ class GitHubPullRequest(BasePullRequest):
     async def _get_file_as_pr_file(
         self, file: File, sha: str, previous_sha: str
     ) -> PullRequestFile:
-        filename = file.filename
-        previous_filename = file.previous_filename or filename
+        file_path = file.filename
+        previous_file_path = file.previous_filename or file_path
 
         if not self.merged_at and not self.closed_at:
             # Read from local file system if the request is still open
-            path = os.path.join(self.repo.request_file_path, filename)
-            body = await self.repo.storage_handler.read_file(path, "r")
+            path = os.path.join(self.repo.request_file_path, file_path)
+            template_body = await self.repo.storage_handler.read_file(path, "r")
 
-            previous_path = os.path.join(self.repo.default_file_path, previous_filename)
+            previous_path = os.path.join(
+                self.repo.default_file_path, previous_file_path
+            )
             if os.path.exists(previous_path):
                 previous_body = await self.repo.storage_handler.read_file(
                     previous_path, "r"
@@ -525,19 +536,24 @@ class GitHubPullRequest(BasePullRequest):
 
         else:
             # Otherwise, we need to resolve the relevant shas and use those
-            body = await aio_wrapper(self.pr_provider.get_contents, filename, ref=sha)
-            body = body.decoded_content.decode("utf-8")
+            template_body = await aio_wrapper(
+                self.pr_provider.get_contents, file_path, ref=sha
+            )
+            template_body = template_body.decoded_content.decode("utf-8")
 
             if file.status == "added":
                 previous_body = ""
             else:
                 previous_body = await aio_wrapper(
-                    self.pr_provider.get_contents, previous_filename, ref=previous_sha
+                    self.pr_provider.get_contents, previous_file_path, ref=previous_sha
                 )
                 previous_body = previous_body.decoded_content.decode("utf-8")
 
         return PullRequestFile(
-            body=body, previous_body=previous_body, **getattr(file, "_rawData")
+            file_path=file_path,
+            template_body=template_body,
+            previous_body=previous_body,
+            **getattr(file, "_rawData"),
         )
 
     async def load_pr(self):
@@ -690,7 +706,6 @@ class Request(SoftDeleteMixin, Base):
             "repo_name": self.repo_name,
             "pull_request_id": self.pull_request_id,
             "pull_request_url": self.pull_request_url,
-            "tenant": self.tenant,
             "status": self.status
             if isinstance(self.status, str)
             else self.status.value,
