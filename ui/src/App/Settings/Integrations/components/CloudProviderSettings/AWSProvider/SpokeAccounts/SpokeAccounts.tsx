@@ -12,7 +12,7 @@ import styles from '../AWSProvider.module.css';
 import DeleteModal from '../DeleteModal';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
-const SpokeAccounts = ({ aws }) => {
+const SpokeAccounts = ({ aws, hubAccounts }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [spokeAccounts, setSpokeAccounts] = useState<SpokeAccount[]>([]);
   const [showDialog, setShowDialog] = useState(false);
@@ -81,7 +81,11 @@ const SpokeAccounts = ({ aws }) => {
       <div className={styles.content}>
         <div className={styles.headerActions}>
           <Button icon="refresh" onClick={() => refetch()}></Button>
-          <Button size="small" onClick={openNewSpokeModal}>
+          <Button
+            size="small"
+            onClick={openNewSpokeModal}
+            disabled={!hubAccounts?.length}
+          >
             New
           </Button>
         </div>

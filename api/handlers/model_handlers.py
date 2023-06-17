@@ -442,6 +442,6 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
                 errors=str(exc).split("\n"),
             )
             sentry_sdk.capture_exception()
-
+        self.set_status(res.status_code)
         self.write(res.json(exclude_unset=True, exclude_none=True))
         return
