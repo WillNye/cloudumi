@@ -28,11 +28,18 @@ def get_role_arn(account_id: str, role_name: str) -> str:
 def get_aws_account_from_template(
     aws_accounts: AWSAccount, account_name
 ) -> Optional[AWSAccount]:
+    log_data = dict(
+        account_name=account_name,
+        function=f"{__name__}.{sys._getframe().f_code.co_name}",
+    )
     aws_account = [x for x in aws_accounts if x.name == account_name]
     if len(aws_account) == 0:
         # TODO: how should this be handled?
         log.warning(
-            f"No corresponding account id known for Iambic included_account {account_name}"
+            {
+                "message": "No corresponding account id known for provided account name",
+                **log_data,
+            }
         )
         return None
     return aws_account[0]

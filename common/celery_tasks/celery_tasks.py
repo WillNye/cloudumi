@@ -2872,10 +2872,9 @@ def sync_iambic_templates_for_tenant(tenant: str) -> Dict:
         if len(iambic_repos) > 1:
             log.warning(
                 {
-                    "function": function,
+                    **log_data,
                     "message": "More than 1 Iambic Template repo has been configured. "
                     "This will result in data being truncated in the cached template bucket.",
-                    "tenant": tenant_name,
                 }
             )
 

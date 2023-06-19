@@ -137,7 +137,6 @@ class IambicConfigInterface:
             "NOQ::AWS::IAM::Role",
             "NOQ::AWS::IAM::Group",
             "NOQ::AWS::IAM::ManagedPolicy",
-            "NOQ::AWS::IAM::ManagedPolicy",
             "NOQ::AWS::IAM::User",
         }
         repo_name = self.iambic_repo.repo_name

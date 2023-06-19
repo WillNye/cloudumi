@@ -1,5 +1,6 @@
 import asyncio
 import os
+import sys
 from datetime import datetime
 from typing import Optional
 
@@ -113,9 +114,10 @@ class IambicRepo:
             default_branch_name = default_branch.split("/")[-1]
             try:
                 self.repo.git.checkout(default_branch_name)
-            except Exception:
+            except Exception as err:
                 # The main branch is already checked out
-                pass
+                if "already exists and is not an empty directory" not in err.stderr:
+                    raise
             self.repo.git.reset("--hard", default_branch)
             self.repo.git.pull()
         else:
@@ -144,8 +146,10 @@ class IambicRepo:
                 f"-b{self.request_branch_name}",
                 self.request_file_path,
             )
-        except GitCommandError:
+        except GitCommandError as err:
             # The branch already exists so create the worktree for it
+            if "already exists" not in err.stderr:
+                raise
             self.repo.git.worktree(
                 "add", "-f", self.request_file_path, self.request_branch_name
             )
@@ -154,22 +158,23 @@ class IambicRepo:
         await self.set_repo_auth()
 
     async def set_repo(self):
+        log_data = dict(
+            tenant=self.tenant,
+            request_id=self.request_id,
+            repo=self.repo_name,
+            function=f"{__name__}.{sys._getframe().f_code.co_name}",
+        )
         if os.path.exists(self.file_path):
             self.repo = Repo(self.file_path)
             await self.set_repo_auth()
         elif not os.path.exists(self.default_file_path):
             # The repo isn't on disk so we need to clone it before proceeding
-            log.debug(
-                "Cloning repo", dict(tenant=self.tenant, request_id=self.request_id)
-            )
+            log.debug({"message": "Cloning repo", **log_data})
             await self.clone_or_pull_git_repo()
         else:
             # The repo has been cloned but the worktree doesn't exist yet
             # So, we want to pull the latest changes before we create the worktree
-            log.debug(
-                "Adding tree to repo",
-                dict(tenant=self.tenant, request_id=self.request_id),
-            )
+            log.debug({"message": "Adding tree to repo", **log_data})
             await self.clone_or_pull_git_repo()  # Ensure we have the latest changes on main
             await self.set_request_branch()  # Create the worktree and set self.repo
 
@@ -180,6 +185,13 @@ class IambicRepo:
         request_notes=Optional[None],
         reset_branch: bool = False,
     ) -> str:
+        log_data = dict(
+            tenant=self.tenant,
+            request_id=self.request_id,
+            repo=self.repo_name,
+            function=f"{__name__}.{sys._getframe().f_code.co_name}",
+        )
+
         async def _apply_template_change(change: IambicTemplateChange):
             file_path = os.path.join(self.request_file_path, change.file_path)
             file_body = change.template_body
@@ -215,7 +227,7 @@ class IambicRepo:
 
         requesting_actor = Actor("Iambic", changed_by)
         self.repo.index.commit(
-            f"Made as part of Noq Request: {self.request_id} by {self.requested_by}",
+            f"Noq Request created by: {self.requested_by}",
             committer=requesting_actor,
             author=requesting_actor,
         )
@@ -238,10 +250,7 @@ class IambicRepo:
                 self.remote_name,
                 "refs/notes/commits",
             )
-        log.debug(
-            "Pushed changes to remote branch",
-            dict(tenant=self.tenant, request_id=self.request_id),
-        )
+        log.debug({"message": "Pushed changes to remote branch", **log_data})
         return self.request_branch_name
 
     async def create_branch(

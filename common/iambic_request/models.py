@@ -1,5 +1,6 @@
 import asyncio
 import os
+import sys
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -215,10 +216,12 @@ class BasePullRequest(PydanticBaseModel):
         raise NotImplementedError
 
     async def reject_request(self):
-        log.debug(
-            "Rejecting request",
-            dict(tenant=self.tenant.name, request_id=self.request_id),
+        log_data = dict(
+            tenant=self.tenant,
+            request_id=self.request_id,
+            function=f"{__name__}.{sys._getframe().f_code.co_name}",
         )
+        log.debug({"message": "Rejecting request", **log_data})
         await self.load_pr()
         await self._reject_request()
         await self._set_repo(use_request_branch=False)

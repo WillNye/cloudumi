@@ -103,7 +103,7 @@ async def get_repo_access_token(
     access_token = response.json()["token"]
     if repo_name:
         # Set cache
-        red.set(cache_key, access_token, ex=60 * 5)  # TTL is 5 minutes
+        red.set(cache_key, access_token, ex=60 * 45)  # TTL is 45 minutes
 
     return access_token
 

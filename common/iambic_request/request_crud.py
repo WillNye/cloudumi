@@ -8,6 +8,7 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import contains_eager
 
 from common import IambicTemplate, IambicTemplateContent
+from common.config import config
 from common.config.globals import ASYNC_PG_SESSION
 from common.exceptions.exceptions import NoMatchingRequest, Unauthorized
 from common.iambic.config.models import TRUSTED_PROVIDER_RESOLVER_MAP
@@ -195,6 +196,14 @@ async def create_request(
     )
     await request.write()
 
+    request_link = config.get_tenant_specific_key("url", tenant)
+    request_link = f"{request_link}/requests/{request.id}"
+    await request_pr.add_comment(
+        f"Request: {request_link}\n"
+        f"Created by: {created_by}\n"
+        f"Justification: {justification}"
+    )
+
     response = await get_request_response(request, request_pr, False)
     del request_pr
     return {
@@ -275,16 +284,15 @@ async def approve_request(
     """
     request = await get_request(tenant.id, request_id)
 
-    print("Uncomment this before merging")
-    # if (
-    #     not any(
-    #         approver_group in request.allowed_approvers
-    #         for approver_group in approver_groups
-    #     )
-    #     or request.status != "Pending"
-    #     or request.deleted
-    # ):
-    #     raise Unauthorized("Unable to approve this request")
+    if (
+        not any(
+            approver_group in request.allowed_approvers
+            for approver_group in approver_groups
+        )
+        or request.status != "Pending"
+        or request.deleted
+    ):
+        raise Unauthorized("Unable to approve this request")
 
     request.status = "Running"
 
