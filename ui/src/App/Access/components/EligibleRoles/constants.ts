@@ -56,3 +56,9 @@ export const allRolesColumns: ColumnDef<any, any>[] = [
     footer: props => props.column.id
   }
 ];
+
+export const SUPPORTED_FILTER_KEYS = [
+  'account_name',
+  'account_id',
+  'role_name'
+];
