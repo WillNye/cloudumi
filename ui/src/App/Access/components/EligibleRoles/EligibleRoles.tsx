@@ -118,7 +118,6 @@ const EligibleRoles = () => {
                 `Remove token ${token.propertyKey} ${token.operator} ${token.value}`,
               enteredTextLabel: text => `Use: "${text}"`
             }}
-            countText="5 matches"
             filteringOptions={[]}
             filteringProperties={[
               {

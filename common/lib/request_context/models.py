@@ -1,11 +1,12 @@
-from typing import Any, List, Optional
+from typing import List, Optional
 
+from common import Tenant
 from common.lib.pydantic import BaseModel
 
 
 class RequestContext(BaseModel):
     tenant: str
-    db_tenant: Any
+    db_tenant: Optional[Tenant]
     user: Optional[str]
     db_user: Any
     groups: Optional[List[str]]
@@ -16,3 +17,6 @@ class RequestContext(BaseModel):
     needs_to_sign_eula: Optional[bool]
     mfa_verification_required: Optional[bool]
     is_admin: Optional[bool]
+
+    class Config:
+        arbitrary_types_allowed = True

@@ -13,5 +13,5 @@ def effective_accounts(
     return [
         account
         for account in aws_accounts
-        if evaluate_on_provider(resource, account, None)
+        if evaluate_on_provider(resource, account, False)
     ]

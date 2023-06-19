@@ -1,27 +1,27 @@
 export const requestsColumns = [
   {
-    Header: 'User',
-    accessor: 'user',
+    header: 'User',
+    accessorKey: 'user',
     sortable: false
   },
   {
-    Header: 'Request ID',
-    accessor: 'requestId',
+    header: 'Request ID',
+    accessorKey: 'requestId',
     sortable: false
   },
   {
-    Header: 'ARN',
-    accessor: 'arn',
+    header: 'ARN',
+    accessorKey: 'arn',
     sortable: false
   },
   {
-    Header: 'Status',
-    accessor: 'status',
+    header: 'Status',
+    accessorKey: 'status',
     sortable: false
   },
   {
-    Header: 'Created At',
-    accessor: 'createdAt',
+    header: 'Created At',
+    accessorKey: 'createdAt',
     sortable: false
   }
 ];

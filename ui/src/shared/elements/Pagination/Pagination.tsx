@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo } from 'react';
+import { FC, Fragment, useCallback, useMemo } from 'react';
 import { Input } from 'shared/form/Input';
 import { Button } from '../Button';
 import styles from './Pagination.module.css';
@@ -41,6 +41,10 @@ export const Pagination: FC<PaginationProps> = ({
   const nextPage = useCallback(() => {
     handleOnPageChange?.(pageIndex + 1);
   }, [handleOnPageChange, pageIndex]);
+
+  if (pageCount === 1) {
+    return <Fragment />;
+  }
 
   return (
     <div className={styles.pagination}>

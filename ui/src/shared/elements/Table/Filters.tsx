@@ -1,6 +1,6 @@
 import React from 'react';
 import { useMemo, useState } from 'react';
-import { useAsyncDebounce } from 'react-table';
+// import { useAsyncDebounce } from '@tanstack/react-table';
 import { Input } from 'shared/form/Input';
 
 export const GlobalFilter = ({
@@ -10,13 +10,13 @@ export const GlobalFilter = ({
 }) => {
   const count = preGlobalFilteredRows?.length;
   const [value, setValue] = useState(globalFilter);
-  const onChange = useAsyncDebounce(value => {
+  const onChange = value => {
     setGlobalFilter(value || undefined);
-  }, 200);
+  };
 
   return (
     <span>
-      Search:{' '}
+      Search:
       <Input
         value={value || ''}
         onChange={e => {

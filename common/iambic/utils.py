@@ -8,33 +8,37 @@ from common.models import IambicRepoDetails
 
 
 async def save_iambic_repos(
-    tenant: str, iambic_repos: IambicRepoDetails, user: str
+    tenant_name: str, iambic_repos: IambicRepoDetails, user: str
 ) -> bool:
 
     ddb = RestrictedDynamoHandler()
-    tenant_config = config.get_tenant_static_config_from_dynamo(tenant)
+    tenant_config = config.get_tenant_static_config_from_dynamo(tenant_name)
     if not tenant_config:
-        raise KeyError(f"No tenant config found for {tenant}")
+        raise KeyError(f"No tenant config found for {tenant_name}")
 
     tenant_config["iambic_repos"] = [iambic_repos.dict()]
 
-    await ddb.update_static_config_for_tenant(yaml.dump(tenant_config), user, tenant)
+    await ddb.update_static_config_for_tenant(
+        yaml.dump(tenant_config), user, tenant_name
+    )
     return True
 
 
-async def delete_iambic_repos(tenant: str, user: str):
+async def delete_iambic_repos(tenant_name: str, user: str):
     ddb = RestrictedDynamoHandler()
-    tenant_config = config.get_tenant_static_config_from_dynamo(tenant)
+    tenant_config = config.get_tenant_static_config_from_dynamo(tenant_name)
     if not tenant_config:
-        raise KeyError(f"No tenant config found for {tenant}")
+        raise KeyError(f"No tenant config found for {tenant_name}")
 
     tenant_config["iambic_repos"] = []
 
-    await ddb.update_static_config_for_tenant(yaml.dump(tenant_config), user, tenant)
+    await ddb.update_static_config_for_tenant(
+        yaml.dump(tenant_config), user, tenant_name
+    )
     return True
 
 
-async def get_iambic_repo(tenant: str) -> Optional[IambicRepoDetails]:
+async def get_iambic_repo(tenant_name: str) -> Optional[IambicRepoDetails]:
     """Retrieve the proper IAMbic repo.
     Currently, we really only support one repo per tenant.
     """
@@ -42,7 +46,7 @@ async def get_iambic_repo(tenant: str) -> Optional[IambicRepoDetails]:
 
     iambic_repos: list[IambicRepoDetails] = (
         models.ModelAdapter(IambicRepoDetails)
-        .load_config(IAMBIC_REPOS_BASE_KEY, tenant)
+        .load_config(IAMBIC_REPOS_BASE_KEY, tenant_name)
         .models
     )
     if not iambic_repos:

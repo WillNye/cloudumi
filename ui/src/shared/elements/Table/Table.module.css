@@ -1,6 +1,6 @@
 .table {
   border-collapse: collapse;
-  overflow: scroll;
+  overflow-y: scroll;
   width: 100%;
 
   th {
@@ -17,7 +17,6 @@
     display: flex;
     align-items: center;
     height: 20px;
-    /* flex-direction: column; */
   }
 
   &.striped {
@@ -107,9 +106,28 @@
     padding: 8px;
   }
 
-  Table thead {
+  thead {
+    position: relative;
+  }
+
+  .columnsDropdown {
     position: sticky;
-    top: 0px;
-    margin: 0 0 0 0;
+    right: 0px;
+    z-index: 12;
+    width: 50px;
+  }
+
+  .columnsDropdownIcon {
+    cursor: pointer;
+    background-color: var(--gray-800);
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+}
+
+.columnsDropdownItem {
+  padding: var(--spacing-xs) 0;
+
+  .itemLabel {
+    padding-left: var(--spacing-md);
   }
 }

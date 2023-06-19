@@ -35,16 +35,20 @@ async def bulk_add(instance_list: List[T]) -> List[T]:
         async with session.begin():
             for instance_batch in batch(instance_list, batch_size):
                 session.add_all(instance_batch)
-                await session.commit()
 
     return instance_list
 
 
-async def bulk_delete(instance_list: List[T]) -> None:
-    """
-    Delete a list of instances from the database in batches.
+async def bulk_delete(instance_list: List[T], as_query: bool = True) -> None:
+    """Delete a list of instances from the database in batches.
+
+    The purpose of to delete by object is to not only delete the object,
+     but it's related objects as part of a cascade.
+    It's slower but that's fine if you're deleting < 1000 objects,
+     and it's way easier to read
 
     :param instance_list: A list of instances to be deleted from the database
+    :param as_query: Whether the deletion should occur on the object itself or as a delete by query
     """
     batch_size = 100
     instance_type = type(instance_list[0])
@@ -53,46 +57,14 @@ async def bulk_delete(instance_list: List[T]) -> None:
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
             for instance_batch in batch(instance_list, batch_size):
-                stmt = delete(instance_type).where(
-                    instance_type.id.in_([instance.id for instance in instance_batch])
-                )
-                await session.execute(stmt)
-
-
-async def bulk_upsert(
-    table: Type[T], index_elements: list[str], instance_list: List[T]
-) -> List[T]:
-    """
-    Add or update a list of instances to the database in batches.
-
-    :param table: The table class corresponding to the instances
-    :param instance_list: A list of instances to be added to the database
-    :return: The list of instances added to the database
-    """
-    batch_size = 100
-
-    async with ASYNC_PG_SESSION() as session:
-        async with session.begin():
-            for instance_batch in batch(instance_list, batch_size):
-                # Convert instances to dictionaries
-                dict_batch = [instance.__dict__ for instance in instance_batch]
-
-                # Create the Insert object
-                stmt = insert(table).values(dict_batch)
-
-                # The 'on conflict do update' clause
-                # Here you need to define the 'index_elements' and 'set_' arguments
-                # 'index_elements' should be the list of columns that form the primary key or unique index
-                # 'set_' should be a dictionary where the key is the column name and the value is the new value for that column
-                # in this case we are setting it to the excluded value, which represents the value that would have been inserted
-                do_update_stmt = stmt.on_conflict_do_update(
-                    index_elements=index_elements,
-                    set_={
-                        key: getattr(stmt.excluded, key) for key in dict_batch[0].keys()
-                    },
-                )
-
-                await session.execute(do_update_stmt)
-                await session.commit()
-
-    return instance_list
+                if as_query:
+                    stmt = delete(instance_type).where(
+                        instance_type.id.in_(
+                            [instance.id for instance in instance_batch]
+                        )
+                    )
+                    await session.execute(stmt)
+                else:
+                    for instance in instance_batch:
+                        await session.delete(instance)
+                    await session.flush()

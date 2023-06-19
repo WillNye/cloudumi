@@ -407,7 +407,6 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
             raise tornado.web.Finish()
 
         user = await User.get_by_email(self.ctx.db_tenant, email)
-
         if not user:
             self.set_status(400)
             self.write(
@@ -415,6 +414,16 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
                     success="error",
                     status_code=400,
                     data={"message": "Invalid token"},
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            raise tornado.web.Finish()
+        elif user.is_managed_externally:
+            self.set_status(400)
+            self.write(
+                WebResponse(
+                    success="error",
+                    status_code=400,
+                    data={"message": "Unable to reset password for externally managed users like Okta"},
                 ).dict(exclude_unset=True, exclude_none=True)
             )
             raise tornado.web.Finish()

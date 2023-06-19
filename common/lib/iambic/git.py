@@ -3,7 +3,7 @@ import hashlib
 import os
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import httpx
 import jwt
@@ -82,6 +82,11 @@ async def get_github_repos(access_token):
 
 
 class IambicGit:
+    """DO NOT USE THIS CLASS. IT IS ON LIFE SUPPORT AND ONLY USED BY THE LEGACY SLACK IMPLEMENTATION.
+
+    Instead, use the IambicRepo and IambicConfigInterface classes.
+    """
+
     def __init__(self, tenant: str) -> None:
         self.tenant: str = tenant
         self.git_repositories = []
@@ -162,7 +167,7 @@ class IambicGit:
         return await iambic_gather_templates(repo_path, *args, **kwargs)
 
     def load_templates(
-        self, template_paths, use_multiprocessing=False, *args, **kwargs
+        self, template_paths, template_map, use_multiprocessing=False, *args, **kwargs
     ):
         tenant_repo_base_path_posix = Path(self.tenant_repo_base_path)
         for template_path in template_paths:
@@ -171,7 +176,11 @@ class IambicGit:
                     f"Template path {template_path} is not valid for this tenant."
                 )
         return iambic_load_templates(
-            template_paths, use_multiprocessing=use_multiprocessing, *args, **kwargs
+            template_paths,
+            template_map,
+            use_multiprocessing=use_multiprocessing,
+            *args,
+            **kwargs,
         )
 
     async def set_git_repositories(self) -> None:
@@ -182,11 +191,11 @@ class IambicGit:
         )
 
     async def retrieve_git_changes(
-        self, repo_name: str, from_sha=None, to_sha=None
+        self, repo_name: str, template_map: dict[str, Any], from_sha=None, to_sha=None
     ) -> None:
         repo_path = self.get_iambic_repo_path(repo_name)
         return await iambic_retrieve_git_changes(
-            repo_path, from_sha=from_sha, to_sha=to_sha
+            repo_path, template_map, from_sha=from_sha, to_sha=to_sha
         )
 
     def evaluate_on_provider(
@@ -295,7 +304,7 @@ class IambicGit:
             config_template = await self.load_iambic_config(repository.repo_name)
             template_paths = await iambic_gather_templates(repo_path)
             self.templates = iambic_load_templates(
-                template_paths, use_multiprocessing=False
+                template_paths, config_template.template_map, use_multiprocessing=False
             )
             template_dicts = []
 
@@ -459,8 +468,10 @@ class IambicGit:
             full_path = os.path.join(repo_path, template_path)
             if not os.path.exists(full_path):
                 continue
-            await self.load_iambic_config(repository.repo_name)
-            return iambic_load_templates([full_path], use_multiprocessing=False)
+            iambic_config = await self.load_iambic_config(repository.repo_name)
+            return iambic_load_templates(
+                [full_path], iambic_config.template_map, use_multiprocessing=False
+            )
         raise Exception("Template not found")
 
     async def sync_aws_accounts(self):

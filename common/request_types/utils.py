@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlalchemy import and_, cast, select
 from sqlalchemy.orm import contains_eager, joinedload
 
@@ -75,8 +77,10 @@ async def list_tenant_request_types(
 
 async def list_tenant_change_types(
     tenant_id: int,
-    request_type_id: str = None,
-    exclude_deleted: bool = True,
+    request_type_id: Optional[str] = None,
+    exclude_deleted: Optional[bool] = True,
+    change_type_ids: Optional[list[str]] = None,
+    summary_only: Optional[bool] = True,
 ) -> list[ChangeType]:
     async with ASYNC_PG_SESSION() as session:
         stmt = select(ChangeType).filter(ChangeType.tenant_id == tenant_id)
@@ -85,6 +89,34 @@ async def list_tenant_change_types(
             stmt = stmt.filter(ChangeType.request_type_id == request_type_id)
         if exclude_deleted:
             stmt = stmt.filter(ChangeType.deleted == False)
+        if change_type_ids:
+            stmt = stmt.filter(ChangeType.id.in_(change_type_ids))
+
+        if not summary_only:
+            stmt = (
+                stmt.join(RequestType, ChangeType.request_type_id == RequestType.id)
+                .outerjoin(ChangeField, ChangeField.change_type_id == ChangeType.id)
+                .outerjoin(
+                    ChangeTypeTemplate,
+                    ChangeTypeTemplate.change_type_id == ChangeType.id,
+                )
+                .outerjoin(
+                    TypeAheadFieldHelper,
+                    TypeAheadFieldHelper.id == ChangeField.typeahead_field_helper_id,
+                )
+            )
+
+            items = await session.execute(
+                stmt.options(
+                    contains_eager(ChangeType.request_type),
+                    contains_eager(ChangeType.change_fields).options(
+                        joinedload(ChangeField.typeahead)
+                    ),
+                    contains_eager(ChangeType.change_template),
+                )
+            )
+
+            return items.scalars().unique().all()
 
         stmt = stmt.order_by(ChangeType.name)
         items = await session.execute(stmt)

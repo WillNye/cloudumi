@@ -244,11 +244,11 @@
       "env": {
         "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
         "AWS_REGION": "us-west-2",
-        "AWS_PROFILE": "staging/staging_admin",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
         "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
         "STAGE": "staging",
-        "TEST_USER_DOMAIN": "localhost",
-        "VERSION": "1.5.571"
+        "RUNTIME_PROFILE": "API",
+        "TEST_USER_DOMAIN": "localhost"
       }
     },
     {

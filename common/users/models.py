@@ -265,6 +265,10 @@ class User(SoftDeleteMixin, Base):
                 await session.commit()
         return user
 
+    @property
+    def is_managed_externally(self):
+        return self.managed_by in {"SSO", "SCIM"}
+
     @classmethod
     async def get_by_id(cls, tenant, user_id, get_groups=False):
         async with ASYNC_PG_SESSION() as session:

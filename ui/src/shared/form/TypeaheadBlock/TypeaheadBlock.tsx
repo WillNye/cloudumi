@@ -1,19 +1,53 @@
 import _, { debounce } from 'lodash';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Search } from '../Search';
 import { Chip } from 'shared/elements/Chip';
 import { Icon } from 'shared/elements/Icon';
+import axios from 'core/Axios/Axios';
 
 export const TypeaheadBlock = ({
   handleInputUpdate,
   defaultValue,
   defaultValues,
-  resultsFormatter
+  resultsFormatter,
+  endpoint,
+  queryParam
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState([]);
   const [selectedValues, setSelectedValues] = useState(defaultValues ?? []);
   const [value, setValue] = useState(defaultValue ?? '');
+  const [error, setError] = useState(null);
+
+  const fetchData = async query => {
+    setIsLoading(true);
+    try {
+      if (!endpoint.startsWith('/')) {
+        endpoint = `/${endpoint}`;
+      }
+      const response = await axios.get(`${endpoint}?${queryParam}=${query}`);
+      let data = response.data.data;
+      // if data is just a list of strings, replace with objects with title
+      if (data.length > 0 && typeof data[0] === 'string') {
+        data = data.map(item => ({ title: item }));
+      }
+      setResults(data);
+      setIsLoading(false);
+    } catch (error) {
+      setError(error);
+      setIsLoading(false);
+    }
+  };
+
+  const debouncedFetchData = useMemo(() => debounce(fetchData, 300), []);
+
+  useEffect(() => {
+    if (value) {
+      debouncedFetchData(value);
+    } else {
+      setResults([]);
+    }
+  }, [value, debouncedFetchData]);
 
   const handleKeyDown = useCallback(
     e => {
@@ -42,7 +76,7 @@ export const TypeaheadBlock = ({
   );
 
   const handleResultSelect = useCallback(
-    ({ result }) => {
+    result => {
       const values = [...selectedValues];
       values.push(result.title);
 
