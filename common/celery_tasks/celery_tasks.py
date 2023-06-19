@@ -2881,7 +2881,7 @@ def sync_iambic_templates_for_tenant(tenant: str) -> Dict:
         iambic_repo = iambic_repos[0]
         iambic_config = IambicConfigInterface(iambic_repo)
         await iambic_config.cache_aws_templates()
-        await sync_tenant_templates_and_definitions(tenant)
+        await sync_tenant_templates_and_definitions(tenant_name)
 
     log.debug(log_data)
     async_to_sync(_sync_iambic_templates_for_tenant)(tenant)
