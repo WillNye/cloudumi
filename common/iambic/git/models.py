@@ -55,9 +55,10 @@ class IambicRepo:
         self.db_tenant = None
         self._default_branch_name = None
         self._storage_handler = TenantFileStorageHandler(self.tenant)
-        tenant_repo_base_path: str = os.path.expanduser(
-            os.path.join(TENANT_STORAGE_BASE_PATH, tenant.name, "iambic_template_repos")
+        self._tenant_storage_base_path = os.path.expanduser(
+            os.path.join(TENANT_STORAGE_BASE_PATH, f'{tenant.name}_{tenant.id}')
         )
+        tenant_repo_base_path: str = os.path.join(self._tenant_storage_base_path, "iambic_template_repos")
         os.makedirs(os.path.dirname(tenant_repo_base_path), exist_ok=True)
         self._default_file_path = os.path.join(tenant_repo_base_path, self.repo_name)
 
@@ -325,8 +326,8 @@ class IambicRepo:
         assert self.request_id
         assert self.requested_by
         return os.path.join(
-            TENANT_STORAGE_BASE_PATH,
-            f"{self.tenant.name}/iambic_template_user_workspaces/{self.requested_by}/{self.repo_name}/{self.request_branch_name}",
+            self._tenant_storage_base_path,
+            f"iambic_template_user_workspaces/{self.requested_by}/{self.repo_name}/{self.request_branch_name}"
         )
 
     @property
