@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { DEFAULT_REQUEST, SELF_SERICE_STEPS } from './constants';
+import { DEFAULT_REQUEST, SELF_SERVICE_STEPS } from './constants';
 import RequestViewer from './components/RequestViewer';
 import SelfServiceContext from './SelfServiceContext';
 import { Button } from 'shared/elements/Button';
@@ -15,7 +15,7 @@ import {
 
 const SelfService = () => {
   const [currentStep, setCurrentStep] = useState(
-    SELF_SERICE_STEPS.SELECT_PROVIDER
+    SELF_SERVICE_STEPS.SELECT_PROVIDER
   );
   const [selfServiceRequest, setSelfServiceRequest] =
     useState<IRequest>(DEFAULT_REQUEST);
@@ -67,47 +67,48 @@ const SelfService = () => {
   };
 
   const canClickBack = useMemo(
-    () => currentStep !== SELF_SERICE_STEPS.SELECT_PROVIDER,
+    () => currentStep !== SELF_SERVICE_STEPS.SELECT_PROVIDER,
     [currentStep]
   );
 
   const canClickNext = useMemo(
     () =>
-      currentStep === SELF_SERICE_STEPS.CHANGE_TYPE ||
-      currentStep === SELF_SERICE_STEPS.SELECT_IDENTITY,
+      currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE ||
+      currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY,
     [currentStep]
   );
 
   const handleNext = useCallback(() => {
-    if (currentStep === SELF_SERICE_STEPS.CHANGE_TYPE) {
-      setCurrentStep(SELF_SERICE_STEPS.COMPLETION_FORM);
-    } else if (currentStep === SELF_SERICE_STEPS.SELECT_IDENTITY) {
-      setCurrentStep(SELF_SERICE_STEPS.REQUEST_TYPE);
+    console.log('handleNext', currentStep);
+    if (currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE) {
+      setCurrentStep(SELF_SERVICE_STEPS.COMPLETION_FORM);
+    } else if (currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY) {
+      setCurrentStep(SELF_SERVICE_STEPS.REQUEST_TYPE);
     }
-  }, []);
+  }, [currentStep]);
 
   const handleBack = useCallback(() => {
     switch (currentStep) {
-      case SELF_SERICE_STEPS.SELECT_IDENTITY:
+      case SELF_SERVICE_STEPS.SELECT_IDENTITY:
         setSelectedIdentityType('');
         setSelectedProvider('');
-        setCurrentStep(SELF_SERICE_STEPS.SELECT_PROVIDER);
+        setCurrentStep(SELF_SERVICE_STEPS.SELECT_PROVIDER);
         break;
-      case SELF_SERICE_STEPS.REQUEST_TYPE:
+      case SELF_SERVICE_STEPS.REQUEST_TYPE:
         setSelectedIdentityType('');
-        setCurrentStep(SELF_SERICE_STEPS.SELECT_IDENTITY);
+        setCurrentStep(SELF_SERVICE_STEPS.SELECT_IDENTITY);
         break;
-      case SELF_SERICE_STEPS.CHANGE_TYPE:
+      case SELF_SERVICE_STEPS.CHANGE_TYPE:
         setSelectedRequestType(null);
-        setCurrentStep(SELF_SERICE_STEPS.REQUEST_TYPE);
+        setCurrentStep(SELF_SERVICE_STEPS.REQUEST_TYPE);
         break;
-      case SELF_SERICE_STEPS.COMPLETION_FORM:
+      case SELF_SERVICE_STEPS.COMPLETION_FORM:
         // setSelectedChangeType(null);
-        setCurrentStep(SELF_SERICE_STEPS.CHANGE_TYPE);
+        setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
         break;
-      // case SELF_SERICE_STEPS.COMPLETION_FORM:
+      // case SELF_SERVICE_STEPS.COMPLETION_FORM:
       //   setSelectedChangeType(null);
-      //   setCurrentStep(SELF_SERICE_STEPS.CHANGE_TYPE);
+      //   setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
       //   break;
       default:
         break;
@@ -144,7 +145,7 @@ const SelfService = () => {
                 Back
               </Button>
             )}
-            {canClickNext && (
+            {canClickNext && currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE && (
               <Button
                 size="small"
                 disabled={!selfServiceRequest.requestedChanges.length}
@@ -153,6 +154,16 @@ const SelfService = () => {
                 Next
               </Button>
             )}
+            {canClickNext &&
+              currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY && (
+                <Button
+                  size="small"
+                  disabled={!selfServiceRequest.identity}
+                  onClick={handleNext}
+                >
+                  Next
+                </Button>
+              )}
           </div>
         </div>
       </div>

@@ -29,6 +29,7 @@ const RequestField = ({ field, selectedOptions, handleChange }) => {
         value={selectedOptions[field.field_key] || ''}
         onChange={value => handleChange(field.field_key, value)}
         multiple={field.allow_multiple}
+        closeOnSelect={field.allow_multiple ? false : true}
         required={!field.allow_none && !selectedOptions[field.field_key]}
       >
         {field.options?.map(option => (

@@ -15,9 +15,15 @@ export const getChangeRequestType = async ({ queryKey }) => {
 };
 
 export const getRequestType = async ({ queryKey }) => {
-  const [_, id] = queryKey;
-  const url = `${V4_API_URL}/self-service/request-types?provider=${id}`;
-  const response = await axios.get(url);
+  const [_, provider, template_type] = queryKey;
+  const url = `${V4_API_URL}/self-service/request-types`;
+  const response = await axios.get(url, {
+    params: {
+      provider,
+      template_type
+    }
+  });
+
   return response.data;
 };
 

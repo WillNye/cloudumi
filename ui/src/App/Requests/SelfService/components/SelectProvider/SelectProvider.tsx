@@ -7,7 +7,7 @@ import { LineBreak } from 'shared/elements/LineBreak';
 import { Link } from 'react-router-dom';
 
 import SelfServiceContext from '../../SelfServiceContext';
-import { SELF_SERICE_STEPS } from '../../constants';
+import { SELF_SERVICE_STEPS } from '../../constants';
 import { useQuery } from '@tanstack/react-query';
 import { getProviders } from 'core/API/iambicRequest';
 import { providerDetails } from './constants';
@@ -53,8 +53,8 @@ const SelectProvider = () => {
               icon={provider.icon}
               description={provider.description}
               onClick={() => {
-                setCurrentStep(SELF_SERICE_STEPS.SELECT_IDENTITY);
                 setSelectedProvider(provider.provider);
+                setCurrentStep(SELF_SERVICE_STEPS.SELECT_IDENTITY);
               }}
             />
           ))}

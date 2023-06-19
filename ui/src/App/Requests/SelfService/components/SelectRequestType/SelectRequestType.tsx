@@ -6,7 +6,7 @@ import styles from './SelectRequestType.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { useContext } from 'react';
 import SelfServiceContext from '../../SelfServiceContext';
-import { SELF_SERICE_STEPS } from '../../constants';
+import { SELF_SERVICE_STEPS } from '../../constants';
 import { RequestType } from '../../types';
 import { useQuery } from '@tanstack/react-query';
 import { getRequestType } from 'core/API/iambicRequest';
@@ -23,7 +23,11 @@ const SelectRequestType = () => {
 
   const { data, isLoading } = useQuery({
     queryFn: getRequestType,
-    queryKey: ['getRequestType', selfServiceRequest.provider],
+    queryKey: [
+      'getRequestType',
+      selfServiceRequest.provider,
+      selfServiceRequest.identityType
+    ],
     onError: (error: AxiosError) => {
       // const errorRes = error?.response;
       // const errorMsg = extractErrorMessage(errorRes?.data);
@@ -47,7 +51,7 @@ const SelectRequestType = () => {
                 icon={getRequestTypeIcon(requestType.name)}
                 description={requestType.description}
                 onClick={() => {
-                  setCurrentStep(SELF_SERICE_STEPS.CHANGE_TYPE);
+                  setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
                   setSelectedRequestType(requestType);
                 }}
               />

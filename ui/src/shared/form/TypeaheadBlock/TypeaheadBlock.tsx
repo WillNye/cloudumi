@@ -29,7 +29,6 @@ export const TypeaheadBlock = ({
       const response = await axios.get(endpoint, {
         params: {
           [queryParam]: query
-          // other parameters can go here
         }
       });
       let data = response.data.data;
@@ -55,6 +54,11 @@ export const TypeaheadBlock = ({
       debouncedFetchData(value);
     }
   }, [endpoint, queryParam, value, debouncedFetchData]);
+
+  useEffect(() => {
+    setValue(defaultValue);
+    setSelectedValues(defaultValues);
+  }, [defaultValue, defaultValues]);
 
   useEffect(() => {
     if (value) {
@@ -93,7 +97,7 @@ export const TypeaheadBlock = ({
   const handleResultSelect = useCallback(
     result => {
       const values = [...selectedValues];
-      values.push(result[titleKey]);
+      values.push(result);
 
       setSelectedValues(values);
 
@@ -134,7 +138,7 @@ export const TypeaheadBlock = ({
     () =>
       selectedValues.map((selectedValue, index) => (
         <Chip key={index}>
-          {selectedValue}
+          {selectedValue[titleKey]}
           <Icon
             name="close"
             onClick={() => handleSelectedValueDelete(selectedValue)}
