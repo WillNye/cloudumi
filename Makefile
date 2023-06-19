@@ -51,31 +51,6 @@ DOMAIN_PREFIX? = engineering
 
 .PHONY: tf-staging-refresh tf-staging-plan tf-staging-apply tf-prod-refresh tf-prod-plan tf-prod-apply
 
-.PHONY: docker_upload_volumes
-docker_upload_volumes: docker_deps_down
-	@echo "Uploading Docker volumes to S3..."
-	@noq file -f -p arn:aws:iam::759357822767:role/development_admin arn:aws:iam::759357822767:role/development_admin
-	@mkdir -p $(DOCKER_VOLUMES_BACKUP_DIR)
-	@for volume in $(DOCKER_VOLUMES_TO_BACKUP); do \
-		echo docker run --rm -e AWS_PROFILE=arn:aws:iam::759357822767:role/development_admin -v ~/.aws:/root/.aws:cached -v $$volume:/data -v $(PWD)/$(DOCKER_VOLUMES_BACKUP_DIR):/backup ubuntu tar cvf /backup/$$volume-$(GIT_BRANCH_SAFE).tar /data; \
-		docker run --rm -e AWS_PROFILE=arn:aws:iam::759357822767:role/development_admin -v ~/.aws:/root/.aws:cached -v $$volume:/data -v $(PWD)/$(DOCKER_VOLUMES_BACKUP_DIR):/backup ubuntu tar cvf /backup/$$volume-$(GIT_BRANCH_SAFE).tar /data; \
-		echo docker run --rm -e AWS_PROFILE=arn:aws:iam::759357822767:role/development_admin -v ~/.aws:/root/.aws:cached -v $(PWD)/$(DOCKER_VOLUMES_BACKUP_DIR):/backup amazon/aws-cli s3 cp /backup/$$volume-$(GIT_BRANCH_SAFE).tar s3://$(DEVELOPMENT_DOCKER_VOLUME_S3_BUCKET)/$$volume-$(GIT_BRANCH_SAFE).tar; \
-		docker run --rm -e AWS_PROFILE=arn:aws:iam::759357822767:role/development_admin -v ~/.aws:/root/.aws:cached -v $(PWD)/$(DOCKER_VOLUMES_BACKUP_DIR):/backup amazon/aws-cli s3 cp /backup/$$volume-$(GIT_BRANCH_SAFE).tar s3://$(DEVELOPMENT_DOCKER_VOLUME_S3_BUCKET)/$$volume-$(GIT_BRANCH_SAFE).tar; \
-	done
-
-.PHONY: docker_download_volumes
-docker_download_volumes: docker_clean docker_deps_up
-	@echo "Downloading Docker volumes from S3..."
-	@noq file -f -p arn:aws:iam::759357822767:role/development_admin arn:aws:iam::759357822767:role/development_admin
-	@mkdir -p $(DOCKER_VOLUMES_BACKUP_DIR)
-	@for volume in $(DOCKER_VOLUMES_TO_BACKUP); do \
-		echo docker run --rm -e AWS_PROFILE=arn:aws:iam::759357822767:role/development_admin -v ~/.aws:/root/.aws:cached -v $(PWD)/$(DOCKER_VOLUMES_BACKUP_DIR):/backup amazon/aws-cli s3 cp s3://$(DEVELOPMENT_DOCKER_VOLUME_S3_BUCKET)/$$volume-$(GIT_BRANCH_SAFE).tar /backup/$$volume-$(GIT_BRANCH_SAFE).tar; \
-		docker run --rm -e AWS_PROFILE=arn:aws:iam::759357822767:role/development_admin -v ~/.aws:/root/.aws:cached -v $(PWD)/$(DOCKER_VOLUMES_BACKUP_DIR):/backup amazon/aws-cli s3 cp s3://$(DEVELOPMENT_DOCKER_VOLUME_S3_BUCKET)/$$volume-$(GIT_BRANCH_SAFE).tar /backup/$$volume-$(GIT_BRANCH_SAFE).tar; \
-		echo docker run --rm -e AWS_PROFILE=arn:aws:iam::759357822767:role/development_admin -v $$volume:/data -v $(PWD)/$(DOCKER_VOLUMES_BACKUP_DIR):/backup ubuntu tar xvf /backup/$$volume-$(GIT_BRANCH_SAFE).tar -C /; \
-		docker run --rm -e AWS_PROFILE=arn:aws:iam::759357822767:role/development_admin -v $$volume:/data -v $(PWD)/$(DOCKER_VOLUMES_BACKUP_DIR):/backup ubuntu tar xvf /backup/$$volume-$(GIT_BRANCH_SAFE).tar -C /; \
-		echo "To inspect the volume, run: docker run -it --rm -v $$volume:/data ubuntu bash"; \
-	done
-
 .PHONY: clean
 clean:
 	rm -rf dist/ || echo $?
@@ -124,6 +99,10 @@ test-lint: test lint
 .PHONY: docker_build
 docker_build:
 	 docker buildx build --platform=linux/amd64 .
+
+.PHONY: docker_build_arm
+docker_build_arm:
+	 docker buildx build --platform=linux/arm64 .
 
 .PHONY: docker_up
 docker_up:
@@ -293,3 +272,37 @@ run_api_local:
 	RUNTIME_PROFILE=API \
 	PYTHON_PROFILE_ENABLE=true \
 	python ./api/__main__.py
+
+.PHONY: docker_upload_volumes
+docker_upload_volumes: docker_deps_down
+	@echo "Uploading Docker volumes to S3..."
+	@noq file -f -p arn:aws:iam::759357822767:role/development_admin arn:aws:iam::759357822767:role/development_admin
+	@mkdir -p $(DOCKER_VOLUMES_BACKUP_DIR)
+	@docker-compose -f deploy/docker-compose-dependencies.yaml up -d cloudumi-pg
+	@set -x; \
+	for volume in $(DOCKER_VOLUMES_TO_BACKUP); do \
+		if [ $$volume != "deploy_cloudumi-pg" ]; then \
+			docker run --rm -e AWS_PROFILE=arn:aws:iam::759357822767:role/development_admin -v ~/.aws:/root/.aws:cached -v $$volume:/data -v $(PWD)/$(DOCKER_VOLUMES_BACKUP_DIR):/backup ubuntu tar cvfz /backup/$$volume-$(GIT_BRANCH_SAFE).tar.gz /data; \
+		else \
+			docker exec -e PGPASSWORD=local_dev deploy-cloudumi-pg-1 bash -c "/usr/bin/pg_dumpall -c --if-exists -U noq | gzip > /var/lib/postgresql/data/postgres-backup.sql.gz"; \
+			docker run --rm -e AWS_PROFILE=arn:aws:iam::759357822767:role/development_admin -v ~/.aws:/root/.aws:cached -v $$volume:/data -v $(PWD)/$(DOCKER_VOLUMES_BACKUP_DIR):/backup ubuntu tar cvfz /backup/$$volume-$(GIT_BRANCH_SAFE).tar.gz /data/postgres-backup.sql.gz; \
+		fi; \
+		docker run --rm -e AWS_PROFILE=arn:aws:iam::759357822767:role/development_admin -v ~/.aws:/root/.aws:cached -v $(PWD)/$(DOCKER_VOLUMES_BACKUP_DIR):/backup amazon/aws-cli s3 cp /backup/$$volume-$(GIT_BRANCH_SAFE).tar.gz s3://$(DEVELOPMENT_DOCKER_VOLUME_S3_BUCKET)/$$volume-$(GIT_BRANCH_SAFE).tar.gz; \
+	done
+
+.PHONY: docker_download_volumes
+docker_download_volumes: docker_clean docker_deps_up
+	@echo "Downloading Docker volumes from S3..."
+	@noq file -f -p arn:aws:iam::759357822767:role/development_admin arn:aws:iam::759357822767:role/development_admin
+	@mkdir -p $(DOCKER_VOLUMES_BACKUP_DIR)
+	@set -x; \
+	for volume in $(DOCKER_VOLUMES_TO_BACKUP); do \
+		docker run --rm -e AWS_PROFILE=arn:aws:iam::759357822767:role/development_admin -v ~/.aws:/root/.aws:cached -v $(PWD)/$(DOCKER_VOLUMES_BACKUP_DIR):/backup amazon/aws-cli s3 cp s3://$(DEVELOPMENT_DOCKER_VOLUME_S3_BUCKET)/$$volume-$(GIT_BRANCH_SAFE).tar.gz /backup/$$volume-$(GIT_BRANCH_SAFE).tar.gz; \
+		if [ $$volume != "deploy_cloudumi-pg" ]; then \
+			docker run --rm -e AWS_PROFILE=arn:aws:iam::759357822767:role/development_admin -v $$volume:/data -v $(PWD)/$(DOCKER_VOLUMES_BACKUP_DIR):/backup ubuntu tar xvzf /backup/$$volume-$(GIT_BRANCH_SAFE).tar.gz -C /; \
+		else \
+			docker run --rm -e AWS_PROFILE=arn:aws:iam::759357822767:role/development_admin -v $$volume:/data -v $(PWD)/$(DOCKER_VOLUMES_BACKUP_DIR):/backup ubuntu tar xvzf /backup/$$volume-$(GIT_BRANCH_SAFE).tar.gz  -C /; \
+			docker exec -i -e PGPASSWORD=local_dev deploy-cloudumi-pg-1 bash -c "gunzip < /var/lib/postgresql/data/postgres-backup.sql.gz | psql -U noq"; \
+		fi; \
+		echo "To inspect the volume, run: docker run -it --rm -v $$volume:/data ubuntu bash"; \
+	done
