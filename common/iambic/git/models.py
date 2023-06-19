@@ -366,7 +366,9 @@ class IambicRepo:
                     dict(
                         message="Error setting up repo",
                         tenant=tenant_name,
-                        repo_details=repo_details,
+                        repo_names=[
+                            repo_detail.repo_name for repo_detail in repo_details
+                        ],
                         error=repo.__class__.__name__,
                     ),
                     exc_info=True,
