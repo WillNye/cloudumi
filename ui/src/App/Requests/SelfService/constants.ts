@@ -2,6 +2,7 @@ import { IRequest } from './types';
 
 export enum SELF_SERICE_STEPS {
   SELECT_PROVIDER,
+  SELECT_IDENTITY,
   REQUEST_TYPE,
   CHANGE_TYPE,
   REQUEST_CHANGE_DETAILS,
@@ -20,6 +21,8 @@ export const DEFAULT_REQUEST: IRequest = {
   provider: '',
   requestType: null,
   changeType: null,
+  identityType: null,
+  identity: null,
   expirationDate: null,
   justification: null,
   requestedChanges: []

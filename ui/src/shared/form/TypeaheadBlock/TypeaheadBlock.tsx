@@ -11,7 +11,8 @@ export const TypeaheadBlock = ({
   defaultValues,
   resultsFormatter,
   endpoint,
-  queryParam
+  queryParam,
+  titleKey = 'title'
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState([]);
@@ -25,7 +26,12 @@ export const TypeaheadBlock = ({
       if (!endpoint.startsWith('/')) {
         endpoint = `/${endpoint}`;
       }
-      const response = await axios.get(`${endpoint}?${queryParam}=${query}`);
+      const response = await axios.get(endpoint, {
+        params: {
+          [queryParam]: query
+          // other parameters can go here
+        }
+      });
       let data = response.data.data;
       // if data is just a list of strings, replace with objects with title
       if (data.length > 0 && typeof data[0] === 'string') {
@@ -39,7 +45,16 @@ export const TypeaheadBlock = ({
     }
   };
 
-  const debouncedFetchData = useMemo(() => debounce(fetchData, 300), []);
+  const debouncedFetchData = useMemo(
+    () => debounce(fetchData, 300),
+    [endpoint, queryParam]
+  );
+
+  useEffect(() => {
+    if (value && endpoint && queryParam) {
+      debouncedFetchData(value);
+    }
+  }, [endpoint, queryParam, value, debouncedFetchData]);
 
   useEffect(() => {
     if (value) {
@@ -78,7 +93,7 @@ export const TypeaheadBlock = ({
   const handleResultSelect = useCallback(
     result => {
       const values = [...selectedValues];
-      values.push(result.title);
+      values.push(result[titleKey]);
 
       setSelectedValues(values);
 

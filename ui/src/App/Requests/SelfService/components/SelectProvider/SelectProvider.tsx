@@ -53,7 +53,7 @@ const SelectProvider = () => {
               icon={provider.icon}
               description={provider.description}
               onClick={() => {
-                setCurrentStep(SELF_SERICE_STEPS.REQUEST_TYPE);
+                setCurrentStep(SELF_SERICE_STEPS.SELECT_IDENTITY);
                 setSelectedProvider(provider.provider);
               }}
             />

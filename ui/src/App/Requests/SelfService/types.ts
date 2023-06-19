@@ -6,6 +6,14 @@ export interface RequestType {
   supported_template_types: string[];
 }
 
+export interface Identity {
+  id: string;
+  resource_id: string;
+  resource_type: string;
+  template_type: string;
+  provider: string;
+}
+
 export interface ChangeType {
   id: string;
   name: string;
@@ -48,6 +56,8 @@ export interface IRequest {
   provider: string;
   requestType: RequestType | null;
   changeType: ChangeType | null;
+  identityType: string | null;
+  identity: Identity | null;
   requestedChanges: ChangeTypeDetails[] | [];
   justification: string | null;
   expirationDate: string | null;

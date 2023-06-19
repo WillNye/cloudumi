@@ -5,7 +5,13 @@ import SelfServiceContext from './SelfServiceContext';
 import { Button } from 'shared/elements/Button';
 
 import styles from './SelfService.module.css';
-import { ChangeType, ChangeTypeDetails, IRequest, RequestType } from './types';
+import {
+  ChangeType,
+  ChangeTypeDetails,
+  IRequest,
+  Identity,
+  RequestType
+} from './types';
 
 const SelfService = () => {
   const [currentStep, setCurrentStep] = useState(
@@ -17,6 +23,20 @@ const SelfService = () => {
   const setSelectedProvider = (provider: string) => {
     setSelfServiceRequest(prev => {
       const newRequest = { ...prev, provider };
+      return newRequest;
+    });
+  };
+
+  const setSelectedIdentityType = (identityType: string) => {
+    setSelfServiceRequest(prev => {
+      const newRequest = { ...prev, identityType };
+      return newRequest;
+    });
+  };
+
+  const setSelectedIdentity = (identity: Identity) => {
+    setSelfServiceRequest(prev => {
+      const newRequest = { ...prev, identity };
       return newRequest;
     });
   };
@@ -52,19 +72,30 @@ const SelfService = () => {
   );
 
   const canClickNext = useMemo(
-    () => currentStep === SELF_SERICE_STEPS.CHANGE_TYPE,
+    () =>
+      currentStep === SELF_SERICE_STEPS.CHANGE_TYPE ||
+      currentStep === SELF_SERICE_STEPS.SELECT_IDENTITY,
     [currentStep]
   );
 
   const handleNext = useCallback(() => {
-    setCurrentStep(SELF_SERICE_STEPS.COMPLETION_FORM);
+    if (currentStep === SELF_SERICE_STEPS.CHANGE_TYPE) {
+      setCurrentStep(SELF_SERICE_STEPS.COMPLETION_FORM);
+    } else if (currentStep === SELF_SERICE_STEPS.SELECT_IDENTITY) {
+      setCurrentStep(SELF_SERICE_STEPS.REQUEST_TYPE);
+    }
   }, []);
 
   const handleBack = useCallback(() => {
     switch (currentStep) {
-      case SELF_SERICE_STEPS.REQUEST_TYPE:
+      case SELF_SERICE_STEPS.SELECT_IDENTITY:
+        setSelectedIdentityType('');
         setSelectedProvider('');
         setCurrentStep(SELF_SERICE_STEPS.SELECT_PROVIDER);
+        break;
+      case SELF_SERICE_STEPS.REQUEST_TYPE:
+        setSelectedIdentityType('');
+        setCurrentStep(SELF_SERICE_STEPS.SELECT_IDENTITY);
         break;
       case SELF_SERICE_STEPS.CHANGE_TYPE:
         setSelectedRequestType(null);
@@ -93,6 +124,8 @@ const SelfService = () => {
         actions: {
           setCurrentStep,
           setSelectedProvider,
+          setSelectedIdentityType,
+          setSelectedIdentity,
           setSelectedRequestType,
           // setSelectedChangeType,
           addChange,
