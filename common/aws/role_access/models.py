@@ -287,10 +287,8 @@ class AWSRoleAccess(SoftDeleteMixin, Base):
     async def list(cls, tenant):
         async with ASYNC_PG_SESSION() as session:
             stmt = select(AWSRoleAccess).filter(AWSRoleAccess.tenant == tenant)
-
-            # stmt = create_filter_from_url_params(stmt, **filter_kwargs)
             items = await session.execute(stmt)
-        return items.scalars().all()
+        return items.scalars().unique().all()
 
     @classmethod
     async def list_by_user(cls, tenant: Tenant, user: User):
