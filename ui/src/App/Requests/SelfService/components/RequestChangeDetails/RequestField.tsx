@@ -45,6 +45,9 @@ const RequestField = ({ field, selectedOptions, handleChange }) => {
       <TypeaheadBlock
         resultsFormatter={result => <p>{result.title}</p>}
         defaultValues={[]}
+        handleOnSelectResult={value => {
+          handleChange(field.field_key, value['title']);
+        }}
         endpoint={field.typeahead.endpoint}
         queryParam={field.typeahead.query_param_key}
       />
