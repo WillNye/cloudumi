@@ -8,7 +8,7 @@ export const getSearchParams = (): PropertyFilterProps.Token[] => {
   for (const [key, value] of searchParams.entries()) {
     if (SUPPORTED_FILTER_KEYS.includes(key)) {
       keyValuePairs.push({
-        operator: '=',
+        operator: ':',
         propertyKey: key,
         value
       });
