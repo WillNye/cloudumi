@@ -7,6 +7,13 @@ export const getProviders = async () => {
   return response.data;
 };
 
+export const getProviderDefinitions = async ({ queryKey }) => {
+  const [_, query] = queryKey;
+  const url = `${V4_API_URL}/providers/definitions?provider=${query.provider}&iambic_template_id=${query.template_id}`;
+  const response = await axios.get(url);
+  return response.data;
+};
+
 export const getChangeRequestType = async ({ queryKey }) => {
   const [_, id] = queryKey;
   const url = `${V4_API_URL}/self-service/request-types/${id}/change-types/`;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Segment } from 'shared/layout/Segment';
 import styles from './SelectChangeType.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
@@ -7,11 +7,12 @@ import SelfServiceContext from '../../SelfServiceContext';
 import RequestChangeDetails from '../RequestChangeDetails';
 import { useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import axios from 'core/Axios/Axios';
-import { getChangeRequestType } from 'core/API/iambicRequest';
+import {
+  getChangeRequestType,
+  getProviderDefinitions
+} from 'core/API/iambicRequest';
 import { Block } from 'shared/layout/Block';
 import { ChangeType } from '../../types';
-import { Divider } from 'shared/elements/Divider';
 import { Button } from 'shared/elements/Button';
 import { Table } from 'shared/elements/Table';
 import { Select as CloudScapeSelect } from '@noqdev/cloudscape';
@@ -24,26 +25,23 @@ const SelectChangeType = () => {
     actions: { removeChange }
   } = useContext(SelfServiceContext);
 
-  const [providerDefinition, setProviderDefinition] = useState(null);
-
-  const fetchProviderDefinition = async () => {
-    console.log(selfServiceRequest.identity);
-    try {
-      const response = await axios.get('/api/v4/providers/definitions', {
-        params: {
-          provider: selfServiceRequest.provider,
-          iambic_template_id: selfServiceRequest.identity[0].id
-        }
-      });
-      setProviderDefinition(response.data.data);
-    } catch (error) {
-      console.error(error);
+  const { data: providerDefinition, isLoading: loadingDefinitions } = useQuery({
+    queryFn: getProviderDefinitions,
+    queryKey: [
+      'getProviderDefinitions',
+      {
+        provider: selfServiceRequest?.provider,
+        template_id: selfServiceRequest?.identity
+          ? selfServiceRequest.identity[0]?.id
+          : null
+      }
+    ],
+    onError: (error: AxiosError) => {
+      // const errorRes = error?.response;
+      // const errorMsg = extractErrorMessage(errorRes?.data);
+      // setErrorMessage(errorMsg || 'An error occurred fetching resource');
     }
-  };
-
-  useEffect(() => {
-    fetchProviderDefinition();
-  }, [selfServiceRequest.identity]);
+  });
 
   const selectedRequestType = useMemo(
     () => selfServiceRequest.requestType,
@@ -153,11 +151,10 @@ const SelectChangeType = () => {
             placeholder="Select change type"
           />
           <LineBreak size="large" />
-          {/* TODO: May use a popup dialog for change details */}
           {selectedChangeType && (
             <RequestChangeDetails
               selectedChangeType={selectedChangeType}
-              providerDefinition={providerDefinition}
+              providerDefinition={providerDefinition?.data || []}
             />
           )}
           <LineBreak size="large" />

@@ -1,19 +1,33 @@
 import _, { debounce } from 'lodash';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { Search } from '../Search';
 import { Chip } from 'shared/elements/Chip';
 import { Icon } from 'shared/elements/Icon';
 import axios from 'core/Axios/Axios';
 
+interface TypeaheadBlockProps {
+  handleOnSelectResult?: (value: string) => void;
+  handleOnRemoveValue?: (value: string) => void;
+  handleOnChange?: (value: string) => void;
+  defaultValue?: string;
+  defaultValues?: any[];
+  resultsFormatter: (result: any) => ReactNode;
+  endpoint: string;
+  queryParam: string;
+  titleKey?: string;
+}
+
 export const TypeaheadBlock = ({
-  handleInputUpdate,
+  handleOnChange,
+  handleOnSelectResult,
+  handleOnRemoveValue,
   defaultValue,
   defaultValues,
   resultsFormatter,
   endpoint,
   queryParam,
   titleKey = 'title'
-}) => {
+}: TypeaheadBlockProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState([]);
   const [selectedValues, setSelectedValues] = useState(defaultValues ?? []);
@@ -79,19 +93,19 @@ export const TypeaheadBlock = ({
         setSelectedValues(values);
         setResults([]);
         setValue('');
-        handleInputUpdate(values);
+        handleOnSelectResult?.(e.target.value);
       }
     },
-    [handleInputUpdate, selectedValues]
+    [handleOnSelectResult, selectedValues]
   );
 
   const handleSelectedValueDelete = useCallback(
     value => {
       const values = selectedValues?.filter(item => item !== value);
       setSelectedValues(values);
-      handleInputUpdate(values);
+      handleOnRemoveValue?.(value);
     },
-    [selectedValues, handleInputUpdate]
+    [selectedValues, handleOnRemoveValue]
   );
 
   const handleResultSelect = useCallback(
@@ -101,9 +115,9 @@ export const TypeaheadBlock = ({
 
       setSelectedValues(values);
 
-      handleInputUpdate(values);
+      handleOnSelectResult?.(result);
     },
-    [selectedValues, handleInputUpdate]
+    [selectedValues, handleOnSelectResult]
   );
 
   const debouncedSearchFilter = useMemo(
@@ -115,11 +129,11 @@ export const TypeaheadBlock = ({
           setIsLoading(false);
           setResults([]);
           setValue('');
-          handleInputUpdate(selectedValues);
+          handleOnChange?.('');
           return;
         }
       }, 300),
-    [selectedValues, handleInputUpdate]
+    [handleOnChange]
   );
 
   const handleSearchChange = useCallback(
@@ -128,10 +142,10 @@ export const TypeaheadBlock = ({
       const newValue = e.target.value;
       setValue(newValue);
 
-      handleInputUpdate(selectedValues);
+      handleOnChange?.(newValue);
       debouncedSearchFilter(newValue);
     },
-    [selectedValues, debouncedSearchFilter, handleInputUpdate]
+    [debouncedSearchFilter, handleOnChange]
   );
 
   const selectedValueLabels = useMemo(
@@ -145,7 +159,7 @@ export const TypeaheadBlock = ({
           />
         </Chip>
       )),
-    [selectedValues, handleSelectedValueDelete]
+    [selectedValues, handleSelectedValueDelete, titleKey]
   );
 
   return (
