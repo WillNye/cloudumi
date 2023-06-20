@@ -56,9 +56,11 @@ class IambicRepo:
         self._default_branch_name = None
         self._storage_handler = TenantFileStorageHandler(self.tenant)
         self._tenant_storage_base_path = os.path.expanduser(
-            os.path.join(TENANT_STORAGE_BASE_PATH, f'{tenant.name}_{tenant.id}')
+            os.path.join(TENANT_STORAGE_BASE_PATH, f"{tenant.name}_{tenant.id}")
         )
-        tenant_repo_base_path: str = os.path.join(self._tenant_storage_base_path, "iambic_template_repos")
+        tenant_repo_base_path: str = os.path.join(
+            self._tenant_storage_base_path, "iambic_template_repos"
+        )
         os.makedirs(os.path.dirname(tenant_repo_base_path), exist_ok=True)
         self._default_file_path = os.path.join(tenant_repo_base_path, self.repo_name)
 
@@ -327,7 +329,7 @@ class IambicRepo:
         assert self.requested_by
         return os.path.join(
             self._tenant_storage_base_path,
-            f"iambic_template_user_workspaces/{self.requested_by}/{self.repo_name}/{self.request_branch_name}"
+            f"iambic_template_user_workspaces/{self.requested_by}/{self.repo_name}/{self.request_branch_name}",
         )
 
     @property
@@ -394,8 +396,9 @@ class IambicRepo:
 
         installation_id = None
         if repo_details.git_provider == "github":
-            if gh_installation := (await GitHubInstall.get(tenant)):
-                installation_id = gh_installation.installation_id
+            gh_install = await GitHubInstall.get(tenant)
+            if gh_install:
+                installation_id = gh_install.installation_id
 
         iambic_repo_instance = cls(
             tenant=tenant,

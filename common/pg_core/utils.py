@@ -1,8 +1,7 @@
 from itertools import chain, islice
-from typing import Iterable, List, Type, TypeVar
+from typing import Iterable, List, TypeVar
 
 from sqlalchemy import delete
-from sqlalchemy.dialects.postgresql import insert
 
 from common.config.globals import ASYNC_PG_SESSION
 
