@@ -16,6 +16,7 @@ interface TypeaheadBlockProps {
   endpoint: string;
   queryParam: string;
   titleKey?: string;
+  multiple?: boolean;
 }
 
 export const TypeaheadBlock = ({
@@ -27,7 +28,8 @@ export const TypeaheadBlock = ({
   resultsFormatter,
   endpoint,
   queryParam,
-  titleKey = 'title'
+  titleKey = 'title',
+  multiple = false
 }: TypeaheadBlockProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState([]);
@@ -89,7 +91,7 @@ export const TypeaheadBlock = ({
         if (!e.target.value) {
           return;
         }
-        const values = [...selectedValues];
+        const values = multiple ? [...selectedValues] : [];
         values.push(e.target.value);
         setSelectedValues(values);
         setResults([]);
@@ -97,7 +99,7 @@ export const TypeaheadBlock = ({
         handleOnSelectResult?.(e.target.value);
       }
     },
-    [handleOnSelectResult, selectedValues]
+    [handleOnSelectResult, selectedValues, multiple]
   );
 
   const handleSelectedValueDelete = useCallback(
@@ -111,14 +113,17 @@ export const TypeaheadBlock = ({
 
   const handleResultSelect = useCallback(
     result => {
-      const values = [...selectedValues];
+      const values = multiple ? [...selectedValues] : [];
       values.push(result);
-
       setSelectedValues(values);
-
+      if (!multiple) {
+        setValue(result[titleKey]);
+      } else {
+        setValue('');
+      }
       handleOnSelectResult?.(result);
     },
-    [selectedValues, handleOnSelectResult]
+    [selectedValues, handleOnSelectResult, multiple, titleKey]
   );
 
   const debouncedSearchFilter = useMemo(
@@ -129,12 +134,15 @@ export const TypeaheadBlock = ({
         if (value.length < 1) {
           setIsLoading(false);
           setResults([]);
-          setValue('');
+          if (multiple) {
+            // only clear the value if multiple is true
+            setValue('');
+          }
           handleOnChange?.('');
           return;
         }
       }, 300),
-    [handleOnChange]
+    [handleOnChange, multiple]
   );
 
   const handleSearchChange = useCallback(
@@ -149,18 +157,26 @@ export const TypeaheadBlock = ({
     [debouncedSearchFilter, handleOnChange]
   );
 
+  const inputValue = useMemo(() => {
+    return value;
+  }, [value]);
+
   const selectedValueLabels = useMemo(
     () =>
-      selectedValues.map((selectedValue, index) => (
-        <Chip key={index}>
-          {selectedValue[titleKey]}
-          <Icon
-            name="close"
-            onClick={() => handleSelectedValueDelete(selectedValue)}
-          />
-        </Chip>
-      )),
-    [selectedValues, handleSelectedValueDelete, titleKey]
+      multiple ? (
+        selectedValues.map((selectedValue, index) => (
+          <Chip key={index}>
+            {selectedValue[titleKey]}
+            <Icon
+              name="close"
+              onClick={() => handleSelectedValueDelete(selectedValue)}
+            />
+          </Chip>
+        ))
+      ) : (
+        <span>{selectedValues[0]?.[titleKey]}</span>
+      ),
+    [selectedValues, handleSelectedValueDelete, titleKey, multiple]
   );
 
   return (
@@ -174,10 +190,10 @@ export const TypeaheadBlock = ({
         resultRenderer={resultsFormatter}
         onKeyDown={handleKeyDown}
         results={results}
-        value={value}
+        value={inputValue}
       />
       <LineBreak />
-      <div>{selectedValueLabels}</div>
+      {multiple && <div>{selectedValueLabels}</div>}
     </div>
   );
 };
