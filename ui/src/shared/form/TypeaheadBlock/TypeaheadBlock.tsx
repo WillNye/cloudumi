@@ -4,6 +4,7 @@ import { Search } from '../Search';
 import { Chip } from 'shared/elements/Chip';
 import { Icon } from 'shared/elements/Icon';
 import axios from 'core/Axios/Axios';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 interface TypeaheadBlockProps {
   handleOnSelectResult?: (value: string) => void;
@@ -175,6 +176,7 @@ export const TypeaheadBlock = ({
         results={results}
         value={value}
       />
+      <LineBreak />
       <div>{selectedValueLabels}</div>
     </div>
   );
