@@ -65,7 +65,10 @@ const SelectIdentity = () => {
           <LineBreak size="large" />
           {/* TODO: Typeahead block should support selecting a single element */}
           <TypeaheadBlock
-            defaultValue={typeaheadDefaults.defaultValue}
+            defaultValue={
+              selfServiceRequest.identity?.resource_id ||
+              typeaheadDefaults.defaultValue
+            }
             defaultValues={typeaheadDefaults.defaultValues}
             handleOnSelectResult={handleTypeaheadSelect}
             // handleInputUpdate={handleTypeaheadSelect}
