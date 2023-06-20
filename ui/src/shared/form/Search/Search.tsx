@@ -1,4 +1,11 @@
-import { ReactNode, useCallback, useMemo, useState } from 'react';
+import {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react';
 import { Input, InputProps } from '../Input';
 import { Icon } from 'shared/elements/Icon';
 import styles from './Search.module.css';
@@ -25,14 +32,33 @@ export const Search = <T,>({
   const onFocus = useCallback(() => setFocused(true), []);
   const onBlur = useCallback(() => setFocused(false), []);
 
-  const ref = useClickOutside(onBlur);
+  const containerRef = useClickOutside(onBlur);
+
+  // const containerRef = useRef(null);
+  const contentRef = useRef(null);
 
   const showResults = useMemo(() => {
     return Boolean(focused && value);
   }, [focused, value]);
 
+  useEffect(() => {
+    if (!contentRef.current) {
+      return;
+    }
+
+    if (results?.length) {
+      const dropdownMenu = contentRef.current;
+      const contentHeight = dropdownMenu.scrollHeight;
+      const maxHeight =
+        window.innerHeight - dropdownMenu.getBoundingClientRect().top - 100;
+      dropdownMenu.style.maxHeight = `${Math.min(contentHeight, maxHeight)}px`;
+    } else {
+      contentRef.current.style.maxHeight = '80px';
+    }
+  }, [results, contentRef, focused]);
+
   return (
-    <div className={styles.container} ref={ref}>
+    <div className={styles.container} ref={containerRef}>
       <Input
         type="search"
         placeholder="Search..."
@@ -42,9 +68,9 @@ export const Search = <T,>({
         {...rest}
       />
       {showResults && (
-        <ul className={styles.results}>
+        <ul className={styles.results} ref={contentRef}>
           {isLoading ? (
-            <li className={styles.result}>
+            <li className={styles.noResults}>
               <Spinner />
             </li>
           ) : results.length ? (
@@ -61,7 +87,7 @@ export const Search = <T,>({
               </li>
             ))
           ) : (
-            <li className={styles.result}>
+            <li className={styles.noResults}>
               <p>No Results Found</p>
             </li>
           )}

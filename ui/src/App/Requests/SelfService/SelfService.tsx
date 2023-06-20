@@ -92,6 +92,11 @@ const SelfService = () => {
     [currentStep]
   );
 
+  const showFooter = useMemo(
+    () => canClickNext || canClickBack,
+    [canClickNext, canClickBack]
+  );
+
   const handleNext = useCallback(() => {
     console.log('handleNext', currentStep);
     if (currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE) {
@@ -167,35 +172,37 @@ const SelfService = () => {
             <RequestViewer />
           </div>
         </div>
-        <div className={styles.actionsWrapper}>
-          <Divider />
-          <div className={styles.actions}>
-            {canClickBack && (
-              <Button size="small" onClick={handleBack}>
-                Back
-              </Button>
-            )}
-            {canClickNext && currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE && (
-              <Button
-                size="small"
-                disabled={!selfServiceRequest.requestedChanges.length}
-                onClick={handleNext}
-              >
-                Next
-              </Button>
-            )}
-            {canClickNext &&
-              currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY && (
+        {showFooter && (
+          <div className={styles.actionsWrapper}>
+            <Divider />
+            <div className={styles.actions}>
+              {canClickBack && (
+                <Button size="small" onClick={handleBack}>
+                  Back
+                </Button>
+              )}
+              {canClickNext && currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE && (
                 <Button
                   size="small"
-                  disabled={!selfServiceRequest.identity}
+                  disabled={!selfServiceRequest.requestedChanges.length}
                   onClick={handleNext}
                 >
                   Next
                 </Button>
               )}
+              {canClickNext &&
+                currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY && (
+                  <Button
+                    size="small"
+                    disabled={!selfServiceRequest.identity}
+                    onClick={handleNext}
+                  >
+                    Next
+                  </Button>
+                )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </SelfServiceContext.Provider>
   );
