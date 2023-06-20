@@ -43,12 +43,7 @@ const RequestField = ({ field, selectedOptions, handleChange }) => {
   if (field.field_type === 'TypeAhead') {
     return (
       <TypeaheadBlock
-        defaultValue={selectedOptions[field.field_key] || ''}
-        handleInputUpdate={(value: string) =>
-          handleChange(field.field_key, value)
-        }
         resultsFormatter={result => <p>{result.title}</p>}
-        // resultsFormatter={value => ({ title: value })} // Use your own formatter if needed
         defaultValues={[]}
         endpoint={field.typeahead.endpoint}
         queryParam={field.typeahead.query_param_key}
