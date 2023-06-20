@@ -33,7 +33,6 @@ const SelectChangeType = () => {
   const {
     store: {
       selfServiceRequest,
-      justification,
       expirationType,
       relativeValue,
       relativeUnit,
@@ -67,7 +66,7 @@ const SelectChangeType = () => {
       setRelativeValue('5');
       setRelativeUnit('Days');
 
-      const futureDate = format(addDays(new Date(), 5), 'yyyy/MM/dd'); // "2023/06/08" - format is 'yyyy/MM/dd' as requested
+      const futureDate = format(addDays(new Date(), 5), 'yyyy/MM/dd');
       setDateValue(futureDate);
       setTimeValue('00:00:00');
     }
@@ -306,7 +305,7 @@ const SelectChangeType = () => {
             <Block disableLabelPadding label="Justification" />
             <TextArea
               fullWidth
-              value={justification}
+              value={selfServiceRequest.justification}
               onChange={e => setJustification(e.target.value)}
             />
           </>

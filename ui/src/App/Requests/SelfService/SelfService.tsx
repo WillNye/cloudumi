@@ -17,14 +17,20 @@ const SelfService = () => {
   const [currentStep, setCurrentStep] = useState(
     SELF_SERVICE_STEPS.SELECT_PROVIDER
   );
-  const [justification, setJustification] = useState('');
-  const [expirationType, setExpirationType] = useState('never');
+  const [expirationType, setExpirationType] = useState('');
   const [relativeValue, setRelativeValue] = useState('');
   const [relativeUnit, setRelativeUnit] = useState('');
   const [dateValue, setDateValue] = useState('');
   const [timeValue, setTimeValue] = useState('');
   const [selfServiceRequest, setSelfServiceRequest] =
     useState<IRequest>(DEFAULT_REQUEST);
+
+  const setJustification = (justification: string) => {
+    setSelfServiceRequest(prev => {
+      const newRequest = { ...prev, justification };
+      return newRequest;
+    });
+  };
 
   const setSelectedProvider = (provider: string) => {
     setSelfServiceRequest(prev => {
@@ -133,7 +139,6 @@ const SelfService = () => {
         store: {
           currentStep,
           selfServiceRequest,
-          justification,
           expirationType,
           relativeValue,
           relativeUnit,

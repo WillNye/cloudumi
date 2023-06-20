@@ -34,8 +34,8 @@ class IambicRequestValidationHandler(BaseHandler):
         self.set_header("Content-Type", "application/json")
 
         db_tenant = self.ctx.db_tenant
-        request_data = SelfServiceRequestData.parse_raw(self.request.body)
         try:
+            request_data = SelfServiceRequestData.parse_raw(self.request.body)
             data = await run_request_validation(db_tenant, request_data)
         except (AssertionError, TypeError, ValidationError) as err:
             self.write(

@@ -11,24 +11,11 @@ import { useQuery } from '@tanstack/react-query';
 import { getRequestChangeDetails } from 'core/API/iambicRequest';
 import { Segment } from 'shared/layout/Segment';
 import { Select, SelectOption } from 'shared/form/Select';
+import { ProviderDefinition } from '../../types';
 
 interface SelectedOptions {
   [key: string]: string;
 }
-
-type ProviderDefinition = {
-  id: string;
-  name: string;
-  provider: string;
-  definition: {
-    account_id: string;
-    account_name: string;
-    variables: Array<{ key: string; value: string }>;
-    org_id: string;
-    preferred_identifier: string;
-    all_identifiers: string[];
-  };
-};
 
 type RequestChangeDetailsProps = {
   selectedChangeType: ChangeType;
@@ -87,7 +74,8 @@ const RequestChangeDetails = ({
       fields: changeTypeDetails.fields.map(field => ({
         ...field,
         value: selectedOptions[field.field_key]
-      }))
+      })),
+      included_providers: includedProviders
     });
     setSelectedOptions({});
   };

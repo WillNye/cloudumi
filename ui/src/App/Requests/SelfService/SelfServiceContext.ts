@@ -22,7 +22,6 @@ export interface ISelfServiceContext {
   store: {
     currentStep: SELF_SERVICE_STEPS;
     selfServiceRequest: IRequest;
-    justification: string;
     expirationType: string;
     relativeValue: string;
     relativeUnit: string;
