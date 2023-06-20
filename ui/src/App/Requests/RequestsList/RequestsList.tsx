@@ -144,7 +144,12 @@ const RequestsList = () => {
           </div>
         </div>
         <LineBreak size="large" />
-        <Table data={[]} columns={requestsColumns} border="row" />
+        <Table
+          data={[]}
+          columns={requestsColumns}
+          border="row"
+          enableColumnVisibility
+        />
       </div>
     </Segment>
   );

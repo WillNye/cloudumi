@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect, useMemo } from 'react';
+import { useState, useContext, useEffect, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { Segment } from 'shared/layout/Segment';
@@ -30,12 +30,12 @@ const SelectIdentity = () => {
       .catch(error => console.error(error));
   }, [selfServiceRequest.provider]);
 
-  const handleIdentityTypeSelect = identityType => {
+  const handleIdentityTypeSelect = useCallback(identityType => {
     setSelectedIdentityType(identityType);
     setSelectedIdentity(null);
     setTypeaheadEndpoint(`/api/v4/templates?template_type=${identityType}`);
     setTypeaheadDefaults({ defaultValue: '', defaultValues: [] });
-  };
+  }, []);
 
   const handleTypeaheadSelect = identity => {
     setSelectedIdentity(identity);

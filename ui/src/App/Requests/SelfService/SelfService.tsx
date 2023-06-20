@@ -12,6 +12,7 @@ import {
   Identity,
   RequestType
 } from './types';
+import { Divider } from 'shared/elements/Divider';
 
 const SelfService = () => {
   const [currentStep, setCurrentStep] = useState(
@@ -129,6 +130,7 @@ const SelfService = () => {
           setSelectedIdentity,
           setSelectedRequestType,
           // setSelectedChangeType,
+          setSelfServiceRequest,
           addChange,
           removeChange
         }
@@ -139,6 +141,9 @@ const SelfService = () => {
           <div className={styles.wrapper}>
             <RequestViewer />
           </div>
+        </div>
+        <div className={styles.actionsWrapper}>
+          <Divider />
           <div className={styles.actions}>
             {canClickBack && (
               <Button size="small" onClick={handleBack}>

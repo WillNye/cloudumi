@@ -10,6 +10,7 @@ export interface ISelfServiceContext {
     setSelectedRequestType: Dispatch<RequestType>;
     addChange: (change: ChangeTypeDetails) => void;
     removeChange: (index: number) => void;
+    setSelfServiceRequest: Dispatch<IRequest>;
   };
   store: {
     currentStep: SELF_SERVICE_STEPS;
