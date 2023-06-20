@@ -54,7 +54,7 @@ const SelectProvider = () => {
               description={provider.description}
               onClick={() => {
                 setSelectedProvider(provider.provider);
-                setCurrentStep(SELF_SERVICE_STEPS.REQUEST_TYPE);
+                setCurrentStep(SELF_SERVICE_STEPS.SELECT_IDENTITY);
               }}
             />
           ))}

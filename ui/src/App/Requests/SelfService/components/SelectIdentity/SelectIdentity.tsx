@@ -5,7 +5,7 @@ import { Segment } from 'shared/layout/Segment';
 import { Select, SelectOption } from 'shared/form/Select';
 import SelfServiceContext from '../../SelfServiceContext';
 import axios from 'core/Axios/Axios';
-import styles from './SelectIdentityType.module.css';
+import styles from './SelectIdentqityType.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { SELF_SERVICE_STEPS } from '../../constants';
 import { TypeaheadBlock } from 'shared/form/TypeaheadBlock';
@@ -67,7 +67,7 @@ const SelectIdentity = () => {
           <TypeaheadBlock
             defaultValue={typeaheadDefaults.defaultValue}
             defaultValues={typeaheadDefaults.defaultValues}
-            handleInputUpdate={handleTypeaheadSelect}
+            // handleInputUpdate={handleTypeaheadSelect}
             resultsFormatter={result => {
               console.log('result', result);
               return <p>{result.resource_id}</p>;
