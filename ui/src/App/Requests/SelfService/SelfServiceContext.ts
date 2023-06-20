@@ -18,6 +18,7 @@ export interface ISelfServiceContext {
     setTimeValue: Dispatch<string>;
     addChange: (change: ChangeTypeDetails) => void;
     removeChange: (index: number) => void;
+    setSelfServiceRequest: Dispatch<IRequest>;
   };
   store: {
     currentStep: SELF_SERVICE_STEPS;

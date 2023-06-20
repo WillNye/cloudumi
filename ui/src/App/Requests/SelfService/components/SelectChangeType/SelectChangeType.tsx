@@ -156,9 +156,8 @@ const SelectChangeType = () => {
       // },
       {
         header: 'Actions',
-        accessorKey: 'id',
         sortable: false,
-        Cell: ({ row: { index } }) => {
+        accessorFn: (_data, index: number) => {
           return (
             <Button
               onClick={() => removeChange(index)}
