@@ -17,6 +17,8 @@ from furl import furl
 from tornado import httputil
 
 import common.lib.noq_json as json
+from common import User
+from common.aws.role_access.utils import get_user_eligible_roles
 from common.config import config
 from common.config.tenant_config import TenantConfig
 from common.exceptions.exceptions import (
@@ -29,7 +31,6 @@ from common.exceptions.exceptions import (
 )
 from common.lib.alb_auth import authenticate_user_by_alb_auth
 from common.lib.auth import AuthenticationError, is_tenant_admin
-from common.lib.aws.cached_resources.iam import get_user_active_tra_roles_by_tag
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.jwt import (
     JwtAuthType,
@@ -107,8 +108,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
                 request_uuid=str(uuid.uuid4()),
                 uri=self.request.uri,
             )
-            if not config.get("_global_.environment") == "test":
-                self.ctx.db_tenant = await Tenant.get_by_name(tenant)
+            await self.maybe_set_db_fields()
             return
 
         # Ignore unprotected routes, like /healthcheck
@@ -171,6 +171,14 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
         if trusted_remote_ip_header:
             return self.request.headers[trusted_remote_ip_header].split(",")[0]
         return self.request.remote_ip
+
+    async def maybe_set_db_fields(self):
+        if not config.get("_global_.environment") == "test":
+            if not self.ctx.db_tenant:
+                self.ctx.db_tenant = await Tenant.get_by_name(self.ctx.tenant)
+            if not self.ctx.db_user and self.ctx.db_tenant:
+                user = getattr(self, "user", None) or self.ctx.user
+                self.ctx.db_user = await User.get_by_email(self.ctx.db_tenant, user)
 
 
 class BaseJSONHandler(TornadoRequestHandler):
@@ -823,6 +831,7 @@ class BaseHandler(TornadoRequestHandler):
             )
             raise tornado.web.Finish()
         elif not self.eula_signed:
+            await self.maybe_set_db_fields()
             self.ctx = RequestContext(
                 tenant=tenant,
                 db_tenant=self.ctx.db_tenant,
@@ -864,6 +873,7 @@ class BaseHandler(TornadoRequestHandler):
                 self.set_status(403)
                 raise tornado.web.Finish()
 
+        await self.maybe_set_db_fields()
         self.ctx = RequestContext(
             tenant=tenant,
             db_tenant=self.ctx.db_tenant,
@@ -929,25 +939,12 @@ class BaseHandler(TornadoRequestHandler):
             ] = "No groups detected for user. Check configuration. Letting user continue."
             log.warning(log_data)
 
-    async def set_eligible_roles(self, console_only: bool):
-        tenant = self.get_tenant_name()
-        group_mapping = get_plugin_by_name(
-            config.get_tenant_specific_key(
-                "plugins.group_mapping",
-                tenant,
-                "cmsaas_group_mapping",
-            )
-        )()
-
-        # self.eligible_roles += await get_user_active_tra_roles_by_tag(tenant, self.user)
-        self.eligible_roles = await group_mapping.get_eligible_roles(
-            self.eligible_roles,
-            self.user,
-            self.groups,
-            self.user_role_name,
-            self.get_tenant_name(),
-            console_only=console_only,
+    async def extend_eligible_roles(self, console_only: bool = False):
+        await self.maybe_set_db_fields()
+        eligible_roles = await get_user_eligible_roles(
+            self.ctx.db_tenant, self.ctx.db_user, self.groups
         )
+        self.eligible_roles = list(set(eligible_roles + self.eligible_roles))
 
     async def clear_jwt_cookie(self):
         cookie_name = self.get_noq_auth_cookie_key()
@@ -1148,10 +1145,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 self.user = res.get("user")
                 self.groups = res.get("groups")
                 self.eligible_roles += res.get("additional_roles")
-                # TODO: Fix expensive call
-                self.eligible_roles += await get_user_active_tra_roles_by_tag(
-                    tenant, self.user
-                )
+                await self.extend_eligible_roles()
                 self.eligible_roles = list(set(self.eligible_roles))
                 self.password_reset_required = res.get("password_reset_required")
                 self.sso_user = res.get("sso_user")

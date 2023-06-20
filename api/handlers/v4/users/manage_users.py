@@ -423,7 +423,9 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
                 WebResponse(
                     success="error",
                     status_code=400,
-                    data={"message": "Unable to reset password for externally managed users like Okta"},
+                    data={
+                        "message": "Unable to reset password for externally managed users like Okta"
+                    },
                 ).dict(exclude_unset=True, exclude_none=True)
             )
             raise tornado.web.Finish()
