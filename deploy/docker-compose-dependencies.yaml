@@ -40,6 +40,7 @@ services:
       - "8001:8001"
 
   cloudumi-pg:
+    container_name: deploy-cloudumi-pg-1
     image: postgres:14
     environment:
       POSTGRES_DB: noq
@@ -51,6 +52,7 @@ services:
       - cloudumi-pg:/var/lib/postgresql/data:delegated
 
   cloudumi-pg-admin:
+    container_name: deploy-cloudumi-pg-admin-1
     image: adminer
     ports:
       - "8008:8080"

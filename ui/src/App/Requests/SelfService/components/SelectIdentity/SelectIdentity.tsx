@@ -67,6 +67,7 @@ const SelectIdentity = () => {
           <TypeaheadBlock
             defaultValue={typeaheadDefaults.defaultValue}
             defaultValues={typeaheadDefaults.defaultValues}
+            handleOnSelectResult={handleTypeaheadSelect}
             // handleInputUpdate={handleTypeaheadSelect}
             resultsFormatter={result => {
               console.log('result', result);

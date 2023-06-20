@@ -32,7 +32,7 @@ const SelectChangeType = () => {
       {
         provider: selfServiceRequest?.provider,
         template_id: selfServiceRequest?.identity
-          ? selfServiceRequest.identity[0]?.id
+          ? selfServiceRequest.identity?.id
           : null
       }
     ],
