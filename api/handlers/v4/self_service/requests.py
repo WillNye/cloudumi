@@ -124,8 +124,8 @@ class IambicRequestHandler(BaseHandler):
 
         db_tenant = self.ctx.db_tenant
         user = self.user
-        request_data = SelfServiceRequestData.parse_raw(self.request.body)
         try:
+            request_data = SelfServiceRequestData.parse_raw(self.request.body)
             template_change = await get_template_change_for_request(
                 db_tenant, request_data
             )

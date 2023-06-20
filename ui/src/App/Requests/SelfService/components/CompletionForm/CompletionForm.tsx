@@ -84,7 +84,7 @@ const CompletionForm = () => {
       axios
         .post('/api/v4/self-service/requests', payload)
         .then(response => {
-          console.log(response.data);
+          alert(JSON.stringify(response.data, null, 2));
         })
         .catch(error => {
           console.error(error);

@@ -16,7 +16,7 @@ export const STEP_COMPONENTS = {
   [SELF_SERVICE_STEPS.COMPLETION_FORM]: CompletionForm
 };
 
-const RequestViewier = () => {
+const RequestViewer = () => {
   const {
     store: { currentStep }
   } = useContext(SelfServiceContext);
@@ -29,4 +29,4 @@ const RequestViewier = () => {
   );
 };
 
-export default RequestViewier;
+export default RequestViewer;

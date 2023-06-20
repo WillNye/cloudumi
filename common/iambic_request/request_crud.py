@@ -196,7 +196,7 @@ async def create_request(
     )
     await request.write()
 
-    request_link = config.get_tenant_specific_key("url", tenant)
+    request_link = config.get_tenant_specific_key("url", tenant.name)
     request_link = f"{request_link}/requests/{request.id}"
     await request_pr.add_comment(
         f"Request: {request_link}\n"
