@@ -17,6 +17,12 @@ const SelfService = () => {
   const [currentStep, setCurrentStep] = useState(
     SELF_SERVICE_STEPS.SELECT_PROVIDER
   );
+  const [justification, setJustification] = useState('');
+  const [expirationType, setExpirationType] = useState('never');
+  const [relativeValue, setRelativeValue] = useState('');
+  const [relativeUnit, setRelativeUnit] = useState('');
+  const [dateValue, setDateValue] = useState('');
+  const [timeValue, setTimeValue] = useState('');
   const [selfServiceRequest, setSelfServiceRequest] =
     useState<IRequest>(DEFAULT_REQUEST);
 
@@ -30,6 +36,13 @@ const SelfService = () => {
   const setSelectedIdentityType = (identityType: string) => {
     setSelfServiceRequest(prev => {
       const newRequest = { ...prev, identityType };
+      return newRequest;
+    });
+  };
+
+  const setRequestTypes = (requestTypes: RequestType[]) => {
+    setSelfServiceRequest(prev => {
+      const newRequest = { ...prev, requestTypes };
       return newRequest;
     });
   };
@@ -91,15 +104,14 @@ const SelfService = () => {
     switch (currentStep) {
       case SELF_SERVICE_STEPS.SELECT_IDENTITY:
         setSelectedIdentityType('');
-        setSelectedProvider('');
+        setSelectedIdentity(null);
         setCurrentStep(SELF_SERVICE_STEPS.SELECT_PROVIDER);
         break;
       case SELF_SERVICE_STEPS.REQUEST_TYPE:
-        setSelectedIdentityType('');
+        setSelectedRequestType(null);
         setCurrentStep(SELF_SERVICE_STEPS.SELECT_IDENTITY);
         break;
       case SELF_SERVICE_STEPS.CHANGE_TYPE:
-        setSelectedRequestType(null);
         setCurrentStep(SELF_SERVICE_STEPS.REQUEST_TYPE);
         break;
       case SELF_SERVICE_STEPS.COMPLETION_FORM:
@@ -120,7 +132,13 @@ const SelfService = () => {
       value={{
         store: {
           currentStep,
-          selfServiceRequest
+          selfServiceRequest,
+          justification,
+          expirationType,
+          relativeValue,
+          relativeUnit,
+          dateValue,
+          timeValue
         },
         actions: {
           setCurrentStep,
@@ -128,9 +146,16 @@ const SelfService = () => {
           setSelectedIdentityType,
           setSelectedIdentity,
           setSelectedRequestType,
+          setRequestTypes,
+          setJustification,
           // setSelectedChangeType,
           addChange,
-          removeChange
+          removeChange,
+          setExpirationType,
+          setRelativeValue,
+          setRelativeUnit,
+          setDateValue,
+          setTimeValue
         }
       }}
     >

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Segment } from 'shared/layout/Segment';
 import styles from './SelectChangeType.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
@@ -11,19 +11,67 @@ import {
   getChangeRequestType,
   getProviderDefinitions
 } from 'core/API/iambicRequest';
+import { Divider } from 'shared/elements/Divider';
+import { Input } from 'shared/form/Input';
 import { Block } from 'shared/layout/Block';
 import { ChangeType } from '../../types';
 import { Button } from 'shared/elements/Button';
 import { Table } from 'shared/elements/Table';
-import { Select as CloudScapeSelect } from '@noqdev/cloudscape';
+import {
+  Select as CloudScapeSelect,
+  DatePicker,
+  TimeInput
+} from '@noqdev/cloudscape';
+import { TextArea } from 'shared/form/TextArea';
+import { Radio } from 'shared/form/Radio';
+import { Select, SelectOption } from 'shared/form/Select';
+import { addDays, format } from 'date-fns';
 
 const SelectChangeType = () => {
   const [selectedChangeType, setSelectedChangeType] =
     useState<ChangeType | null>(null);
   const {
-    store: { selfServiceRequest },
-    actions: { removeChange }
+    store: {
+      selfServiceRequest,
+      justification,
+      expirationType,
+      relativeValue,
+      relativeUnit,
+      dateValue,
+      timeValue
+    },
+    actions: {
+      removeChange,
+      setJustification,
+      setExpirationType,
+      setRelativeValue,
+      setRelativeUnit,
+      setDateValue,
+      setTimeValue
+    }
   } = useContext(SelfServiceContext);
+
+  const handleDurationTypeChange = useCallback(e => {
+    setExpirationType(e.target.value);
+    if (e.target.value === 'never') {
+      setRelativeValue('');
+      setDateValue('');
+      setTimeValue('');
+    }
+  }, []);
+
+  // Default expiration should be set to "Relative" and "5 days"
+  useEffect(() => {
+    if (!expirationType) {
+      setExpirationType('relative');
+      setRelativeValue('5');
+      setRelativeUnit('Days');
+
+      const futureDate = format(addDays(new Date(), 5), 'yyyy/MM/dd'); // "2023/06/08" - format is 'yyyy/MM/dd' as requested
+      setDateValue(futureDate);
+      setTimeValue('00:00:00');
+    }
+  }, [expirationType]);
 
   const { data: providerDefinition, isLoading: loadingDefinitions } = useQuery({
     queryFn: getProviderDefinitions,
@@ -157,20 +205,112 @@ const SelectChangeType = () => {
               providerDefinition={providerDefinition?.data || []}
             />
           )}
-          <LineBreak size="large" />
-          <h4>Selected Changes</h4>
-          <LineBreak size="small" />
-          <Table
-            data={tableRows}
-            columns={changesColumns}
-            noResultsComponent={
-              <div className={styles.subText}>
-                Please add changes to the request
-              </div>
-            }
-            border="row"
-          />
+          {tableRows.length > 0 && (
+            <>
+              <LineBreak size="large" />
+              <h4>Selected Changes</h4>
+              <LineBreak size="small" />
+              <Table
+                data={tableRows}
+                columns={changesColumns}
+                noResultsComponent={
+                  <div className={styles.subText}>
+                    Please add changes to the request
+                  </div>
+                }
+                border="row"
+              />
+            </>
+          )}
         </div>
+        {tableRows.length > 0 && (
+          <>
+            <LineBreak size="large" />
+            <Block disableLabelPadding label="Expiration" />
+            <div className={styles.radioGroup}>
+              <div className={styles.radioInput}>
+                <Radio
+                  name="durationType"
+                  value="relative"
+                  checked={expirationType === 'relative'}
+                  onChange={handleDurationTypeChange}
+                />
+                <div>Relative</div>
+              </div>
+
+              <div className={styles.radioInput}>
+                <Radio
+                  name="durationType"
+                  value="absolute"
+                  checked={expirationType === 'absolute'}
+                  onChange={handleDurationTypeChange}
+                />
+                <div>Absolute</div>
+              </div>
+
+              <div className={styles.radioInput}>
+                <Radio
+                  name="durationType"
+                  value="never"
+                  checked={expirationType === 'never'}
+                  onChange={handleDurationTypeChange}
+                />
+                <div>Never</div>
+              </div>
+            </div>
+            <LineBreak size="small" />
+            <Divider />
+            <LineBreak size="small" />
+            {expirationType === 'relative' && (
+              <div className={styles.relative}>
+                <Input
+                  type="number"
+                  value={relativeValue}
+                  onChange={e => setRelativeValue(e.target.value)}
+                  fullWidth
+                />
+                <LineBreak size="small" />
+                <Select
+                  value={relativeUnit}
+                  onChange={value => setRelativeUnit(value)}
+                  name="time"
+                >
+                  <SelectOption value="Hours">Hours</SelectOption>
+                  <SelectOption value="Days">Days</SelectOption>
+                  <SelectOption value="Weeks">Weeks</SelectOption>
+                  <SelectOption value="Months">Months</SelectOption>
+                </Select>
+              </div>
+            )}
+            {expirationType === 'absolute' && (
+              <div className={styles.absolute}>
+                <DatePicker
+                  placeholder="YYYY/MM/DD"
+                  value={dateValue}
+                  onChange={({ detail: { value } }) => setDateValue(value)}
+                  ariaLabelledby="duration-date-label"
+                  previousMonthAriaLabel="Previous month"
+                  nextMonthAriaLabel="Next month"
+                  todayAriaLabel="Today"
+                />
+                <TimeInput
+                  ariaLabelledby="duration-time-label"
+                  use24Hour={true}
+                  placeholder="hh:mm:ss"
+                  value={timeValue}
+                  onChange={({ detail: { value } }) => setTimeValue(value)}
+                />
+              </div>
+            )}
+            <LineBreak size="large" />
+            <Block disableLabelPadding label="Justification" />
+            <TextArea
+              fullWidth
+              value={justification}
+              onChange={e => setJustification(e.target.value)}
+            />
+          </>
+        )}
       </div>
     </Segment>
   );
