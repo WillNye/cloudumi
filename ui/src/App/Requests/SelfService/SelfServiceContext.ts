@@ -1,5 +1,5 @@
 import React, { Dispatch } from 'react';
-import { SELF_SERVICE_STEPS } from './constants';
+import { EXPIRATION_TYPE, SELF_SERVICE_STEPS } from './constants';
 import { ChangeTypeDetails, IRequest, RequestType, Identity } from './types';
 
 export interface ISelfServiceContext {
@@ -8,10 +8,9 @@ export interface ISelfServiceContext {
     setSelectedProvider: Dispatch<string>;
     setSelectedIdentityType: Dispatch<string>;
     setSelectedIdentity: Dispatch<Identity>;
-    setRequestTypes: Dispatch<RequestType[]>;
     setSelectedRequestType: Dispatch<RequestType>;
     setJustification: Dispatch<string>;
-    setExpirationType: Dispatch<string>;
+    setExpirationType: Dispatch<EXPIRATION_TYPE>;
     setRelativeValue: Dispatch<string>;
     setRelativeUnit: Dispatch<string>;
     setDateValue: Dispatch<string>;
@@ -19,11 +18,12 @@ export interface ISelfServiceContext {
     addChange: (change: ChangeTypeDetails) => void;
     removeChange: (index: number) => void;
     setSelfServiceRequest: Dispatch<IRequest>;
+    setExpirationDate: Dispatch<string | null>;
   };
   store: {
     currentStep: SELF_SERVICE_STEPS;
     selfServiceRequest: IRequest;
-    expirationType: string;
+    expirationType: EXPIRATION_TYPE;
     relativeValue: string;
     relativeUnit: string;
     dateValue: string;

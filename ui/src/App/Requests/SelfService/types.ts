@@ -69,7 +69,6 @@ export interface ChangeTypeDetails {
 
 export interface IRequest {
   provider: string;
-  requestTypes: RequestType[] | [];
   requestType: RequestType | null;
   changeType: ChangeType | null;
   identityType: string | null;

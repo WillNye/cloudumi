@@ -3,41 +3,13 @@ import { Button } from 'shared/elements/Button';
 import { useCallback, useEffect, useContext, useState } from 'react';
 import styles from './CompletionForm.module.css';
 import SelfServiceContext from '../../SelfServiceContext';
-import { IRequest, SubmittableRequest, TemplatePreview } from '../../types';
+import { SubmittableRequest, TemplatePreview } from '../../types';
 import axios from 'core/Axios/Axios';
 import { DiffEditor } from 'shared/form/DiffEditor';
 import { Spinner } from 'shared/elements/Spinner';
 import { Link } from 'react-router-dom';
-
-function convertToSubmittableRequest(request: IRequest): SubmittableRequest {
-  const changes = request.requestedChanges.map(change => {
-    const fields = change.fields.map(field => ({
-      field_key: field.field_key,
-      field_value: field.value
-    }));
-
-    const providerDefinitionIds = change.included_providers.map(
-      provider => provider.id
-    );
-
-    return {
-      change_type_id: change.id,
-      // The provider_definition_ids are unclear from the request, for now returning an empty array
-      provider_definition_ids: providerDefinitionIds,
-      fields: fields
-    };
-  });
-
-  return {
-    iambic_template_id: request.identity?.id || '',
-    file_path: null,
-    justification: request.justification || '',
-    template_body: null,
-    template: null,
-    expires_at: request.expirationDate || '',
-    changes: changes
-  };
-}
+import { convertToSubmittableRequest } from './utils';
+import { Segment } from 'shared/layout/Segment';
 
 const CompletionForm = () => {
   const [submittableRequest, setSubmittableRequest] =
@@ -108,42 +80,41 @@ const CompletionForm = () => {
   }, [revisedTemplateBody, submittableRequest]);
 
   return (
-    <div className={styles.container}>
-      <h3>Request Summary</h3>
-      <LineBreak />
-      {isLoading ? (
-        <Spinner />
-      ) : (
-        <>
+    <Segment disablePadding isLoading={isLoading}>
+      <div className={styles.container}>
+        <h3>Request Summary</h3>
+        <LineBreak />
+        <p className={styles.subText}>Please select a change type</p>
+        <LineBreak size="large" />
+        <div className={styles.content}>
           <DiffEditor
             original={templateResponse?.current_template_body || ''}
             modified={revisedTemplateBody || ''}
             onChange={onChange}
           />
-          <div className={styles.content}>
-            <LineBreak size="large" />
-            <Button
-              size="small"
-              color="primary"
-              fullWidth
-              onClick={handleSubmit}
-            >
-              Submit Request
-            </Button>
-          </div>
-        </>
-      )}
-      {responseContent?.data?.request_id && (
-        <div>
-          <p>
-            Request successfully submitted. Click on the link below to view it
-          </p>
-          <Link to={`/request/${responseContent?.data?.request_id}`}>
-            View Request
-          </Link>
+          <LineBreak size="large" />
+          <Button
+            size="small"
+            color="primary"
+            fullWidth
+            onClick={handleSubmit}
+            disabled={isLoading}
+          >
+            Submit Request
+          </Button>
         </div>
-      )}
-    </div>
+        {responseContent?.data?.request_id && (
+          <div>
+            <p>
+              Request successfully submitted. Click on the link below to view it
+            </p>
+            <Link to={`/request/${responseContent?.data?.request_id}`}>
+              View Request
+            </Link>
+          </div>
+        )}
+      </div>
+    </Segment>
   );
 };
 
