@@ -17,7 +17,7 @@ import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 from random import randint
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union, Optional
 
 import celery
 import certifi
@@ -40,6 +40,7 @@ from celery.signals import (
     task_unknown,
 )
 from celery_singleton import Singleton
+from common.iambic_request.tasks import handle_tenant_iambic_github_event
 from more_itertools import chunked
 
 # from celery_progress.backend import ProgressRecorder
@@ -98,7 +99,7 @@ from common.lib.cloudtrail.auto_perms import detect_cloudtrail_denies_and_update
 from common.lib.event_bridge.role_updates import detect_role_changes_and_update_cache
 from common.lib.generic import un_wrap_json_and_dump_values
 from common.lib.git import store_iam_resources_in_git
-from common.lib.iambic.sync import sync_all_iambic_data
+from common.aws.role_access.celery_tasks import sync_all_iambic_data, sync_all_iambic_data_for_tenant
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import get_aws_config_history_url_for_resource
 from common.lib.pynamo import NoqModel
@@ -2930,16 +2931,58 @@ def upsert_tenant_request_types_for_all_tenants() -> Dict:
 
 
 @app.task(soft_time_limit=600, **default_celery_task_kwargs)
+def update_self_service_state(
+    tenant_id: int,
+    repo_name: str,
+    pull_request: int,
+    pr_created_at: datetime,
+    approved_by: Optional[list[str]],
+    is_closed: Optional[bool],
+    is_merged: Optional[bool],
+) -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    log_data = {
+        "function": function,
+        "message": "Caching Iambic data.",
+        "tenant": tenant_id,
+    }
+    log.debug(log_data)
+    async_to_sync(handle_tenant_iambic_github_event)(
+        tenant_id,
+        repo_name,
+        pull_request,
+        pr_created_at,
+        approved_by,
+        is_closed,
+        is_merged
+    )
+    return log_data
+
+
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
+def cache_iambic_data_for_tenant(tenant: str) -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    log_data = {
+        "function": function,
+        "message": "Caching Iambic data.",
+        "tenant": tenant,
+    }
+    log.debug(log_data)
+    async_to_sync(sync_all_iambic_data_for_tenant)(tenant)
+    return log_data
+
+
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def cache_iambic_data_for_all_tenants() -> Dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
-        "message": "Caching Iambic Data",
+        "message": "Caching Iambic data for all tenants.",
     }
     log.debug(log_data)
-    # TODO: MUST be converted to a celery task per tenant, otherwise we lose
-    # scalability
-    async_to_sync(sync_all_iambic_data)()
+    tenants = get_all_tenants()
+    for tenant in tenants:
+        cache_iambic_data_for_tenant.delay(tenant)
 
     return log_data
 
@@ -3156,3 +3199,17 @@ app.conf.timezone = "UTC"
 
 # TODO: Message user with information about this being reviewed
 # TODO: Determine how to map IdP groups to Slack channels
+# from qa.request_types import hard_delete_request_type
+# from common.tenants.models import Tenant
+# from qa.request_types import hard_delete_request_type
+# async def reset_request_type_tables():
+#     tenant = await Tenant.get_by_name("localhost")
+#     request_types = await list_tenant_request_types(tenant.id, exclude_deleted=False)
+#     await asyncio.gather(
+#         *[hard_delete_request_type(req_type) for req_type in request_types]
+#     )
+
+#     await upsert_tenant_request_types(tenant.name)
+
+# import asyncio
+# asyncio.run(reset_request_type_tables())

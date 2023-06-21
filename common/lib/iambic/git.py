@@ -501,7 +501,7 @@ class IambicGit:
                 )
 
     async def sync_identity_roles(self):
-        from common.lib.iambic.sync import sync_identity_roles, sync_role_access
+        from common.aws.role_access.celery_tasks.sync import sync_identity_roles, sync_role_access
 
         await self.set_git_repositories()
         if not self.db_tenant:

@@ -1,10 +1,13 @@
+from cachetools import TTLCache
 from sqlalchemy import or_, select
 
 from common import AWSRoleAccess, Group, Tenant, User
 from common.config.globals import ASYNC_PG_SESSION
+from common.core.async_cached import noq_cached
 from common.identity.models import AwsIdentityRole
 
 
+@noq_cached(cache=TTLCache(maxsize=1024, ttl=120), cache_none=False)
 async def get_user_eligible_roles(
     tenant: Tenant,
     user: User,

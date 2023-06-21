@@ -12,7 +12,7 @@ FROM tiangolo/node-frontend as build-stage
 #
 #RUN npm run build:prod
 
-FROM nginx:1.24
+FROM nginx:1.25
 
 WORKDIR /apps/frontend
 # Install Node, Yarn, and their dependencies

@@ -196,7 +196,7 @@ async def create_request(
     )
     await request.write()
 
-    request_link = config.get_tenant_specific_key("url", tenant)
+    request_link = config.get_tenant_specific_key("url", tenant.name)
     request_link = f"{request_link}/requests/{request.id}"
     await request_pr.add_comment(
         f"Request: {request_link}\n"
@@ -295,14 +295,14 @@ async def approve_request(
         raise Unauthorized("Unable to approve this request")
 
     request.status = "Running"
-
     request_pr = await get_iambic_pr_instance(
         tenant, request_id, request.created_by, request.pull_request_id
     )
     await request_pr.load_pr()
 
-    if request_pr.mergeable and request_pr.merge_on_approval:
-        await request_pr.approve_request()
+    if request_pr.mergeable:
+        request.approved_by.append(approved_by)
+        await request_pr.approve_request(approved_by)
     elif request_pr.closed_at and not request_pr.merged_at:
         # The PR has already been closed (Rejected) but the status was not updated in the DB
         request.status = "Rejected"
@@ -313,8 +313,6 @@ async def approve_request(
         # The PR has already been merged but the status was not updated in the DB
         # request.approved_by.append(?)
         pass
-    else:
-        request.approved_by.append(approved_by)
 
     await request.write()
     response = await get_request_response(request, request_pr)

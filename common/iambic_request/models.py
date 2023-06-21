@@ -3,23 +3,25 @@ import os
 import sys
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 
-from github import Github
-from github.File import File
-from pydantic import BaseModel as PydanticBaseModel
-from pydantic.fields import Any
-from sqlalchemy import Column, ForeignKey, Index, Integer, String
-from sqlalchemy.dialects.postgresql import ARRAY, ENUM, UUID
+from iambic.core.utils import jws_encode_with_past_time
 from sqlalchemy.orm import relationship
+from cryptography.hazmat.primitives import serialization
+from pydantic.fields import Any
+from sqlalchemy.dialects.postgresql import ARRAY, ENUM, UUID
+from sqlalchemy import Column, ForeignKey, Index, Integer, String
+from github.File import File
+from github import Github
+from pydantic import BaseModel as PydanticBaseModel
 
-from common.config import config
-from common.config.globals import ASYNC_PG_SESSION
-from common.iambic.git.models import IambicRepo
-from common.lib import noq_json as json
 from common.lib.asyncio import aio_wrapper
-from common.models import IambicTemplateChange
+from common.config import config
+from common.lib import noq_json as json
+from common.config.globals import ASYNC_PG_SESSION, GITHUB_APP_APPROVE_PRIVATE_PEM_1
 from common.pg_core.models import Base, SoftDeleteMixin
+from common.iambic.git.models import IambicRepo
+from common.models import IambicTemplateChange
 from common.tenants.models import Tenant  # noqa: F401
 
 log = config.get_logger(__name__)
@@ -187,13 +189,15 @@ class BasePullRequest(PydanticBaseModel):
                 template_changes, updated_by, request_notes, reset_branch=reset_branch
             )
 
-    async def approve_request(self):
-        if not self.iambic_repo:
+    async def _approve_request(self, approved_by: str):
+        raise NotImplementedError
+
+    async def approve_request(self, approved_by: Union[str, list[str]]):
+        if not self.pr_obj:
             await self.load_pr()
 
-        if self.mergeable and self.merge_on_approval:
-            await self.add_comment("approve")
-            await self.add_comment("iambic apply")
+        if self.mergeable:
+            await self._approve_request(approved_by)
         elif self.mergeable and not self.merge_on_approval:
             # TODO: Return something to let user know they need to merge the PR manually
             pass
@@ -202,6 +206,19 @@ class BasePullRequest(PydanticBaseModel):
             pass
         elif not self.merged_at:
             raise Exception("PR can not be merged")
+
+    async def _merge_request(self, approved_by: Union[str, list[str]]):
+        raise NotImplementedError
+
+    async def merge_request(self, approved_by: Union[str, list[str]]):
+        if not self.pr_obj:
+            await self.load_pr()
+
+        if self.mergeable and self.merge_on_approval:
+            await self._merge_request(approved_by)
+        elif self.mergeable and not self.merge_on_approval:
+            # TODO: Return something to let user know they need to merge the PR manually
+            pass
 
     async def remove_branch(self, pull_default: bool):
         await self.iambic_repo.delete_branch()
@@ -359,11 +376,53 @@ class GitHubPullRequest(BasePullRequest):
             )
         )
 
+    async def sign_and_comment(self, body: str, approved_by: Union[str, list[str]]):
+
+        loaded_private_key = serialization.load_pem_private_key(
+            GITHUB_APP_APPROVE_PRIVATE_PEM_1, None
+        )
+        private_pem_bytes = loaded_private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+
+        if isinstance(approved_by, str):
+            approved_by = [approved_by]
+        payload = {
+            "repo": self.iambic_repo.repo_name,
+            "pr": self.pull_request_id,
+            "signee": approved_by,
+        }
+        algorithm = "ES256"
+        valid_period_in_minutes = 15
+        encoded_jwt = jws_encode_with_past_time(
+            payload, private_pem_bytes, algorithm, valid_period_in_minutes
+        )
+
+        # message format for approve
+        # iambic approve\n
+        # <whatever nice message you like>\n
+        # <!--{encoded_jwt}-->
+        # remember last line cannot have any newline character, the signature metadata must be on the last line
+
+        message = f"""{body}
+    ```json
+    {json.dumps(payload)}
+    ```
+<!--{encoded_jwt}-->"""
+
+        await self.add_comment(message)
+
     async def add_comment(
-        self, body: str, commented_by: str = None, original_comment_id: str = None
+        self, body: str, commented_by: Optional[Union[str, list]] = None, original_comment_id: str = None
     ):
         if commented_by:
-            body = f"{body} on behalf of @{commented_by}"
+            if isinstance(commented_by, str):
+                commented_by = [commented_by]
+
+            commented_by = ", ".join([f"@{user}" for user in commented_by])
+            body = f"{body} on behalf of {commented_by}"
         self.pr_obj.create_issue_comment(body)
 
     async def update_comment(self, comment_id: int, body: str):
@@ -395,8 +454,11 @@ class GitHubPullRequest(BasePullRequest):
         self.pull_request_id = self.pr_obj.number
         self.pull_request_url = self.pr_obj.html_url
 
-    async def _merge_request(self):
-        await aio_wrapper(self.pr_obj.merge)
+    async def _merge_request(self, approved_by: Union[str, list[str]]):
+        await self.add_comment("iambic apply", approved_by)
+
+    async def _approve_request(self, approved_by: Union[str, list[str]]):
+        await self.sign_and_comment("iambic approve", approved_by)
 
     async def _reject_request(self):
         await aio_wrapper(self.pr_obj.edit, state="closed")

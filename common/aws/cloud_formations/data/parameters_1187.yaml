@@ -1,0 +1,75 @@
+shared:
+  AccountNameParameter:
+    Description: >-
+      Name to identify the account by.
+    Type: String
+    MinLength: "0"
+    MaxLength: "50"
+    AllowedPattern: '[\s\S]*'
+    ConstraintDescription: 'Invalid account name value.  Must match pattern [\s\S]* with a length between 1-50. Defaults to account id'
+  ExternalIDParameter:
+    Description: >-
+      ExternalId is used for verification. Do not change this value!
+    Type: String
+    MinLength: "2"
+    MaxLength: "100"
+    AllowedPattern: '[\w+=,.@:\/-]*'
+    ConstraintDescription: 'Invalid ExternalID value.  Must match pattern [\w+=,.@:\/-]* with a length between 2-100'
+  HostParameter:
+    Description: >-
+      The host parameter. Do not change this value!
+    Type: String
+    MinLength: "2"
+    MaxLength: "100"
+    AllowedPattern: '[\w+_-]*'
+    ConstraintDescription: 'Invalid Host value.  Must match pattern [\w+_-]* with a length between 2-100'
+  SpokeRoleNameParameter:
+    Description: >-
+      The name of the spoke role in each customer account. Do not change this value!
+    Type: String
+    MinLength: "2"
+    MaxLength: "100"
+    AllowedPattern: '[\w+_-]*'
+    ConstraintDescription: 'Invalid SpokeRoleName value.  Must match pattern [\w+_-]* with a length between 2-100'
+  RegistrationTopicArnParameter:
+    Description: >-
+      The SNS queue ARN that will be used to send registration messages to the SaaS. Do not change this value!
+    Type: String
+    MinLength: "2"
+    MaxLength: "100"
+    AllowedPattern: '^arn:aws:sns:[\w-]*:\d{12}:.+'
+    ConstraintDescription: 'Invalid RegistrationTopicArn value.  Must match pattern ^arn:aws:sns:[\w-]*:\d{12}:.+ with a length between 2-100'
+  ReadOnlyModeParameter:
+    Description: >-
+      Only give read-only permissions to the Spoke role.
+    Type: String
+    Default: false
+    AllowedValues:
+      - true
+      - false
+spoke:
+  CentralRoleArnParameter:
+    Description: >-
+      The cross account role in customer's environment that will be allowed to assume this spoke role account.
+    Type: String
+    MinLength: "2"
+    MaxLength: "100"
+    AllowedPattern: '^arn:aws:iam::\d{12}:role/.+'
+    ConstraintDescription: 'Invalid CentralRoleArn value.  Must match pattern ^arn:aws:iam::\d{12}:role/.+ with a length between 2-100'
+central:
+  ClusterRoleParameter:
+    Description: >-
+      The SaaS Cluster role that will assume into the role created by this stack. Do not change this value!
+    Type: String
+    MinLength: "10"
+    MaxLength: "100"
+    AllowedPattern: '^arn:aws:iam::\d{12}:(role|user)/.+'
+    ConstraintDescription: 'Invalid ClusterRole value.  Must match pattern ^arn:aws:iam::\d{12}:role/.+ with a length between 10-100'
+  CentralRoleNameParameter:
+    Description: >-
+      The name of the Central role in the customer's environment. Do not change this value!
+    Type: String
+    MinLength: "10"
+    MaxLength: "100"
+    AllowedPattern: '[\w+_-]*'
+    ConstraintDescription: 'Invalid CentralRoleName value.  Must match pattern [\w+_-]*'

@@ -464,7 +464,7 @@ def _get_default_aws_request_access_request_types(
             change_template=ChangeTypeTemplate(
                 template="""
         {
-            "users":[{{form.noq_group}}],
+            "groups":["{{form.noq_group}}"],
             "included_accounts": {{form.provider_definitions}}
         }"""
             ),
@@ -501,7 +501,7 @@ def _get_default_aws_request_access_request_types(
             change_template=ChangeTypeTemplate(
                 template="""
         {
-            "users":[{{form.sso_username}}],
+            "users":["{{form.sso_username}}"],
             "included_accounts": {{form.provider_definitions}}
         }"""
             ),
@@ -513,7 +513,7 @@ def _get_default_aws_request_access_request_types(
             change_fields=[
                 ChangeField(
                     change_element=0,
-                    field_key="noq_group",
+                    field_key="sso_group",
                     field_type="TextBox",
                     field_text="Group",
                     description="The SSO group that requires access.",
@@ -524,7 +524,7 @@ def _get_default_aws_request_access_request_types(
             change_template=ChangeTypeTemplate(
                 template="""
         {
-            "users":[{{form.noq_group}}],
+            "groups":["{{form.sso_group}}"],
             "included_accounts": {{form.provider_definitions}}
         }"""
             ),

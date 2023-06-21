@@ -128,11 +128,13 @@ def verify_signature(sig: str, payload: str) -> None:
 
 class GitHubEventsHandler(TornadoRequestHandler):
     async def post(self):
+        from common.celery_tasks.celery_tasks import app as celery_app
 
         # the format is in sha256=<sig>
         request_signature = self.request.headers["x-hub-signature-256"].split("=")[1]
         # because this handler is unauthenticated, always verify signature before taking action
         verify_signature(request_signature, self.request.body.decode("utf-8"))
+        github_event_type = self.request.headers.get("x-github-event")
         github_event = json.loads(self.request.body)
         github_installation_id = github_event["installation"]["id"]
 
@@ -147,6 +149,39 @@ class GitHubEventsHandler(TornadoRequestHandler):
             await tenant_github_install.delete()
             self.set_status(204)
             return
+        elif (
+                github_event_type == "pull_request" and github_action == "closed"
+        ) or (
+                github_event_type == "pull_request_review"
+                and github_action == "submitted"
+                and github_event["review"]["state"] == "approved"
+        ):
+            if github_event_type == "pull_request":
+                # per merged_by, there is only 1 approver; however, there can be multiple review, and
+                # saas may need to aggregate them for audit? maybe. especially for complex review
+                # rule that requires multiple approvers.
+                approved_by = github_event.get("merged_by", {}).get("login", None)
+            else:
+                # per review, there is only 1 approver; however, there can be multiple review, and
+                # saas may need to aggregate them for audit? maybe. especially for complex review
+                # rule that requires multiple approvers.
+                approved_by = github_event["review"]["user"]["login"]
+
+            if isinstance(approved_by, str):
+                approved_by = [approved_by]
+
+            celery_app.send_task(
+                "common.celery_tasks.celery_tasks.update_self_service_state",
+                kwargs={
+                    "tenant_id": tenant_github_install.tenant_id,
+                    "repo_name": github_event["repository"]["full_name"],
+                    "pull_request": github_event["pull_request"]["number"],
+                    "pr_created_at": github_event["pull_request"]["created_at"],
+                    "approved_by": approved_by,
+                    "is_merged": bool(github_event["pull_request"]["merged_at"]),
+                    "is_closed": bool(github_event["pull_request"]["closed_at"]),
+                },
+            )
         # TODO any clean up method if we need to call if webhook event
         # notify us repos is removed
         # elif github_action == "removed":

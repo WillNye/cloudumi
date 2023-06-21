@@ -338,6 +338,8 @@ async def api_self_service_request_update(request: Optional[Request]):
 
 @default_request_setter()
 async def api_self_service_request_approve(request: Optional[Request]):
+    print("Waiting 30 seconds for the noq-saas-iambic-integrations bot to run")
+    await asyncio.sleep(30)
     return generic_api_create_or_update_request(
         "patch",
         f"v4/self-service/requests/{request.id}",

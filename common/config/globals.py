@@ -48,6 +48,15 @@ GITHUB_APP_PRIVATE_KEY = config.get("_global_.secrets.github_app.private_key")
 assert GITHUB_APP_PRIVATE_KEY
 GITHUB_APP_WEBHOOK_SECRET = config.get("_global_.secrets.github_app.webhook_secret")
 assert GITHUB_APP_WEBHOOK_SECRET
+# for local dev, instruction to create one:
+#   https://docs.iambic.org/how_to_guides/integrate-other-github-apps#generating-an-ecdsa-public-and-private-key
+GITHUB_APP_APPROVE_PRIVATE_PEM_1 = config.get(
+    "_global_.secrets.github_app.approve_private_pem_1"
+)
+assert GITHUB_APP_APPROVE_PRIVATE_PEM_1
+GITHUB_APP_APPROVE_PRIVATE_PEM_1 = bytes(GITHUB_APP_APPROVE_PRIVATE_PEM_1, "utf-8")
+# we have not implemented GITHUB_APP_APPROVE_PRIVATE_PEM_2 but that's how we will
+# handle rotation.
 
 SLACK_CLIENT_ID = config.get("_global_.secrets.slack.client_id")
 assert SLACK_CLIENT_ID

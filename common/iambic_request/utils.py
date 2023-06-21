@@ -397,7 +397,7 @@ async def get_allowed_approvers(
     Not using template_bodies for now but may be used to resolve approvers in the future.
     The idea being that
     """
-    return config.get_tenant_specific_key("groups.can_admin", tenant_name)
+    return config.get_tenant_specific_key("groups.can_admin", tenant_name, ["noq_admins@noq.dev"])
 
 
 async def get_iambic_pr_instance(
