@@ -31,9 +31,12 @@ def noq_cached(
 
     def decorator(func):
         if asyncio.iscoroutinefunction(func):
+
             async def wrapper(*args, **kwargs):
                 key_args = [k if not isinstance(k, list) else tuple(k) for k in args]
-                key_kwargs = {k: v if isinstance(v, list) else tuple(v) for k, v in kwargs.items()}
+                key_kwargs = {
+                    k: v if isinstance(v, list) else tuple(v) for k, v in kwargs.items()
+                }
                 k = key(*key_args, **key_kwargs)
                 try:
                     async with lock:
@@ -55,9 +58,12 @@ def noq_cached(
                 return val
 
         else:
+
             def wrapper(*args, **kwargs):
                 key_args = [k if not isinstance(k, list) else tuple(k) for k in args]
-                key_kwargs = {k: v if isinstance(v, list) else tuple(v) for k, v in kwargs.items()}
+                key_kwargs = {
+                    k: v if isinstance(v, list) else tuple(v) for k, v in kwargs.items()
+                }
                 k = key(*key_args, **key_kwargs)
                 try:
                     with lock:

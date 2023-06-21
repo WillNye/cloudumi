@@ -283,8 +283,12 @@ class IambicRepo:
         )
 
     async def delete_branch(self):
-        remote = self.repo.remote(name=self.remote_name)
-        await aio_wrapper(remote.push, refspec=f":{self.request_branch_name}")
+        try:
+            remote = self.repo.remote(name=self.remote_name)
+            await aio_wrapper(remote.push, refspec=f":{self.request_branch_name}")
+        except GitCommandError as err:
+            if "remote ref does not exist" not in err.stderr:
+                raise
 
     async def pull_current_branch(self):
         branch_name = (
