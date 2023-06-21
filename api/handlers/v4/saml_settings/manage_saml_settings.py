@@ -58,7 +58,7 @@ class ManageSAMLSettingsCrudHandler(BaseAdminHandler):
 
         # tenant = self.ctx.tenant
         body = tornado.escape.json_decode(self.request.body or "{}")
-        body = SAMLSettingsDto.parse_obj(body)
+        saml_settings_dto = SAMLSettingsDto.parse_obj(body)
         ddb = RestrictedDynamoHandler()
         dynamic_config = await aio_wrapper(
             ddb.get_static_config_for_tenant_sync,
@@ -69,11 +69,11 @@ class ManageSAMLSettingsCrudHandler(BaseAdminHandler):
 
         for obj, model, key in [
             (
-                body.get_user_by_saml_settings,
+                saml_settings_dto.get_user_by_saml_settings,
                 GetUserBySAMLSettings,
                 "get_user_by_saml_settings",
             ),
-            (body.auth, AuthSettings, "auth"),
+            (saml_settings_dto.auth, AuthSettings, "auth"),
         ]:
             adapter = model(**dynamic_config.get(key, {}))
 
