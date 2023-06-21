@@ -80,6 +80,10 @@ const CompletionForm = () => {
     }
   }, [templateResponse]);
 
+  const onChange = (value: string) => {
+    setRevisedTemplateBody(value);
+  };
+
   const handleSubmit = useCallback(() => {
     if (revisedTemplateBody && submittableRequest) {
       setIsLoading(true);
@@ -114,6 +118,7 @@ const CompletionForm = () => {
           <DiffEditor
             original={templateResponse?.current_template_body || ''}
             modified={revisedTemplateBody || ''}
+            onChange={onChange}
           />
           <div className={styles.content}>
             <LineBreak size="large" />
