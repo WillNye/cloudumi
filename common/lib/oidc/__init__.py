@@ -262,7 +262,11 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
                     body=f"grant_type={grant_type}&code={code}&redirect_uri={oidc_redirect_uri}&scope={client_scope}",
                 )
             except tornado.httpclient.HTTPError as e:
-                log.error(e)
+                log_data[
+                    "message"
+                ] = f"Exception trying to exchange OIDC token: {str(e)}"
+                log_data["error"] = str(e)
+                log.error(log_data, exc_info=True)
                 raise
 
             token_exchange_response_body_dict = json.loads(token_exchange_response.body)
