@@ -41,6 +41,8 @@ async def upsert_tenant_request_types(tenant_name: str):
             change type templates
     """
     tenant = await Tenant.get_by_name(tenant_name)
+    if not tenant:
+        return
     updated_at = datetime.utcnow()
 
     # Ensure tenant.supported_tenant_types is up to date

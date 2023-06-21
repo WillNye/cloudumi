@@ -188,7 +188,7 @@ async def sync_role_access(
                         access_rule_users = []
                         if access_rule.users == "*":
                             access_rule_users = list(users.values())
-                        elif access_rules.users:
+                        elif access_rule.users:
                             for user_rule in access_rule.users:
                                 if user := users.get(user_rule):
                                     access_rule_users.append(user)
@@ -218,7 +218,7 @@ async def sync_role_access(
                         access_rule_groups = []
                         if access_rule.groups == "*":
                             access_rule_groups = list(groups.values())
-                        elif access_rules.groups:
+                        elif access_rule.groups:
                             for group_rule in access_rule.groups:
                                 if group := groups.get(group_rule):
                                     access_rule_groups.append(group)
