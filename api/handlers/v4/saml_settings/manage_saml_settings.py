@@ -2,7 +2,7 @@ import tornado.escape
 import tornado.web
 
 from common.config import config
-from common.handlers.base import BaseHandler
+from common.handlers.base import BaseAdminHandler
 from common.lib.asyncio import aio_wrapper
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.yaml import yaml
@@ -16,7 +16,7 @@ from common.models import (
 log = config.get_logger()
 
 
-class ManageSAMLSettingsCrudHandler(BaseHandler):
+class ManageSAMLSettingsCrudHandler(BaseAdminHandler):
     """Handler for /api/v4/auth/sso/saml/?"""
 
     async def get(self):

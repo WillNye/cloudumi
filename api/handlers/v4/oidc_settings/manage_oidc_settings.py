@@ -2,12 +2,9 @@ import tornado.escape
 import tornado.web
 
 from common.config import config
-from common.handlers.base import BaseHandler
+from common.handlers.base import BaseAdminHandler
 from common.lib.asyncio import aio_wrapper
-from common.lib.dynamo import (  # filter_config_secrets,
-    RestrictedDynamoHandler,
-    decode_config_secrets,
-)
+from common.lib.dynamo import RestrictedDynamoHandler, decode_config_secrets
 from common.lib.yaml import yaml
 from common.models import (
     AuthSettings,
@@ -20,29 +17,11 @@ from common.models import (
 log = config.get_logger()
 
 
-class ManageOIDCSettingsCrudHandler(BaseHandler):
+class ManageOIDCSettingsCrudHandler(BaseAdminHandler):
     """Handler for /api/v4/auth/sso/oidc/?"""
 
     async def get(self):
         """Retrieve OIDC settings for tenant"""
-
-        # secrets = ModelAdapter(SecretAuthSettings).load_config(
-        #     "secrets.auth", self.ctx.tenant, {}
-        # )
-        # auth = ModelAdapter(AuthSettings).load_config("auth", self.ctx.tenant, {})
-        # get_user_by_oidc_settings = ModelAdapter(GetUserByOIDCSettings).load_config(
-        #     "get_user_by_oidc_settings", self.ctx.tenant, {}
-        # )
-        # oidc_settings = OIDCSettingsDto.parse_obj(
-        #     {
-        #         "get_user_by_oidc_settings": get_user_by_oidc_settings.model,
-        #         # ModelAdapter should be able to handle secrets
-        #         "secrets": SecretAuthSettings(
-        #             **filter_config_secrets(secrets.model.dict(exclude_secrets=False))
-        #         ),
-        #         "auth": auth.model,
-        #     }
-        # )
 
         ddb = RestrictedDynamoHandler()
         dynamic_config = await aio_wrapper(
