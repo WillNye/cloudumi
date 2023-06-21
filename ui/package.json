@@ -40,6 +40,7 @@
     "framer-motion": "^7.6.9",
     "graphql": "^16.6.0",
     "graphql-tag": "^2.12.6",
+    "luxon": "^3.3.0",
     "monaco-editor": "^0.37.1",
     "monaco-yaml": "^4.0.4",
     "nanoid": "^4.0.0",

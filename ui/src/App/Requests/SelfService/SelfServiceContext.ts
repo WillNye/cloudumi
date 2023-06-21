@@ -1,17 +1,33 @@
 import React, { Dispatch } from 'react';
-import { SELF_SERICE_STEPS } from './constants';
-import { ChangeTypeDetails, IRequest, RequestType } from './types';
+import { SELF_SERVICE_STEPS } from './constants';
+import { ChangeTypeDetails, IRequest, RequestType, Identity } from './types';
+
 export interface ISelfServiceContext {
   actions: {
-    setCurrentStep: Dispatch<SELF_SERICE_STEPS>;
+    setCurrentStep: Dispatch<SELF_SERVICE_STEPS>;
     setSelectedProvider: Dispatch<string>;
+    setSelectedIdentityType: Dispatch<string>;
+    setSelectedIdentity: Dispatch<Identity>;
+    setRequestTypes: Dispatch<RequestType[]>;
     setSelectedRequestType: Dispatch<RequestType>;
+    setJustification: Dispatch<string>;
+    setExpirationType: Dispatch<string>;
+    setRelativeValue: Dispatch<string>;
+    setRelativeUnit: Dispatch<string>;
+    setDateValue: Dispatch<string>;
+    setTimeValue: Dispatch<string>;
     addChange: (change: ChangeTypeDetails) => void;
     removeChange: (index: number) => void;
+    setSelfServiceRequest: Dispatch<IRequest>;
   };
   store: {
-    currentStep: SELF_SERICE_STEPS;
+    currentStep: SELF_SERVICE_STEPS;
     selfServiceRequest: IRequest;
+    expirationType: string;
+    relativeValue: string;
+    relativeUnit: string;
+    dateValue: string;
+    timeValue: string;
   };
 }
 

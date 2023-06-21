@@ -1,3 +1,5 @@
+from typing import Optional
+
 import tornado.web
 
 from common.handlers.base import BaseHandler
@@ -11,6 +13,7 @@ from common.request_types.utils import (
 
 class SelfServiceRequestTypeParams(BaseModel):
     provider: str = None
+    template_type: Optional[str] = None
 
 
 class SelfServiceRequestTypeHandler(BaseHandler):
@@ -32,7 +35,9 @@ class SelfServiceRequestTypeHandler(BaseHandler):
                     item.dict()
                     for item in (
                         await list_tenant_request_types(
-                            tenant_id, provider=query_params.provider
+                            tenant_id,
+                            provider=query_params.provider,
+                            template_type=query_params.template_type,
                         )
                     )
                 ],

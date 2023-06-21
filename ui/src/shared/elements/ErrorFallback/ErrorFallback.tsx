@@ -40,12 +40,12 @@ export const ErrorFallback: FC<ErrorFallbackProps> = ({
     <div className={`${className} ${classes}`}>
       <img src={CloudImage} />
       <LineBreak size="large" />
-      <h2>Internal Server Error</h2>
+      <h2>Error</h2>
       <LineBreak />
       <p className={styles.description}>
-        Sorry, an internal server error has occurred. Our team has been notified
-        of the issue and is working to resolve it as soon as possible. Please
-        try again later.
+        Sorry, an error has occurred. Our team has been notified of the issue
+        and is working to resolve it as soon as possible. Please try again
+        later.
       </p>
       <LineBreak size="large" />
       <div className={styles.resetButtons}>

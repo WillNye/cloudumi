@@ -1,18 +1,36 @@
 import _, { debounce } from 'lodash';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { Search } from '../Search';
 import { Chip } from 'shared/elements/Chip';
 import { Icon } from 'shared/elements/Icon';
 import axios from 'core/Axios/Axios';
+import { LineBreak } from 'shared/elements/LineBreak';
+
+interface TypeaheadBlockProps {
+  handleOnSelectResult?: (value: string) => void;
+  handleOnRemoveValue?: (value: string) => void;
+  handleOnChange?: (value: string) => void;
+  defaultValue?: string;
+  defaultValues?: any[];
+  resultsFormatter: (result: any) => ReactNode;
+  endpoint: string;
+  queryParam: string;
+  titleKey?: string;
+  multiple?: boolean;
+}
 
 export const TypeaheadBlock = ({
-  handleInputUpdate,
+  handleOnChange,
+  handleOnSelectResult,
+  handleOnRemoveValue,
   defaultValue,
   defaultValues,
   resultsFormatter,
   endpoint,
-  queryParam
-}) => {
+  queryParam,
+  titleKey = 'title',
+  multiple = false
+}: TypeaheadBlockProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState([]);
   const [selectedValues, setSelectedValues] = useState(defaultValues ?? []);
@@ -25,7 +43,11 @@ export const TypeaheadBlock = ({
       if (!endpoint.startsWith('/')) {
         endpoint = `/${endpoint}`;
       }
-      const response = await axios.get(`${endpoint}?${queryParam}=${query}`);
+      const response = await axios.get(endpoint, {
+        params: {
+          [queryParam]: query
+        }
+      });
       let data = response.data.data;
       // if data is just a list of strings, replace with objects with title
       if (data.length > 0 && typeof data[0] === 'string') {
@@ -39,7 +61,21 @@ export const TypeaheadBlock = ({
     }
   };
 
-  const debouncedFetchData = useMemo(() => debounce(fetchData, 300), []);
+  const debouncedFetchData = useMemo(
+    () => debounce(fetchData, 300),
+    [endpoint, queryParam]
+  );
+
+  useEffect(() => {
+    if (value && endpoint && queryParam) {
+      debouncedFetchData(value);
+    }
+  }, [endpoint, queryParam, value, debouncedFetchData]);
+
+  useEffect(() => {
+    setValue(defaultValue);
+    setSelectedValues(defaultValues);
+  }, [defaultValue, defaultValues]);
 
   useEffect(() => {
     if (value) {
@@ -55,36 +91,39 @@ export const TypeaheadBlock = ({
         if (!e.target.value) {
           return;
         }
-        const values = [...selectedValues];
+        const values = multiple ? [...selectedValues] : [];
         values.push(e.target.value);
         setSelectedValues(values);
         setResults([]);
         setValue('');
-        handleInputUpdate(values);
+        handleOnSelectResult?.(e.target.value);
       }
     },
-    [handleInputUpdate, selectedValues]
+    [handleOnSelectResult, selectedValues, multiple]
   );
 
   const handleSelectedValueDelete = useCallback(
     value => {
       const values = selectedValues?.filter(item => item !== value);
       setSelectedValues(values);
-      handleInputUpdate(values);
+      handleOnRemoveValue?.(value);
     },
-    [selectedValues, handleInputUpdate]
+    [selectedValues, handleOnRemoveValue]
   );
 
   const handleResultSelect = useCallback(
     result => {
-      const values = [...selectedValues];
-      values.push(result.title);
-
+      const values = multiple ? [...selectedValues] : [];
+      values.push(result);
       setSelectedValues(values);
-
-      handleInputUpdate(values);
+      if (!multiple) {
+        setValue(result[titleKey]);
+      } else {
+        setValue('');
+      }
+      handleOnSelectResult?.(result);
     },
-    [selectedValues, handleInputUpdate]
+    [selectedValues, handleOnSelectResult, multiple, titleKey]
   );
 
   const debouncedSearchFilter = useMemo(
@@ -95,12 +134,15 @@ export const TypeaheadBlock = ({
         if (value.length < 1) {
           setIsLoading(false);
           setResults([]);
-          setValue('');
-          handleInputUpdate(selectedValues);
+          if (multiple) {
+            // only clear the value if multiple is true
+            setValue('');
+          }
+          handleOnChange?.('');
           return;
         }
       }, 300),
-    [selectedValues, handleInputUpdate]
+    [handleOnChange, multiple]
   );
 
   const handleSearchChange = useCallback(
@@ -109,24 +151,32 @@ export const TypeaheadBlock = ({
       const newValue = e.target.value;
       setValue(newValue);
 
-      handleInputUpdate(selectedValues);
+      handleOnChange?.(newValue);
       debouncedSearchFilter(newValue);
     },
-    [selectedValues, debouncedSearchFilter, handleInputUpdate]
+    [debouncedSearchFilter, handleOnChange]
   );
+
+  const inputValue = useMemo(() => {
+    return value;
+  }, [value]);
 
   const selectedValueLabels = useMemo(
     () =>
-      selectedValues.map((selectedValue, index) => (
-        <Chip key={index}>
-          {selectedValue}
-          <Icon
-            name="close"
-            onClick={() => handleSelectedValueDelete(selectedValue)}
-          />
-        </Chip>
-      )),
-    [selectedValues, handleSelectedValueDelete]
+      multiple ? (
+        selectedValues.map((selectedValue, index) => (
+          <Chip key={index}>
+            {selectedValue[titleKey]}
+            <Icon
+              name="close"
+              onClick={() => handleSelectedValueDelete(selectedValue)}
+            />
+          </Chip>
+        ))
+      ) : (
+        <span>{selectedValues[0]?.[titleKey]}</span>
+      ),
+    [selectedValues, handleSelectedValueDelete, titleKey, multiple]
   );
 
   return (
@@ -140,9 +190,10 @@ export const TypeaheadBlock = ({
         resultRenderer={resultsFormatter}
         onKeyDown={handleKeyDown}
         results={results}
-        value={value}
+        value={inputValue}
       />
-      <div>{selectedValueLabels}</div>
+      <LineBreak />
+      {multiple && <div>{selectedValueLabels}</div>}
     </div>
   );
 };

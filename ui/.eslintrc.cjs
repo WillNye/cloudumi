@@ -48,9 +48,9 @@ module.exports = {
     'import/no-anonymous-default-export': [0],
     'react/jsx-no-target-blank': [0],
     '@typescript-eslint/no-explicit-any': 'off',
-    'no-multiple-empty-lines': [2, { max: 1 }],
+    'no-multiple-empty-lines': [1, { max: 1 }],
     'max-len': [
-      2,
+      1,
       {
         code: 120,
         tabWidth: 2,

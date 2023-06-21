@@ -40,7 +40,7 @@ const RoleAccessPreferencesModal: FC<RoleAccessPreferencesModalProps> = ({
       showCloseIcon
     >
       <div>
-        <h3>User Preferences for {role.arn}</h3>
+        <h4>User Preferences for {role.arn}</h4>
         <LineBreak />
         <label>
           Default Region:

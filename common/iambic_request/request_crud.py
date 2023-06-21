@@ -301,7 +301,6 @@ async def approve_request(
     await request_pr.load_pr()
 
     if request_pr.mergeable:
-        request.approved_by.append(approved_by)
         await request_pr.approve_request(approved_by)
     elif request_pr.closed_at and not request_pr.merged_at:
         # The PR has already been closed (Rejected) but the status was not updated in the DB
@@ -313,6 +312,9 @@ async def approve_request(
         # The PR has already been merged but the status was not updated in the DB
         # request.approved_by.append(?)
         pass
+
+    if request.status != "Rejected":
+        request.approved_by.append(approved_by)
 
     await request.write()
     response = await get_request_response(request, request_pr)
