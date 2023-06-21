@@ -53,10 +53,11 @@ const SelectChangeType = () => {
   } = useContext(SelfServiceContext);
 
   const setExpirationFromAbsoluteDate = useCallback(
-    (dateValue, hours) => {
+    (dateValue, time) => {
       const date = DateTime.fromISO(dateValue);
-      const formattedDate = date.toFormat('d MMMM yyyy');
-      const formattedDateTime = `${formattedDate} ${hours}`;
+      const [hours, minutes] = time.split(':').map(Number);
+      const newDateTime = date.plus({ hours, minutes });
+      const formattedDateTime = newDateTime.toFormat('yyyy/MM/dd HH:mm ZZZZ');
       setExpirationDate(formattedDateTime);
     },
     [setExpirationDate]
