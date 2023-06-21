@@ -1,28 +1,31 @@
 import { useCallback, useMemo, useState } from 'react';
-import { DEFAULT_REQUEST, SELF_SERVICE_STEPS } from './constants';
+import {
+  DEFAULT_REQUEST,
+  EXPIRATION_TYPE,
+  SELF_SERVICE_STEPS
+} from './constants';
 import RequestViewer from './components/RequestViewer';
 import SelfServiceContext from './SelfServiceContext';
 import { Button } from 'shared/elements/Button';
 
 import styles from './SelfService.module.css';
-import {
-  ChangeType,
-  ChangeTypeDetails,
-  IRequest,
-  Identity,
-  RequestType
-} from './types';
+import { ChangeTypeDetails, IRequest, Identity, RequestType } from './types';
 import { Divider } from 'shared/elements/Divider';
+import { DateTime } from 'luxon';
 
 const SelfService = () => {
   const [currentStep, setCurrentStep] = useState(
     SELF_SERVICE_STEPS.SELECT_PROVIDER
   );
-  const [expirationType, setExpirationType] = useState('');
-  const [relativeValue, setRelativeValue] = useState('');
-  const [relativeUnit, setRelativeUnit] = useState('');
-  const [dateValue, setDateValue] = useState('');
-  const [timeValue, setTimeValue] = useState('');
+  const [expirationType, setExpirationType] = useState(
+    EXPIRATION_TYPE.RELATIVE
+  );
+  const [relativeValue, setRelativeValue] = useState('4');
+  const [relativeUnit, setRelativeUnit] = useState('hours');
+  const [dateValue, setDateValue] = useState(
+    DateTime.fromJSDate(new Date()).toFormat('yyyy-MM-dd')
+  );
+  const [timeValue, setTimeValue] = useState('00:00:00');
   const [selfServiceRequest, setSelfServiceRequest] =
     useState<IRequest>(DEFAULT_REQUEST);
 
@@ -74,6 +77,10 @@ const SelfService = () => {
       const newRequest = { ...prev, requestedChanges };
       return newRequest;
     });
+  };
+
+  const setExpirationDate = (date: string | null) => {
+    setSelfServiceRequest(prev => ({ ...prev, expirationDate: date }));
   };
 
   const removeChange = index => {
@@ -156,9 +163,7 @@ const SelfService = () => {
           setSelectedIdentityType,
           setSelectedIdentity,
           setSelectedRequestType,
-          setRequestTypes,
           setJustification,
-          // setSelectedChangeType,
           setSelfServiceRequest,
           addChange,
           removeChange,
@@ -166,7 +171,8 @@ const SelfService = () => {
           setRelativeValue,
           setRelativeUnit,
           setDateValue,
-          setTimeValue
+          setTimeValue,
+          setExpirationDate
         }
       }}
     >

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Segment } from 'shared/layout/Segment';
 import styles from './SelectChangeType.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
@@ -7,6 +7,7 @@ import SelfServiceContext from '../../SelfServiceContext';
 import RequestChangeDetails from '../RequestChangeDetails';
 import { useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
+import { Duration, DateTime } from 'luxon';
 import {
   getChangeRequestType,
   getProviderDefinitions
@@ -25,7 +26,7 @@ import {
 import { TextArea } from 'shared/form/TextArea';
 import { Radio } from 'shared/form/Radio';
 import { Select, SelectOption } from 'shared/form/Select';
-import { addDays, format } from 'date-fns';
+import { EXPIRATION_TYPE } from '../../constants';
 
 const SelectChangeType = () => {
   const [selectedChangeType, setSelectedChangeType] =
@@ -46,31 +47,43 @@ const SelectChangeType = () => {
       setRelativeValue,
       setRelativeUnit,
       setDateValue,
-      setTimeValue
+      setTimeValue,
+      setExpirationDate
     }
   } = useContext(SelfServiceContext);
 
-  const handleDurationTypeChange = useCallback(e => {
-    setExpirationType(e.target.value);
-    if (e.target.value === 'never') {
-      setRelativeValue('');
-      setDateValue('');
-      setTimeValue('');
-    }
-  }, []);
+  const setExpirationFromAbsoluteDate = useCallback(
+    (dateValue, hours) => {
+      const date = DateTime.fromISO(dateValue);
+      const formattedDate = date.toFormat('d MMMM yyyy');
+      const formattedDateTime = `${formattedDate} ${hours}`;
+      setExpirationDate(formattedDateTime);
+    },
+    [setExpirationDate]
+  );
 
-  // Default expiration should be set to "Relative" and "5 days"
-  useEffect(() => {
-    if (!expirationType) {
-      setExpirationType('relative');
-      setRelativeValue('5');
-      setRelativeUnit('Days');
+  const setExpirationFromRelativeate = useCallback(
+    (time, units) => {
+      setExpirationDate(`${time} ${units}`);
+    },
+    [setExpirationDate]
+  );
 
-      const futureDate = format(addDays(new Date(), 5), 'yyyy/MM/dd');
-      setDateValue(futureDate);
-      setTimeValue('00:00:00');
-    }
-  }, [expirationType]);
+  const handleDurationTypeChange = useCallback(
+    e => {
+      const value = e.target.value;
+      setExpirationType(value);
+      if (value === EXPIRATION_TYPE.ABSOLUTE) {
+        setExpirationFromAbsoluteDate(dateValue, timeValue);
+      } else if (value === EXPIRATION_TYPE.RELATIVE) {
+        setExpirationFromRelativeate(relativeValue, relativeUnit);
+      } else {
+        setExpirationDate(null);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dateValue, timeValue, relativeValue, relativeUnit]
+  );
 
   const { data: providerDefinition, isLoading: loadingDefinitions } = useQuery({
     queryFn: getProviderDefinitions,
@@ -229,8 +242,8 @@ const SelectChangeType = () => {
               <div className={styles.radioInput}>
                 <Radio
                   name="durationType"
-                  value="relative"
-                  checked={expirationType === 'relative'}
+                  value={EXPIRATION_TYPE.RELATIVE}
+                  checked={expirationType === EXPIRATION_TYPE.RELATIVE}
                   onChange={handleDurationTypeChange}
                 />
                 <div>Relative</div>
@@ -239,8 +252,8 @@ const SelectChangeType = () => {
               <div className={styles.radioInput}>
                 <Radio
                   name="durationType"
-                  value="absolute"
-                  checked={expirationType === 'absolute'}
+                  value={EXPIRATION_TYPE.ABSOLUTE}
+                  checked={expirationType === EXPIRATION_TYPE.ABSOLUTE}
                   onChange={handleDurationTypeChange}
                 />
                 <div>Absolute</div>
@@ -249,8 +262,8 @@ const SelectChangeType = () => {
               <div className={styles.radioInput}>
                 <Radio
                   name="durationType"
-                  value="never"
-                  checked={expirationType === 'never'}
+                  value={EXPIRATION_TYPE.NEVER}
+                  checked={expirationType === EXPIRATION_TYPE.NEVER}
                   onChange={handleDurationTypeChange}
                 />
                 <div>Never</div>
@@ -259,45 +272,64 @@ const SelectChangeType = () => {
             <LineBreak size="small" />
             <Divider />
             <LineBreak size="small" />
-            {expirationType === 'relative' && (
+            {expirationType === EXPIRATION_TYPE.RELATIVE && (
               <div className={styles.relative}>
                 <Input
                   type="number"
                   value={relativeValue}
-                  onChange={e => setRelativeValue(e.target.value)}
+                  onChange={e => {
+                    setRelativeValue(e.target.value);
+                    setExpirationFromRelativeate(e.target.value, relativeUnit);
+                  }}
                   fullWidth
                 />
                 <LineBreak size="small" />
                 <Select
                   value={relativeUnit}
-                  onChange={value => setRelativeUnit(value)}
+                  onChange={value => {
+                    setRelativeUnit(value);
+                    setExpirationFromRelativeate(relativeValue, value);
+                  }}
                   name="time"
                 >
-                  <SelectOption value="Hours">Hours</SelectOption>
-                  <SelectOption value="Days">Days</SelectOption>
-                  <SelectOption value="Weeks">Weeks</SelectOption>
-                  <SelectOption value="Months">Months</SelectOption>
+                  <SelectOption value="hours">Hours</SelectOption>
+                  <SelectOption value="days">Days</SelectOption>
+                  <SelectOption value="weeks">Weeks</SelectOption>
+                  <SelectOption value="months">Months</SelectOption>
                 </Select>
               </div>
             )}
-            {expirationType === 'absolute' && (
+            {expirationType === EXPIRATION_TYPE.ABSOLUTE && (
               <div className={styles.absolute}>
                 <DatePicker
                   placeholder="YYYY/MM/DD"
                   value={dateValue}
-                  onChange={({ detail: { value } }) => setDateValue(value)}
+                  onChange={({ detail: { value } }) => {
+                    setDateValue(value);
+                    setExpirationFromAbsoluteDate(value, timeValue);
+                  }}
                   ariaLabelledby="duration-date-label"
                   previousMonthAriaLabel="Previous month"
                   nextMonthAriaLabel="Next month"
                   todayAriaLabel="Today"
                 />
+                <LineBreak size="small" />
                 <TimeInput
                   ariaLabelledby="duration-time-label"
                   use24Hour={true}
                   placeholder="hh:mm:ss"
                   value={timeValue}
-                  onChange={({ detail: { value } }) => setTimeValue(value)}
+                  onChange={({ detail: { value } }) => {
+                    setTimeValue(value);
+                    setExpirationFromAbsoluteDate(dateValue, value);
+                  }}
                 />
+              </div>
+            )}
+            {expirationType === EXPIRATION_TYPE.NEVER && (
+              <div className={styles.subText}>
+                Warning: The request changes will never expire (they will need
+                to be removed manually after use)
               </div>
             )}
             <LineBreak size="large" />

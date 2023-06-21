@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import {
   DiffEditor as MonacoDiffEditor,
   useMonaco
@@ -45,10 +45,6 @@ export const DiffEditor: FC<DiffEditorProps> = ({
     renderSideBySide
   };
 
-  const handleSideBySideToggle = () => {
-    setRenderSideBySide(!renderSideBySide);
-  };
-
   useEffect(() => {
     if (!monaco) {
       return;
@@ -59,7 +55,7 @@ export const DiffEditor: FC<DiffEditorProps> = ({
         return await getMonacoCompletions(model, position, monaco);
       }
     });
-  }, [monaco]);
+  }, [monaco, language]);
 
   const editorDidMount = (editor, monaco) => {
     const modifiedEditor = editor.getModifiedEditor();
@@ -71,15 +67,24 @@ export const DiffEditor: FC<DiffEditorProps> = ({
   return (
     <div className={styles.editorBlock}>
       <div className={styles.renderStyle}>
-        <Button onClick={handleSideBySideToggle}>
-          {renderSideBySide ? 'Unified' : 'Side-by-Side'}
-        </Button>
+        <Button
+          onClick={() => setRenderSideBySide(false)}
+          icon="column"
+          color={renderSideBySide ? 'secondary' : 'primary'}
+          size="small"
+        />
+        <Button
+          onClick={() => setRenderSideBySide(true)}
+          icon="columns"
+          color={renderSideBySide ? 'primary' : 'secondary'}
+          size="small"
+        />
       </div>
 
       <MonacoDiffEditor
         language={language}
         width="100%"
-        height="600px"
+        height="500px"
         original={original}
         modified={modified}
         options={options}

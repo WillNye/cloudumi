@@ -48,7 +48,7 @@ export const Search = <T,>({
 
     if (results?.length) {
       const dropdownMenu = contentRef.current;
-      const contentHeight = dropdownMenu.scrollHeight;
+      const contentHeight = dropdownMenu.scrollHeight + 10;
       const maxHeight =
         window.innerHeight - dropdownMenu.getBoundingClientRect().top - 100;
       dropdownMenu.style.maxHeight = `${Math.min(contentHeight, maxHeight)}px`;

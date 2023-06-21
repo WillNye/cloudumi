@@ -5,23 +5,23 @@
     list-style-type: none;
     padding: 0;
     margin: 0;
-    border-radius: 4px;
+    border-radius: var(--border-radius-md);
     position: absolute;
     width: 100%;
     top: calc(100% + 10px);
     left: 0;
     background-color: var(--gray-600);
-    border: 1px solid var(--gray-300);
+    border: 2px solid var(--gray-300);
     border-radius: var(--border-radius-md);
     z-index: 12;
-    overflow-y: auto;
+    overflow-y: scroll;
   }
 
   .result {
-    padding: var(--spacing-sm);
+    padding: var(--spacing-md);
     cursor: pointer;
-    border: 1px solid transparent;
-    border-radius: var(--spacing-sm);
+    border: 1px solid var(--gray-300);
+    /* border-radius: var(--spacing-sm); */
 
     &:hover {
       background-color: var(--gray-700);

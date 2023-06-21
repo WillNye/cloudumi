@@ -5,11 +5,9 @@ import { Segment } from 'shared/layout/Segment';
 import { Select, SelectOption } from 'shared/form/Select';
 import SelfServiceContext from '../../SelfServiceContext';
 import axios from 'core/Axios/Axios';
-import styles from './SelectIdentqityType.module.css';
+import styles from './SelectIdentity.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
-import { SELF_SERVICE_STEPS } from '../../constants';
 import { TypeaheadBlock } from 'shared/form/TypeaheadBlock';
-import { set } from 'date-fns';
 
 const SelectIdentity = () => {
   const [typeaheadDefaults, setTypeaheadDefaults] = useState({
@@ -43,45 +41,46 @@ const SelectIdentity = () => {
 
   return (
     <Segment>
-      <h3>Select Identity Type</h3>
-      <LineBreak />
-      <p>Please select an identity type</p>
-      <LineBreak size="large" />
-      {identityTypes && (
-        <Select
-          value={selfServiceRequest.identityType || ''}
-          onChange={handleIdentityTypeSelect}
-          placeholder="Select identity type"
-        >
-          {identityTypes.map(identityType => (
-            <SelectOption key={identityType.id} value={identityType.id}>
-              {identityType.name}
-            </SelectOption>
-          ))}
-        </Select>
-      )}
-      {selfServiceRequest.identityType && (
-        <>
-          <LineBreak size="large" />
-          {/* TODO: Typeahead block should support selecting a single element */}
-          <TypeaheadBlock
-            defaultValue={
-              selfServiceRequest.identity?.resource_id ||
-              typeaheadDefaults.defaultValue
-            }
-            defaultValues={typeaheadDefaults.defaultValues}
-            handleOnSelectResult={handleTypeaheadSelect}
-            // handleInputUpdate={handleTypeaheadSelect}
-            resultsFormatter={result => {
-              console.log('result', result);
-              return <p>{result.resource_id}</p>;
-            }}
-            endpoint={typeaheadEndpoint}
-            queryParam={'resource_id'}
-            titleKey={'resource_id'}
-          />
-        </>
-      )}
+      <div className={styles.container}>
+        <h3>Select Identity Type</h3>
+        <LineBreak />
+        <p className={styles.subText}>Please select an identity type</p>
+        <LineBreak size="large" />
+        <div className={styles.content}>
+          {identityTypes && (
+            <Select
+              value={selfServiceRequest.identityType || ''}
+              onChange={handleIdentityTypeSelect}
+              placeholder="Select identity type"
+            >
+              {identityTypes.map(identityType => (
+                <SelectOption key={identityType.id} value={identityType.id}>
+                  {identityType.name}
+                </SelectOption>
+              ))}
+            </Select>
+          )}
+          {selfServiceRequest.identityType && (
+            <>
+              <LineBreak size="large" />
+              <TypeaheadBlock
+                defaultValue={
+                  selfServiceRequest.identity?.resource_id ||
+                  typeaheadDefaults.defaultValue
+                }
+                defaultValues={typeaheadDefaults.defaultValues}
+                handleOnSelectResult={handleTypeaheadSelect}
+                resultsFormatter={result => {
+                  return <p>{result.resource_id}</p>;
+                }}
+                endpoint={typeaheadEndpoint}
+                queryParam={'resource_id'}
+                titleKey={'resource_id'}
+              />
+            </>
+          )}
+        </div>
+      </div>
     </Segment>
   );
 };

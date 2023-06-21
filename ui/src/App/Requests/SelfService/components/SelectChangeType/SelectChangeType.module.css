@@ -4,7 +4,6 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
-  min-height: 100%;
   padding: var(--spacing-md);
   height: 100%;
 
@@ -27,7 +26,6 @@
     flex-direction: row;
     width: 100%;
     height: 100%;
-    max-width: 1000px;
   }
 
   .content {
@@ -45,5 +43,13 @@
     align-items: center;
     justify-content: center;
     padding: var(--spacing-sm) var(--spacing-lg);
+  }
+
+  .absolute {
+    width: 100%;
+  }
+
+  .relative {
+    width: 100%;
   }
 }
