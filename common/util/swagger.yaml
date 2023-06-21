@@ -3703,6 +3703,7 @@ components:
       properties:
         metadata_url:
           title: Metadata Url
+          default: null
           type: string
         client_scopes:
           title: Client Scopes
@@ -3750,8 +3751,6 @@ components:
           title: User Info Groups Key
           default: groups
           type: string
-      required:
-        - metadata_url
     JWTSAMLSettings:
       title: JWTSAMLSettings
       description: BaseModel adds CamelCase aliases to a Pydantic model
