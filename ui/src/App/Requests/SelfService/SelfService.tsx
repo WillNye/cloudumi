@@ -104,7 +104,6 @@ const SelfService = () => {
   );
 
   const handleNext = useCallback(() => {
-    console.log('handleNext', currentStep);
     if (currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE) {
       setCurrentStep(SELF_SERVICE_STEPS.COMPLETION_FORM);
     } else if (currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY) {
@@ -189,7 +188,12 @@ const SelfService = () => {
               {canClickNext && currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE && (
                 <Button
                   size="small"
-                  disabled={!selfServiceRequest.requestedChanges.length}
+                  disabled={
+                    !(
+                      selfServiceRequest.requestedChanges.length &&
+                      selfServiceRequest.justification
+                    )
+                  }
                   onClick={handleNext}
                 >
                   Next

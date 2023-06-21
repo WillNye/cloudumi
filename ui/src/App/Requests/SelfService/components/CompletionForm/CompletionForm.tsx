@@ -3,10 +3,11 @@ import { Button } from 'shared/elements/Button';
 import { useCallback, useEffect, useContext, useState } from 'react';
 import styles from './CompletionForm.module.css';
 import SelfServiceContext from '../../SelfServiceContext';
-import { Dialog } from 'shared/layers/Dialog';
 import { IRequest, SubmittableRequest, TemplatePreview } from '../../types';
 import axios from 'core/Axios/Axios';
 import { DiffEditor } from 'shared/form/DiffEditor';
+import { Spinner } from 'shared/elements/Spinner';
+import { Link } from 'react-router-dom';
 
 function convertToSubmittableRequest(request: IRequest): SubmittableRequest {
   const changes = request.requestedChanges.map(change => {
@@ -46,6 +47,8 @@ const CompletionForm = () => {
   const [revisedTemplateBody, setRevisedTemplateBody] = useState<string | null>(
     null
   );
+  const [isLoading, setIsLoading] = useState(false);
+  const [responseContent, setResponseContent] = useState<any>(null);
 
   const {
     store: { selfServiceRequest }
@@ -53,6 +56,7 @@ const CompletionForm = () => {
 
   useEffect(() => {
     if (selfServiceRequest) {
+      setIsLoading(true);
       const convertedRequest = convertToSubmittableRequest(selfServiceRequest);
       setSubmittableRequest(convertedRequest);
 
@@ -63,6 +67,9 @@ const CompletionForm = () => {
         })
         .catch(error => {
           console.error(error);
+        })
+        .finally(() => {
+          setIsLoading(false);
         });
     }
   }, [selfServiceRequest]);
@@ -75,6 +82,7 @@ const CompletionForm = () => {
 
   const handleSubmit = useCallback(() => {
     if (revisedTemplateBody && submittableRequest) {
+      setIsLoading(true);
       const payload = {
         iambic_template_id: submittableRequest.iambic_template_id,
         justification: submittableRequest.justification,
@@ -84,10 +92,13 @@ const CompletionForm = () => {
       axios
         .post('/api/v4/self-service/requests', payload)
         .then(response => {
-          alert(JSON.stringify(response.data, null, 2));
+          setResponseContent(response.data);
         })
         .catch(error => {
           console.error(error);
+        })
+        .finally(() => {
+          setIsLoading(false);
         });
     }
   }, [revisedTemplateBody, submittableRequest]);
@@ -96,16 +107,37 @@ const CompletionForm = () => {
     <div className={styles.container}>
       <h3>Request Summary</h3>
       <LineBreak />
-      <DiffEditor
-        original={templateResponse?.current_template_body || ''}
-        modified={revisedTemplateBody || ''}
-      />
-      <div className={styles.content}>
-        <LineBreak size="large" />
-        <Button size="small" color="primary" fullWidth onClick={handleSubmit}>
-          Submit Request
-        </Button>
-      </div>
+      {isLoading ? (
+        <Spinner />
+      ) : (
+        <>
+          <DiffEditor
+            original={templateResponse?.current_template_body || ''}
+            modified={revisedTemplateBody || ''}
+          />
+          <div className={styles.content}>
+            <LineBreak size="large" />
+            <Button
+              size="small"
+              color="primary"
+              fullWidth
+              onClick={handleSubmit}
+            >
+              Submit Request
+            </Button>
+          </div>
+        </>
+      )}
+      {responseContent?.data?.request_id && (
+        <div>
+          <p>
+            Request successfully submitted. Click on the link below to view it
+          </p>
+          <Link to={`/request/${responseContent?.data?.request_id}`}>
+            View Request
+          </Link>
+        </div>
+      )}
     </div>
   );
 };
