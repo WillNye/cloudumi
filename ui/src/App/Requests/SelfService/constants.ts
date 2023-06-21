@@ -15,7 +15,7 @@ export const DEFAULT_REQUEST: IRequest = {
   changeType: null,
   identityType: null,
   identity: null,
-  expirationDate: `4 hours`,
+  expirationDate: `In 4 hours`,
   justification: '',
   requestedChanges: []
 };

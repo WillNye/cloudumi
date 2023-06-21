@@ -7,7 +7,7 @@ import SelfServiceContext from '../../SelfServiceContext';
 import RequestChangeDetails from '../RequestChangeDetails';
 import { useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import { Duration, DateTime } from 'luxon';
+import { DateTime } from 'luxon';
 import {
   getChangeRequestType,
   getProviderDefinitions
@@ -64,7 +64,7 @@ const SelectChangeType = () => {
 
   const setExpirationFromRelativeate = useCallback(
     (time, units) => {
-      setExpirationDate(`${time} ${units}`);
+      setExpirationDate(`In ${time} ${units}`);
     },
     [setExpirationDate]
   );
