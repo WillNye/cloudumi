@@ -201,7 +201,7 @@ async def generate_s3_permission_template_for_managed_policy():
     return iambic_template
 
 
-async def generate_request_role_access_template():
+async def generate_request_role_access_request_data(user_request: bool = True):
     tenant = TENANT_SUMMARY.tenant
     (
         template,
@@ -215,8 +215,11 @@ async def generate_request_role_access_template():
     request_type = [
         r for r in request_types if r.name == "Request access to AWS IAM Role"
     ][0]
+    change_type_name = (
+        "Noq User access request" if user_request else "Noq Group access request"
+    )
     change_type = [
-        ct for ct in request_type.change_types if ct.name == "Noq User access request"
+        ct for ct in request_type.change_types if ct.name == change_type_name
     ][0]
     self_service_request = SelfServiceRequestData(
         id=uuid.uuid4(),
@@ -225,33 +228,30 @@ async def generate_request_role_access_template():
         expires_at="In 1 days",
         changes=[],
     )
+    if user_request:
+        field = SelfServiceRequestChangeTypeField(
+            field_key="noq_email", field_value="user@noq.dev"
+        )
+    else:
+        field = SelfServiceRequestChangeTypeField(
+            field_key="noq_group", field_value="engineering@noq.dev"
+        )
 
     for tpd in tenant_provider_definitions[:-1]:
         self_service_request.changes.append(
             SelfServiceRequestChangeType(
                 change_type_id=str(change_type.id),
                 provider_definition_ids=[str(tpd.id)],
-                fields=[
-                    SelfServiceRequestChangeTypeField(
-                        field_key="noq_email", field_value="user@noq.dev"
-                    )
-                ],
+                fields=[field],
             )
         )
 
-    iambic_template = await generate_updated_iambic_template(
-        tenant.id, self_service_request
-    )
-    print(
-        json.dumps(
-            iambic_template.dict(exclude_unset=False, exclude_defaults=True), indent=2
-        )
-    )
-    return iambic_template
+    return self_service_request
 
 
-async def api_self_service_request_create():
-    request_data = await get_s3_permission_template_for_role_request_data()
+async def api_self_service_request_create(request_data: SelfServiceRequestData = None):
+    if not request_data:
+        request_data = await get_s3_permission_template_for_role_request_data()
 
     validated_data = generic_api_create_or_update_request(
         "post",
@@ -338,6 +338,12 @@ async def api_self_service_request_update(request: Optional[Request]):
 
 @default_request_setter()
 async def api_self_service_request_approve(request: Optional[Request]):
+    """
+    Requires:
+    lt --port 8092 --subdomain {your_github_app}
+    API Running
+    Celery Running
+    """
     print("Waiting 30 seconds for the noq-saas-iambic-integrations bot to run")
     await asyncio.sleep(30)
     return generic_api_create_or_update_request(
@@ -349,6 +355,12 @@ async def api_self_service_request_approve(request: Optional[Request]):
 
 @default_request_setter()
 async def api_self_service_request_deny(request: Optional[Request]):
+    """
+    Requires:
+    lt --port 8092 --subdomain {your_github_app}
+    API Running
+    Celery Running
+    """
     return generic_api_create_or_update_request(
         "patch",
         f"v4/self-service/requests/{request.id}",
@@ -380,6 +392,25 @@ async def api_self_service_request_comment_update(request: Optional[Request]):
         body=f"This is my updated test comment - {random.randint(0, 1000)}",
     )
     return await api_self_service_request_get(request)
+
+
+async def api_end_to_end_access_request(user_request: bool):
+    """Creates, approves, and applies an IAMbic request.
+
+    if user_request is true it will generate a user request, otherwise it will generate a group request
+
+    Requires:
+    lt --port 8092 --subdomain {your_github_app}
+    API Running
+    Celery Running
+    """
+    request_response = await api_self_service_request_create(
+        await generate_request_role_access_request_data(user_request=user_request)
+    )
+    request_id = request_response["data"]["request_id"]
+    return await api_self_service_request_approve(
+        await get_request(TENANT_SUMMARY.tenant.id, request_id)
+    )
 
 
 if __name__ == "__main__":
