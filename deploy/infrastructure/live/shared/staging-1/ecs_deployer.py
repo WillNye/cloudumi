@@ -31,7 +31,7 @@ service_task_definition_map = [
     {
         "service": "celery_worker",
         "task_definition": f"{current_path}/task_definition_celery_worker.yaml",
-        "desiredCount": 1,
+        "desiredCount": 0,
     },
 ]
 
