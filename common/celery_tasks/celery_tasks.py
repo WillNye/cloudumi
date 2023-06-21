@@ -17,7 +17,7 @@ import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 from random import randint
-from typing import Any, Dict, List, Tuple, Union, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import celery
 import certifi
@@ -40,7 +40,6 @@ from celery.signals import (
     task_unknown,
 )
 from celery_singleton import Singleton
-from common.iambic_request.tasks import handle_tenant_iambic_github_event
 from more_itertools import chunked
 
 # from celery_progress.backend import ProgressRecorder
@@ -58,6 +57,7 @@ from common.aws.organizations.utils import (
     onboard_new_accounts_from_orgs,
     sync_account_names_from_orgs,
 )
+from common.aws.role_access.celery_tasks import sync_all_iambic_data_for_tenant
 from common.aws.service_config.utils import execute_query
 from common.config import config
 from common.config import globals as config_globals
@@ -67,6 +67,7 @@ from common.iambic.config.utils import update_tenant_providers_and_definitions
 from common.iambic.git.models import IambicRepo
 from common.iambic.interface import IambicConfigInterface
 from common.iambic.templates.tasks import sync_tenant_templates_and_definitions
+from common.iambic_request.tasks import handle_tenant_iambic_github_event
 from common.lib import noq_json as ujson
 from common.lib.account_indexers import (
     cache_cloud_accounts,
@@ -99,7 +100,6 @@ from common.lib.cloudtrail.auto_perms import detect_cloudtrail_denies_and_update
 from common.lib.event_bridge.role_updates import detect_role_changes_and_update_cache
 from common.lib.generic import un_wrap_json_and_dump_values
 from common.lib.git import store_iam_resources_in_git
-from common.aws.role_access.celery_tasks import sync_all_iambic_data, sync_all_iambic_data_for_tenant
 from common.lib.plugins import get_plugin_by_name
 from common.lib.policies import get_aws_config_history_url_for_resource
 from common.lib.pynamo import NoqModel
@@ -2954,7 +2954,7 @@ def update_self_service_state(
         pr_created_at,
         approved_by,
         is_closed,
-        is_merged
+        is_merged,
     )
     return log_data
 

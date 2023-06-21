@@ -149,18 +149,20 @@ class GitHubEventsHandler(TornadoRequestHandler):
             await tenant_github_install.delete()
             self.set_status(204)
             return
-        elif (
-                github_event_type == "pull_request" and github_action == "closed"
-        ) or (
-                github_event_type == "pull_request_review"
-                and github_action == "submitted"
-                and github_event["review"]["state"] == "approved"
+        elif (github_event_type == "pull_request" and github_action == "closed") or (
+            github_event_type == "pull_request_review"
+            and github_action == "submitted"
+            and github_event["review"]["state"] == "approved"
         ):
             if github_event_type == "pull_request":
                 # per merged_by, there is only 1 approver; however, there can be multiple review, and
                 # saas may need to aggregate them for audit? maybe. especially for complex review
                 # rule that requires multiple approvers.
-                approved_by = github_event.get("merged_by", {}).get("login", None)
+                approved_by = (
+                    github_event.get("pull_request", {})
+                    .get("merged_by", {})
+                    .get("login", None)
+                )
             else:
                 # per review, there is only 1 approver; however, there can be multiple review, and
                 # saas may need to aggregate them for audit? maybe. especially for complex review
