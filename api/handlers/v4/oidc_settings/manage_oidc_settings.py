@@ -59,7 +59,7 @@ class ManageOIDCSettingsCrudHandler(BaseAdminHandler):
 
         # tenant = self.ctx.tenant
         body = tornado.escape.json_decode(self.request.body or "{}")
-        body = OIDCSettingsDto.parse_obj(body)
+        oidc_setting_dto = OIDCSettingsDto.parse_obj(body)
 
         ddb = RestrictedDynamoHandler()
         dynamic_config = await aio_wrapper(
@@ -71,12 +71,12 @@ class ManageOIDCSettingsCrudHandler(BaseAdminHandler):
 
         for obj, model, key in [
             (
-                body.get_user_by_oidc_settings,
+                oidc_setting_dto.get_user_by_oidc_settings,
                 GetUserByOIDCSettings,
                 "get_user_by_oidc_settings",
             ),
-            (body.auth, AuthSettings, "auth"),
-            (body.secrets, SecretAuthSettings, "secrets.auth"),
+            (oidc_setting_dto.auth, AuthSettings, "auth"),
+            (oidc_setting_dto.secrets, SecretAuthSettings, "secrets.auth"),
         ]:
             adapter = model(**dynamic_config.get(key, {}))
 
