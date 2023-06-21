@@ -8,6 +8,7 @@ import { Input } from 'shared/form/Input';
 import { DiffEditor } from 'shared/form/DiffEditor';
 import styles from './SelfServiceReview.module.css';
 import { Spinner } from 'shared/elements/Spinner';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 const SelfServiceReview = () => {
   const { requestId } = useParams<{ requestId: string }>();
@@ -113,25 +114,64 @@ const SelfServiceReview = () => {
     return null;
   }
 
-  const tableData = {
-    'Requested By': requestData.requested_by || 'N/A',
-    'Requested At': requestData.requested_at || 'N/A',
-    'Last Updated': requestData.updated_at || 'N/A',
-    Status: requestData.status || 'N/A',
-    Title: requestData.title || 'N/A',
-    Justification: requestData.justification || 'N/A',
-    Repository: requestData.repo_name || 'N/A',
-    'Pull Request URL': requestData.pull_request_url || 'N/A'
-  };
+  const mainTableData = [
+    {
+      header: 'Requested By',
+      value: requestData.requested_by || 'N/A'
+    },
+    {
+      header: 'Requested At',
+      value: requestData.requested_at || 'N/A'
+    },
+    {
+      header: 'Last Updated',
+      value: requestData.updated_at || 'N/A'
+    },
+    {
+      header: 'Status',
+      value: requestData.status || 'N/A'
+    },
+    {
+      header: 'Title',
+      value: requestData.title || 'N/A'
+    },
+    {
+      header: 'Justification',
+      value: requestData.justification || 'N/A'
+    },
+    {
+      header: 'Repository',
+      value: requestData.repo_name || 'N/A'
+    },
+    {
+      header: 'Pull Request URL',
+      value: requestData.pull_request_url || 'N/A'
+    }
+  ];
+
+  const mainTableColumns = [
+    { header: 'header', accessorKey: 'header' },
+    { header: 'value', accessorKey: 'value' }
+  ];
+
+  const filePathColumns = [
+    { header: 'header', accessorKey: 'header' },
+    { header: 'value', accessorKey: 'value' }
+  ];
 
   return (
     <div>
       <h2>Self Service Request Review</h2>
 
-      {/* <Table data={tableData} /> */}
-
+      <Table data={mainTableData} columns={mainTableColumns} />
+      <LineBreak size={'large'} />
       {requestData.files.map((file, i) => (
         <div key={i}>
+          <Table
+            data={[{ header: 'File Path', value: file.file_path }]}
+            columns={filePathColumns}
+          />
+
           <DiffEditor
             original={file.previous_body || ''}
             modified={file.template_body || ''}
