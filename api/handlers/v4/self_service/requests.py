@@ -38,6 +38,14 @@ class IambicRequestValidationHandler(BaseHandler):
             request_data = SelfServiceRequestData.parse_raw(self.request.body)
             data = await run_request_validation(db_tenant, request_data)
         except (AssertionError, TypeError, ValidationError) as err:
+            log.exception(
+                {
+                    "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+                    "error": str(err),
+                    "tenant_name": db_tenant.name,
+                },
+                exc_info=True,
+            )
             self.write(
                 WebResponse(
                     errors=[str(err)],

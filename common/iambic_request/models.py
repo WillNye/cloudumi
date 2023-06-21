@@ -465,7 +465,7 @@ class Request(SoftDeleteMixin, Base):
     def dict(self):
         response = {
             "id": str(self.id),
-            "repo_name": self.iambic_repo.repo_name,
+            "repo_name": self.repo_name,
             "pull_request_id": self.pull_request_id,
             "pull_request_url": self.pull_request_url,
             "status": self.status
