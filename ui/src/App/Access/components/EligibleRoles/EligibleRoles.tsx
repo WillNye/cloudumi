@@ -138,6 +138,12 @@ const EligibleRoles = () => {
                 operators: ['=', '!=', ':', '!:'],
                 propertyLabel: 'Role Name',
                 groupValuesLabel: 'Role Name values'
+              },
+              {
+                key: 'arn',
+                operators: ['=', '!=', ':', '!:'],
+                propertyLabel: 'ARN',
+                groupValuesLabel: 'ARN values'
               }
             ]}
           />

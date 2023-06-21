@@ -60,5 +60,6 @@ export const allRolesColumns: ColumnDef<any, any>[] = [
 export const SUPPORTED_FILTER_KEYS = [
   'account_name',
   'account_id',
-  'role_name'
+  'role_name',
+  'arn'
 ];
