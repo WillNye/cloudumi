@@ -1360,7 +1360,7 @@ class SecretAuthSettings(BaseModel):
 
 
 class GetUserByOIDCSettings(BaseModel):
-    metadata_url: str = Field(..., title="Metadata Url")
+    metadata_url: Optional[str] = Field(None, title="Metadata Url")
     client_scopes: Optional[List[str]] = Field([], title="Client Scopes")
     include_admin_scope: Optional[bool] = Field(False, title="Include Admin Scope")
     grant_type: Optional[str] = Field("authorization_code", title="Grant Type")
