@@ -398,7 +398,7 @@ async def get_allowed_approvers(
     The idea being that
     """
     return config.get_tenant_specific_key(
-        "groups.can_admin", tenant_name, ["noq_admins@noq.dev"]
+        "groups.can_admin", tenant_name, ["noq_admins"]
     )
 
 

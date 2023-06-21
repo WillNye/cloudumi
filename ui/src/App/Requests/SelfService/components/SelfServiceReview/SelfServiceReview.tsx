@@ -67,8 +67,9 @@ const SelfServiceReview = () => {
   const handleApprove = async () => {
     setLoading(true);
     try {
-      const response = await axios.post(
-        `/api/v4/self-service/requests/${requestId}/approve`
+      const response = await axios.patch(
+        `/api/v4/self-service/requests/${requestId}`,
+        { status: 'approved' }
       );
       setRequestData(response.data.data);
     } catch (error) {
