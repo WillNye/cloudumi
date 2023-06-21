@@ -687,7 +687,7 @@ class RegistrationAttemptModel(BaseModel):
     password: str
 
 
-class Status2(Enum):
+class Status2(str, Enum):
     success = "success"
     error = "error"
     redirect = "redirect"
