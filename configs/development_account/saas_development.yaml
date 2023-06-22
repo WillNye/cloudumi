@@ -103,7 +103,7 @@ _global_:
     internal_routes: cmsaas_internal_routes
     internal_policies: cmsaas_policies
   celery:
-    clear_tasks_for_development: true
+    clear_tasks_for_development: false
     purge: true
     broker:
       us-east-1: rediss://:{password}@cloudumi-redis:6379/1?ssl_ca_certs={ssl_ca_certs}&ssl_cert_reqs=required

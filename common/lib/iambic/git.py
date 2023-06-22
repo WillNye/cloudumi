@@ -81,6 +81,11 @@ async def get_github_repos(access_token):
 
 
 class IambicGit:
+    """DO NOT USE THIS CLASS. IT IS ON LIFE SUPPORT AND ONLY USED BY THE LEGACY SLACK IMPLEMENTATION.
+
+    Instead, use the IambicRepo and IambicConfigInterface classes.
+    """
+
     def __init__(self, tenant: str) -> None:
         self.tenant: str = tenant
         self.git_repositories = []

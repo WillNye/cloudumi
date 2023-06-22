@@ -4,8 +4,8 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
-  height: 100%;
   padding: var(--spacing-md);
+  height: 100%;
 
   .subText {
     color: var(--gray-200);
@@ -26,10 +26,30 @@
     flex-direction: row;
     width: 100%;
     height: 100%;
-    max-width: 1000px;
   }
 
   .content {
+    width: 100%;
+  }
+
+  .radioGroup {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .radioInput {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-sm) var(--spacing-lg);
+  }
+
+  .absolute {
+    width: 100%;
+  }
+
+  .relative {
     width: 100%;
   }
 }

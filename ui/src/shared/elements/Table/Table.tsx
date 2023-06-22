@@ -27,6 +27,7 @@ interface TableProps<D> {
   isLoading?: boolean;
   showPagination?: boolean;
   noResultsComponent?: ReactNode;
+  enableColumnVisibility?: boolean;
   totalCount?: number;
   pageSize?: number;
   pageIndex?: number;
@@ -41,6 +42,7 @@ export const Table = <T, D>({
   striped = false,
   border,
   enableRowSelection = false,
+  enableColumnVisibility = false,
   isLoading = false,
   showPagination = false,
   totalCount,
@@ -148,38 +150,40 @@ export const Table = <T, D>({
                   </th>
                 );
               })}
-              <th className={styles.columnsDropdown}>
-                <span ref={columnsRef}>
-                  <Icon
-                    className={styles.columnsDropdownIcon}
-                    onClick={() => setIsColumnMenuOpen(isOpen => !isOpen)}
-                    name="list-view"
-                    size="large"
-                  />
-                </span>
-                <Menu
-                  open={isColumnMenuOpen}
-                  onClose={() => setIsColumnMenuOpen(false)}
-                  reference={columnsRef}
-                >
-                  {table.getAllLeafColumns().map(column => {
-                    return (
-                      <div
-                        className={styles.columnsDropdownItem}
-                        key={column.id}
-                      >
-                        <Checkbox
-                          {...{
-                            checked: column.getIsVisible(),
-                            onChange: column.getToggleVisibilityHandler()
-                          }}
-                        />
-                        <span className={styles.itemLabel}>{column.id}</span>
-                      </div>
-                    );
-                  })}
-                </Menu>
-              </th>
+              {enableColumnVisibility && (
+                <th className={styles.columnsDropdown}>
+                  <span ref={columnsRef}>
+                    <Icon
+                      className={styles.columnsDropdownIcon}
+                      onClick={() => setIsColumnMenuOpen(isOpen => !isOpen)}
+                      name="list-view"
+                      size="large"
+                    />
+                  </span>
+                  <Menu
+                    open={isColumnMenuOpen}
+                    onClose={() => setIsColumnMenuOpen(false)}
+                    reference={columnsRef}
+                  >
+                    {table.getAllLeafColumns().map(column => {
+                      return (
+                        <div
+                          className={styles.columnsDropdownItem}
+                          key={column.id}
+                        >
+                          <Checkbox
+                            {...{
+                              checked: column.getIsVisible(),
+                              onChange: column.getToggleVisibilityHandler()
+                            }}
+                          />
+                          <span className={styles.itemLabel}>{column.id}</span>
+                        </div>
+                      );
+                    })}
+                  </Menu>
+                </th>
+              )}
             </tr>
           ))}
         </thead>

@@ -38,6 +38,10 @@ const configureYAMLSchema = async (
   console.log(editorInstance);
   console.log(monaco);
 
+  const schemaUri = Uri.parse(
+    'https://docs.iambic.org/schemas/v1/aws_iam_role_template.json'
+  );
+
   setDiagnosticsOptions({
     enableSchemaRequest: true,
     hover: true,
@@ -182,6 +186,9 @@ const ResourceDetails = () => {
             <CodeEditor
               height="100%"
               defaultLanguage="yaml"
+              schemaUri={
+                'https://docs.iambic.org/schemas/v1/aws_iam_role_template.json'
+              }
               value={data?.raw_template_yaml}
               onChange={handleEditorChange}
               onMount={(editor, monaco) =>

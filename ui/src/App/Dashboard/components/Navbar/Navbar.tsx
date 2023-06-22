@@ -48,20 +48,20 @@ export const Navbar = () => {
             </div>
           </Tooltip>
         </Link>
-        <Link to="/profile">
+        {/* <Link to="/profile">
           <Tooltip text="Users" alignment="right">
             <div>
               <Icon width="26px" height="26px" name="profile" />
             </div>
           </Tooltip>
-        </Link>
-        <Link to="/notifications">
+        </Link> */}
+        {/* <Link to="/notifications">
           <Tooltip text="Notifications" alignment="right">
             <div>
               <Icon width="26px" height="26px" name="notifications" />
             </div>
           </Tooltip>
-        </Link>
+        </Link> */}
         <Link to="/settings">
           <Tooltip text="Settings" alignment="right">
             <div>

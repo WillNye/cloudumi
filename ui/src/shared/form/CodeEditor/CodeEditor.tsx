@@ -1,9 +1,13 @@
-import React, { FC, useCallback, useRef } from 'react';
-import Editor, { EditorProps, Monaco } from '@monaco-editor/react';
+import React, { FC, useCallback, useEffect, useRef } from 'react';
+import Editor, { EditorProps, Monaco, useMonaco } from '@monaco-editor/react';
 import { setupEditor } from './instance';
 import classNames from 'classnames';
 import { useUnmount } from 'react-use';
 import css from './CodeEditor.module.css';
+import {
+  getMonacoCompletions,
+  getMonacoTriggerCharacters
+} from 'core/utils/monacoUtils';
 
 interface IDisposable {
   dispose(): void;
@@ -29,6 +33,7 @@ interface CodeEditorProps extends EditorProps {
   maxHeight?: number;
   error?: boolean;
   suggestions?: Suggestion[];
+  language?: string;
   onBlur?: (event: React.FocusEvent<HTMLDivElement>) => void;
   onFocus?: (event: React.FocusEvent<HTMLDivElement>) => void;
 }
@@ -46,6 +51,7 @@ export const CodeEditor: FC<CodeEditorProps> = ({
   height = '100%',
   width = '100%',
   error,
+  language = 'yaml',
   onBlur,
   onFocus,
   ...rest
@@ -53,6 +59,7 @@ export const CodeEditor: FC<CodeEditorProps> = ({
   const elmRef = useRef<HTMLDivElement | null>(null);
   const contentHeightRef = useRef<number>(0);
   const disposables = useRef<IDisposable[]>([]);
+  const monaco = useMonaco();
 
   useUnmount(() => disposables.current.forEach(d => d.dispose()));
 
@@ -82,6 +89,18 @@ export const CodeEditor: FC<CodeEditorProps> = ({
     },
     [minHeight, maxHeight]
   );
+
+  useEffect(() => {
+    if (!monaco) {
+      return;
+    }
+    monaco.languages.registerCompletionItemProvider(language, {
+      triggerCharacters: getMonacoTriggerCharacters(),
+      async provideCompletionItems(model, position) {
+        return await getMonacoCompletions(model, position, monaco);
+      }
+    });
+  }, [monaco]);
 
   const handleEditorWillMount = useCallback(
     (instance: Monaco) => {
@@ -159,6 +178,7 @@ export const CodeEditor: FC<CodeEditorProps> = ({
     >
       <Editor
         {...rest}
+        language={language}
         options={{
           readOnly: disabled,
           fontSize: 12,
@@ -172,8 +192,8 @@ export const CodeEditor: FC<CodeEditorProps> = ({
             enabled: false
           }
         }}
-        theme="noq"
-        beforeMount={handleEditorWillMount}
+        theme="vs-dark"
+        // beforeMount={handleEditorWillMount}
         onMount={onEditorMount}
       />
     </div>

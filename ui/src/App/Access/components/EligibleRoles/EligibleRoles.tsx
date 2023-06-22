@@ -61,7 +61,8 @@ const EligibleRoles = () => {
       const roleName = item.role_name.match(/\[(.+?)\]\((.+?)\)/)[1];
       return {
         ...item,
-        roleName: <Link to={`/resources/edit/${item.arn}`}>{roleName}</Link>,
+        // roleName: <Link to={`/resources/edit/${item.arn}`}>{roleName}</Link>,
+        roleName: <div>{roleName}</div>,
         name: (
           <div>
             <div>{item.account_name}</div>
