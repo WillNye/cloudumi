@@ -14,9 +14,9 @@ from common.iambic.config.models import (
     TenantProviderDefinition,
     TrustedProvider,
 )
+from common.iambic.git.models import IambicRepo
+from common.iambic.interface import IambicConfigInterface
 from common.iambic.templates.models import IambicTemplateProviderDefinition
-from common.iambic.utils import get_iambic_repo
-from common.lib.iambic.git import IambicGit
 from common.pg_core.utils import bulk_add, bulk_delete
 from common.tenants.models import Tenant
 
@@ -94,9 +94,11 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
     # This is super hacky, and we should be using the config object to do all of this
     # Unfortunately, we don't currently have a way to get providers that are stored in a secret
     tenant = await Tenant.get_by_name(tenant_name)
-    iambic_git = IambicGit(tenant_name)
-
-    if not await iambic_git.is_github_app_connected():
+    iambic_repos = await IambicRepo.get_all_tenant_repos(tenant_name)
+    iambic_repos = [
+        iambic_repo for iambic_repo in iambic_repos if iambic_repo.is_app_connected()
+    ]
+    if not iambic_repos:
         # early return because github app is not even connected.
         # this is a cascade problem if github app is not connected,
         # the repo cannot be fetched.
@@ -104,7 +106,7 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
             {
                 "function": f"{__name__}.{sys._getframe().f_code.co_name}",
                 "tenant": tenant_name,
-                "message": "github_app is not connected.",
+                "message": "A git provider app is not connected to any configured repos.",
             }
         )
         return
@@ -132,50 +134,17 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
             f"{existing_definition.provider}-{existing_definition.sub_type}"
         ][existing_definition.name] = existing_definition
 
-    try:
-        # At some point we will support multiple repos and this is a way to futureproof
-        iambic_repos = await get_iambic_repo(tenant_name)
-        if not isinstance(iambic_repos, list):
-            iambic_repos = [iambic_repos]
-    except KeyError as err:
-        log.error(
-            {
-                "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-                "tenant": tenant_name,
-                "error": str(err),
-            }
-        )
-        return
-
-    for repo in iambic_repos:
-        repo_dir = iambic_git.get_iambic_repo_path(repo.repo_name)
-        try:
-            iambic_config = await iambic_git.load_iambic_config(repo.repo_name)
-        except ValueError as err:
-            log.error(
-                {
-                    "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-                    "repo": repo.repo_name,
-                    "tenant": tenant_name,
-                    "error": str(err),
-                }
-            )
-
+    for iambic_repo in iambic_repos:
+        iambic_config_interface = IambicConfigInterface(iambic_repo)
         # Collect provider definitions from the template repo
-        azure_ad_templates = iambic_git.load_templates(
-            await iambic_git.gather_templates(repo_dir, "AzureAD"),
-            iambic_config.template_map,
-            use_multiprocessing=False,
+        azure_ad_templates = await iambic_config_interface.load_templates(
+            await iambic_config_interface.gather_templates("AzureAD"),
         )
-        okta_templates = iambic_git.load_templates(
-            await iambic_git.gather_templates(repo_dir, "Okta"),
-            iambic_config.template_map,
-            use_multiprocessing=False,
+        okta_templates = await iambic_config_interface.load_templates(
+            await iambic_config_interface.gather_templates("Okta")
         )
-        google_workspace_templates = iambic_git.load_templates(
-            await iambic_git.gather_templates(repo_dir, "GoogleWorkspace"),
-            iambic_config.template_map,
-            use_multiprocessing=False,
+        google_workspace_templates = await iambic_config_interface.load_templates(
+            await iambic_config_interface.gather_templates("GoogleWorkspace")
         )
 
         # Handling Azure AD and Okta
@@ -210,6 +179,7 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
                 domain, {"domain": domain, "provider": provider}
             )
 
+        iambic_config = await iambic_config_interface.get_iambic_config()
         # Handling AWS accounts and orgs
         if iambic_config.aws and iambic_config.aws.accounts:
             provider = "aws"

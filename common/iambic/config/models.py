@@ -2,6 +2,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Optional, Type
 
+from iambic.core.iambic_plugin import ProviderPlugin
 from iambic.core.models import BaseTemplate, Variable
 from iambic.plugins.v0_1_0.aws.iambic_plugin import IAMBIC_PLUGIN as AWS_IAMBIC_PLUGIN
 from iambic.plugins.v0_1_0.azure_ad.iambic_plugin import (
@@ -26,7 +27,7 @@ log = config.get_logger(__name__)
 class TrustedProviderResolver:
     provider: str
     template_type_prefix: str
-    template_classes: list
+    iambic_plugin: ProviderPlugin
     included_providers_attribute: Optional[str] = None
     excluded_providers_attribute: Optional[str] = None
     template_provider_attribute: Optional[str] = None
@@ -39,6 +40,10 @@ class TrustedProviderResolver:
     @staticmethod
     def get_name_from_iambic_provider_config(provider_config):
         return str(provider_config)
+
+    @property
+    def template_classes(self):
+        return self.iambic_plugin.templates
 
     @property
     def template_map(self) -> dict[str, Type[BaseTemplate]]:
@@ -77,7 +82,7 @@ TRUSTED_PROVIDER_RESOLVERS = [
         provider="aws",
         template_type_prefix="NOQ::AWS",
         provider_config_definition_attribute="accounts",
-        template_classes=AWS_IAMBIC_PLUGIN.templates,
+        iambic_plugin=AWS_IAMBIC_PLUGIN,
         included_providers_attribute="included_accounts",
         excluded_providers_attribute="excluded_accounts",
     ),
@@ -85,19 +90,19 @@ TRUSTED_PROVIDER_RESOLVERS = [
         provider="azure_ad",
         template_type_prefix="NOQ::AzureAD",
         template_provider_attribute="idp_name",
-        template_classes=AZURE_AD_IAMBIC_PLUGIN.templates,
+        iambic_plugin=AZURE_AD_IAMBIC_PLUGIN,
     ),
     TrustedProviderResolver(
         provider="google_workspace",
         template_type_prefix="NOQ::GoogleWorkspace",
         template_provider_attribute="properties.domain",
-        template_classes=GOOGLE_WORKSPACE_IAMBIC_PLUGIN.templates,
+        iambic_plugin=GOOGLE_WORKSPACE_IAMBIC_PLUGIN,
     ),
     TrustedProviderResolver(
         provider="okta",
         template_type_prefix="NOQ::Okta",
         template_provider_attribute="idp_name",
-        template_classes=OKTA_IAMBIC_PLUGIN.templates,
+        iambic_plugin=OKTA_IAMBIC_PLUGIN,
     ),
 ]
 

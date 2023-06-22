@@ -20,8 +20,13 @@ from qa.utils import generic_api_get_request
 """Example script
 import asyncio
 
-from qa import setup, TENANT_NAME
-asyncio.run(setup())
+from qa import TENANT_SUMMARY
+await TENANT_SUMMARY.setup(
+    tenant_name="localhost",
+    tenant_url="http://localhost:8092",
+    username="user@noq.dev",
+    user_groups = ["engineering@noq.dev"]
+)
 
 from qa.iambic_templates import list_templates_api_request, sync_test_tenant_templates, teardown_refs
 
@@ -40,6 +45,8 @@ async def teardown_refs():
     Sets the last parsed date to None, and deletes all templates.
     This will result in a full reparse of all templates.
     """
+    TENANT_SUMMARY.tenant.iambic_templates_last_parsed = None
+    await TENANT_SUMMARY.tenant.write()
     await rollback_full_create(TENANT_SUMMARY.tenant)
 
 

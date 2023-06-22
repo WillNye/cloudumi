@@ -5,13 +5,17 @@ import { requestsColumns } from './constants';
 import { Button } from 'shared/elements/Button';
 import { Divider } from 'shared/elements/Divider';
 import { PropertyFilter, PropertyFilterProps } from '@noqdev/cloudscape';
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './RequestsList.module.css';
 import { Icon } from 'shared/elements/Icon';
 import { Menu } from 'shared/layers/Menu';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
+import axios from 'core/Axios/Axios';
+import { DateTime } from 'luxon';
 
 const RequestsList = () => {
+  const [data, setData] = useState([]);
   const statusRef = useRef();
 
   const navigate = useNavigate();
@@ -38,6 +42,32 @@ const RequestsList = () => {
     },
     filtering: filter
   });
+
+  useEffect(() => {
+    axios.get('/api/v4/self-service/requests/').then(response => {
+      setData(response.data.data);
+    });
+  }, [query]);
+
+  const tableRows = useMemo(() => {
+    return (data || []).map(item => {
+      return {
+        repo_name: <p>{item.repo_name}</p>,
+        pull_request_id: (
+          <a href={item.pull_request_url}>#{item.pull_request_id}</a>
+        ),
+        created_at: (
+          <p>
+            {DateTime.fromSeconds(item.created_at).toFormat(
+              'yyyy/MM/dd HH:mm ZZZZ'
+            )}
+          </p>
+        ),
+        created_by: <p>{item.created_by}</p>,
+        status: <p>{item.status}</p>
+      };
+    });
+  }, [data]);
 
   return (
     <Segment>
@@ -81,26 +111,12 @@ const RequestsList = () => {
               enteredTextLabel: text => `Use: "${text}"`
             }}
             filteringOptions={[]}
-            filteringProperties={[
-              {
-                key: 'account_name',
-                operators: ['=', '!=', ':', '!:'],
-                propertyLabel: 'Account Name',
-                groupValuesLabel: 'Account Name values'
-              },
-              {
-                key: 'account_id',
-                operators: ['=', '!=', ':', '!:'],
-                propertyLabel: 'Account ID',
-                groupValuesLabel: 'Account ID values'
-              },
-              {
-                key: 'role_name',
-                operators: ['=', '!=', ':', '!:'],
-                propertyLabel: 'Role Name',
-                groupValuesLabel: 'Role Name values'
-              }
-            ]}
+            filteringProperties={requestsColumns.map(column => ({
+              key: column.id,
+              operators: ['=', '!=', ':', '!:'],
+              propertyLabel: column.header,
+              groupValuesLabel: column.header + ' values'
+            }))}
           />
           <LineBreak size="large" />
           <div className={styles.actionsBar}>
@@ -144,7 +160,12 @@ const RequestsList = () => {
           </div>
         </div>
         <LineBreak size="large" />
-        <Table data={[]} columns={requestsColumns} border="row" />
+        <Table
+          data={tableRows}
+          columns={requestsColumns}
+          border="row"
+          enableColumnVisibility
+        />
       </div>
     </Segment>
   );

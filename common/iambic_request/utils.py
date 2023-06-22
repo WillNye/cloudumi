@@ -21,11 +21,11 @@ from common import (
 from common.config import config
 from common.config.globals import ASYNC_PG_SESSION
 from common.iambic.config.models import TRUSTED_PROVIDER_RESOLVER_MAP
+from common.iambic.git.models import IambicRepo
 from common.iambic.templates.utils import get_template_by_id
 from common.iambic.utils import get_iambic_repo
 from common.iambic_request.models import GitHubPullRequest, IambicTemplateChange
 from common.lib import noq_json as json
-from common.lib.iambic.git import IambicGit
 from common.models import (
     IambicRepoDetails,
     SelfServiceRequestChangeType,
@@ -403,19 +403,23 @@ async def get_allowed_approvers(
 async def get_iambic_pr_instance(
     tenant: Tenant, request_id: str, requested_by: str, pull_request_id: int = None
 ):
-    iambic_git = IambicGit(tenant.name)
-    iambic_repo: IambicRepoDetails = await get_iambic_repo(tenant.name)
-    access_token = await iambic_git.get_access_token()
+    iambic_repo_details: IambicRepoDetails = await get_iambic_repo(tenant.name)
+    iambic_repo = await IambicRepo.setup(
+        tenant,
+        iambic_repo_details.repo_name,
+        request_id,
+        requested_by,
+        use_request_branch=True,
+    )
 
-    if iambic_repo.git_provider == "github":
+    if iambic_repo_details.git_provider == "github":
         return GitHubPullRequest(
-            tenant=tenant.name,
+            tenant=tenant,
             request_id=str(request_id),
             requested_by=requested_by,
             pull_request_id=pull_request_id,
-            repo_name=iambic_repo.repo_name,
-            access_token=access_token,
-            merge_on_approval=iambic_repo.merge_on_approval,
+            iambic_repo=iambic_repo,
+            merge_on_approval=iambic_repo_details.merge_on_approval,
         )
 
     raise ValueError(f"Unsupported git provider: {iambic_repo.git_provider}")

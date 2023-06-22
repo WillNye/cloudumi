@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { Segment } from 'shared/layout/Segment';
 import RequestCard from '../RequestCard';
 
@@ -6,8 +6,7 @@ import styles from './SelectRequestType.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { useContext } from 'react';
 import SelfServiceContext from '../../SelfServiceContext';
-import { SELF_SERICE_STEPS } from '../../constants';
-import { RequestType } from '../../types';
+import { SELF_SERVICE_STEPS } from '../../constants';
 import { useQuery } from '@tanstack/react-query';
 import { getRequestType } from 'core/API/iambicRequest';
 import { AxiosError } from 'axios';
@@ -21,9 +20,13 @@ const SelectRequestType = () => {
     actions: { setCurrentStep, setSelectedRequestType }
   } = useContext(SelfServiceContext);
 
-  const { data, isLoading } = useQuery({
+  const { data: requestTypes, isLoading } = useQuery({
     queryFn: getRequestType,
-    queryKey: ['getRequestType', selfServiceRequest.provider],
+    queryKey: [
+      'getRequestType',
+      selfServiceRequest.provider,
+      selfServiceRequest.identityType
+    ],
     onError: (error: AxiosError) => {
       // const errorRes = error?.response;
       // const errorMsg = extractErrorMessage(errorRes?.data);
@@ -39,15 +42,15 @@ const SelectRequestType = () => {
         <p className={styles.subText}>What would you like to do?</p>
         <LineBreak size="large" />
         <div className={styles.cardList}>
-          {data?.data?.length ? (
-            data.data.map(requestType => (
+          {requestTypes?.data?.length ? (
+            requestTypes.data.map(requestType => (
               <RequestCard
                 key={requestType.id}
                 title={requestType.name}
                 icon={getRequestTypeIcon(requestType.name)}
                 description={requestType.description}
                 onClick={() => {
-                  setCurrentStep(SELF_SERICE_STEPS.CHANGE_TYPE);
+                  setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
                   setSelectedRequestType(requestType);
                 }}
               />

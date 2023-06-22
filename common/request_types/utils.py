@@ -31,6 +31,7 @@ async def list_tenant_request_types(
     provider: str = None,
     summary_only: bool = True,
     exclude_deleted: bool = True,
+    template_type: Optional[str] = None,
 ) -> list[RequestType]:
     async with ASYNC_PG_SESSION() as session:
         stmt = select(RequestType).filter(RequestType.tenant_id == tenant_id)
@@ -39,6 +40,9 @@ async def list_tenant_request_types(
 
         if exclude_deleted:
             stmt = stmt.filter(RequestType.deleted == False)
+
+        if template_type:
+            stmt = stmt.filter(RequestType.template_types.contains([template_type]))
 
         if summary_only:
             items = await session.execute(stmt)

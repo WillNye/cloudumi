@@ -311,7 +311,9 @@ async def api_self_service_request_update(request: Optional[Request]):
     change_summary = response_dict["data"]["files"][0]
     file_path = change_summary["file_path"]
     iambic_template = yaml.load(StringIO(change_summary["template_body"]))
-    template_description = iambic_template["properties"]["description"]
+    template_description = iambic_template["properties"].get(
+        "description", "Role description"
+    )
     if isinstance(template_description, str):
         iambic_template["properties"][
             "description"
@@ -336,12 +338,11 @@ async def api_self_service_request_update(request: Optional[Request]):
 
 @default_request_setter()
 async def api_self_service_request_approve(request: Optional[Request]):
-    # return generic_api_create_or_update_request(
-    #     "patch",
-    #     f"v4/self-service/requests/{request.id}",
-    #     status="approved",
-    # )
-    raise NotImplementedError
+    return generic_api_create_or_update_request(
+        "patch",
+        f"v4/self-service/requests/{request.id}",
+        status="approved",
+    )
 
 
 @default_request_setter()

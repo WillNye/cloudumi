@@ -55,7 +55,8 @@ const AllRoles = () => {
       const arn = item.arn.match(/\[(.+?)\]\((.+?)\)/)[1];
       return {
         ...item,
-        roleName: <Link to={`/resources/edit/${arn}`}>{arn}</Link>,
+        // roleName: <Link to={`/resources/edit/${arn}`}>{arn}</Link>,
+        roleName: <div>{arn}</div>,
         name: (
           <div>
             <div>{item.account_name}</div>
