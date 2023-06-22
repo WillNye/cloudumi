@@ -49,3 +49,10 @@
   justify-content: flex-end;
   padding-bottom: 10px;
 }
+
+.editor {
+  height: 100%;
+  width: 100%;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--gray-500);
+}

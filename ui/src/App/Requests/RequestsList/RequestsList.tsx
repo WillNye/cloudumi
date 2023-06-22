@@ -10,7 +10,6 @@ import styles from './RequestsList.module.css';
 import { Icon } from 'shared/elements/Icon';
 import { Menu } from 'shared/layers/Menu';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
 import axios from 'core/Axios/Axios';
 import { DateTime } from 'luxon';
 
@@ -165,6 +164,7 @@ const RequestsList = () => {
           columns={requestsColumns}
           border="row"
           enableColumnVisibility
+          spacing="expanded"
         />
       </div>
     </Segment>

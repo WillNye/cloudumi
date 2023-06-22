@@ -43,6 +43,20 @@
     }
   }
 
+  &.success {
+    --btn-color: var(--body-color);
+    --btn-background-color: var(--green-700);
+
+    &[disabled] {
+      --btn-color: var(--body-color);
+      --btn-background-color: var(--green-500);
+    }
+
+    &:hover {
+      --btn-background-color: var(--green-600);
+    }
+  }
+
   &.secondary {
     --btn-color: var(--body-color);
     --btn-background-color: var(--gray-600);
@@ -59,14 +73,15 @@
   }
 
   &.outline {
-    --btn-background: var(--btn-background-color);
-    --btn-border-color: var(--gray-300);
+    --btn-background: transparent;
+    --btn-border-color: var(--btn-background-color);
+    --btn-color: var(--btn-background-color);
   }
 
   &.text {
     --btn-background: transparent;
     --btn-border-color: transparent;
-    --btn-color: var(--body-colorr);
+    --btn-color: var(--body-color);
   }
 
   &.fullWidth {

@@ -90,6 +90,7 @@ export const DiffEditor: FC<DiffEditorProps> = ({
         options={options}
         theme="vs-dark"
         onMount={editorDidMount}
+        className={styles.editor}
       />
     </div>
   );
