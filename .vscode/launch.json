@@ -78,6 +78,23 @@
       }
     },
     {
+      "name": "Local Config: CloudUmi Celery Events",
+      "program": "${workspaceFolder}/common/celery_tasks/run.py",
+      "type": "python",
+      "request": "launch",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
+        "AWS_REGION": "us-west-2",
+        // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
+        "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
+        "PYTHONASYNCIODEBUG": "1",
+        "RUNTIME_PROFILE": "CELERY_EVENTS"
+      }
+    },
+    {
       "name": "Local Config: Initialize DynamoDB",
       "type": "python",
       "request": "launch",
