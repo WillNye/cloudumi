@@ -547,3 +547,8 @@ async def api_typeahead_list_groups(name: Optional[str] = None):
 async def api_typeahead_list_users(email: Optional[str] = None):
     request_params = {} if not email else {"email": email}
     generic_api_get_request("v4/self-service/typeahead/noq/users", **request_params)
+
+
+if __name__ == "__main__":
+    asyncio.run(TENANT_SUMMARY.setup())
+    asyncio.run(reset_request_type_tables())
