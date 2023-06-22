@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'core/Axios/Axios';
 import { Button } from 'shared/elements/Button';
@@ -12,153 +12,144 @@ import { Segment } from 'shared/layout/Segment';
 import { TextArea } from 'shared/form/TextArea';
 import styles from './RequestDetails.module.css';
 import { Block } from 'shared/layout/Block';
+import { useQuery } from '@tanstack/react-query';
+import { getIambicRequest } from 'core/API/iambicRequest';
+import { Loader } from 'shared/elements/Loader';
 
 const RequestChangeDetails = () => {
   const { requestId } = useParams<{ requestId: string }>();
-  const [requestData, setRequestData] = useState<any>(null);
   const [comment, setComment] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchRequestData = async () => {
-    setIsLoading(true);
-    try {
-      const response = await axios.get(
-        `/api/v4/self-service/requests/${requestId}`
-      );
-      setRequestData(response.data.data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRequestData();
-  }, [requestId]);
+  const {
+    refetch: refetchData,
+    data: requestData,
+    isLoading
+  } = useQuery({
+    queryFn: getIambicRequest,
+    queryKey: ['getIambicRequest', requestId]
+  });
 
   const handleSave = async () => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
-      const response = await axios.put(
-        `/api/v4/self-service/requests/${requestId}`,
-        { files: requestData.files }
-      );
-      setRequestData(response.data.data);
+      await axios.put(`/api/v4/self-service/requests/${requestId}`, {
+        files: requestData.files
+      });
+      refetchData();
     } catch (error) {
       console.error(error);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const handleComment = async () => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
-      const response = await axios.post(
-        `/api/v4/self-service/requests/${requestId}/comments`,
-        { comment }
-      );
-      setRequestData(response.data.data);
+      await axios.post(`/api/v4/self-service/requests/${requestId}/comments`, {
+        comment
+      });
+      refetchData();
     } catch (error) {
       console.error(error);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const handleApprove = async () => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
-      const response = await axios.patch(
-        `/api/v4/self-service/requests/${requestId}`,
-        { status: 'approved' }
-      );
-      setRequestData(response.data.data);
+      await axios.patch(`/api/v4/self-service/requests/${requestId}`, {
+        status: 'approved'
+      });
+      refetchData();
     } catch (error) {
       console.error(error);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const handleReject = async () => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
-      const response = await axios.post(
-        `/api/v4/self-service/requests/${requestId}/reject`
-      );
-      setRequestData(response.data.data);
+      await axios.post(`/api/v4/self-service/requests/${requestId}/reject`);
+      refetchData();
     } catch (error) {
       console.error(error);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const handleApply = async () => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
-      const response = await axios.post(
-        `/api/v4/self-service/requests/${requestId}/apply`
-      );
-      setRequestData(response.data.data);
+      await axios.post(`/api/v4/self-service/requests/${requestId}/apply`);
+      refetchData();
     } catch (error) {
       console.error(error);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const mainTableData = [
     {
       header: 'Requested By',
-      value: requestData?.requested_by || 'N/A'
+      value: requestData?.data?.requested_by || 'N/A'
     },
     {
       header: 'Requested At',
-      value: requestData?.requested_at || 'N/A'
+      value: requestData?.data?.requested_at || 'N/A'
     },
     {
       header: 'Last Updated',
-      value: requestData?.updated_at || 'N/A'
+      value: requestData?.data?.updated_at || 'N/A'
     },
     {
       header: 'Status',
-      value: requestData?.status || 'N/A'
+      value: requestData?.data?.status || 'N/A'
     },
     {
       header: 'Title',
-      value: requestData?.title || 'N/A'
+      value: requestData?.data?.title || 'N/A'
     },
     {
       header: 'Justification',
-      value: requestData?.justification || 'N/A'
+      value: requestData?.data?.justification || 'N/A'
     },
     {
       header: 'Repository',
-      value: requestData?.repo_name || 'N/A'
+      value: requestData?.data?.repo_name || 'N/A'
     },
     {
       header: 'Pull Request URL',
-      value: requestData?.pull_request_url || 'N/A'
+      value: requestData?.data?.pull_request_url || 'N/A'
     }
   ];
 
-  if (!requestData && !isLoading) {
+  if (isLoading) {
+    return <Loader />;
+  }
+
+  if (!requestData?.data) {
     return <NotFound />;
   }
 
   return (
-    <Segment isLoading={isLoading}>
+    <Segment isLoading={isSubmitting}>
       <div className={styles.container}>
         <h3>Request Review</h3>
         <Table
           data={mainTableData}
           columns={mainTableColumns}
           spacing="expanded"
+          border="row"
         />
-        {requestData?.files.map((file, i) => (
+        {requestData?.data?.files.map((file, i) => (
           <div key={i}>
             <Table
               data={[{ header: 'File Path', value: file.file_path }]}

@@ -5,16 +5,16 @@ import { requestsColumns } from './constants';
 import { Button } from 'shared/elements/Button';
 import { Divider } from 'shared/elements/Divider';
 import { PropertyFilter, PropertyFilterProps } from '@noqdev/cloudscape';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import styles from './RequestsList.module.css';
 import { Icon } from 'shared/elements/Icon';
 import { Menu } from 'shared/layers/Menu';
-import { useNavigate } from 'react-router-dom';
-import axios from 'core/Axios/Axios';
+import { Link, useNavigate } from 'react-router-dom';
 import { DateTime } from 'luxon';
+import { useQuery } from '@tanstack/react-query';
+import { getAllRequests } from 'core/API/iambicRequest';
 
 const RequestsList = () => {
-  const [data, setData] = useState([]);
   const statusRef = useRef();
 
   const navigate = useNavigate();
@@ -42,18 +42,19 @@ const RequestsList = () => {
     filtering: filter
   });
 
-  useEffect(() => {
-    axios.get('/api/v4/self-service/requests/').then(response => {
-      setData(response.data.data);
-    });
-  }, [query]);
+  const { data: requests, isLoading } = useQuery({
+    queryFn: getAllRequests,
+    queryKey: ['getAllRequests']
+  });
 
   const tableRows = useMemo(() => {
-    return (data || []).map(item => {
+    return (requests?.data || []).map(item => {
       return {
-        repo_name: <p>{item.repo_name}</p>,
+        repo_name: <Link to={`/requests/${item.id}`}>{item.repo_name}</Link>,
         pull_request_id: (
-          <a href={item.pull_request_url}>#{item.pull_request_id}</a>
+          <Link to={item.pull_request_url} target="_blank">
+            #{item.pull_request_id}
+          </Link>
         ),
         created_at: (
           <p>
@@ -66,7 +67,7 @@ const RequestsList = () => {
         status: <p>{item.status}</p>
       };
     });
-  }, [data]);
+  }, [requests]);
 
   return (
     <Segment>
@@ -165,6 +166,7 @@ const RequestsList = () => {
           border="row"
           enableColumnVisibility
           spacing="expanded"
+          isLoading={isLoading}
         />
       </div>
     </Segment>

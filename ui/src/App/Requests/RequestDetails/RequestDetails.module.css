@@ -10,5 +10,9 @@
     justify-content: center;
     align-items: center;
     flex-direction: row;
+
+    button {
+      margin: var(--spacing-md);
+    }
   }
 }
