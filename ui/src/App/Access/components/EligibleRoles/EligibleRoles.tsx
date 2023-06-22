@@ -14,11 +14,12 @@ import css from './EligibleRoles.module.css';
 import { useQuery } from '@tanstack/react-query';
 import { getEligibleRoles } from 'core/API/roles';
 import { LineBreak } from 'shared/elements/LineBreak';
+import { getSearchParams } from './utils';
 
 const EligibleRoles = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [filter, setFilter] = useState<PropertyFilterProps.Query>({
-    tokens: [],
+    tokens: [...getSearchParams()],
     operation: 'and'
   });
 
@@ -138,6 +139,12 @@ const EligibleRoles = () => {
                 operators: ['=', '!=', ':', '!:'],
                 propertyLabel: 'Role Name',
                 groupValuesLabel: 'Role Name values'
+              },
+              {
+                key: 'arn',
+                operators: ['=', '!=', ':', '!:'],
+                propertyLabel: 'ARN',
+                groupValuesLabel: 'ARN values'
               }
             ]}
           />
