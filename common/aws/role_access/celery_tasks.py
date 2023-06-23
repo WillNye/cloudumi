@@ -160,7 +160,8 @@ async def sync_role_access(
 
     for role_template in iambic_templates:
         upserts = []
-        effective_aws_accounts = []
+        # A collection of all AWS accounts across all access rules
+        all_effective_aws_accounts_map = dict()
         if access_rules := role_template.access_rules:
             for access_rule in access_rules:
                 effective_aws_accounts = [
@@ -168,78 +169,86 @@ async def sync_role_access(
                     for account in iambic_config.aws.accounts
                     if evaluate_on_provider(access_rule, account, False)
                 ]
-        for effective_aws_account in effective_aws_accounts:
-            role_arn = get_role_arn(effective_aws_account, role_template)
-            if identity_role := aws_identity_role_map.get(role_arn):
-                access_rule_users = []
-                if access_rule.users == "*":
-                    access_rule_users = list(users.values())
-                elif access_rule.users:
-                    for user_rule in access_rule.users:
-                        if user := users.get(user_rule):
-                            access_rule_users.append(user)
-                        else:
-                            log.info(
+                for effective_aws_account in effective_aws_accounts:
+                    all_effective_aws_accounts_map[
+                        effective_aws_account.account_id
+                    ] = effective_aws_account
+                    role_arn = get_role_arn(effective_aws_account, role_template)
+                    if identity_role := aws_identity_role_map.get(role_arn):
+                        access_rule_users = []
+                        if access_rule.users == "*":
+                            access_rule_users = list(users.values())
+                        elif access_rule.users:
+                            for user_rule in access_rule.users:
+                                if user := users.get(user_rule):
+                                    access_rule_users.append(user)
+                                else:
+                                    log.info(
+                                        {
+                                            "message": "Could not find matching rule",
+                                            "user_rule": user_rule,
+                                            "tenant": tenant.name,
+                                        }
+                                    )
+                        for user in access_rule_users:
+                            existing_user_role_access_map[identity_role.id].pop(
+                                user.id, None
+                            )
+                            upserts.append(
                                 {
-                                    "message": "Could not find matching rule",
-                                    "user_rule": user_rule,
-                                    "tenant": tenant.name,
+                                    "tenant": tenant,
+                                    "type": RoleAccessTypes.credential_access,
+                                    "identity_role": identity_role,
+                                    "cli_only": False,
+                                    "expiration": access_rule.expires_at,
+                                    "user": user,
                                 }
                             )
-                for user in access_rule_users:
-                    existing_user_role_access_map[identity_role.id].pop(user.id, None)
-                    upserts.append(
-                        {
-                            "tenant": tenant,
-                            "type": RoleAccessTypes.credential_access,
-                            "identity_role": identity_role,
-                            "cli_only": False,
-                            "expiration": access_rule.expires_at,
-                            "user": user,
-                        }
-                    )
 
-                access_rule_groups = []
-                if access_rule.groups == "*":
-                    access_rule_groups = list(groups.values())
-                elif access_rule.groups:
-                    for group_rule in access_rule.groups:
-                        if group := groups.get(group_rule):
-                            access_rule_groups.append(group)
-                        else:
-                            group = Group(
-                                managed_by="MANUAL",
-                                description="Group automatically detected as part of IAMbic access rule",
-                                name=group_rule,
-                                email=group_rule,
-                                tenant=tenant,
+                        access_rule_groups = []
+                        if access_rule.groups == "*":
+                            access_rule_groups = list(groups.values())
+                        elif access_rule.groups:
+                            for group_rule in access_rule.groups:
+                                if group := groups.get(group_rule):
+                                    access_rule_groups.append(group)
+                                else:
+                                    group = Group(
+                                        managed_by="MANUAL",
+                                        description="Group automatically detected as part of IAMbic access rule",
+                                        name=group_rule,
+                                        email=group_rule,
+                                        tenant=tenant,
+                                    )
+                                    await group.write()
+                                    groups[group_rule] = group
+                                    access_rule_groups.append(group)
+
+                        for group in access_rule_groups:
+                            existing_group_role_access_map[identity_role.id].pop(
+                                group.id, None
                             )
-                            await group.write()
-                            groups[group_rule] = group
-                            access_rule_groups.append(group)
-
-                for group in access_rule_groups:
-                    existing_group_role_access_map[identity_role.id].pop(group.id, None)
-                    upserts.append(
-                        {
-                            "tenant": tenant,
-                            "type": RoleAccessTypes.credential_access,
-                            "identity_role": identity_role,
-                            "cli_only": False,
-                            "expiration": access_rule.expires_at,
-                            "group": group,
-                        }
-                    )
-            else:
-                log.warning(
-                    {
-                        "message": "Could not find identity role",
-                        "role_arn": role_arn,
-                        "tenant": tenant.name,
-                    }
-                )
+                            upserts.append(
+                                {
+                                    "tenant": tenant,
+                                    "type": RoleAccessTypes.credential_access,
+                                    "identity_role": identity_role,
+                                    "cli_only": False,
+                                    "expiration": access_rule.expires_at,
+                                    "group": group,
+                                }
+                            )
+                    else:
+                        log.warning(
+                            {
+                                "message": "Could not find identity role",
+                                "role_arn": role_arn,
+                                "tenant": tenant.name,
+                            }
+                        )
 
         # TODO: Remove this once we have removed all usage of the legacy noq-authorized tag
+        effective_aws_accounts = list(all_effective_aws_accounts_map.values())
         if role_tags := [
             tag for tag in role_template.properties.tags if tag.key == "noq-authorized"
         ]:
