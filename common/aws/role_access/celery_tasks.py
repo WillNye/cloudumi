@@ -338,7 +338,7 @@ async def sync_all_iambic_data_for_tenant(tenant_name: str):
         log.warning(
             {
                 "function": fnc,
-                "message": "No Iambic Template repo has been configured.",
+                "message": "No valid IAMbic repos found for tenant",
                 "tenant": tenant.name,
             }
         )

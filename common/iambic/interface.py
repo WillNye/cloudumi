@@ -14,10 +14,13 @@ from iambic.core.utils import gather_templates as iambic_gather_templates
 from jinja2.environment import Environment
 from jinja2.loaders import BaseLoader
 
+from common.config import config
 from common.config.tenant_config import TenantConfig
 from common.iambic.config.models import TRUSTED_PROVIDER_RESOLVERS
 from common.iambic.git.models import IambicRepo
 from common.lib.cache import store_json_results_in_redis_and_s3
+
+log = config.get_logger(__name__)
 
 
 class IambicConfigInterface:
@@ -126,6 +129,15 @@ class IambicConfigInterface:
 
     async def cache_aws_templates(self):
         from iambic.core.utils import evaluate_on_provider
+
+        if not self.iambic_repo.is_app_connected():
+            log.error(
+                {
+                    "message": "No IAMbic repos configured for tenant",
+                    "tenant": self.iambic_repo.repo_name,
+                }
+            )
+            return
 
         tenant_name = self.iambic_repo.tenant.name
         tenant_config = TenantConfig(self.iambic_repo.tenant.name)

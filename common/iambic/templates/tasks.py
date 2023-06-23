@@ -586,6 +586,20 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
         tenant_name (str): The name of the tenant.
     """
     tenant = await Tenant.get_by_name(tenant_name)
+    iambic_repos = await IambicRepo.get_all_tenant_repos(tenant.name)
+    if not iambic_repos:
+        log.error(
+            {
+                "message": "No valid IAMbic repos found for tenant",
+                "tenant": tenant.name,
+            }
+        )
+        tenant.supported_template_types = []
+        tenant.iambic_templates_last_parsed = None
+        await tenant.write()
+        await rollback_full_create(tenant)
+        return
+
     iambic_templates_last_parsed = tenant.iambic_templates_last_parsed
     if iambic_templates_last_parsed:
         iambic_templates_last_parsed = pytz.UTC.localize(iambic_templates_last_parsed)
