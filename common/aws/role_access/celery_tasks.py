@@ -160,19 +160,20 @@ async def sync_role_access(
 
     for role_template in iambic_templates:
         upserts = []
+        template_aws_accounts = [
+            account
+            for account in iambic_config.aws.accounts
+            if evaluate_on_provider(role_template, account, False)
+        ]
         # A collection of all AWS accounts across all access rules
-        all_effective_aws_accounts_map = dict()
         if access_rules := role_template.access_rules:
             for access_rule in access_rules:
                 effective_aws_accounts = [
                     account
-                    for account in iambic_config.aws.accounts
+                    for account in template_aws_accounts
                     if evaluate_on_provider(access_rule, account, False)
                 ]
                 for effective_aws_account in effective_aws_accounts:
-                    all_effective_aws_accounts_map[
-                        effective_aws_account.account_id
-                    ] = effective_aws_account
                     role_arn = get_role_arn(effective_aws_account, role_template)
                     if identity_role := aws_identity_role_map.get(role_arn):
                         access_rule_users = []
@@ -248,17 +249,16 @@ async def sync_role_access(
                         )
 
         # TODO: Remove this once we have removed all usage of the legacy noq-authorized tag
-        effective_aws_accounts = list(all_effective_aws_accounts_map.values())
         if role_tags := [
             tag for tag in role_template.properties.tags if tag.key == "noq-authorized"
         ]:
             for role_tag in role_tags:
-                effective_aws_accounts_for_tag = [
+                effective_aws_accounts = [
                     account
-                    for account in effective_aws_accounts
+                    for account in template_aws_accounts
                     if evaluate_on_provider(role_tag, account, False)
                 ]
-                if not effective_aws_accounts_for_tag:
+                if not effective_aws_accounts:
                     continue
 
                 access_rule_users = []
@@ -277,7 +277,7 @@ async def sync_role_access(
                             }
                         )
 
-                for effective_aws_account in effective_aws_accounts_for_tag:
+                for effective_aws_account in effective_aws_accounts:
                     role_arn = get_role_arn(effective_aws_account, role_template)
                     if identity_role := aws_identity_role_map.get(role_arn):
                         for user in access_rule_users:
