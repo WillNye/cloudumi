@@ -37,7 +37,7 @@ export const DiffEditor: FC<DiffEditorProps> = ({
   language = 'yaml',
   onChange
 }) => {
-  const [renderSideBySide, setRenderSideBySide] = useState(true);
+  const [renderSideBySide, setRenderSideBySide] = useState(false);
   const monaco = useMonaco();
 
   const options = {

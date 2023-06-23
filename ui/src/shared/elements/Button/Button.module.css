@@ -58,7 +58,7 @@
   }
 
   &.secondary {
-    --btn-color: var(--body-color);
+    --btn-color: var(--gray-100);
     --btn-background-color: var(--gray-600);
   }
 
@@ -74,8 +74,7 @@
 
   &.outline {
     --btn-background: transparent;
-    --btn-border-color: var(--btn-background-color);
-    --btn-color: var(--btn-background-color);
+    --btn-border-color: var(--btn-color);
   }
 
   &.text {
