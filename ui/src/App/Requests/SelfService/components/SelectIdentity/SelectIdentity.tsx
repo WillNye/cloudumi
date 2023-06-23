@@ -1,32 +1,28 @@
-import { useState, useContext, useEffect, useMemo, useCallback } from 'react';
+import { useState, useContext, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AxiosError } from 'axios';
 import { Segment } from 'shared/layout/Segment';
 import { Select, SelectOption } from 'shared/form/Select';
 import SelfServiceContext from '../../SelfServiceContext';
-import axios from 'core/Axios/Axios';
 import styles from './SelectIdentity.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { TypeaheadBlock } from 'shared/form/TypeaheadBlock';
+import { getRequestTemplateTypes } from 'core/API/iambicRequest';
 
 const SelectIdentity = () => {
   const [typeaheadDefaults, setTypeaheadDefaults] = useState({
     defaultValue: '',
     defaultValues: []
   });
-  const [identityTypes, setIdentityTypes] = useState([]);
   const [typeaheadEndpoint, setTypeaheadEndpoint] = useState('');
   const { selfServiceRequest } = useContext(SelfServiceContext).store;
   const {
     actions: { setSelectedIdentity, setSelectedIdentityType }
   } = useContext(SelfServiceContext);
 
-  useEffect(() => {
-    axios
-      .get(`/api/v4/template-types?provider=${selfServiceRequest.provider}`)
-      .then(response => setIdentityTypes(response?.data?.data))
-      .catch(error => console.error(error));
-  }, [selfServiceRequest.provider]);
+  const { data: identityTypes, isLoading } = useQuery({
+    queryFn: getRequestTemplateTypes,
+    queryKey: ['getRequestTemplateTypes', selfServiceRequest.provider]
+  });
 
   const handleIdentityTypeSelect = useCallback(identityType => {
     setSelectedIdentityType(identityType);
@@ -40,20 +36,20 @@ const SelectIdentity = () => {
   };
 
   return (
-    <Segment>
+    <Segment isLoading={isLoading}>
       <div className={styles.container}>
         <h3>Select Identity Type</h3>
         <LineBreak />
         <p className={styles.subText}>Please select an identity type</p>
         <LineBreak size="large" />
         <div className={styles.content}>
-          {identityTypes && (
+          {identityTypes?.data && (
             <Select
               value={selfServiceRequest.identityType || ''}
               onChange={handleIdentityTypeSelect}
               placeholder="Select identity type"
             >
-              {identityTypes.map(identityType => (
+              {identityTypes?.data.map(identityType => (
                 <SelectOption key={identityType.id} value={identityType.id}>
                   {identityType.name}
                 </SelectOption>

@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Segment } from 'shared/layout/Segment';
 import RequestCard from '../RequestCard';
 
