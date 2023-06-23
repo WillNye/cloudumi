@@ -134,7 +134,7 @@ def templatize_form_val(form_val: any) -> any:
         except Exception:
             # This is to catch values that can't be cast to a set
             pass
-        return json.dumps(sorted(form_val))
+        return sorted(json.loads(json.dumps(form_val)))
     else:
         return form_val
 
