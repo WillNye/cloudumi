@@ -286,6 +286,22 @@
       }
     },
     {
+      "name": "Local Config: Run local script",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/__local_script.py",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "CONFIG_LOCATION": "${workspaceFolder}/configs/development_account/saas_development.yaml",
+        // "CONFIG_LOCATION": "s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml",
+        "AWS_PROFILE": "development/NoqSaasRoleLocalDev",
+        "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
+        // "PYTHONASYNCIODEBUG": "1",
+        "AWS_REGION": "us-west-2"
+      }
+    },
+    {
       "name": "Local Config: CloudUmi API - HTTP PROXY",
       "type": "python",
       "request": "launch",
