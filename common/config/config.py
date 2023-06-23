@@ -1,5 +1,4 @@
 """Configuration handling library."""
-import datetime
 import logging
 import logging.handlers
 import operator
@@ -11,19 +10,15 @@ import threading
 import time
 from collections import defaultdict
 from collections.abc import Mapping
-from logging import LoggerAdapter, LogRecord
+from logging import LoggerAdapter
 from threading import Timer
 from typing import Any, Dict, List, Optional, Union
 
 import boto3
 import botocore.exceptions
-import logmatic
 import sentry_sdk
-
-from cachetools import TTLCache, cached, cachedmethod
-
 import structlog
-from pytz import timezone
+from cachetools import TTLCache, cached, cachedmethod
 
 import common.lib.noq_json as json
 from common.lib.aws.aws_secret_manager import get_aws_secret
@@ -528,43 +523,7 @@ class Configuration(metaclass=Singleton):
         return value
 
     @cached(cache=TTLCache(maxsize=1024, ttl=120))
-    def get_logger(self, name: Optional[str] = None):
-        if not name:
-            name = self.get("_global_.application_name", "noq")
-        level_c = self.get("_global_.logging.level", "debug")
-        if level_c == "info":
-            level = logging.INFO
-        elif level_c == "critical":
-            level = logging.CRITICAL
-        elif level_c == "error":
-            level = logging.ERROR
-        elif level_c == "warning":
-            level = logging.WARNING
-        elif level_c == "debug":
-            level = logging.DEBUG
-        else:
-            # default
-            level = logging.DEBUG
-
-        logging.basicConfig(level=level, format="%(name)s - %(message)s")
-        return structlog.get_logger(name)
-        # Configure logging
-        # logging.basicConfig(level=logging.DEBUG, format="%(message)s")
-
-        # for handler in root_logger.handlers:
-        #     handler.setFormatter(logging.Formatter("%(message)s"))
-
-        # # Get the logger
-        # native_logger = logging.getLogger(name)
-        # native_logger.setLevel(logging.DEBUG)
-        # # Add a StreamHandler explicitly
-        # stream_handler = logging.StreamHandler()
-        # stream_handler.setFormatter(logging.Formatter("%(message)s"))
-        # native_logger.addHandler(stream_handler)
-        # log = structlog.wrap_logger(native_logger)
-        # return log
-
-    def get_logger_3(self, name: Optional[str] = None) -> LoggerAdapter:
+    def get_logger(self, name: Optional[str] = None) -> LoggerAdapter:
         if self.log:
             return structlog.get_logger(name=name)
         if not name:
@@ -589,6 +548,13 @@ class Configuration(metaclass=Singleton):
         root_logger.setLevel(level)
         root_logger.addHandler(logging.StreamHandler())
 
+        # Env var will take precedence, but if not set, use the config value
+        stage = os.getenv("STAGE", self.get("_global_.environment", "dev"))
+        renderer = (
+            structlog.dev.ConsoleRenderer()
+            if stage == "dev"
+            else structlog.processors.JSONRenderer(serializer=json.dumps)
+        )
         structlog.configure(
             processors=[
                 structlog.stdlib.add_logger_name,
@@ -596,106 +562,17 @@ class Configuration(metaclass=Singleton):
                 structlog.stdlib.PositionalArgumentsFormatter(),
                 structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M.%S"),
                 structlog.processors.StackInfoRenderer(),
-                structlog.dev.ConsoleRenderer(),
+                renderer,
             ],
             context_class=dict,
             logger_factory=structlog.stdlib.LoggerFactory(),
-            wrapper_class=structlog.stdlib.BoundLogger,
             cache_logger_on_first_use=True,
         )
 
         logger = structlog.get_logger(name)
-        logger.debug("I don't see this!")
-        logger.error("I see this!")
+        logger.debug("Initializing logger (debug level)")
+        logger.error("Initializing logger (error level)")
         self.log = logger
-        return self.log
-
-    def get_logger_2(self, name: Optional[str] = None) -> LoggerAdapter:
-        """Get logger."""
-        if self.log:
-            return self.log
-        if not name:
-            name = self.get("_global_.application_name", "noq")
-        level_c = self.get("_global_.logging.level", "debug")
-        if level_c == "info":
-            level = logging.INFO
-        elif level_c == "critical":
-            level = logging.CRITICAL
-        elif level_c == "error":
-            level = logging.ERROR
-        elif level_c == "warning":
-            level = logging.WARNING
-        elif level_c == "debug":
-            level = logging.DEBUG
-        else:
-            # default
-            level = logging.DEBUG
-        # filter_c = ContextFilter()
-        # format_c = self.get(
-        #     "_global_.logging.format",
-        #     "%(asctime)s - %(levelname)s - %(name)s - [%(filename)s:%(lineno)s - %(funcName)s() ] - %(message)s",
-        # )
-        logging.basicConfig(level=level)
-        # logging.basicConfig(level=level, format=format_c)
-        original_logger = logging.getLogger(name)
-        # logger.addFilter(filter_c)
-        original_logger.propagate = False
-        logger = structlog.wrap_logger(original_logger)
-
-        # Log to stdout and disk
-        if self.get("_global_.logging.stdout_enabled", True):
-            handler = logging.StreamHandler(sys.stdout)
-            handler.setFormatter(
-                structlog.stdlib.ProcessorFormatter(
-                    processor=structlog.dev.ConsoleRenderer(),
-                    foreign_pre_chain=[
-                        structlog.stdlib.add_log_level,
-                        structlog.stdlib.add_logger_name,
-                        structlog.stdlib.PositionalArgumentsFormatter(),
-                    ],
-                )
-            )
-            # handler.setFormatter(
-            #     logmatic.JsonFormatter(
-            #         json_indent=self.get("_global_.logging.json_formatter.indent")
-            #     )
-            # )
-            handler.setLevel(self.get("_global_.logging.stdout.level", "DEBUG"))
-            logger.addHandler(handler)
-            logging_file = self.get("_global_.logging.file")
-            if logging_file:
-                if "~" in logging_file:
-                    logging_file = os.path.expanduser(logging_file)
-                os.makedirs(os.path.dirname(logging_file), exist_ok=True)
-                file_handler = logging.handlers.TimedRotatingFileHandler(
-                    logging_file,
-                    when="d",
-                    interval=1,
-                    backupCount=5,
-                    encoding=None,
-                    delay=False,
-                )
-                file_handler.setFormatter(
-                    structlog.stdlib.ProcessorFormatter(
-                        processor=structlog.processors.JSONRenderer(),
-                        foreign_pre_chain=[
-                            structlog.stdlib.add_log_level,
-                            structlog.stdlib.add_logger_name,
-                            structlog.stdlib.PositionalArgumentsFormatter(),
-                        ],
-                    )
-                )
-                # file_handler.setFormatter(
-                #     logmatic.JsonFormatter(
-                #         json_indent=self.get("_global_.logging.json_formatter.indent")
-                #     )
-                # )
-                # logger.addHandler(file_handler)
-        self.log = structlog.get_logger()
-        # self.log = logging.LoggerAdapter(logger)
-        # self.log = logging.LoggerAdapter(original_logger)
-        self.log.debug("I don't see this!")
-        self.log.error("I see this!!")
         return self.log
 
     def set_logging_levels(self):
