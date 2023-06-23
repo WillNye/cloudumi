@@ -47,6 +47,11 @@ _global_:
         PRIVATE
         KEY
         -----END RSA...
+      approve_private_pem_1: |
+        -----BEGIN ...
+        PRIVATE
+        KEY
+        -----END ...
   noq_db:
     endpoint: "localhost"
     port: 5432

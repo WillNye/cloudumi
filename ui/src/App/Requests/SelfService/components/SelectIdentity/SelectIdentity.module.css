@@ -1,0 +1,25 @@
+.container {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: var(--spacing-md);
+  height: 100%;
+
+  .subText {
+    color: var(--gray-200);
+    font-size: var(--font-size-sm);
+  }
+
+  .text {
+    color: var(--gray-200);
+    font-size: var(--font-size-md);
+    padding-top: var(--spacing-sm);
+    padding-bottom: var(--spacing-md);
+  }
+
+  .content {
+    width: 100%;
+  }
+}

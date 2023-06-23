@@ -1,9 +1,8 @@
 import asyncio
-import re
 import sys
 from collections import defaultdict
 
-from iambic.core.utils import evaluate_on_provider
+from iambic.core.utils import evaluate_on_provider, sanitize_string
 from iambic.plugins.v0_1_0.aws.iam.role.models import (
     AWS_IAM_ROLE_TEMPLATE_TYPE,
     AwsIamRoleTemplate,
@@ -34,27 +33,14 @@ def get_role_arn(aws_account: AWSAccount, role_template: AwsIamRoleTemplate) -> 
         owner := getattr(role_template, "owner", None)
     ):
         variables["owner"] = owner
+    valid_characters_re = r"[\w_+=,.@-]"
+    variables = {
+        k: sanitize_string(v, valid_characters_re) for k, v in variables.items()
+    }
     role_arn = f"arn:aws:iam::{aws_account.account_id}:role{role_template.properties.path}{role_template.properties.role_name}"
     rtemplate = Environment(loader=BaseLoader()).from_string(role_arn)
     role_arn = rtemplate.render(var=variables)
     return role_arn
-
-
-def get_aws_accounts_from_template(
-    aws_accounts: AWSAccount, account_name
-) -> list[AWSAccount]:
-    aws_accounts = [
-        x
-        for x in aws_accounts
-        if re.search(re.escape(account_name), x.name) or x.name == "*"
-    ]
-    if len(aws_accounts) == 0:
-        # TODO: how should this be handled?
-        log.warning(
-            f"No corresponding account id known for Iambic included_account {account_name}"
-        )
-        return []
-    return aws_accounts
 
 
 async def get_arn_to_role_template_mapping(
@@ -100,7 +86,7 @@ async def sync_aws_accounts(
 
 
 async def __help_get_role_mappings(
-    tenant: Tenant, iambic_config_interface: IambicConfigInterface
+    iambic_config_interface: IambicConfigInterface,
 ) -> dict[str, AwsIamRoleTemplate]:
     iambic_config = await iambic_config_interface.get_iambic_config()
     iambic_template_rules = await iambic_config_interface.load_templates(
@@ -126,8 +112,7 @@ async def __get_groups(tenant: Tenant) -> dict[str, Group]:
 async def sync_identity_roles(
     tenant: Tenant, iambic_config_interface: IambicConfigInterface
 ):
-    role_mappings = await __help_get_role_mappings(tenant, iambic_config_interface)
-
+    role_mappings = await __help_get_role_mappings(iambic_config_interface)
     known_roles = await AwsIdentityRole.get_all(tenant)
     remove_roles = [x for x in known_roles if x.role_arn not in role_mappings.keys()]
 
@@ -175,6 +160,7 @@ async def sync_role_access(
 
     for role_template in iambic_templates:
         upserts = []
+        effective_aws_accounts = []
         if access_rules := role_template.access_rules:
             for access_rule in access_rules:
                 effective_aws_accounts = [
@@ -182,88 +168,88 @@ async def sync_role_access(
                     for account in iambic_config.aws.accounts
                     if evaluate_on_provider(access_rule, account, False)
                 ]
-                for effective_aws_account in effective_aws_accounts:
-                    role_arn = get_role_arn(effective_aws_account, role_template)
-                    if identity_role := aws_identity_role_map.get(role_arn):
-                        access_rule_users = []
-                        if access_rule.users == "*":
-                            access_rule_users = list(users.values())
-                        elif access_rules.users:
-                            for user_rule in access_rule.users:
-                                if user := users.get(user_rule):
-                                    access_rule_users.append(user)
-                                else:
-                                    log.info(
-                                        {
-                                            "message": "Could not find matching rule",
-                                            "user_rule": user_rule,
-                                            "tenant": tenant.name,
-                                        }
-                                    )
-                        for user in access_rule_users:
-                            existing_user_role_access_map[identity_role.id].pop(
-                                user.id, None
-                            )
-                            upserts.append(
+        for effective_aws_account in effective_aws_accounts:
+            role_arn = get_role_arn(effective_aws_account, role_template)
+            if identity_role := aws_identity_role_map.get(role_arn):
+                access_rule_users = []
+                if access_rule.users == "*":
+                    access_rule_users = list(users.values())
+                elif access_rule.users:
+                    for user_rule in access_rule.users:
+                        if user := users.get(user_rule):
+                            access_rule_users.append(user)
+                        else:
+                            log.info(
                                 {
-                                    "tenant": tenant,
-                                    "type": RoleAccessTypes.credential_access,
-                                    "identity_role": identity_role,
-                                    "cli_only": False,
-                                    "expiration": access_rule.expires_at,
-                                    "user": user,
+                                    "message": "Could not find matching rule",
+                                    "user_rule": user_rule,
+                                    "tenant": tenant.name,
                                 }
                             )
+                for user in access_rule_users:
+                    existing_user_role_access_map[identity_role.id].pop(user.id, None)
+                    upserts.append(
+                        {
+                            "tenant": tenant,
+                            "type": RoleAccessTypes.credential_access,
+                            "identity_role": identity_role,
+                            "cli_only": False,
+                            "expiration": access_rule.expires_at,
+                            "user": user,
+                        }
+                    )
 
-                        access_rule_groups = []
-                        if access_rule.groups == "*":
-                            access_rule_groups = list(groups.values())
-                        elif access_rules.groups:
-                            for group_rule in access_rule.groups:
-                                if group := groups.get(group_rule):
-                                    access_rule_groups.append(group)
-                                else:
-                                    group = Group(
-                                        managed_by="MANUAL",
-                                        description="Group automatically detected as part of IAMbic access rule",
-                                        name=group_rule,
-                                        email=group_rule,
-                                        tenant=tenant,
-                                    )
-                                    await group.write()
-                                    groups[group_rule] = group
-                                    access_rule_groups.append(group)
+                access_rule_groups = []
+                if access_rule.groups == "*":
+                    access_rule_groups = list(groups.values())
+                elif access_rule.groups:
+                    for group_rule in access_rule.groups:
+                        if group := groups.get(group_rule):
+                            access_rule_groups.append(group)
+                        else:
+                            group = Group(
+                                managed_by="MANUAL",
+                                description="Group automatically detected as part of IAMbic access rule",
+                                name=group_rule,
+                                email=group_rule,
+                                tenant=tenant,
+                            )
+                            await group.write()
+                            groups[group_rule] = group
+                            access_rule_groups.append(group)
 
-                        for group in access_rule_groups:
-                            existing_group_role_access_map[identity_role.id].pop(
-                                group.id, None
-                            )
-                            upserts.append(
-                                {
-                                    "tenant": tenant,
-                                    "type": RoleAccessTypes.credential_access,
-                                    "identity_role": identity_role,
-                                    "cli_only": False,
-                                    "expiration": access_rule.expires_at,
-                                    "group": group,
-                                }
-                            )
-                    else:
-                        log.warning(
-                            f"Could not find identity role for arn {role_arn} in tenant {tenant.name}"
-                        )
+                for group in access_rule_groups:
+                    existing_group_role_access_map[identity_role.id].pop(group.id, None)
+                    upserts.append(
+                        {
+                            "tenant": tenant,
+                            "type": RoleAccessTypes.credential_access,
+                            "identity_role": identity_role,
+                            "cli_only": False,
+                            "expiration": access_rule.expires_at,
+                            "group": group,
+                        }
+                    )
+            else:
+                log.warning(
+                    {
+                        "message": "Could not find identity role",
+                        "role_arn": role_arn,
+                        "tenant": tenant.name,
+                    }
+                )
 
         # TODO: Remove this once we have removed all usage of the legacy noq-authorized tag
         if role_tags := [
             tag for tag in role_template.properties.tags if tag.key == "noq-authorized"
         ]:
             for role_tag in role_tags:
-                effective_aws_accounts = [
+                effective_aws_accounts_for_tag = [
                     account
-                    for account in iambic_config.aws.accounts
+                    for account in effective_aws_accounts
                     if evaluate_on_provider(role_tag, account, False)
                 ]
-                if not effective_aws_accounts:
+                if not effective_aws_accounts_for_tag:
                     continue
 
                 access_rule_users = []
@@ -282,7 +268,7 @@ async def sync_role_access(
                             }
                         )
 
-                for effective_aws_account in effective_aws_accounts:
+                for effective_aws_account in effective_aws_accounts_for_tag:
                     role_arn = get_role_arn(effective_aws_account, role_template)
                     if identity_role := aws_identity_role_map.get(role_arn):
                         for user in access_rule_users:
@@ -361,16 +347,34 @@ async def sync_all_iambic_data_for_tenant(tenant_name: str):
     iambic_config_interface = IambicConfigInterface(iambic_repos[0])
     try:
         await sync_aws_accounts(tenant, iambic_config_interface)
-    except Exception as e:
-        log.exception(f"Error syncing aws accounts for tenant {tenant.name}: {e}")
+    except Exception:
+        log.exception(
+            {
+                "function": fnc,
+                "message": "Error syncing aws accounts for tenant.",
+                "tenant": tenant.name,
+            }
+        )
     try:
         await sync_identity_roles(tenant, iambic_config_interface)
-    except Exception as e:
-        log.exception(f"Error synching identity roles for tenant {tenant.name}: {e}")
+    except Exception:
+        log.exception(
+            {
+                "function": fnc,
+                "message": "Error synching identity roles for tenant.",
+                "tenant": tenant.name,
+            }
+        )
     try:
         await sync_role_access(tenant, iambic_config_interface)
-    except Exception as e:
-        log.exception(f"Error synching role access for tenant {tenant.name}: {e}")
+    except Exception:
+        log.exception(
+            {
+                "function": fnc,
+                "message": "Error synching role access for tenant.",
+                "tenant": tenant.name,
+            }
+        )
 
 
 async def sync_all_iambic_data():

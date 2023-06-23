@@ -51,7 +51,7 @@ async def rebuild_tables():
             else:
                 user = existing_user
 
-            existing_group = await Group.get_by_name(tenant, tenant_info["group"])
+            existing_group = await Group.get_by_email(tenant, tenant_info["group"])
             if not existing_group:
                 group = await Group.create(
                     tenant=tenant,

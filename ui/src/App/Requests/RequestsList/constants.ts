@@ -1,27 +1,27 @@
 export const requestsColumns = [
   {
-    header: 'User',
-    accessorKey: 'user',
-    sortable: false
+    id: 'repo_name',
+    header: 'Repo Name',
+    accessorKey: 'repo_name',
+    sortable: true
   },
   {
-    header: 'Request ID',
-    accessorKey: 'requestId',
-    sortable: false
+    id: 'pull_request_id',
+    header: 'Pull Request ID',
+    accessorKey: 'pull_request_id',
+    sortable: true
   },
   {
-    header: 'ARN',
-    accessorKey: 'arn',
-    sortable: false
-  },
-  {
-    header: 'Status',
-    accessorKey: 'status',
-    sortable: false
-  },
-  {
+    id: 'created_at',
     header: 'Created At',
-    accessorKey: 'createdAt',
-    sortable: false
-  }
+    accessorKey: 'created_at',
+    sortable: true
+  },
+  {
+    id: 'created_by',
+    header: 'Created By',
+    accessorKey: 'created_by',
+    sortable: true
+  },
+  { id: 'status', header: 'Status', accessorKey: 'status', sortable: true }
 ];

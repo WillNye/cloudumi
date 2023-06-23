@@ -4,8 +4,6 @@ import { Select, SelectOption } from 'shared/form/Select';
 import { TypeaheadBlock } from 'shared/form/TypeaheadBlock';
 
 const RequestField = ({ field, selectedOptions, handleChange }) => {
-  console.log(field, '-----------------');
-
   if (field.field_type === 'TextBox') {
     return (
       <Input

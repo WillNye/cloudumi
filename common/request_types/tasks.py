@@ -10,6 +10,10 @@ from common.config.globals import ASYNC_PG_SESSION
 from common.iambic.templates.models import IambicTemplate
 from common.pg_core.utils import bulk_add
 from common.request_types.defaults.aws import get_default_aws_request_types
+from common.request_types.defaults.azure_ad import get_default_azure_ad_request_types
+from common.request_types.defaults.google_workspace import (
+    get_default_google_workspace_request_types,
+)
 from common.request_types.utils import list_tenant_request_types
 from common.tenants.models import Tenant
 
@@ -41,6 +45,8 @@ async def upsert_tenant_request_types(tenant_name: str):
             change type templates
     """
     tenant = await Tenant.get_by_name(tenant_name)
+    if not tenant:
+        return
     updated_at = datetime.utcnow()
 
     # Ensure tenant.supported_tenant_types is up to date
@@ -74,6 +80,12 @@ async def upsert_tenant_request_types(tenant_name: str):
             ] = change_type
 
     default_request_types = await asyncio.gather(get_default_aws_request_types())
+    default_request_types.extend(
+        await asyncio.gather(get_default_google_workspace_request_types())
+    )
+    default_request_types.extend(
+        await asyncio.gather(get_default_azure_ad_request_types())
+    )
     default_request_types = list(chain.from_iterable(default_request_types))
     default_request_type_map = {rt.name: rt for rt in default_request_types}
     default_request_type_change_map = defaultdict(dict)

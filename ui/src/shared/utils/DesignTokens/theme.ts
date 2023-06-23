@@ -199,9 +199,9 @@ export const theme: DesignTokens = {
       'select-input-disabled-color': themeColors.gray['100'],
       'select-input-icon-color': themeColors.gray['100'],
 
-      'select-menu-background': themeColors.gray['600'],
-      'select-menu-border': `solid 2px ${themeColors.blue['800']}`,
-      'select-menu-border-radius': `0 0 ${borders.radius.lg} ${borders.radius.lg}`,
+      'select-menu-background': themeColors.gray['700'],
+      'select-menu-border': `solid 2px ${themeColors.gray['300']}`,
+      'select-menu-border-radius': `${borders.radius.lg}`,
       'select-menu-item-color': themeColors.white,
       'select-menu-group-color': themeColors.gray['100'],
       'select-menu-item-spacing': `${spacings.md} ${spacings.sm}`,

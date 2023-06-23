@@ -15,8 +15,13 @@ export const DEFAULT_REQUEST: IRequest = {
   changeType: null,
   identityType: null,
   identity: null,
-  expirationDate: null,
-  justification: null,
-  requestedChanges: [],
-  requestTypes: []
+  expirationDate: `In 4 hours`,
+  justification: '',
+  requestedChanges: []
 };
+
+export enum EXPIRATION_TYPE {
+  RELATIVE = 'RELATIVE',
+  ABSOLUTE = 'ABSOLUTE',
+  NEVER = 'NEVER'
+}
