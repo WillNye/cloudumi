@@ -1,9 +1,8 @@
 import asyncio
-import re
 import sys
 from collections import defaultdict
 
-from iambic.core.utils import evaluate_on_provider
+from iambic.core.utils import evaluate_on_provider, sanitize_string
 from iambic.plugins.v0_1_0.aws.iam.role.models import (
     AWS_IAM_ROLE_TEMPLATE_TYPE,
     AwsIamRoleTemplate,
@@ -34,27 +33,14 @@ def get_role_arn(aws_account: AWSAccount, role_template: AwsIamRoleTemplate) -> 
         owner := getattr(role_template, "owner", None)
     ):
         variables["owner"] = owner
+    valid_characters_re = r"[\w_+=,.@-]"
+    variables = {
+        k: sanitize_string(v, valid_characters_re) for k, v in variables.items()
+    }
     role_arn = f"arn:aws:iam::{aws_account.account_id}:role{role_template.properties.path}{role_template.properties.role_name}"
     rtemplate = Environment(loader=BaseLoader()).from_string(role_arn)
     role_arn = rtemplate.render(var=variables)
     return role_arn
-
-
-def get_aws_accounts_from_template(
-    aws_accounts: AWSAccount, account_name
-) -> list[AWSAccount]:
-    aws_accounts = [
-        x
-        for x in aws_accounts
-        if re.search(re.escape(account_name), x.name) or x.name == "*"
-    ]
-    if len(aws_accounts) == 0:
-        # TODO: how should this be handled?
-        log.warning(
-            f"No corresponding account id known for Iambic included_account {account_name}"
-        )
-        return []
-    return aws_accounts
 
 
 async def get_arn_to_role_template_mapping(
@@ -250,7 +236,11 @@ async def sync_role_access(
                             )
                     else:
                         log.warning(
-                            f"Could not find identity role for arn {role_arn} in tenant {tenant.name}"
+                            {
+                                "message": "Could not find identity role",
+                                "role_arn": role_arn,
+                                "tenant": tenant.name,
+                            }
                         )
 
         # TODO: Remove this once we have removed all usage of the legacy noq-authorized tag
@@ -361,16 +351,34 @@ async def sync_all_iambic_data_for_tenant(tenant_name: str):
     iambic_config_interface = IambicConfigInterface(iambic_repos[0])
     try:
         await sync_aws_accounts(tenant, iambic_config_interface)
-    except Exception as e:
-        log.exception(f"Error syncing aws accounts for tenant {tenant.name}: {e}")
+    except Exception:
+        log.exception(
+            {
+                "function": fnc,
+                "message": "Error syncing aws accounts for tenant.",
+                "tenant": tenant.name,
+            }
+        )
     try:
         await sync_identity_roles(tenant, iambic_config_interface)
-    except Exception as e:
-        log.exception(f"Error synching identity roles for tenant {tenant.name}: {e}")
+    except Exception:
+        log.exception(
+            {
+                "function": fnc,
+                "message": "Error synching identity roles for tenant.",
+                "tenant": tenant.name,
+            }
+        )
     try:
         await sync_role_access(tenant, iambic_config_interface)
-    except Exception as e:
-        log.exception(f"Error synching role access for tenant {tenant.name}: {e}")
+    except Exception:
+        log.exception(
+            {
+                "function": fnc,
+                "message": "Error synching role access for tenant.",
+                "tenant": tenant.name,
+            }
+        )
 
 
 async def sync_all_iambic_data():

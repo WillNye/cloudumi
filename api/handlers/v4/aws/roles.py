@@ -37,13 +37,6 @@ class RolesHandlerV4(BaseHandler):
             )
         )()
 
-        # db_user = await User.get_by_email(self.ctx.db_tenant, self.user)
-
-        # await filter_data_with_sqlalchemy(
-        #         {
-        #          }, self.ctx.db_tenant, AWSRoleAccess
-        #     )
-
         self.eligible_roles = await group_mapping.get_eligible_roles(
             self.eligible_roles,
             self.user,
