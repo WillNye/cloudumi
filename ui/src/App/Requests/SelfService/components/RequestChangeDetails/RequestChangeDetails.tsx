@@ -27,7 +27,8 @@ const RequestChangeDetails = ({
   providerDefinition
 }: RequestChangeDetailsProps) => {
   const {
-    actions: { addChange }
+    actions: { addChange },
+    store: { selfServiceRequest }
   } = useContext(SelfServiceContext);
 
   const [changeTypeDetails, setChangeTypeDetails] =
@@ -100,34 +101,38 @@ const RequestChangeDetails = ({
             <LineBreak />
           </div>
         ))}
-        <Block
-          disableLabelPadding
-          key={'Included Accounts'}
-          label={'Included Accounts'}
-          required={true}
-        ></Block>
-        <Select
-          id="accountNames"
-          name="accountNames"
-          placeholder="Select account(s)"
-          multiple
-          value={includedProviders.map(
-            provider => provider.definition.account_name
-          )}
-          onChange={value => {
-            const selectedProviders = providerDefinition.filter(provider =>
-              value.includes(provider.definition.account_name)
-            );
-            setIncludedProviders(selectedProviders);
-          }}
-          closeOnSelect={false}
-        >
-          {providerDefinition?.map(def => (
-            <SelectOption key={def.id} value={def.definition.account_name}>
-              {def.definition.account_name}
-            </SelectOption>
-          ))}
-        </Select>
+        {selfServiceRequest?.provider === 'aws' && (
+          <>
+            <Block
+              disableLabelPadding
+              key={'Included Accounts'}
+              label={'Included Accounts'}
+              required={true}
+            ></Block>
+            <Select
+              id="accountNames"
+              name="accountNames"
+              placeholder="Select account(s)"
+              multiple
+              value={includedProviders.map(
+                provider => provider.definition.account_name
+              )}
+              onChange={value => {
+                const selectedProviders = providerDefinition.filter(provider =>
+                  value.includes(provider.definition.account_name)
+                );
+                setIncludedProviders(selectedProviders);
+              }}
+              closeOnSelect={false}
+            >
+              {providerDefinition?.map(def => (
+                <SelectOption key={def.id} value={def.definition.account_name}>
+                  {def.definition.account_name}
+                </SelectOption>
+              ))}
+            </Select>
+          </>
+        )}
         <LineBreak />
         <Button type="submit" size="small" disabled={!changeTypeDetails}>
           Add Change
