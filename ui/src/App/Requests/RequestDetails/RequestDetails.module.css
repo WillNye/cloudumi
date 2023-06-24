@@ -4,20 +4,6 @@
   margin: auto;
   padding-top: var(--spacing-md);
 
-  .section {
-    margin: var(--spacing-sm);
-    padding: var(--spacing-md);
-    border: 2px solid var(--gray-700);
-    border-radius: var(--border-radius-md);
-  }
-
-  .sectionHeader {
-    background-color: var(--gray-700);
-    border-radius: var(--border-radius-md);
-    padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-md);
-  }
-
   .subTitle {
     display: flex;
     align-items: center;

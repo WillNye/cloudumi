@@ -4,7 +4,6 @@ import axios from 'core/Axios/Axios';
 import { Button } from 'shared/elements/Button';
 import { Table } from 'shared/elements/Table';
 
-import { DiffEditor } from 'shared/form/DiffEditor';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { mainTableColumns } from './constants';
 import NotFound from 'App/NotFound';
@@ -16,6 +15,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getIambicRequest } from 'core/API/iambicRequest';
 import { Loader } from 'shared/elements/Loader';
 import { Chip } from 'shared/elements/Chip';
+import ChangeViewer from './components/ChangeViewer';
 
 const RequestChangeDetails = () => {
   const { requestId } = useParams<{ requestId: string }>();
@@ -30,20 +30,6 @@ const RequestChangeDetails = () => {
     queryFn: getIambicRequest,
     queryKey: ['getIambicRequest', requestId]
   });
-
-  const handleSave = async () => {
-    setIsSubmitting(true);
-    try {
-      await axios.put(`/api/v4/self-service/requests/${requestId}`, {
-        files: requestData.files
-      });
-      refetchData();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleComment = useCallback(async () => {
     setIsSubmitting(true);
@@ -98,6 +84,28 @@ const RequestChangeDetails = () => {
     }
   };
 
+  const handleModifyChange = useCallback(
+    async newFile => {
+      setIsSubmitting(true);
+      try {
+        await axios.put(`/api/v4/self-service/requests/${requestId}`, {
+          files: requestData?.data.files?.map(currentFile => {
+            if (newFile.file_path === currentFile.file_path) {
+              return newFile;
+            }
+            return currentFile;
+          })
+        });
+        refetchData();
+        setIsSubmitting(false);
+      } catch (error) {
+        console.error(error);
+        setIsSubmitting(false);
+      }
+    },
+    [refetchData, requestData, requestId]
+  );
+
   const mainTableData = [
     {
       header: 'Requested By',
@@ -151,21 +159,11 @@ const RequestChangeDetails = () => {
         </ul>
         <LineBreak />
         {requestData?.data?.files.map((file, index) => (
-          <div className={styles.section} key={index}>
-            <div className={styles.sectionHeader}>
-              File: {file.file_path}{' '}
-              <Chip type="success">{file.additions}+</Chip>
-            </div>
-            <DiffEditor
-              original={file.previous_body || ''}
-              modified={file.template_body || ''}
-            />
-            <LineBreak size="large" />
-            <Button onClick={handleSave} fullWidth size="small">
-              Modify
-            </Button>
-            <LineBreak />
-          </div>
+          <ChangeViewer
+            file={file}
+            handleModifyChange={handleModifyChange}
+            key={index}
+          />
         ))}
         <LineBreak size="large" />
         {requestData?.data?.comments.map((commentData, index) => (
