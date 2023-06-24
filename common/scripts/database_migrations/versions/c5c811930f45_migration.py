@@ -12,7 +12,7 @@ from sqlalchemy.sql.sqltypes import Enum
 
 # revision identifiers, used by Alembic.
 revision = "c5c811930f45"
-down_revision = "bc4d17a5423b"
+down_revision = "0d66940df8e4"
 branch_labels = None
 depends_on = None
 
