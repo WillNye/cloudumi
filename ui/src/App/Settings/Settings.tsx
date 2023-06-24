@@ -9,6 +9,7 @@ import { Helmet } from 'react-helmet-async';
 import OnBoarding from './Integrations/components/CloudProviderSettings/AWSProvider/AWSOnboarding';
 import AWSProvider from './Integrations/components/CloudProviderSettings/AWSProvider';
 import AdminAuthRoute from 'core/Auth/AdminAuthRoute';
+import AuthenticationSettings from './Integrations/components/AuthenticationSettings/AuthenticationSettings';
 
 export const Settings: FC = () => {
   return (
@@ -27,6 +28,10 @@ export const Settings: FC = () => {
               element={<OnBoarding />}
             />
             <Route path="/user_management" element={<Accounts />} />
+            <Route
+              path="/authentication-settings"
+              element={<AuthenticationSettings />}
+            />
           </Route>
         </Route>
         <Route path="*" element={<NotFound fullPage />} />

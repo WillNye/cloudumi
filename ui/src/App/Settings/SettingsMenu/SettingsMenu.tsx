@@ -3,6 +3,7 @@ import { Link, Outlet, useMatch } from 'react-router-dom';
 import styles from './SettingsMenu.module.css';
 import {
   BREAD_CRUMBS_ACCOUNTS_PATH,
+  BREAD_CRUMBS_AUTH_SETTINGS_PATH,
   BREAD_CRUMBS_INTEGRATIONS_PATH,
   BREAD_CRUMBS_PROFILE_PATH,
   BREAD_CRUMBS_SETTINGS_PATH
@@ -16,6 +17,7 @@ const SettingsMenu: FC = () => {
   const isMyProfilePath = useMatch('/settings');
   const isIntegrationsPath = useMatch('/settings/integrations');
   const isAccountsPath = useMatch('/settings/user_management');
+  const isAuthenticationPath = useMatch('/settings/authentication-settings');
 
   const breadCrumbsPaths = useMemo(() => {
     if (isMyProfilePath) {
@@ -24,8 +26,14 @@ const SettingsMenu: FC = () => {
     if (isIntegrationsPath) {
       return [...BREAD_CRUMBS_SETTINGS_PATH, ...BREAD_CRUMBS_INTEGRATIONS_PATH];
     }
+    if (isAuthenticationPath) {
+      return [
+        ...BREAD_CRUMBS_SETTINGS_PATH,
+        ...BREAD_CRUMBS_AUTH_SETTINGS_PATH
+      ];
+    }
     return [...BREAD_CRUMBS_SETTINGS_PATH, ...BREAD_CRUMBS_ACCOUNTS_PATH];
-  }, [isMyProfilePath, isIntegrationsPath]);
+  }, [isMyProfilePath, isIntegrationsPath, isAuthenticationPath]);
 
   return (
     <div className={styles.container}>
@@ -57,6 +65,15 @@ const SettingsMenu: FC = () => {
                     }`}
                   >
                     <Link to="/settings/user_management">User Management</Link>
+                  </li>
+                  <li
+                    className={`${styles.navItem} ${
+                      isAuthenticationPath && styles.isActive
+                    }`}
+                  >
+                    <Link to={'/settings/authentication-settings'}>
+                      Auth Settings
+                    </Link>
                   </li>
                 </>
               )}

@@ -23,3 +23,11 @@ export const BREAD_CRUMBS_ACCOUNTS_PATH = [
     url: '/settings/user_management'
   }
 ];
+
+export const BREAD_CRUMBS_AUTH_SETTINGS_PATH = [
+  {
+    id: 'auth_settings',
+    name: 'Auth Settings',
+    url: '/settings/auth_settings'
+  }
+];
