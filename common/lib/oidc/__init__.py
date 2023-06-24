@@ -123,12 +123,6 @@ async def get_roles_from_token(tenant, token: dict[str, Any]) -> set:
 
 async def authenticate_user_by_oidc(request, return_200=False, force_redirect=None):
     jwt_tokens = {}
-    cognito_enabled = False
-    if (
-        config.get_tenant_specific_key("get_user_by_oidc_settings.jwt_groups_key")
-        == "cognito:groups"
-    ):
-        cognito_enabled = True
     try:
         request_body: dict = json.loads(request.request.body)
         if request_body.get("idToken").get("jwtToken", {}):
@@ -142,6 +136,15 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
     if not full_host:
         full_host = request.get_tenant()
     tenant = request.get_tenant_name()
+
+    cognito_enabled = False
+    if (
+        config.get_tenant_specific_key(
+            "get_user_by_oidc_settings.jwt_groups_key", tenant
+        )
+        == "cognito:groups"
+    ):
+        cognito_enabled = True
     groups = []
     decoded_access_token = {}
     oidc_config = await populate_oidc_config(tenant)
