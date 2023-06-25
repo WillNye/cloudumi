@@ -265,7 +265,7 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
                     headers["Authorization"] = "Basic %s" % authorization_header_encoded
                 body = f"grant_type={grant_type}&code={code}&redirect_uri={oidc_redirect_uri}&scope={client_scope}"
                 if cognito_enabled:
-                    body += "&client_id={client_id}"
+                    body += f"&client_id={client_id}"
                 token_exchange_response = await http_client.fetch(
                     url,
                     method="POST",
