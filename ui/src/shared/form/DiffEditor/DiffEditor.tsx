@@ -88,17 +88,19 @@ export const DiffEditor: FC<DiffEditorProps> = ({
         />
       </div>
 
-      <MonacoDiffEditor
-        language={language}
-        width="100%"
-        height="500px"
-        original={original}
-        modified={modified}
-        options={options}
-        theme="vs-dark"
-        onMount={editorDidMount}
-        className={styles.editor}
-      />
+      {modified && (
+        <MonacoDiffEditor
+          language={language}
+          width="100%"
+          height="500px"
+          original={original}
+          modified={modified}
+          options={options}
+          theme="vs-dark"
+          onMount={editorDidMount}
+          className={styles.editor}
+        />
+      )}
     </div>
   );
 };
