@@ -10,8 +10,10 @@ import { Spinner } from 'shared/elements/Spinner';
 import { Link } from 'react-router-dom';
 import { convertToSubmittableRequest } from './utils';
 import { Segment } from 'shared/layout/Segment';
+import { Icon } from 'shared/elements/Icon';
 
 const CompletionForm = () => {
+  const [createdRequest, setCreatedRequest] = useState(null);
   const [submittableRequest, setSubmittableRequest] =
     useState<SubmittableRequest | null>(null);
   const [templateResponse, setTemplateResponse] =
@@ -20,7 +22,6 @@ const CompletionForm = () => {
     null
   );
   const [isLoading, setIsLoading] = useState(false);
-  const [responseContent, setResponseContent] = useState<any>(null);
 
   const {
     store: { selfServiceRequest }
@@ -67,8 +68,8 @@ const CompletionForm = () => {
 
       axios
         .post('/api/v4/self-service/requests', payload)
-        .then(response => {
-          setResponseContent(response.data);
+        .then(({ data }) => {
+          setCreatedRequest(data?.data);
         })
         .catch(error => {
           console.error(error);
@@ -80,37 +81,39 @@ const CompletionForm = () => {
   }, [revisedTemplateBody, submittableRequest]);
 
   return (
-    <Segment disablePadding isLoading={isLoading}>
+    <Segment disablePadding isLoading={isLoading} className={styles.wrapper}>
       <div className={styles.container}>
         <h3>Request Summary</h3>
         <LineBreak />
         <p className={styles.subText}>Please select a change type</p>
         <LineBreak size="large" />
-        <div className={styles.content}>
-          <DiffEditor
-            original={templateResponse?.current_template_body || ''}
-            modified={revisedTemplateBody || ''}
-            onChange={onChange}
-          />
-          <LineBreak size="large" />
-          <Button
-            size="small"
-            color="primary"
-            fullWidth
-            onClick={handleSubmit}
-            disabled={isLoading}
-          >
-            Submit Request
-          </Button>
-        </div>
-        {responseContent?.data?.request_id && (
-          <div>
-            <p>
+        {createdRequest?.request_id ? (
+          <div className={styles.successAlert}>
+            <Icon name="notification-success" size="large" />
+            <p className={styles.text}>
               Request successfully submitted. Click on the link below to view it
             </p>
-            <Link to={`/request/${responseContent?.data?.request_id}`}>
+            <Link to={`/requests/${createdRequest.request_id}`}>
               View Request
             </Link>
+          </div>
+        ) : (
+          <div className={styles.content}>
+            <DiffEditor
+              original={templateResponse?.current_template_body || ''}
+              modified={revisedTemplateBody || ''}
+              onChange={onChange}
+            />
+            <LineBreak size="large" />
+            <Button
+              size="small"
+              color="primary"
+              fullWidth
+              onClick={handleSubmit}
+              disabled={isLoading}
+            >
+              Submit Request
+            </Button>
           </div>
         )}
       </div>

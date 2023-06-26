@@ -58,7 +58,7 @@ class IambicResourcesHandler(BaseHandler):
         raw_template_yaml = await iambic_config.get_raw_template_yaml(real_file_path)
         template_info = IAMbicTemplateInfo(
             last_updated=last_updated,
-            external_link=iambic_repo.generate_github_link(real_file_path),
+            external_link=iambic_repo.generate_repo_link(real_file_path),
             template_type=template.template_type,
             description=getattr(template, "description", None),
             identifier=getattr(template, "identifier", None),

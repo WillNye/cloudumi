@@ -48,4 +48,23 @@
   flex-direction: row;
   justify-content: flex-end;
   padding-bottom: 10px;
+
+  button {
+    padding: var(--spacing-sm) !important;
+  }
+
+  button:last-child {
+    border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+  }
+
+  button:first-child {
+    border-radius: var(--border-radius-md) 0 0 var(--border-radius-md);
+  }
+}
+
+.editor {
+  height: 100%;
+  width: 100%;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--gray-500);
 }
