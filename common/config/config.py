@@ -72,42 +72,6 @@ def positional_to_keyword_processor(logger, method_name, event_dict):
     return event_dict
 
 
-# TODOs:
-# 1. Figure out how to log to disk in JSON for prod
-
-# logging.basicConfig(level=logging.DEBUG, format="%(message)s")
-# root_logger = logging.getLogger()
-# root_logger.setLevel(logging.DEBUG)
-
-# for handler in root_logger.handlers:
-#     handler.setFormatter(logging.Formatter("%(message)s"))
-
-structlog.configure(
-    processors=[
-        positional_to_keyword_processor,
-        structlog.stdlib.add_logger_name,
-        structlog.stdlib.filter_by_level,
-        structlog.contextvars.merge_contextvars,
-        structlog.processors.add_log_level,
-        structlog.processors.StackInfoRenderer(),
-        structlog.dev.set_exc_info,
-        structlog.processors.TimeStamper(fmt="iso"),
-        # structlog.dev.ConsoleRenderer(),
-        structlog.processors.JSONRenderer(serializer=json.dumps),
-    ],
-    wrapper_class=structlog.make_filtering_bound_logger(logging.DEBUG),
-    # wrapper_class=structlog.stdlib.BoundLogger,
-    context_class=dict,
-    # logger_factory=structlog.PrintLoggerFactory(),
-    logger_factory=structlog.stdlib.LoggerFactory(),
-    cache_logger_on_first_use=True,
-)
-log = structlog.get_logger(__name__)
-log.debug("Logging configured")
-log.debug("Logging configured", lol=True)
-log.debug({"message": "Logging configured", "lol": True})
-
-
 class Configuration(metaclass=Singleton):
     """Load YAML configuration files. YAML files can be extended to extend each other, to include common configuration
     values."""
@@ -233,7 +197,7 @@ class Configuration(metaclass=Singleton):
                     with open(extend_path, "r") as ymlfile:
                         extend_config = yaml.load(ymlfile)
                 except FileNotFoundError:
-                    log.error(f"Unable to open file: {s}", exc_info=True)
+                    self.log.error(f"Unable to open file: {s}", exc_info=True)
 
             dict_merge(self.config, extend_config)
             if extend_config.get("extends"):
@@ -522,6 +486,34 @@ class Configuration(metaclass=Singleton):
                 return default
         return value
 
+    def positional_to_keyword_processor(self, logger, method_name, event_dict):
+        if event_dict.get("event") and isinstance(event_dict["event"], dict):
+            event_dict = {**event_dict["event"], **event_dict}
+            del event_dict["event"]
+        if not event_dict.get("event"):
+            if event_dict.get("message"):
+                event_dict["event"] = event_dict["message"]
+                del event_dict["message"]
+            elif event_dict.get("error"):
+                event_dict["event"] = event_dict["error"]
+                del event_dict["error"]
+        return event_dict
+
+    def event_augmentor(self, logger, method_name, event_dict):
+        """
+        Add some extra information into (and remove extra from) event dict.
+        For now, adding:
+         * Hostname
+        Removing:
+          * Name if same as logger
+
+        """
+        event_dict["host"] = socket.gethostname()
+        if "name" in event_dict:
+            if event_dict["name"] == logger.name:
+                del event_dict["name"]
+        return event_dict
+
     @cached(cache=TTLCache(maxsize=1024, ttl=120))
     def get_logger(self, name: Optional[str] = None) -> LoggerAdapter:
         if self.log:
@@ -557,11 +549,16 @@ class Configuration(metaclass=Singleton):
         )
         structlog.configure(
             processors=[
+                self.positional_to_keyword_processor,
                 structlog.stdlib.add_logger_name,
+                self.event_augmentor,
                 structlog.stdlib.add_log_level,
+                structlog.stdlib.filter_by_level,
+                structlog.contextvars.merge_contextvars,
                 structlog.stdlib.PositionalArgumentsFormatter(),
                 structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M.%S"),
                 structlog.processors.StackInfoRenderer(),
+                structlog.dev.set_exc_info,
                 renderer,
             ],
             context_class=dict,
@@ -570,8 +567,7 @@ class Configuration(metaclass=Singleton):
         )
 
         logger = structlog.get_logger(name)
-        logger.debug("Initializing logger (debug level)")
-        logger.error("Initializing logger (error level)")
+        logger.info("Initializing logger")
         self.log = logger
         return self.log
 
@@ -583,6 +579,7 @@ class Configuration(metaclass=Singleton):
             "boto3": "CRITICAL",
             "botocore.hooks": "WARNING",
             "botocore": "CRITICAL",
+            "common.lib.plugins.fluent_bit": "WARNING",
             "elasticapm.conf": "WARNING",
             "elasticapm.metrics": "WARNING",
             "elasticapm.transport.http": "WARNING",
@@ -654,16 +651,6 @@ class Configuration(metaclass=Singleton):
 
     def get_dax_endpoints(self):
         return self.get("_global_.dax_endpoints", [])
-
-
-# class ContextFilter(logging.Filter):
-#     """Logging Filter for adding hostname to log entries."""
-
-#     hostname = socket.gethostname()
-
-#     def filter(self, record: LogRecord) -> bool:
-#         record.hostname = ContextFilter.hostname
-#         return True
 
 
 CONFIG = Configuration()
