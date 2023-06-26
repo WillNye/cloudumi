@@ -62,6 +62,13 @@ export const DiffEditor: FC<DiffEditorProps> = ({
     modifiedEditor.onDidChangeModelContent(_ => {
       onChange && onChange(modifiedEditor.getValue());
     });
+
+    // Create diff navigator and move to the first difference
+    const diffNavigator = monaco.editor.createDiffNavigator(editor, {
+      followsCaret: true,
+      ignoreCharChanges: true
+    });
+    diffNavigator.next();
   };
 
   return (
