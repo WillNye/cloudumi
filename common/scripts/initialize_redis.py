@@ -74,7 +74,6 @@ if args.use_celery:
         celery.cache_sqs_queues_across_accounts_for_all_tenants,
         celery.cache_managed_policies_across_accounts_for_all_tenants,
         celery.cache_resources_from_aws_config_across_accounts_for_all_tenants,
-        celery.cache_access_advisor_across_accounts_for_all_tenants,
         celery.sync_iambic_templates_all_tenants,
         celery.cache_iambic_data_for_all_tenants,
         celery.update_providers_and_provider_definitions_all_tenants,
@@ -108,7 +107,6 @@ else:
             celery.cache_sns_topics_for_account,
             celery.cache_sqs_queues_for_account,
             celery.cache_managed_policies_for_account,
-            celery.cache_access_advisor_for_account,
             celery.cache_resources_from_aws_config_for_account,
         ]
         if parallel:

@@ -277,6 +277,15 @@ async def sync_role_access(
 async def sync_all_iambic_data_for_tenant(tenant_name: str):
     fnc = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenant = await Tenant.get_by_name(tenant_name)
+    if not tenant:
+        log.warning(
+            {
+                "function": fnc,
+                "message": "Could not find tenant",
+                "tenant": tenant_name,
+            }
+        )
+        return
     iambic_repos = await IambicRepo.get_all_tenant_repos(tenant.name)
     if not iambic_repos:
         log.warning(

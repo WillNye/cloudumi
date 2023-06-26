@@ -269,7 +269,7 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
                     url,
                     method="POST",
                     headers=headers,
-                    body=f"grant_type={grant_type}&code={code}&redirect_uri={oidc_redirect_uri}&scope={client_scope}",
+                    body=body,
                 )
             except tornado.httpclient.HTTPError:
                 raise
