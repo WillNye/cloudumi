@@ -169,6 +169,9 @@ async def get_field_value(change_field: ChangeField, form_value: any) -> any:
         if not allow_multiple and isinstance(form_value, list):
             raise AssertionError(f"Field {field_text} does not allow multiple values")
 
+        if allow_multiple and not isinstance(form_value, list):
+            form_value = [form_value]
+
         if change_field.field_type == "EnforcedTypeAhead":
             # TODO: Add validation for enforced type ahead fields
             # This would mean checking that the provided value exists.
