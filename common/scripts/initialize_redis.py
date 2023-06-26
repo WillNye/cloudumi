@@ -44,12 +44,14 @@ def log_end(task_name, start_time):
 
 
 async def maybe_set_user():
+    # This should only run for localhost. Let's not create users in prod environments
+    # dynamically based on iambic tempalte data.
     from common import Tenant, User
 
     all_tenants = await Tenant.get_all()
     for local_tenant in all_tenants:
         auth_rule = "user@noq.dev"
-        user = await User.get_by_email(auth_rule)
+        user = await User.get_by_email(local_tenant, auth_rule)
         if user:
             continue
 
