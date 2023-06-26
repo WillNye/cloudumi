@@ -136,6 +136,15 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
     if not full_host:
         full_host = request.get_tenant()
     tenant = request.get_tenant_name()
+
+    cognito_enabled = False
+    if (
+        config.get_tenant_specific_key(
+            "get_user_by_oidc_settings.jwt_groups_key", tenant
+        )
+        == "cognito:groups"
+    ):
+        cognito_enabled = True
     groups = []
     decoded_access_token = {}
     oidc_config = await populate_oidc_config(tenant)
@@ -254,6 +263,9 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
                     # for a client without a client_secret, Cognito will return an
                     # ambiguous error.
                     headers["Authorization"] = "Basic %s" % authorization_header_encoded
+                body = f"grant_type={grant_type}&code={code}&redirect_uri={oidc_redirect_uri}&scope={client_scope}"
+                if cognito_enabled:
+                    body += f"&client_id={client_id}"
                 token_exchange_response = await http_client.fetch(
                     url,
                     method="POST",
@@ -308,7 +320,7 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
         )
         mfa_setup_required = None
 
-        if not decoded_id_token.get("identities"):
+        if cognito_enabled and not decoded_id_token.get("identities"):
             user_client = CognitoUserClient.tenant_client(tenant)
             mfa_configured = user_client.user_mfa_enabled(email)
             if not mfa_configured and config.get_tenant_specific_key(
