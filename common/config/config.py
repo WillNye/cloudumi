@@ -553,7 +553,6 @@ class Configuration(metaclass=Singleton):
                 structlog.stdlib.add_logger_name,
                 self.event_augmentor,
                 structlog.stdlib.add_log_level,
-                structlog.stdlib.filter_by_level,
                 structlog.contextvars.merge_contextvars,
                 structlog.stdlib.PositionalArgumentsFormatter(),
                 structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M.%S"),
@@ -561,13 +560,14 @@ class Configuration(metaclass=Singleton):
                 structlog.dev.set_exc_info,
                 renderer,
             ],
+            wrapper_class=structlog.make_filtering_bound_logger(level),
             context_class=dict,
             logger_factory=structlog.stdlib.LoggerFactory(),
             cache_logger_on_first_use=True,
         )
 
         logger = structlog.get_logger(name)
-        logger.info("Initializing logger")
+        logger.debug("Initializing logger")
         self.log = logger
         return self.log
 
