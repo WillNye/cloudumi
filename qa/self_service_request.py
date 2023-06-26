@@ -124,8 +124,11 @@ async def get_s3_permission_template_for_role_request_data() -> SelfServiceReque
                         field_value=f"test-policy-{policy_number}",
                     ),
                     SelfServiceRequestChangeTypeField(
-                        field_key="s3_bucket",
-                        field_value=f"arn:aws:s3:::{account_name}-bucket",
+                        field_key="s3_buckets",
+                        field_value=[
+                            f"arn:aws:s3:::{account_name}-bucket-{elem}"
+                            for elem in range(1, 4)
+                        ],
                     ),
                     SelfServiceRequestChangeTypeField(
                         field_key="s3_permissions",
@@ -180,7 +183,10 @@ async def generate_s3_permission_template_for_managed_policy():
                 fields=[
                     SelfServiceRequestChangeTypeField(
                         field_key="s3_bucket",
-                        field_value=f"arn:aws:s3:::{account_name}-bucket",
+                        field_value=[
+                            f"arn:aws:s3:::{account_name}-bucket-{elem}"
+                            for elem in range(1, 4)
+                        ],
                     ),
                     SelfServiceRequestChangeTypeField(
                         field_key="s3_permissions",
@@ -249,17 +255,23 @@ async def generate_request_role_access_request_data(user_request: bool = True):
     return self_service_request
 
 
-async def api_self_service_request_create(request_data: SelfServiceRequestData = None):
+async def api_service_service_request_validate(
+    request_data: SelfServiceRequestData = None,
+):
     if not request_data:
         request_data = await get_s3_permission_template_for_role_request_data()
 
-    validated_data = generic_api_create_or_update_request(
+    return generic_api_create_or_update_request(
         "post",
         "v4/self-service/requests/validate",
         **request_data.dict(
             exclude_unset=False, exclude_defaults=False, exclude_none=True
         ),
     )
+
+
+async def api_self_service_request_create(request_data: SelfServiceRequestData = None):
+    validated_data = await api_service_service_request_validate(request_data)
     return generic_api_create_or_update_request(
         "post",
         "v4/self-service/requests",
