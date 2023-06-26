@@ -292,7 +292,7 @@ async def sync_all_iambic_data_for_tenant(tenant_name: str):
             {
                 "function": fnc,
                 "message": "No Iambic Template repo has been configured.",
-                "tenant": tenant.name,
+                "tenant": tenant_name,
             }
         )
         return
@@ -302,7 +302,7 @@ async def sync_all_iambic_data_for_tenant(tenant_name: str):
                 "function": fnc,
                 "message": "More than 1 Iambic Template repo has been configured. "
                 "This will result in data being truncated.",
-                "tenant": tenant.name,
+                "tenant": tenant_name,
             }
         )
 
@@ -314,7 +314,7 @@ async def sync_all_iambic_data_for_tenant(tenant_name: str):
             {
                 "function": fnc,
                 "message": "Error syncing aws accounts for tenant.",
-                "tenant": tenant.name,
+                "tenant": tenant_name,
             }
         )
     try:
@@ -324,7 +324,7 @@ async def sync_all_iambic_data_for_tenant(tenant_name: str):
             {
                 "function": fnc,
                 "message": "Error synching identity roles for tenant.",
-                "tenant": tenant.name,
+                "tenant": tenant_name,
             }
         )
     try:
@@ -334,7 +334,7 @@ async def sync_all_iambic_data_for_tenant(tenant_name: str):
             {
                 "function": fnc,
                 "message": "Error synching role access for tenant.",
-                "tenant": tenant.name,
+                "tenant": tenant_name,
             }
         )
 
