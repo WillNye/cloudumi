@@ -34,6 +34,7 @@ test_args := --cov-report term-missing
 GIT_BRANCH_SAFE := $(shell git rev-parse --abbrev-ref HEAD | tr '/' '-')
 BASE_DIR := $(shell pwd)
 AWS_PROFILE_STAGING = staging/staging_admin
+AWS_PROFILE_GLOBAL_STAGING = global_tenant_data_staging/global_tenant_data_staging_admin
 AWS_REGION_STAGING = us-west-2
 STAGING_VAR_FILES = --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars
 DEVELOPMENT_DOCKER_VOLUME_S3_BUCKET = consoleme-dev-configuration-bucket/docker_volumes_backup
@@ -42,8 +43,8 @@ DOCKER_VOLUMES_TO_BACKUP := deploy_cloudumi-pg deploy_cloudumi-redis deploy_clou
 DOCKER_VOLUMES_BACKUP_DIR := ./docker_volumes_backup
 
 AWS_PROFILE_DEV = development/development_admin
-AWS_REGION_DEV = us-west-2
 AWS_PROFILE_PROD = production/prod_admin
+AWS_PROFILE_GLOBAL_PROD = global_tenant_data_prod/global_tenant_data_prod_admin
 AWS_REGION_PROD = us-west-2
 PROD_VAR_FILES = --var-file=live/shared/prod-1/noq.dev-prod.tfvars --var-file=live/shared/prod-1/secret.tfvars
 
@@ -220,18 +221,18 @@ tf-prod-unlock:
 	terraform force-unlock $(UUID)
 
 # This is for our global Tenant DDB table
-tf-global-development-apply:
-	@cd deploy/infrastructure && \
-	export AWS_PROFILE=$(AWS_PROFILE_DEV) AWS_REGION=$(AWS_REGION_DEV); \
-	terraform workspace select shared-staging-1; \
-	terraform apply $(STAGING_VAR_FILES)
+tf-global-staging-apply:
+	@cd deploy/global_infrastructure && \
+	export AWS_PROFILE=$(AWS_PROFILE_GLOBAL_STAGING) AWS_REGION=$(AWS_REGION_STAGING); \
+	terraform workspace select shared-staging-global; \
+	terraform apply --var-file=live/shared/staging-global/noq.dev-staging.tfvars
 
 # This is for our global Tenant DDB table
-tf-global-staging-apply:
-	@cd deploy/infrastructure && \
-	export AWS_PROFILE=$(AWS_PROFILE_STAGING) AWS_REGION=$(AWS_REGION_STAGING); \
-	terraform workspace select shared-staging-1; \
-	terraform apply $(STAGING_VAR_FILES)
+tf-global-prod-apply:
+	@cd deploy/global_infrastructure && \
+	export AWS_PROFILE=$(AWS_PROFILE_GLOBAL_PROD) AWS_REGION=$(AWS_REGION_PROD); \
+	terraform workspace select shared-prod-global; \
+	terraform apply --var-file=live/shared/prod-global/noq.dev-prod.tfvars
 
 .PHONY: deploy-staging
 deploy-staging:

@@ -28,12 +28,6 @@ Ensure that your AWS profile is setup correctly in the `~/.aws/credentials` file
 
 ### Cheat Codes
 
-#### Development
-
-export AWS_PROFILE=development_2/development_2_admin AWS_REGION=us-west-2
-terraform workspace select shared-dev-global
-terraform refresh --var-file=live/shared/dev-global/noq.dev-dev.tfvars
-
 #### Staging
 
 export AWS_PROFILE=global_tenant_data_staging/global_tenant_data_staging_admin AWS_REGION=us-west-2
@@ -105,7 +99,7 @@ Option 2: To retrieve temporary 1 hour credentials from Noq for each profile, ru
 ```
 noq file development_admin --profile noq_dev
 noq file global_tenant_data_prod_admin --profile global_tenant_data_prod_admin
-noq file noq_global_staging --profile global_tenant_data_staging_admin
+noq file global_tenant_data_staging_admin --profile global_tenant_data_staging_admin
 ```
 
 Option 4: Noq can emulate the ECS credential provider locally. This method is much more performant than credential_process, and

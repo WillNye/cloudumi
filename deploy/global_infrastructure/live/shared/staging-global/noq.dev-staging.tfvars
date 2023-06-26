@@ -3,7 +3,7 @@ account_id  = "615395543222"
 stage       = "staging"
 domain_name = "*.staging.noq.dev"
 
-profile = "noq_global_staging"
+profile = "global_tenant_data_staging/global_tenant_data_staging_admin"
 region  = "us-west-2"
 
 # Note tags cannot have variable names.

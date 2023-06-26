@@ -17,7 +17,7 @@ variable "profile" {
   description = "The AWS PROFILE, as configured in the file ~/.aws/credentials to be used for deployment"
   type        = string
   validation {
-    condition     = contains(["development_2/development_2_admin", "global_tenant_data_staging/global_tenant_data_staging_admin", "global_tenant_data_prod/global_tenant_data_prod_admin"], var.profile)
+    condition     = contains(["global_tenant_data_staging/global_tenant_data_staging_admin", "global_tenant_data_prod/global_tenant_data_prod_admin"], var.profile)
     error_message = "Allowed AWS_PROFILEs are \"global_tenant_data_staging/global_tenant_data_staging_admin\" and \"global_tenant_data_prod/global_tenant_data_prod_admin\"."
   }
 }
