@@ -37,7 +37,7 @@ export const DiffEditor: FC<DiffEditorProps> = ({
   language = 'yaml',
   onChange
 }) => {
-  const [renderSideBySide, setRenderSideBySide] = useState(true);
+  const [renderSideBySide, setRenderSideBySide] = useState(false);
   const monaco = useMonaco();
 
   const options = {
@@ -90,6 +90,7 @@ export const DiffEditor: FC<DiffEditorProps> = ({
         options={options}
         theme="vs-dark"
         onMount={editorDidMount}
+        className={styles.editor}
       />
     </div>
   );

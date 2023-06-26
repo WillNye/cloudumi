@@ -4,9 +4,8 @@ import { ToastContainer } from 'react-toastify';
 import { AuthRoute } from 'core/Auth';
 import { Loader } from 'shared/elements/Loader';
 import 'react-toastify/dist/ReactToastify.css';
-import ChallengeValidator from './ChallengeValidator/ChallengeValidator';
+import ChallengeValidator from './ChallengeValidator';
 import Downloads from './Downloads/Downloads';
-import SelfServiceReview from './Requests/SelfService/components/SelfServiceReview/SelfServiceReview';
 
 const Login = lazy(() => import('./Login'));
 const Settings = lazy(() => import('./Settings'));
@@ -34,7 +33,6 @@ export const App: FC = () => (
           <Route path="/resources/*" element={<Resources />} />
           <Route path="/settings/*" element={<Settings />} />
           <Route path="/requests/*" element={<Requests />} />
-          <Route path="/request/:requestId" element={<SelfServiceReview />} />
           <Route path="/role/*" element={<SignInToRole />} />
           <Route path="/downloads" element={<Downloads />} />
           <Route

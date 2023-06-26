@@ -5,6 +5,7 @@ import NotFound from '../NotFound';
 import RequestsMenu from './RequestsMenu';
 import RequestsList from './RequestsList';
 import SelfService from './SelfService';
+import RequestDetails from './RequestDetails';
 
 export const Requests: FC = () => {
   return (
@@ -16,6 +17,7 @@ export const Requests: FC = () => {
         <Route path="/" element={<RequestsMenu />} />
         <Route path="/all/" element={<RequestsList />} />
         <Route path="/create/" element={<SelfService />} />
+        <Route path="/:requestId" element={<RequestDetails />} />
         <Route path="*" element={<NotFound fullPage />} />
       </Routes>
     </>
