@@ -33,6 +33,7 @@ ASYNC_PG_SESSION = sessionmaker(
 
 AUTH_COOKIE_NAME: str = config.get("_global_.auth.cookie.name", "noq_auth")
 
+ENVIRONMENT = config.get("_global_.environment")
 IAMBIC_REPOS_BASE_KEY = "iambic_repos"
 GITHUB_APP_URL = config.get("_global_.secrets.github_app.app_url")
 assert GITHUB_APP_URL
@@ -63,3 +64,9 @@ assert SENDGRID_FROM_ADDRESS
 
 REDIS_PASSWORD = config.get("_global_.secrets.redis.password")
 assert REDIS_PASSWORD
+
+AWS_MARKETPLACE_SUBSCRIPTION_QUEUE = config.get(
+    "_global_.integrations.aws.aws_marketplace_subscription_queue_arn"
+)
+if ENVIRONMENT == "prod":
+    assert AWS_MARKETPLACE_SUBSCRIPTION_QUEUE

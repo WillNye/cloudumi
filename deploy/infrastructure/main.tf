@@ -23,6 +23,12 @@ provider "aws" {
   region  = var.region
 }
 
+provider "aws" {
+  alias   = "aws_east"
+  profile = var.profile
+  region  = "us-east-1"
+}
+
 locals {
   cluster_id = "${replace(var.zone, ".", "-")}-${var.namespace}-${var.stage}-${var.attributes}"
 }
@@ -66,6 +72,18 @@ module "tenant_messaging" {
   account_id = var.account_id
   cluster_id = local.cluster_id
   tags       = var.tags
+}
+
+module "tenant_messaging_us-east-1" {
+  source = "./modules/services/messaging-us-east-1"
+
+  account_id                                 = var.account_id
+  cluster_id                                 = local.cluster_id
+  tags                                       = var.tags
+  aws_marketplace_subscription_sns_topic_arn = var.aws_marketplace_subscription_sns_topic_arn
+  providers = {
+    aws = aws.aws_east
+  }
 }
 
 module "tenant_dynamodb_service" {

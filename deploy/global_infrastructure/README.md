@@ -19,18 +19,24 @@ The only time the variable should be set to true is upon initial cluster creatio
 ## Quick Start
 
 Ensure that your AWS profile is setup correctly in the `~/.aws/credentials` file - the expectation is that there is a
-`noq_global_staging` and `noq_global_prod` entry with AWS keys configured; this is the profile that terraform will look for explicitly.
+`global_tenant_data_staging/global_tenant_data_staging_admin` and `global_tenant_data_prod/global_tenant_data_prod_admin` entry with AWS keys configured; this is the profile that terraform will look for explicitly.
 
 - Ensure you have the pre-requisites installed
-- Export your AWS Profile (see the `AWS Credentials` section below): `export AWS_PROFILE=noq_global_staging`
+- Export your AWS Profile (see the `AWS Credentials` section below): `export AWS_PROFILE=global_tenant_data_staging/global_tenant_data_staging_admin`
 
 ## Terraform
 
 ### Cheat Codes
 
+#### Development
+
+export AWS_PROFILE=development_2/development_2_admin AWS_REGION=us-west-2
+terraform workspace select shared-dev-global
+terraform refresh --var-file=live/shared/dev-global/noq.dev-dev.tfvars
+
 #### Staging
 
-export AWS_PROFILE=noq_global_staging AWS_REGION=us-west-2
+export AWS_PROFILE=global_tenant_data_staging/global_tenant_data_staging_admin AWS_REGION=us-west-2
 terraform workspace select shared-staging-global
 terraform refresh --var-file=live/shared/staging-global/noq.dev-staging.tfvars
 terraform plan --var-file=live/shared/staging-global/noq.dev-staging.tfvars
@@ -38,7 +44,7 @@ terraform apply --var-file=live/shared/staging-global/noq.dev-staging.tfvars
 
 #### Prod
 
-export AWS_PROFILE=noq_global_prod AWS_REGION=us-west-2
+export AWS_PROFILE=global_tenant_data_prod/global_tenant_data_prod_admin AWS_REGION=us-west-2
 terraform workspace select shared-prod-global
 terraform refresh --var-file=live/shared/prod-global/noq.dev-prod.tfvars
 terraform plan --var-file=live/shared/prod-global/noq.dev-prod.tfvars
@@ -48,7 +54,7 @@ Terraform is only required when either establishing a new tenant / account or up
 
 To use terraform, follow the below steps:
 
-- Ensure `AWS_PROFILE` is set to respective environment (`noq_global_prod` or `noq_global_staging`)
+- Ensure `AWS_PROFILE` is set to respective environment (`global_tenant_data_prod/global_tenant_data_prod_admin` or `global_tenant_data_staging/global_tenant_data_staging_admin`)
 - Ensure `AWS_REGION` is set correctly (`us-west-2` for most clusters)
 - Initialize Terraform if you haven't already: `terraform init`
 - Setup your workspaces: `./setup.sh`
@@ -87,10 +93,10 @@ if you are running services in a container and the container doesn't have access
 update your `~/.aws/config` file with the following:
 
 ```
-[profile noq_global_prod]
+[profile global_tenant_data_prod/global_tenant_data_prod_admin]
 credential_process = noq credential_process  arn:aws:iam::306086318698:role/global_tenant_data_prod_admin
 
-[profile noq_global_staging]
+[profile global_tenant_data_staging/global_tenant_data_staging_admin]
 credential_process = noq credential_process arn:aws:iam::615395543222:role/global_tenant_data_staging_admin
 ```
 
@@ -98,7 +104,7 @@ Option 2: To retrieve temporary 1 hour credentials from Noq for each profile, ru
 
 ```
 noq file development_admin --profile noq_dev
-noq file noq_global_prod --profile global_tenant_data_prod_admin
+noq file global_tenant_data_prod_admin --profile global_tenant_data_prod_admin
 noq file noq_global_staging --profile global_tenant_data_staging_admin
 ```
 

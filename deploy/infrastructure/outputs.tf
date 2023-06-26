@@ -172,6 +172,17 @@ output "sqs_registration_response_queue_name" {
   description = "The SQS response queue name that is used to trigger customer registration using the NOQ CF template"
   value       = module.tenant_messaging.sqs_registration_response_queue_name
 }
+
+output "aws_marketplace_subscription_queue_arn" {
+  description = "The SQS queue ARN that is used to trigger customer registration using the NOQ CF template"
+  value       = module.tenant_messaging_us-east-1.aws_marketplace_subscription_queue_arn
+}
+
+output "aws_marketplace_subscription_queue_name" {
+  description = "The SQS queue name that is used to trigger customer registration using the NOQ CF template"
+  value       = module.tenant_messaging_us-east-1.aws_marketplace_subscription_queue_name
+}
+
 output "stage" {
   description = "The configured stage (for automation)"
   value       = var.stage

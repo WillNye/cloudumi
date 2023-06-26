@@ -75,6 +75,7 @@ from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.access_advisor import AccessAdvisor
 from common.lib.aws.cached_resources.iam import store_iam_managed_policies_for_tenant
 from common.lib.aws.cloudtrail import CloudTrail
+from common.lib.aws.marketplace import handle_aws_marketplace_queue
 from common.lib.aws.s3 import list_buckets
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.sns import list_topics
@@ -2944,6 +2945,24 @@ def cache_iambic_data_for_all_tenants() -> Dict:
     return log_data
 
 
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
+def handle_aws_marketplace_subscription_queue() -> dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    log_data = {
+        "function": function,
+        "message": "Caching AWS Marketplace Queue",
+    }
+    if not config_globals.AWS_MARKETPLACE_SUBSCRIPTION_QUEUE:
+        log_data["message"] = "AWS Marketplace Queue is not configured"
+        return log_data
+
+    log.debug(log_data)
+    res = async_to_sync(handle_aws_marketplace_queue)(
+        config_globals.AWS_MARKETPLACE_SUBSCRIPTION_QUEUE
+    )
+    return {**log_data, "response": res}
+
+
 run_tasks_normally = not bool(
     config.get("_global_.development", False)
     and config.get("_global_._development_run_celery_tasks_1_min", False)
@@ -3112,6 +3131,11 @@ schedule = {
     },
     "update_providers_and_provider_definitions_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.update_providers_and_provider_definitions_all_tenants",
+        "options": {"expires": 180},
+        "schedule": get_schedule(30),
+    },
+    "handle_aws_marketplace_subscription_queue": {
+        "task": "common.celery_tasks.celery_tasks.handle_aws_marketplace_subscription_queue",
         "options": {"expires": 180},
         "schedule": get_schedule(30),
     },

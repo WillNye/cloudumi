@@ -7,7 +7,7 @@ from pynamodax.indexes import AllProjection, GlobalSecondaryIndex
 from common.config import config
 from common.config.config import get_logger
 from common.lib.plugins import get_plugin_by_name
-from common.lib.pynamo import GlobalNoqModel, NoqMapAttribute
+from common.lib.pynamo import GlobalNoqModel, NoqListAttribute, NoqMapAttribute
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = get_logger(__name__)
@@ -46,6 +46,96 @@ class ClusterShardingIndex(GlobalSecondaryIndex):
         region = config.region
 
     noq_cluster = UnicodeAttribute(hash_key=True)
+
+
+class AWSMarketplaceTenantDetails(GlobalNoqModel):
+    class Meta:
+        table_name = "aws_marketplace_tenant_details"  # This table is global across all clusters in an environment
+        region = (
+            config.get("_global_.accounts.aws_marketplace_tenant_details.region")
+            or config.region
+        )
+
+    customer_identifier = UnicodeAttribute(hash_key=True)
+    customer_account_id = UnicodeAttribute(null=True)
+    is_free_trial_term_present = BooleanAttribute(default=False)
+    subscription_action = UnicodeAttribute(null=True)
+    subscription_expired = BooleanAttribute(default=False)
+    successfully_subscribed = BooleanAttribute(default=False)
+    product_code = UnicodeAttribute(null=True)
+    registration_token = UnicodeAttribute(null=True)
+    created_at = NumberAttribute()
+    updated_at = NumberAttribute()
+    change_history = NoqListAttribute(null=True)
+    company_name = UnicodeAttribute(null=True)
+    contact_person = UnicodeAttribute(null=True)
+    contact_phone = UnicodeAttribute(null=True)
+    contact_email = UnicodeAttribute(null=True)
+
+    @classmethod
+    async def customer_id_exists(cls, customer_identifier: str) -> bool:
+        results = await cls.query(customer_identifier, limit=1)
+        try:
+            return bool(results.next())
+        except StopIteration:
+            return False
+
+    @classmethod
+    async def create(
+        cls,
+        customer_identifier: str,
+        registration_token: str = "",
+        product_code: str = "",
+        customer_account_id: str = "",
+    ) -> "AWSMarketplaceTenantDetails":
+        aws_marketplace_details = cls(
+            customer_identifier=customer_identifier,
+            customer_account_id=customer_account_id,
+            registration_token=registration_token,
+            product_code=product_code,
+            created_at=int((datetime.utcnow()).timestamp()),
+            updated_at=int((datetime.utcnow()).timestamp()),
+        )
+        await aws_marketplace_details.save()
+        return aws_marketplace_details
+
+    @classmethod
+    async def update_subscription(cls, message: dict) -> bool:
+        try:
+            customer_identifier = message["customer-identifier"]
+            tenant = await cls.get(customer_identifier)
+
+            action = message["action"]
+
+            if action == "subscribe-success":
+                tenant.successfully_subscribed = True
+                tenant.subscription_action = "subscribe-success"
+            elif action == "subscribe-fail":
+                tenant.successfully_subscribed = False
+                tenant.subscription_action = "subscribe-fail"
+            elif action == "unsubscribe-pending":
+                tenant.subscription_expired = True
+                tenant.subscription_action = "unsubscribe-pending"
+            elif action == "unsubscribe-success":
+                tenant.subscription_expired = True
+                tenant.subscription_action = "unsubscribe-success"
+
+            tenant.is_free_trial_term_present = message.get(
+                "isFreeTrialTermPresent", False
+            )
+            tenant.product_code = message.get("product-code")
+            tenant.updated_at = int((datetime.utcnow()).timestamp())
+
+            if tenant.change_history:
+                tenant.change_history.append({str(datetime.utcnow()): action})
+            else:
+                tenant.change_history = [{str(datetime.utcnow()): action}]
+
+            await tenant.save()
+            return True
+        except Exception as e:
+            log.exception({"error": f"Error updating tenant details: {str(e)}"})
+            return False
 
 
 class TenantDetails(GlobalNoqModel):

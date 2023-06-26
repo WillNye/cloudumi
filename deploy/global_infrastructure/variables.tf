@@ -17,8 +17,8 @@ variable "profile" {
   description = "The AWS PROFILE, as configured in the file ~/.aws/credentials to be used for deployment"
   type        = string
   validation {
-    condition     = contains(["noq_global_staging", "noq_global_prod"], var.profile)
-    error_message = "Allowed AWS_PROFILEs are \"noq_global_staging\" and \"noq_global_prod\"."
+    condition     = contains(["development_2/development_2_admin", "global_tenant_data_staging/global_tenant_data_staging_admin", "global_tenant_data_prod/global_tenant_data_prod_admin"], var.profile)
+    error_message = "Allowed AWS_PROFILEs are \"global_tenant_data_staging/global_tenant_data_staging_admin\" and \"global_tenant_data_prod/global_tenant_data_prod_admin\"."
   }
 }
 
@@ -27,8 +27,8 @@ variable "region" {
   default = "us-west-2"
 
   validation {
-    condition     = contains(["us-west-1", "us-west-2"], var.region)
-    error_message = "Allowed values for input_parameter are \"us-west-1\", \"us-west-2\"."
+    condition     = contains(["us-west-2"], var.region)
+    error_message = "Allowed values for input_parameter are \"us-west-2\"."
   }
 }
 
@@ -37,8 +37,8 @@ variable "stage" {
   default = "staging"
 
   validation {
-    condition     = contains(["staging", "test", "prod"], var.stage)
-    error_message = "Allowed values for input_parameter are \"staging\", \"test\", or \"prod\"."
+    condition     = contains(["staging", "test", "dev", "prod"], var.stage)
+    error_message = "Allowed values for input_parameter are \"staging\", \"test\", \"dev\", or \"prod\"."
   }
 }
 

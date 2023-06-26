@@ -182,6 +182,7 @@ from api.handlers.v3.tenant_details.handler import (
     TenantEulaHandler,
 )
 from api.handlers.v3.tenant_registration.tenant_registration import (
+    TenantRegistrationAwsMarketplaceFormSubmissionHandler,
     TenantRegistrationAwsMarketplaceHandler,
     TenantRegistrationHandler,
 )
@@ -547,8 +548,12 @@ def make_app(jwt_validator=None):
                 [
                     (r"/api/v3/tenant_registration", TenantRegistrationHandler),
                     (
-                        r"/api/v3/tenant_registration_aws_marketplace",
+                        r"/aws_marketplace/?",
                         TenantRegistrationAwsMarketplaceHandler,
+                    ),
+                    (
+                        r"/aws_marketplace/form_submission/?",
+                        TenantRegistrationAwsMarketplaceFormSubmissionHandler,
                     ),
                 ],
             )

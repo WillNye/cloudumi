@@ -96,6 +96,12 @@ resource "aws_sqs_queue" "registration_queue" {
   max_message_size          = 2048
   message_retention_seconds = 86400
   receive_wait_time_seconds = 10
+  tags = merge(
+    var.tags,
+    {
+      "System" : "Registration",
+    }
+  )
 }
 
 resource "aws_sqs_queue_policy" "registration_queue_policy" {
@@ -129,6 +135,12 @@ resource "aws_sqs_queue" "registration_response_queue" {
   message_retention_seconds  = 86400
   receive_wait_time_seconds  = 10
   visibility_timeout_seconds = 300
+  tags = merge(
+    var.tags,
+    {
+      "System" : "RegistrationResponse",
+    }
+  )
 }
 
 resource "aws_sqs_queue_policy" "registration_response_queue_policy" {

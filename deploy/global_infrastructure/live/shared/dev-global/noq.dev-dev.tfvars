@@ -1,9 +1,9 @@
 # Associated account id
-account_id  = "306086318698"
-stage       = "prod"
-domain_name = "*.noq.dev"
+account_id  = "350876197038"
+stage       = "dev"
+domain_name = "*.example.com"
 
-profile = "global_tenant_data_prod/global_tenant_data_prod_admin"
+profile = "development_2/development_2_admin"
 region  = "us-west-2"
 
 # Note tags cannot have variable names.
@@ -11,9 +11,9 @@ region  = "us-west-2"
 # Environment: {stage}
 tags = {
   "Name" : "noq.dev",
-  "Environment" : "production",
+  "Environment" : "development",
 }
 
 # Can be extended by adding regions to the list below
 dynamo_table_replica_regions = ["us-west-2"]
-s3_access_log_bucket         = "noq-global-prod-s3-access-logs.us-west-2"
+s3_access_log_bucket         = "noq-global-dev-s3-access-logs.us-west-2"
