@@ -10,6 +10,8 @@ export const extractErrorMessage = error => {
       return error.map(e => extractErrorMessage(e)).join(', ');
     } else if (error.data) {
       return extractErrorMessage(error.data);
+    } else if (error.errors) {
+      return extractErrorMessage(error.errors);
     }
   }
   return '';

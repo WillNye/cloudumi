@@ -20,6 +20,7 @@ import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import MissingConfigurationValue, UnableToAuthenticate
 from common.lib.auth.user_management import maybe_create_users_groups_in_database
+from common.lib.cognito.identity import CognitoUserClient
 from common.lib.generic import should_force_redirect
 from common.lib.jwt import generate_jwt_token
 
@@ -136,6 +137,15 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
     if not full_host:
         full_host = request.get_tenant()
     tenant = request.get_tenant_name()
+
+    cognito_enabled = False
+    if (
+        config.get_tenant_specific_key(
+            "get_user_by_oidc_settings.jwt_groups_key", tenant
+        )
+        == "cognito:groups"
+    ):
+        cognito_enabled = True
     groups = []
     decoded_access_token = {}
     oidc_config = await populate_oidc_config(tenant)
@@ -217,15 +227,14 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
         raise tornado.web.Finish()
     if not id_token or not access_token:
         try:
+            client_id = oidc_config["client_id"]
             # exchange the authorization code with the access token
             grant_type = config.get_tenant_specific_key(
                 "get_user_by_oidc_settings.grant_type",
                 tenant,
                 "authorization_code",
             )
-            authorization_header = (
-                f"{oidc_config['client_id']}:{oidc_config['client_secret']}"
-            )
+            authorization_header = f"{client_id}:{oidc_config['client_secret']}"
             authorization_header_encoded = base64.b64encode(
                 authorization_header.encode("UTF-8")
             ).decode("UTF-8")
@@ -253,6 +262,9 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
                     # for a client without a client_secret, Cognito will return an
                     # ambiguous error.
                     headers["Authorization"] = "Basic %s" % authorization_header_encoded
+                body = f"grant_type={grant_type}&code={code}&redirect_uri={oidc_redirect_uri}&scope={client_scope}"
+                if cognito_enabled:
+                    body += f"&client_id={client_id}"
                 token_exchange_response = await http_client.fetch(
                     url,
                     method="POST",
@@ -306,18 +318,17 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
             )
         )
         mfa_setup_required = None
-
-        # if not decoded_id_token.get("identities"):
-        #     user_client = CognitoUserClient.tenant_client(tenant)
-        #     mfa_configured = user_client.user_mfa_enabled(email)
-        #     if not mfa_configured and config.get_tenant_specific_key(
-        #         "get_user_by_oidc_settings.enable_mfa", tenant, True
-        #     ):
-        #         # If MFA isn't enabled for the user, begin the setup process
-        #         mfa_setup_required = await user_client.get_mfa_secret(
-        #             email, access_token=access_token, tenant=tenant
-        #         )
-        #         after_redirect_uri = f"{protocol}://{full_host}/mfa"
+        if cognito_enabled and not decoded_id_token.get("identities"):
+            user_client = CognitoUserClient.tenant_client(tenant)
+            mfa_configured = user_client.user_mfa_enabled(email)
+            if not mfa_configured and config.get_tenant_specific_key(
+                "get_user_by_oidc_settings.enable_mfa", tenant, True
+            ):
+                # If MFA isn't enabled for the user, begin the setup process
+                mfa_setup_required = await user_client.get_mfa_secret(
+                    email, access_token=access_token, tenant=tenant
+                )
+                after_redirect_uri = f"{protocol}://{full_host}/mfa"
 
         # For google auth, the access_token does not contain JWT-parsable claims.
         if config.get_tenant_specific_key(

@@ -20,7 +20,7 @@
     padding-bottom: var(--spacing-md);
   }
 
-  .successAlert {
+  .notificationAlert {
     text-align: center;
     line-height: 1.5rem;
     padding: var(--spacing-lg) 0;
