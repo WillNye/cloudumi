@@ -30,13 +30,32 @@ export const getRequestType = async ({ queryKey }) => {
       template_type
     }
   });
+  return response.data;
+};
 
+export const getRequestTemplateTypes = async ({ queryKey }) => {
+  const [_, provider] = queryKey;
+  const url = `${V4_API_URL}/template-types?provider=${provider}`;
+  const response = await axios.get(url);
   return response.data;
 };
 
 export const getRequestChangeDetails = async ({ queryKey }) => {
   const [_, requestTypeId, changeTypeId] = queryKey;
   const url = `${V4_API_URL}/self-service/request-types/${requestTypeId}/change-types/${changeTypeId}`;
+  const response = await axios.get(url);
+  return response.data;
+};
+
+export const getAllRequests = async () => {
+  const url = `${V4_API_URL}/self-service/requests/`;
+  const response = await axios.get(url);
+  return response.data;
+};
+
+export const getIambicRequest = async ({ queryKey }) => {
+  const [_, requestId] = queryKey;
+  const url = `${V4_API_URL}/self-service/requests/${requestId}`;
   const response = await axios.get(url);
   return response.data;
 };
