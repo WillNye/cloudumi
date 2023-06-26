@@ -230,7 +230,7 @@ def _get_default_aws_request_permission_request_types(
             change_template=ChangeTypeTemplate(
                 template="""
         {
-          "Action": {{form.sqs_permissions}},
+          "Action": ["{{form.sqs_permissions|join('","')}}"],
           "Effect":"Allow",
           "Resource": ["{{form.sqs_queues|join('","')}}"]
         }"""
@@ -286,7 +286,7 @@ def _get_default_aws_request_permission_request_types(
             change_template=ChangeTypeTemplate(
                 template="""
         {
-          "Action": {{form.sns_permissions}},
+          "Action": ["{{form.sns_permissions|join('","')}}"],
           "Effect":"Allow",
           "Resource": ["{{form.sns_topics|join('","')}}"]
         }"""
@@ -341,7 +341,7 @@ def _get_default_aws_request_permission_request_types(
                 change_template=ChangeTypeTemplate(
                     template="""
         {
-          "Action": {{form.service_permissions}},
+          "Action": ["{{form.service_permissions|join('","')}}"],
           "Effect":"Allow",
           "Resource": ["{{form.resource_arns|join('","')}}"]
         }"""
