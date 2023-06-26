@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import concurrent.futures
 import inspect
 import os
@@ -10,6 +11,7 @@ from asgiref.sync import async_to_sync
 
 from common.celery_tasks import celery_tasks as celery
 from common.lib.account_indexers import get_account_id_to_name_mapping
+from common.lib.password import generate_random_password
 from common.lib.tenant import get_all_tenants
 
 total_start_time = int(time.time())
@@ -39,6 +41,29 @@ def log_start(task_name):
 def log_end(task_name, start_time):
     end_time = time.time()
     print(f"Finished task: {task_name}. It took {end_time - start_time:.2f} seconds")
+
+
+async def maybe_set_user():
+    from common import Tenant, User
+
+    all_tenants = await Tenant.get_all()
+    for local_tenant in all_tenants:
+        auth_rule = "user@noq.dev"
+        user = await User.get_by_email(auth_rule)
+        if user:
+            continue
+
+        user = User(
+            managed_by="SCIM",
+            username=auth_rule,
+            email=auth_rule,
+            email_verified=True,
+            tenant=local_tenant,
+            display_name="Test User",
+            full_name="Test User",
+        )
+        await user.set_password(await generate_random_password())
+        await user.write()
 
 
 if args.use_celery:
@@ -170,5 +195,6 @@ else:
                 start_time,
             )
 
+asyncio.run(maybe_set_user())
 total_time = int(time.time()) - total_start_time
 print(f"Done caching data in Redis. It took {total_time} seconds")
