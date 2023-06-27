@@ -1,3 +1,5 @@
+data "aws_organizations_organization" "owner" {}
+
 data "aws_iam_policy_document" "sns_assume_role" {
   statement {
     effect = "Allow"
@@ -45,6 +47,43 @@ resource "aws_sns_topic" "github_app_noq_webhook" {
     var.tags,
     {}
   )
+}
+
+resource "aws_sns_topic_policy" "github_app_noq_webhook" {
+  arn    = aws_sns_topic.github_app_noq_webhook.arn
+  policy = data.aws_iam_policy_document.sns_topic_policy.json
+}
+
+data "aws_iam_policy_document" "sns_topic_policy" {
+  policy_id = "__default_policy_ID"
+
+  statement {
+    actions = [
+      "SNS:Subscribe"
+    ]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:PrincipalOrgID"
+
+      values = [
+        data.aws_organizations_organization.owner.id,
+      ]
+    }
+
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
+    resources = [
+      aws_sns_topic.github_app_noq_webhook.arn,
+    ]
+
+    sid = "Allow-other-account-to-subscribe-to-topic"
+  }
 }
 
 data "aws_iam_policy_document" "assume_role" {
