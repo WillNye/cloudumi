@@ -27,3 +27,8 @@ output "sqs_registration_response_queue_name" {
   description = "The SQS response queue name that is used to trigger customer registration using the NOQ CF template"
   value       = aws_sqs_queue.registration_response_queue.name
 }
+
+output "sqs_github_app_webhook_queue_arn" {
+  description = "The SQS to see GitHub App Noq Webhook Events"
+  value       = aws_sqs_queue.github_app_webhook.arn
+}

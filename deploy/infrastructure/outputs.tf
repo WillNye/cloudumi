@@ -172,6 +172,12 @@ output "sqs_registration_response_queue_name" {
   description = "The SQS response queue name that is used to trigger customer registration using the NOQ CF template"
   value       = module.tenant_messaging.sqs_registration_response_queue_name
 }
+
+output "sqs_github_app_webhook_queue_arn" {
+  description = "The SQS to see GitHub App Noq Webhook Events"
+  value       = module.tenant_messaging.sqs_github_app_webhook_queue_arn
+}
+
 output "stage" {
   description = "The configured stage (for automation)"
   value       = var.stage
