@@ -35,3 +35,8 @@ module "tenant_dynamodb_service" {
   dynamo_table_replica_regions = var.dynamo_table_replica_regions
   tags                         = var.tags
 }
+
+module "github_app_integration" {
+  source = "./modules/services/github-app-integration"
+  tags   = var.tags
+}

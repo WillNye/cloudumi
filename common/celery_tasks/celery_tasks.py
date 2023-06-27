@@ -62,6 +62,7 @@ from common.config import config
 from common.config import globals as config_globals
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
+from common.github.webhook_event_buffer import handle_github_webhook_event_queue
 from common.iambic.config.utils import update_tenant_providers_and_definitions
 from common.iambic.git.models import IambicRepo
 from common.iambic.interface import IambicConfigInterface
@@ -2751,6 +2752,19 @@ def handle_tenant_aws_integration_queue() -> Dict:
 
 
 @app.task(soft_time_limit=600, **default_celery_task_kwargs)
+def handle_github_webhook_integration_queue() -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    log_data = {
+        "function": function,
+        "message": "Handling GitHub Webhook Event Queue",
+    }
+    log.debug(log_data)
+    res = async_to_sync(handle_github_webhook_event_queue)(app)
+
+    log.debug({**log_data, "num_events": res.get("num_events")})
+
+
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def get_current_celery_tasks(tenant: str = None, status: str = None) -> List[Any]:
     # TODO: We may need to build a custom DynamoDB backend to segment tasks by tenant and maintain task status
     if not tenant:
@@ -3118,6 +3132,16 @@ schedule = {
 }
 
 
+# FIXME Debugging
+# once finished debugging, integrate this with the rest of schedule
+schedule = {
+    "handle_github_webhook_integration_queue": {
+        "task": "common.celery_tasks.celery_tasks.handle_github_webhook_integration_queue",
+        "options": {"expires": 180},
+        "schedule": schedule_15_seconds,
+    },
+}
+
 if internal_celery_tasks and isinstance(internal_celery_tasks, dict):
     schedule = {**schedule, **internal_celery_tasks}
 
@@ -3157,3 +3181,21 @@ app.conf.timezone = "UTC"
 
 # TODO: Message user with information about this being reviewed
 # TODO: Determine how to map IdP groups to Slack channels
+
+# from qa.request_types import hard_delete_request_type
+# from common.tenants.models import Tenant
+# from qa.request_types import hard_delete_request_type
+# async def reset_request_type_tables():
+#     tenant = await Tenant.get_by_name("localhost")
+#     request_types = await list_tenant_request_types(tenant.id, exclude_deleted=False)
+#     await asyncio.gather(
+#         *[hard_delete_request_type(req_type) for req_type in request_types]
+#     )
+
+#     await upsert_tenant_request_types(tenant.name)
+
+# import asyncio
+# asyncio.run(reset_request_type_tables())
+
+# FIXME - uncomment below to start consuming from the webhook event queue
+# handle_github_webhook_integration_queue()
