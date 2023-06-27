@@ -28,7 +28,7 @@ from common.lib.tenant.models import TenantDetails
 from common.tenants.models import Tenant
 from common.users.models import User
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class TenantRegistrationAwsMarketplaceHandler(TornadoRequestHandler):
@@ -180,6 +180,8 @@ class TenantRegistrationHandler(TornadoRequestHandler):
                     }
                 )
                 return
+
+        # TODO: Validate domain ends in a valid suffix / or just the prefix, just get the subdomain
 
         dev_domain_url = f'https://{dev_domain.replace("_", ".")}'
         log_data["dev_domain"] = dev_domain

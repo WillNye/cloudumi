@@ -1,5 +1,4 @@
 """Configuration handling library."""
-import datetime
 import logging
 import logging.handlers
 import operator
@@ -11,16 +10,15 @@ import threading
 import time
 from collections import defaultdict
 from collections.abc import Mapping
-from logging import LoggerAdapter, LogRecord
+from logging import LoggerAdapter
 from threading import Timer
 from typing import Any, Dict, List, Optional, Union
 
 import boto3
 import botocore.exceptions
-import logmatic
 import sentry_sdk
+import structlog
 from cachetools import TTLCache, cached, cachedmethod
-from pytz import timezone
 
 import common.lib.noq_json as json
 from common.lib.aws.aws_secret_manager import get_aws_secret
@@ -121,12 +119,6 @@ class Configuration(metaclass=Singleton):
             self.get_tenant_specific_key("dynamic_config", tenant, {})
             != dynamic_config_j
         ):
-            self.get_logger("config").debug(
-                {
-                    **log_data,
-                    "message": "Refreshing dynamic configuration from Redis",
-                }
-            )
             self.config["site_configs"][tenant]["dynamic_config"] = dynamic_config_j
 
     def load_tenant_configurations_from_redis_or_s3(self):
@@ -191,7 +183,7 @@ class Configuration(metaclass=Singleton):
                     with open(extend_path, "r") as ymlfile:
                         extend_config = yaml.load(ymlfile)
                 except FileNotFoundError:
-                    logging.error(f"Unable to open file: {s}", exc_info=True)
+                    self.log.error(f"Unable to open file: {s}", exc_info=True)
 
             dict_merge(self.config, extend_config)
             if extend_config.get("extends"):
@@ -480,10 +472,38 @@ class Configuration(metaclass=Singleton):
                 return default
         return value
 
+    def positional_to_keyword_processor(self, logger, method_name, event_dict):
+        if event_dict.get("event") and isinstance(event_dict["event"], dict):
+            event_dict = {**event_dict["event"], **event_dict}
+            del event_dict["event"]
+        if not event_dict.get("event"):
+            if event_dict.get("message"):
+                event_dict["event"] = event_dict["message"]
+                del event_dict["message"]
+            elif event_dict.get("error"):
+                event_dict["event"] = event_dict["error"]
+                del event_dict["error"]
+        return event_dict
+
+    def event_augmentor(self, logger, method_name, event_dict):
+        """
+        Add some extra information into (and remove extra from) event dict.
+        For now, adding:
+         * Hostname
+        Removing:
+          * Name if same as logger
+
+        """
+        event_dict["host"] = socket.gethostname()
+        if "name" in event_dict:
+            if event_dict["name"] == logger.name:
+                del event_dict["name"]
+        return event_dict
+
+    @cached(cache=TTLCache(maxsize=1024, ttl=120))
     def get_logger(self, name: Optional[str] = None) -> LoggerAdapter:
-        """Get logger."""
         if self.log:
-            return self.log
+            return structlog.get_logger(name=name)
         if not name:
             name = self.get("_global_.application_name", "noq")
         level_c = self.get("_global_.logging.level", "debug")
@@ -500,81 +520,79 @@ class Configuration(metaclass=Singleton):
         else:
             # default
             level = logging.DEBUG
-        filter_c = ContextFilter()
-        format_c = self.get(
-            "_global_.logging.format",
-            "%(asctime)s - %(levelname)s - %(name)s - [%(filename)s:%(lineno)s - %(funcName)s() ] - %(message)s",
+
+        logging.basicConfig(level=level)
+        root_logger = logging.getLogger(name)
+        root_logger.setLevel(level)
+        root_logger.addHandler(logging.StreamHandler())
+
+        # Env var will take precedence, but if not set, use the config value
+        stage = os.getenv("STAGE", self.get("_global_.environment", "dev"))
+        renderer = (
+            structlog.dev.ConsoleRenderer()
+            if stage == "dev"
+            else structlog.processors.JSONRenderer(serializer=json.dumps)
+        )
+        structlog.configure(
+            processors=[
+                self.positional_to_keyword_processor,
+                structlog.stdlib.add_logger_name,
+                self.event_augmentor,
+                structlog.stdlib.add_log_level,
+                structlog.contextvars.merge_contextvars,
+                structlog.stdlib.PositionalArgumentsFormatter(),
+                structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M.%S"),
+                structlog.processors.StackInfoRenderer(),
+                structlog.dev.set_exc_info,
+                renderer,
+            ],
+            wrapper_class=structlog.make_filtering_bound_logger(level),
+            context_class=dict,
+            logger_factory=structlog.stdlib.LoggerFactory(),
+            cache_logger_on_first_use=True,
         )
 
-        logging.basicConfig(level=level, format=format_c)
-        logger = logging.getLogger(name)
-        logger.addFilter(filter_c)
-
-        extra = {"eventTime": datetime.datetime.now(timezone("US/Pacific")).isoformat()}
-
-        # Log to stdout and disk
-        if self.get("_global_.logging.stdout_enabled", True):
-            logger.propagate = False
-            handler = logging.StreamHandler(sys.stdout)
-            handler.setFormatter(
-                logmatic.JsonFormatter(
-                    json_indent=self.get("_global_.logging.json_formatter.indent")
-                )
-            )
-            handler.setLevel(self.get("_global_.logging.stdout.level", "DEBUG"))
-            logger.addHandler(handler)
-            logging_file = self.get("_global_.logging.file")
-            if logging_file:
-                if "~" in logging_file:
-                    logging_file = os.path.expanduser(logging_file)
-                os.makedirs(os.path.dirname(logging_file), exist_ok=True)
-                file_handler = logging.handlers.TimedRotatingFileHandler(
-                    logging_file,
-                    when="d",
-                    interval=1,
-                    backupCount=5,
-                    encoding=None,
-                    delay=False,
-                )
-                file_handler.setFormatter(
-                    logmatic.JsonFormatter(
-                        json_indent=self.get("_global_.logging.json_formatter.indent")
-                    )
-                )
-                logger.addHandler(file_handler)
-        self.log = logging.LoggerAdapter(logger, extra)
+        logger = structlog.get_logger(name)
+        logger.debug("Initializing logger")
+        self.log = logger
         return self.log
 
     def set_logging_levels(self):
         default_logging_levels = {
             "amazondax": "WARNING",
             "asyncio": "WARNING",
-            "boto3": "CRITICAL",
             "boto": "CRITICAL",
+            "boto3": "CRITICAL",
+            "botocore.hooks": "WARNING",
             "botocore": "CRITICAL",
+            "common.lib.plugins.fluent_bit": "WARNING",
+            "elasticapm.conf": "WARNING",
+            "elasticapm.metrics": "WARNING",
+            "elasticapm.transport.http": "WARNING",
+            "elasticapm.transport": "WARNING",
             "elasticsearch.trace": "ERROR",
             "elasticsearch": "ERROR",
+            "git.cmd": "WARNING",
+            "git": "WARNING",
+            "github.Requester": "WARNING",
+            "httpcore": "WARNING",
+            "httpx": "WARNING",
             "nose": "CRITICAL",
             "parso.python.diff": "WARNING",
+            "policy_sentry": "WARNING",
             "pynamodb": "WARNING",
             "raven.base.client": "WARNING",
+            "rediscluster.client": "WARNING",
+            "rediscluster.connection": "WARNING",
+            "rediscluster.nodemanager": "WARNING",
+            "root": "WARNING",
             "s3transfer": "CRITICAL",
+            "slack_sdk.web.async_base_client": "WARNING",
             "spectator.HttpClient": "WARNING",
             "spectator.Registry": "WARNING",
             "urllib3": "ERROR",
-            "rediscluster.nodemanager": "WARNING",
-            "rediscluster.connection": "WARNING",
-            "rediscluster.client": "WARNING",
-            "git.cmd": "WARNING",
-            "elasticapm.metrics": "WARNING",
-            "elasticapm.conf": "WARNING",
-            "elasticapm.transport": "WARNING",
-            "elasticapm.transport.http": "WARNING",
-            "github.Requester": "WARNING",
-            "slack_sdk.web.async_base_client": "WARNING",
-            "root": "WARNING",
-            "httpx:": "WARNING",
         }
+        logging.getLogger().setLevel("WARNING")  # For the root logger
         for logger, level in self.get(
             "_global_.logging_levels", default_logging_levels
         ).items():
@@ -619,16 +637,6 @@ class Configuration(metaclass=Singleton):
 
     def get_dax_endpoints(self):
         return self.get("_global_.dax_endpoints", [])
-
-
-class ContextFilter(logging.Filter):
-    """Logging Filter for adding hostname to log entries."""
-
-    hostname = socket.gethostname()
-
-    def filter(self, record: LogRecord) -> bool:
-        record.hostname = ContextFilter.hostname
-        return True
 
 
 CONFIG = Configuration()

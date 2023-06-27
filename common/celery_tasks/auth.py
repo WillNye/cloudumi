@@ -7,7 +7,7 @@ from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.yaml import yaml
 from common.models import SpokeAccount
 
-LOG = config.get_logger()
+LOG = config.get_logger(__name__)
 
 
 @app.task

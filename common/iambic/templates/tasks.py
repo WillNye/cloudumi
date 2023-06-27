@@ -36,7 +36,7 @@ from common.lib.asyncio import NoqSemaphore
 from common.pg_core.utils import bulk_add, bulk_delete
 from common.tenants.models import Tenant
 
-log = saas_config.get_logger()
+log = saas_config.get_logger(__name__)
 
 
 def get_template_provider_resource_id(

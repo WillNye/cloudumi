@@ -9,7 +9,7 @@ from common.lib.aws.access_undenied.access_undenied_aws import (
     resource_policy_utils,
 )
 
-logger = config.get_logger()
+logger = config.get_logger(__name__)
 
 
 class IamPolicyData(object):

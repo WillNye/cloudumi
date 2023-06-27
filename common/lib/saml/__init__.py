@@ -19,7 +19,7 @@ from common.lib.asyncio import aio_wrapper
 from common.lib.generic import should_force_redirect
 from common.lib.storage import TenantFileStorageHandler
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def init_saml_auth(request, tenant):

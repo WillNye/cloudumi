@@ -23,7 +23,7 @@ from common.models import (
     WebResponse,
 )
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class UserRegistrationHandler(TornadoRequestHandler):

@@ -17,7 +17,7 @@ from common.lib.generic import is_in_group
 from common.lib.plugins import get_plugin_by_name
 from common.models import ExtendedRequestModel, SpokeAccount
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class AuthenticatedResponse:

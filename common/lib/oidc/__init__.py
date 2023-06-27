@@ -23,7 +23,7 @@ from common.lib.cognito.identity import CognitoUserClient
 from common.lib.generic import should_force_redirect
 from common.lib.jwt import generate_jwt_token
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def populate_oidc_config(tenant):
@@ -368,7 +368,7 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
                             "Unable to derive user's groups from access_token. Attempting to get groups through "
                             "userinfo endpoint. "
                         ),
-                        "error": e,
+                        "error": str(e),
                         "user": email,
                     }
                 )
@@ -429,7 +429,7 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
                         {
                             **log_data,
                             "message": ("Unable to parse user's groups from id token"),
-                            "error": e,
+                            "error": str(e),
                             "user": email,
                             "groups": groups,
                         }

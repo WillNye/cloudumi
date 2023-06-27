@@ -18,7 +18,7 @@ import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import MissingConfigurationValue, UnableToAuthenticate
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def populate_oidc_config(tenant):
@@ -171,7 +171,7 @@ async def authenticate_user_by_alb_auth(request):
                 "message": (
                     "Unable to decode claims token. This is expected for some Identity Providers."
                 ),
-                "error": e,
+                "error": str(e),
                 "user": email,
             }
         )
@@ -189,7 +189,7 @@ async def authenticate_user_by_alb_auth(request):
             {
                 **log_data,
                 "message": (str(e)),
-                "error": e,
+                "error": str(e),
                 "user": email,
             }
         )

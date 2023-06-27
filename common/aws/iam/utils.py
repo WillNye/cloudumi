@@ -11,7 +11,7 @@ from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.sanitize import sanitize_session_name
 from common.models import SpokeAccount
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 with open(
     os.path.join(

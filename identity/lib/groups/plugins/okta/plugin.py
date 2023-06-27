@@ -13,7 +13,7 @@ from identity.lib.groups.models import (
     User,
 )
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class OktaGroupManagementPlugin(GroupManagementPlugin):

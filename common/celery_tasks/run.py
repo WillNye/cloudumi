@@ -7,7 +7,7 @@ from common.lib.plugins import fluent_bit
 
 # from functional_tests import run_tests as functional_tests  ## TODO (see below)
 
-logger = config.get_logger()
+logger = config.get_logger(__name__)
 
 if os.getenv("DEBUG"):
     os.system("systemctl start ssh")

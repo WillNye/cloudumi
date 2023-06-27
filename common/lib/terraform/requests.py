@@ -15,7 +15,7 @@ from common.models import (
     UserModel,
 )
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 # TODO:

@@ -20,7 +20,7 @@ from common.models import (
     UserModel,
 )
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def generate_honeybee_request_from_change_model_array(

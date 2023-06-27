@@ -13,7 +13,7 @@ from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.dynamo import UserDynamoHandler
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def get_resource_from_cloudtrail_deny(ct_event, raw_ct_event):
