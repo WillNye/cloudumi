@@ -8,7 +8,6 @@ from uuid import uuid4
 
 import pyotp
 import ujson as json
-from cachetools import TTLCache
 from sqlalchemy import (
     Boolean,
     Column,
@@ -26,7 +25,6 @@ from sqlalchemy.sql import select
 
 from common.config import config
 from common.config.globals import ASYNC_PG_SESSION
-from common.core.async_cached import noq_cached
 from common.group_memberships.models import GroupMembership  # noqa
 from common.lib.notifications import send_email_via_sendgrid
 from common.lib.password import generate_random_password
@@ -303,7 +301,6 @@ class User(SoftDeleteMixin, Base):
                 return user.scalars().first()
 
     @classmethod
-    @noq_cached(cache=TTLCache(maxsize=1024, ttl=600), cache_none=False)
     async def get_by_email(cls, tenant, email, get_groups=False):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
