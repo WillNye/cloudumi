@@ -63,9 +63,11 @@ module "tenant_s3_service" {
 module "tenant_messaging" {
   source = "./modules/services/messaging"
 
-  account_id = var.account_id
-  cluster_id = local.cluster_id
-  tags       = var.tags
+  account_id                    = var.account_id
+  cluster_id                    = local.cluster_id
+  tags                          = var.tags
+  global_tenant_data_account_id = var.global_tenant_data_account_id
+  region                        = var.region
 }
 
 module "tenant_dynamodb_service" {

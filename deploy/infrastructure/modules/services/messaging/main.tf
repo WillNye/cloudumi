@@ -166,3 +166,17 @@ resource "aws_sns_topic_subscription" "registration_response_queue_subscription_
   protocol  = "sqs"
   endpoint  = aws_sqs_queue.registration_response_queue.arn
 }
+
+
+resource "aws_sqs_queue" "github_app_webhook" {
+  name                      = "${var.cluster_id}-github-app-webhook"
+  message_retention_seconds = 86400
+  receive_wait_time_seconds = 10
+}
+
+
+resource "aws_sns_topic_subscription" "github_app_webhook" {
+  topic_arn = "arn:aws:sns:${var.region}:${var.global_tenant_data_account_id}:github-app-noq-webhook"
+  protocol  = "sqs"
+  endpoint  = aws_sqs_queue.github_app_webhook.arn
+}
