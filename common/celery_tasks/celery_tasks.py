@@ -3099,6 +3099,11 @@ schedule = {
         "options": {"expires": 180},
         "schedule": schedule_15_seconds,
     },
+    "handle_github_webhook_integration_queue": {
+        "task": "common.celery_tasks.celery_tasks.handle_github_webhook_integration_queue",
+        "options": {"expires": 180},
+        "schedule": schedule_15_seconds,
+    },
     "cache_terraform_resources_task_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.cache_terraform_resources_task_for_all_tenants",
         "options": {"expires": 180},
@@ -3131,16 +3136,6 @@ schedule = {
     },
 }
 
-
-# FIXME Debugging
-# once finished debugging, integrate this with the rest of schedule
-schedule = {
-    "handle_github_webhook_integration_queue": {
-        "task": "common.celery_tasks.celery_tasks.handle_github_webhook_integration_queue",
-        "options": {"expires": 180},
-        "schedule": schedule_15_seconds,
-    },
-}
 
 if internal_celery_tasks and isinstance(internal_celery_tasks, dict):
     schedule = {**schedule, **internal_celery_tasks}
