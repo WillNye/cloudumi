@@ -5,6 +5,11 @@ import { IWebResponse } from './types';
 const SAML_URL = `${V4_API_URL}/auth/sso/saml`;
 const OIDC_URL = `${V4_API_URL}/auth/sso/oidc`;
 
+export const fetchOidcWellKnownConfig = async (url): Promise<any> => {
+  const { data } = await axios.get(url);
+  return data;
+};
+
 export const fetchOidcSettings = async (): Promise<
   IWebResponse<OIDCResponse>
 > => {
