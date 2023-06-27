@@ -8,8 +8,7 @@ import {
   updateSAMLSettings,
   deleteOidcSettings,
   deleteSamlSettings,
-  fetchOidcWellKnownConfig,
-  GetUserByOidcSettings
+  fetchOidcWellKnownConfig
 } from 'core/API/ssoSettings';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
@@ -21,7 +20,7 @@ import { Checkbox } from 'shared/form/Checkbox';
 import { Input } from 'shared/form/Input';
 import { Block } from 'shared/layout/Block';
 import { LineBreak } from 'shared/elements/LineBreak';
-import { debounce } from 'lodash';
+import { debounce, merge } from 'lodash';
 
 // SAML Bindings: https://en.wikipedia.org/wiki/SAML_2.0#Bindings
 const BINDINGS = [
@@ -89,7 +88,40 @@ const DEFAULT_OIDC_SETTINGS = {
 };
 
 const DEFAULT_SAML_SETTINGS = {
-  saml: {}
+  saml: {
+    get_user_by_saml_settings: {
+      jwt: {
+        expiration_hours: 2,
+        email_key: 'email',
+        group_key: 'groups'
+      },
+      attributes: {
+        user: 'user',
+        groups: 'groups',
+        email: 'email'
+      },
+      idp_metadata_url: '',
+      sp: {
+        entityId: '',
+        assertionConsumerService: {
+          binding: '',
+          url: ''
+        }
+      },
+      idp: {
+        entityId: '',
+        singleSignOnService: {
+          binding: '',
+          url: ''
+        },
+        singleLogoutService: {
+          binding: '',
+          url: ''
+        },
+        x509cert: ''
+      }
+    }
+  }
 };
 
 const AUTH_DEFAULT_VALUES = {
@@ -125,103 +157,109 @@ const AuthenticationSettings = () => {
           then: schema => schema.required(),
           otherwise: schema => schema.notRequired()
         }),
-      oidc: Yup.object()
-        .shape({
-          get_user_by_oidc_settings: Yup.object().shape({
-            metadata_url: Yup.string().default(''),
-            client_scopes: Yup.array().of(Yup.string()).default([]),
-            include_admin_scope: Yup.boolean().default(false),
-            grant_type: Yup.string().default('authorization_code').required(),
-            id_token_response_key: Yup.string().default('id_token').required(),
-            access_token_response_key: Yup.string()
-              .default('access_token')
-              .required(),
-            jwt_email_key: Yup.string().default('email').required(),
-            enable_mfa: Yup.boolean().default(false),
-            get_groups_from_access_token: Yup.boolean().default(false),
-            access_token_audience: Yup.string().required(),
-            get_groups_from_userinfo_endpoint: Yup.boolean().default(false),
-            user_info_groups_key: Yup.string().default('groups').required()
-          }),
-          secrets: Yup.object().shape({
-            use: Yup.boolean().default(false),
-            oidc: Yup.object().when('use', {
-              is: true,
-              then: schema =>
-                schema.shape({
-                  client_id: Yup.string().required().min(1),
-                  client_secret: Yup.string().required().min(1)
+      oidc: Yup.object().when('ssoType', {
+        is: 'oidc',
+        then: schema =>
+          schema
+            .shape({
+              get_user_by_oidc_settings: Yup.object().shape({
+                metadata_url: Yup.string().url().default(''),
+                client_scopes: Yup.array().of(Yup.string()).default([]),
+                include_admin_scope: Yup.boolean().default(false),
+                grant_type: Yup.string()
+                  .default('authorization_code')
+                  .required(),
+                id_token_response_key: Yup.string()
+                  .default('id_token')
+                  .required(),
+                access_token_response_key: Yup.string()
+                  .default('access_token')
+                  .required(),
+                jwt_email_key: Yup.string().default('email').required(),
+                enable_mfa: Yup.boolean().default(false),
+                get_groups_from_access_token: Yup.boolean().default(false),
+                access_token_audience: Yup.string().required(),
+                get_groups_from_userinfo_endpoint: Yup.boolean().default(false),
+                user_info_groups_key: Yup.string().default('groups').required()
+              }),
+              secrets: Yup.object().shape({
+                use: Yup.boolean().default(false),
+                oidc: Yup.object().when('use', {
+                  is: true,
+                  then: schema =>
+                    schema.shape({
+                      client_id: Yup.string().required().min(1),
+                      client_secret: Yup.string().required().min(1)
+                    })
                 })
+              })
             })
-          })
-        })
-        .when('ssoType', {
-          is: 'oidc',
-          then: schema => schema.required(),
-          otherwise: schema => schema.notRequired()
-        })
-        .nullable()
-      // saml: Yup.object()
-      //   .shape({
-      //     get_user_by_saml_settings: Yup.object().shape({
-      //       jwt: Yup.object().shape({
-      //         expiration_hours: Yup.number().default(1),
-      //         email_key: Yup.string().default('email'),
-      //         group_key: Yup.string().default('groups')
-      //       }),
-      //       attributes: Yup.object().shape({
-      //         user: Yup.string().default('user'),
-      //         groups: Yup.string().default('groups'),
-      //         email: Yup.string().default('email')
-      //       }),
-      //       idp_metadata_url: Yup.string().default('').notRequired(),
-      //       idp: Yup.object()
-      //         .shape({
-      //           entityId: Yup.string().required(),
-      //           singleSignOnService: Yup.object()
-      //             .shape({
-      //               binding: Yup.string()
-      //                 .oneOf(BINDINGS)
-      //                 .default(BINDINGS[0])
-      //                 .required(),
-      //               url: Yup.string().url().required()
-      //             })
-      //             .notRequired(),
-      //           singleLogoutService: Yup.object()
-      //             .shape({
-      //               binding: Yup.string()
-      //                 .oneOf(BINDINGS)
-      //                 .default(BINDINGS[0])
-      //                 .required(),
-      //               url: Yup.string().url().required()
-      //             })
-      //             .notRequired(),
-      //           x509cert: Yup.string().required()
-      //         })
-      //         .when('idp_metadata_url', {
-      //           is: (idp_metadata_url: string) => idp_metadata_url != '',
-      //           then: schema => schema.required(),
-      //           otherwise: schema => schema.notRequired()
-      //         }),
-      //       sp: Yup.object()
-      //         .shape({
-      //           assertionConsumerService: Yup.object().shape({
-      //             binding: Yup.string()
-      //               .oneOf(BINDINGS)
-      //               .default(BINDINGS[0])
-      //               .required(),
-      //             url: Yup.string().url().required()
-      //           }),
-      //           entityId: Yup.string().required()
-      //         })
-      //         .notRequired()
-      //     })
-      //   })
-      //   .when('ssoType', {
-      //     is: 'saml',
-      //     then: schema => schema.required(),
-      //     otherwise: schema => schema.notRequired()
-      //   })
+            .required(),
+        otherwise: schema => schema.notRequired()
+      }),
+      saml: Yup.object().when('ssoType', {
+        is: 'saml',
+        then: schema =>
+          schema
+            .shape({
+              get_user_by_saml_settings: Yup.object().shape({
+                idp_metadata_url: Yup.string().url().default(''),
+                jwt: Yup.object().shape({
+                  expiration_hours: Yup.number().default(1),
+                  email_key: Yup.string().default('email'),
+                  group_key: Yup.string().default('groups')
+                }),
+                attributes: Yup.object().shape({
+                  user: Yup.string().default('user'),
+                  groups: Yup.string().default('groups'),
+                  email: Yup.string().default('email')
+                }),
+                idp: Yup.object().when('idp_metadata_url', {
+                  is: (idp_metadata_url: string) => !idp_metadata_url,
+                  then: schema =>
+                    schema
+                      .shape({
+                        entityId: Yup.string().required(),
+                        singleSignOnService: Yup.object()
+                          .shape({
+                            binding: Yup.string()
+                              .oneOf(BINDINGS)
+                              .default(BINDINGS[0])
+                              .required(),
+                            url: Yup.string().url().required()
+                          })
+                          .notRequired(),
+                        singleLogoutService: Yup.object()
+                          .shape({
+                            binding: Yup.string()
+                              .oneOf(BINDINGS)
+                              .default(BINDINGS[0])
+                              .required(),
+                            url: Yup.string().url().required()
+                          })
+                          .notRequired(),
+                        x509cert: Yup.string().required()
+                      })
+                      .required(),
+                  otherwise: schema => schema.notRequired()
+                }),
+                sp: Yup.object()
+                  .shape({
+                    assertionConsumerService: Yup.object().shape({
+                      binding: Yup.string()
+                        .oneOf([...BINDINGS, '', null])
+                        .default('')
+                        .notRequired(),
+                      url: Yup.string().url().notRequired()
+                    }),
+                    entityId: Yup.string()
+                  })
+                  .notRequired()
+              })
+            })
+            .required(),
+        otherwise: schema => schema.notRequired()
+      })
     })
     .required();
 
@@ -250,13 +288,11 @@ const AuthenticationSettings = () => {
     setError,
     clearErrors,
     formState: { isSubmitting, errors, isValid },
-    reset
+    getValues
   } = useForm({
     values: formValues,
     resolver: yupResolver(schema)
   });
-
-  // console.log(errors);
 
   // watch sso provider type
   const ssoType = watch('ssoType');
@@ -351,86 +387,55 @@ const AuthenticationSettings = () => {
   }, [getCurrentSsoType, setValue]);
 
   useEffect(() => {
-    // TODO: use setFormValues
-    type GetUserByOidcSettingsKeys = keyof GetUserByOidcSettings;
     if (oidcSettings?.get_user_by_oidc_settings) {
-      Object.entries(oidcSettings?.get_user_by_oidc_settings).forEach(
-        ([key, value]): void =>
-          setValue(
-            `oidc.get_user_by_oidc_settings.${
-              key as GetUserByOidcSettingsKeys
-            }`,
-            value
-          )
+      const data = merge(
+        {},
+        { ...DEFAULT_OIDC_SETTINGS },
+        {
+          oidc: {
+            get_user_by_oidc_settings: oidcSettings?.get_user_by_oidc_settings
+          }
+        }
       );
+      setFormValues(merge({ ...getValues() }, { ...data }));
     }
-  }, [oidcSettings?.get_user_by_oidc_settings, setValue]);
+  }, [getValues, oidcSettings?.get_user_by_oidc_settings, setValue]);
 
   useEffect(() => {
-    // TODO: setFormValues
     if (samlSettings?.get_user_by_saml_settings) {
-      // TODO: how to handle subkeys to typing, (e.g: keyof GetUserBySamlSettings)
-      Object.entries(samlSettings?.get_user_by_saml_settings).forEach(
-        ([key, value]) =>
-          setValue(
-            `samlSettings.get_user_by_saml_settings.${key}` as any,
-            value
-          )
+      const data = merge(
+        {},
+        { ...DEFAULT_SAML_SETTINGS },
+        {
+          saml: {
+            get_user_by_saml_settings: samlSettings.get_user_by_saml_settings
+          }
+        }
       );
+
+      setFormValues(merge({}, { ...getValues() }, { ...data }));
     }
-  }, [samlSettings?.get_user_by_saml_settings, setValue]);
-
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      if (ssoType === 'oidc') {
-        await deleteSamlSettings();
-      } else if (ssoType === 'saml') {
-        await deleteOidcSettings();
-      } else if (ssoType === 'none') {
-        await deleteOidcSettings();
-        await deleteSamlSettings();
-      }
-    },
-    mutationKey: ['deleteSsoSettings'],
-    onSuccess: () => {
-      // TODO: after save, if user tries to edit ssoType again, before values are being shown (form not reset?)
-      setFormValues({
-        ...formValues,
-        ...DEFAULT_OIDC_SETTINGS,
-        ...DEFAULT_SAML_SETTINGS
-      });
-      reset();
-
-      queryClient.invalidateQueries({ queryKey: [`samlSettings`] });
-      queryClient.invalidateQueries({ queryKey: [`oidcSettings`] });
-
-      setSuccessMessage('Settings removed successfully');
-    }
-  });
+  }, [getValues, samlSettings?.get_user_by_saml_settings, setValue]);
 
   const { isLoading: isLoadingSave, mutateAsync: saveMutation } = useMutation({
     mutationFn: async (data: any) => {
       if (ssoType === 'oidc') {
         await updateOIDCSettings(data);
+        await deleteSamlSettings();
       } else if (ssoType === 'saml') {
         await updateSAMLSettings(data);
+        await deleteOidcSettings();
       } else if (ssoType === 'none') {
-        await deleteMutation.mutateAsync();
+        await deleteOidcSettings();
+        await deleteSamlSettings();
       }
     },
     mutationKey: ['ssoSettings'],
     onSuccess: () => {
-      if (ssoType === 'none') {
-        // info: queries were invalidate at delete mutation
-      } else {
-        queryClient.invalidateQueries({ queryKey: [`${ssoType}Settings`] });
-        setSuccessMessage('Settings saved successfully');
-        setFormValues({
-          ...formValues,
-          ...(ssoType === 'saml' ? DEFAULT_OIDC_SETTINGS : {}),
-          ...(ssoType === 'oidc' ? DEFAULT_SAML_SETTINGS : {})
-        });
-      }
+      queryClient.invalidateQueries({ queryKey: [`samlSettings`] });
+      queryClient.invalidateQueries({ queryKey: [`oidcSettings`] });
+
+      setSuccessMessage('Settings saved successfully');
     }
   });
 
@@ -440,12 +445,7 @@ const AuthenticationSettings = () => {
     } else {
       setIsLoading(false);
     }
-  }, [
-    samlQuery.isLoading,
-    oidcQuery.isLoading,
-    deleteMutation.isLoading,
-    isLoadingSave
-  ]);
+  }, [samlQuery.isLoading, oidcQuery.isLoading, isLoadingSave]);
 
   /**
    * Parse body to save settings
@@ -454,14 +454,11 @@ const AuthenticationSettings = () => {
    */
   const parseBody = settings => {
     if (ssoType == 'oidc') {
-      console.log(settings);
-
       const secrets = settings?.oidc?.secrets?.use
         ? {
             secrets: {
               oidc: {
-                client_id: settings.oidc.secrets.client_id,
-                client_secret: settings.oidc.secrets.client_secret
+                ...settings.oidc.secrets.oidc
               }
             }
           }
@@ -509,81 +506,85 @@ const AuthenticationSettings = () => {
         ...auth
       };
     } else if (ssoType == 'saml') {
-      return {
+      const get_user_by_saml_settings = {
         get_user_by_saml_settings: {
           jwt: {
             expiration_hours: 2
           },
           attributes: {
-            user: 'user',
-            groups: 'groups',
-            email: 'email'
+            user: settings.saml.get_user_by_saml_settings.attributes.user,
+            groups: settings.saml.get_user_by_saml_settings.attributes.groups,
+            email: settings.saml.get_user_by_saml_settings.attributes.email
           },
           idp_metadata_url:
-            'https://dev-876967.okta.com/app/exkd7qjwdu0bLgfIJ4x7/sso/saml/metadata',
-          idp: null,
+            settings.saml.get_user_by_saml_settings.idp_metadata_url ?? null,
+          // if idp_metadata_url is not set, use idp object
+          ...(!settings.saml.get_user_by_saml_settings.idp_metadata_url
+            ? {
+                idp: {
+                  entityId:
+                    settings.saml.get_user_by_saml_settings.idp.entityId,
+                  singleSignOnService: {
+                    binding:
+                      settings.saml.get_user_by_saml_settings.idp
+                        .singleSignOnService.binding,
+                    url: settings.saml.get_user_by_saml_settings.idp
+                      .singleSignOnService.url
+                  },
+                  singleLogoutService: {
+                    binding:
+                      settings.saml.get_user_by_saml_settings.idp
+                        .singleLogoutService.binding,
+                    url: settings.saml.get_user_by_saml_settings.idp
+                      .singleLogoutService.url
+                  },
+                  x509cert: settings.saml.get_user_by_saml_settings.idp.x509cert
+                }
+              }
+            : { idp: null }),
+          // if sp is not set, then set it to null
           sp: {
-            entityId: 'afab1597-aebe-417e-b3f1-fc87dece18c8',
-            assertionConsumerService: {
-              binding: 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
-              url: 'https://jonathanloscalzo.example.com:3000/saml/acs'
-            }
+            // if entityId is not set, then set it to null
+            ...(settings.saml.get_user_by_saml_settings.sp.entityId && {
+              entityId: settings.saml.get_user_by_saml_settings.sp.entityId
+            }),
+            // if assertionConsumerService is not set, then set it to null
+            ...(settings.saml.get_user_by_saml_settings.sp
+              .assertionConsumerService
+              ? {
+                  assertionConsumerService: {
+                    binding:
+                      settings.saml.get_user_by_saml_settings.sp
+                        .assertionConsumerService.binding,
+                    url: settings.saml.get_user_by_saml_settings.sp
+                      .assertionConsumerService.url
+                  }
+                }
+              : { sp: null })
           }
-        },
+        }
+      };
+
+      const auth = {
         auth: {
           get_user_by_oidc: false,
           get_user_by_saml: true,
-          extra_auth_cookies: ['AWSELBAuthSessionCookie'],
-          force_redirect_to_identity_provider: false
+          extra_auth_cookies: settings.auth.extra_auth_cookies,
+          force_redirect_to_identity_provider:
+            settings.auth.force_redirect_to_identity_provider
         }
       };
-      // {
-      //   get_user_by_saml_settings: {
-      //     jwt: {
-      //       expiration_hours: 2
-      //     },
-      //     attributes: {
-      //       user: 'user',
-      //       groups: 'groups',
-      //       email: 'email'
-      //     },
-      //     idp_metadata_url: null,
-      //     sp: {
-      //       entityId: 'afab1597-aebe-417e-b3f1-fc87dece18c8',
-      //       assertionConsumerService: {
-      //         binding: 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
-      //         url: 'https://jonathanloscalzo.example.com:3000/saml/acs'
-      //       }
-      //     },
-      //     idp: {
-      //       entityId: 'urn:dev-o6hu-9yg.us.auth0.com',
-      //       singleSignOnService: {
-      //         binding: 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
-      //         url: 'https://dev-o6hu-9yg.us.auth0.com/samlp/qOQcmWU2t3thJ1umrGpGHBRnkhq48FOa'
-      //       },
-      //       singleLogoutService: {
-      //         binding: 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
-      //         url: 'https://dev-o6hu-9yg.us.auth0.com/samlp/qOQcmWU2t3thJ1umrGpGHBRnkhq48FOa/logout'
-      //       },
-      //       x509cert:
-      //         'MIIDDTCCAfWgAwIBAgIJSXpJqrLtCzb1MA0GCSqGSIb3DQEBCwUAMCQxIjAgBgNVBAMTGWRldi1vNmh1LTl5Zy51cy5hdXRoMC5jb20wHhcNMjAwODI1MDM1OTA2WhcNMzQwNTA0MDM1OTA2WjAkMSIwIAYDVQQDExlkZXYtbzZodS05eWcudXMuYXV0aDAuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2sBtN9DaZ197rfxyAxfUL6UXoanv6DI52g/4+fA4WVIWwRlctX0PRpiM9QMPWdvf/KK5BmNt2e+lEhZjnohlEPYYeXvMfLWzhaB3d2OiD2x8ys3UJ+hBjk8P3c7g55pBqBjyc/TrG56W6eKd/Fxvik/CpFkakO6hPbHKUl71sqmcg4lFK45scZr+xNQ7uXlx2fzCcLBiPy0tph6Rny0OYnlYOd8fn47XL8FWxPVqCmWjMRSsPL739bjCYGiT1Ia9K5ptGeTdGBjXmD7F5mVPqowCrr+A5GGMgI3DqZwFJ3fqPrsWnV0M5Ho3owJBQQZtwDdmqcipGUyhQLisMGAxnwIDAQABo0IwQDAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBQeGBLizIBcLHcS4oImRVb6BF0odDAOBgNVHQ8BAf8EBAMCAoQwDQYJKoZIhvcNAQELBQADggEBAEGgCstJN3HGtluIfFy23VvQ2FGq/s+ZjKGMvsJ0TU8DpfHwe9Hj0FaulrkXqaK+2SoojD7uAoHr9sZz9osCS+7X0oo+a1rEQzpQsio1xy2v2zfdRPDXHx1ICejkuWDrBCIoImpsolQPewMmngCQYEZDtkMdFomDNfguVdp4z3JTVzjQu/fPtSi0t/Knu5VtEqrdRthAFjZBY/DoS5FDH0X1QniqKMBOBD8HWlC0bP8MXxl8TjdjJnOnnFdLBzzP7mqtQwfa8o3KO8locvWL+Sl150iajzX+kGmFljwBDn3BE2Iu7B1J7pabjYYZZTHh2An/3Iq6QMNzA6cFlo1mBsE='
-      //     }
-      //   },
-      //   auth: {
-      //     get_user_by_oidc: false,
-      //     get_user_by_saml: true,
-      //     extra_auth_cookies: ['AWSELBAuthSessionCookie'],
-      //     force_redirect_to_identity_provider: false
-      //   }
-      // };
+
+      return {
+        ...get_user_by_saml_settings,
+        ...auth
+      };
     } else {
       return null;
     }
   };
 
   const handleSave = handleSubmit(async newSettings => {
-    // TODO: check if oidc.secrets.use is true, then oidc.secrets.oidc.client_id and oidc.secrets.oidc.client_secret must be filled
-
     const body = parseBody(newSettings);
     if (isValid) {
       await saveMutation(body);
@@ -597,6 +598,7 @@ const AuthenticationSettings = () => {
           type={NotificationType.ERROR}
           header={errorMessage}
           showCloseIcon={true}
+          onClose={() => setErrorMessage(null)}
           fullWidth
         />
       )}
@@ -605,6 +607,7 @@ const AuthenticationSettings = () => {
           type={NotificationType.SUCCESS}
           header={successMessage}
           showCloseIcon={true}
+          onClose={() => setSuccessMessage(null)}
           fullWidth
         />
       )}
@@ -673,9 +676,10 @@ const AuthenticationSettings = () => {
               name="oidc.get_user_by_oidc_settings.client_scopes"
               control={control}
               render={({ field }) => (
-                <>
+                <Block disableLabelPadding label="Client Scopes" required>
                   <Select
                     multiple={true}
+                    closeOnSelect={false}
                     name="oidc.get_user_by_oidc_settings.client_scopes"
                     value={watch(
                       'oidc.get_user_by_oidc_settings.client_scopes'
@@ -693,7 +697,7 @@ const AuthenticationSettings = () => {
                       </SelectOption>
                     ))}
                   </Select>
-                </>
+                </Block>
               )}
             />
             <LineBreak />
@@ -800,7 +804,235 @@ const AuthenticationSettings = () => {
           </>
         )}
         {ssoType === 'saml' && (
-          <div>{/* Generate form fields from samlSettings */}</div>
+          <>
+            <Block disableLabelPadding label="Attributes User" required>
+              <Input
+                {...register('saml.get_user_by_saml_settings.attributes.user')}
+              />
+              {errors?.saml?.get_user_by_saml_settings?.attributes?.user &&
+                errors?.saml?.get_user_by_saml_settings?.attributes?.user
+                  ?.message}
+            </Block>
+            <LineBreak />
+
+            <Block disableLabelPadding label="Attributes email" required>
+              <Input
+                {...register('saml.get_user_by_saml_settings.attributes.email')}
+              />
+              {errors?.saml?.get_user_by_saml_settings?.attributes?.email &&
+                errors?.saml?.get_user_by_saml_settings?.attributes?.email
+                  ?.message}
+            </Block>
+            <LineBreak />
+
+            <Block disableLabelPadding label="Attributes groups" required>
+              <Input
+                {...register(
+                  'saml.get_user_by_saml_settings.attributes.groups'
+                )}
+              />
+              {errors?.saml?.get_user_by_saml_settings?.attributes?.groups &&
+                errors?.saml?.get_user_by_saml_settings?.attributes?.groups
+                  ?.message}
+            </Block>
+            <LineBreak />
+
+            <Block disableLabelPadding label="idp_metadata_url" required>
+              <Input
+                {...register('saml.get_user_by_saml_settings.idp_metadata_url')}
+              />
+              {
+                errors?.saml?.get_user_by_saml_settings?.idp_metadata_url
+                  ?.message
+              }
+            </Block>
+            <LineBreak />
+            {!watch('saml.get_user_by_saml_settings.idp_metadata_url') && (
+              <>
+                <Block disableLabelPadding label="IDP Entity ID" required>
+                  <Input
+                    {...register('saml.get_user_by_saml_settings.idp.entityId')}
+                  />
+                  {errors?.saml?.get_user_by_saml_settings?.idp?.entityId &&
+                    errors?.saml?.get_user_by_saml_settings?.idp?.entityId
+                      ?.message}
+                </Block>
+                <LineBreak />
+
+                <Block
+                  label="Single Sign On Service Binding"
+                  disableLabelPadding
+                  required
+                >
+                  <Controller
+                    name="saml.get_user_by_saml_settings.idp.singleSignOnService.binding"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        name="ssoType"
+                        value={watch(
+                          'saml.get_user_by_saml_settings.idp.singleSignOnService.binding'
+                        )}
+                        onChange={v =>
+                          setValue(
+                            'saml.get_user_by_saml_settings.idp.singleSignOnService.binding',
+                            v
+                          )
+                        }
+                      >
+                        {BINDINGS.map(binding => (
+                          <SelectOption key={binding} value={binding}>
+                            {binding}
+                          </SelectOption>
+                        ))}
+                      </Select>
+                    )}
+                  />
+                  {errors?.saml?.get_user_by_saml_settings?.idp
+                    ?.singleSignOnService.binding &&
+                    errors?.saml?.get_user_by_saml_settings?.idp
+                      ?.singleSignOnService.binding.message}
+                </Block>
+                <LineBreak />
+
+                <Block
+                  disableLabelPadding
+                  label="Single Sign On Service URL"
+                  required
+                >
+                  <Input
+                    {...register(
+                      'saml.get_user_by_saml_settings.idp.singleSignOnService.url'
+                    )}
+                  />
+                  {errors?.saml?.get_user_by_saml_settings?.idp
+                    ?.singleSignOnService.url &&
+                    errors?.saml?.get_user_by_saml_settings?.idp
+                      ?.singleSignOnService.url?.message}
+                </Block>
+                <LineBreak />
+
+                <Block
+                  label="Single Logout Service Binding"
+                  disableLabelPadding
+                  required
+                >
+                  <Controller
+                    name="saml.get_user_by_saml_settings.idp.singleLogoutService.binding"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        name="singleLogoutService.binding"
+                        value={watch(
+                          'saml.get_user_by_saml_settings.idp.singleLogoutService.binding'
+                        )}
+                        onChange={v =>
+                          setValue(
+                            'saml.get_user_by_saml_settings.idp.singleLogoutService.binding',
+                            v
+                          )
+                        }
+                      >
+                        {BINDINGS.map(binding => (
+                          <SelectOption key={binding} value={binding}>
+                            {binding}
+                          </SelectOption>
+                        ))}
+                      </Select>
+                    )}
+                  />
+                  {errors?.saml?.get_user_by_saml_settings?.idp
+                    ?.singleLogoutService?.binding &&
+                    errors?.saml?.get_user_by_saml_settings?.idp
+                      ?.singleLogoutService?.binding.message}
+                </Block>
+                <LineBreak />
+
+                <Block
+                  disableLabelPadding
+                  label="Single Logout Service URL"
+                  required
+                >
+                  <Input
+                    {...register(
+                      'saml.get_user_by_saml_settings.idp.singleLogoutService.url'
+                    )}
+                  />
+                  {errors?.saml?.get_user_by_saml_settings?.idp
+                    ?.singleLogoutService.url &&
+                    errors?.saml?.get_user_by_saml_settings?.idp
+                      ?.singleLogoutService.url?.message}
+                </Block>
+                <LineBreak />
+
+                <Block disableLabelPadding label="x509cert" required>
+                  <Input
+                    {...register('saml.get_user_by_saml_settings.idp.x509cert')}
+                  />
+                  {errors?.saml?.get_user_by_saml_settings?.idp?.x509cert &&
+                    errors?.saml?.get_user_by_saml_settings?.idp?.x509cert
+                      ?.message}
+                </Block>
+                <LineBreak />
+              </>
+            )}
+
+            <Block disableLabelPadding label="SP Entity ID">
+              <Input
+                {...register('saml.get_user_by_saml_settings.sp.entityId')}
+              />
+              {errors?.saml?.get_user_by_saml_settings?.sp?.entityId &&
+                errors?.saml?.get_user_by_saml_settings?.sp?.entityId?.message}
+            </Block>
+            <LineBreak />
+
+            <Block disableLabelPadding label="Assertion Consumer Service URL">
+              <Input
+                {...register(
+                  'saml.get_user_by_saml_settings.sp.assertionConsumerService.url'
+                )}
+              />
+              {errors?.saml?.get_user_by_saml_settings?.idp?.singleLogoutService
+                .url &&
+                errors?.saml?.get_user_by_saml_settings?.idp
+                  ?.singleLogoutService?.url?.message}
+            </Block>
+            <LineBreak />
+
+            <Block
+              label="Assertion Consumer Service Binding"
+              disableLabelPadding
+            >
+              <Controller
+                name="saml.get_user_by_saml_settings.sp.assertionConsumerService.binding"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    name="assertionConsumerService.binding"
+                    value={watch(
+                      'saml.get_user_by_saml_settings.sp.assertionConsumerService.binding'
+                    )}
+                    onChange={v =>
+                      setValue(
+                        'saml.get_user_by_saml_settings.sp.assertionConsumerService.binding',
+                        v
+                      )
+                    }
+                  >
+                    {BINDINGS.map(binding => (
+                      <SelectOption key={binding} value={binding}>
+                        {binding}
+                      </SelectOption>
+                    ))}
+                  </Select>
+                )}
+              />
+              {errors?.saml?.get_user_by_saml_settings?.sp
+                ?.assertionConsumerService?.binding &&
+                errors?.saml?.get_user_by_saml_settings?.sp
+                  ?.assertionConsumerService?.binding.message}
+            </Block>
+          </>
         )}
         <Button type="submit" disabled={isSubmitting}>
           Save
