@@ -172,3 +172,8 @@ resource "aws_lambda_function" "github_app_webhook" {
     mode = "Active"
   }
 }
+
+resource "aws_lambda_function_url" "github_app_webhook" {
+  function_name      = aws_lambda_function.github_app_webhook.function_name
+  authorization_type = "NONE"
+}

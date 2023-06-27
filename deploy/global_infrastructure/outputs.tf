@@ -18,6 +18,10 @@ output "github_app_webhook_sns_topic_arn" {
   value       = module.github_app_integration.github_app_webhook_sns_topic_arn
 }
 
+output "github_app_webhook_function_url" {
+  value = module.github_app_integration.function_url
+}
+
 output "global_profile" {
   description = "The selected profile"
   value       = var.profile
