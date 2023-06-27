@@ -51,10 +51,10 @@ class ManageOIDCSettingsCrudHandler(BaseAdminHandler):
                 reason=None,
                 data=oidc_settings.dict(
                     exclude_unset=False,
-                    exclude_none=True,
+                    exclude_none=False,
                     exclude_secrets=False,
                 ),
-            ).dict(exclude_unset=True, exclude_none=True)
+            ).dict(exclude_unset=True, exclude_none=False)
         )
 
     async def post(self):
@@ -94,10 +94,14 @@ class ManageOIDCSettingsCrudHandler(BaseAdminHandler):
                 exclude_secrets=False,
                 exclude_unset=False,
                 exclude_none=False,
-            ) | obj.dict(
-                exclude_secrets=False,
-                exclude_unset=False,
-                exclude_none=False,
+            ) | (
+                obj.dict(
+                    exclude_secrets=False,
+                    exclude_unset=False,
+                    exclude_none=False,
+                )
+                if obj is not None
+                else {}
             )
 
             upsert: dict = decode_config_secrets(
