@@ -22,7 +22,7 @@ from common.lib.generic import un_wrap_json
 from common.models import SpokeAccount
 
 MAX_CONFIG_EVENTS_PER_RESOURCE = 50
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 def get_config_client(tenant: str, account: str, region: str = config.region):

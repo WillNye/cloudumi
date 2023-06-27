@@ -41,7 +41,7 @@ from common.templates import (
     new_user_with_password_email_template,
 )
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class User(SoftDeleteMixin, Base):

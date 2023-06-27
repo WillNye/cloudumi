@@ -8,7 +8,7 @@ from common.exceptions.exceptions import DataNotRetrievable, MissingConfiguratio
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.sanitize import sanitize_session_name
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 def detect_role_changes_and_update_cache(celery_app, tenant):

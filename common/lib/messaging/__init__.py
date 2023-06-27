@@ -1,10 +1,11 @@
 import json
-import logging
 from typing import Dict, Generator, List
 
 import boto3
 
-logger = logging.getLogger(__name__)
+from common.config import config
+
+logger = config.get_logger(__name__)
 
 
 def __get_queue_name_from_arn(event_source_arn: str) -> str:

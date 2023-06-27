@@ -10,7 +10,7 @@ from common.lib.aws.cached_resources.iam import get_user_active_tra_roles_by_tag
 from common.lib.filter import filter_data
 from common.models import DataTableResponse
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class RolesHandlerV4(BaseHandler):

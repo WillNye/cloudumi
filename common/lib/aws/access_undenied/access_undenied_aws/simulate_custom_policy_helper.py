@@ -21,7 +21,7 @@ from common.lib.aws.access_undenied.access_undenied_aws.iam_policy_data import (
 )
 from common.models import SpokeAccount
 
-logger = config.get_logger()
+logger = config.get_logger(__name__)
 
 if TYPE_CHECKING:
     from mypy_boto3_iam import IAMClient

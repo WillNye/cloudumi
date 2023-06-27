@@ -1,12 +1,12 @@
 from typing import Any, Dict, List, Type, Union
 
-from common.config import config, logger
+from common.config import config
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.pydantic import BaseModel
 from common.lib.yaml import yaml
 
 UPDATED_BY = "NOQ_Automation"
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class ModelAdapter:
@@ -149,7 +149,7 @@ class ModelAdapter:
         try:
             _model = self._model_class.parse_obj(config_item)
         except Exception as exc:
-            logger.log_dict_func(
+            log.error(
                 "exception",
                 tenant=self._tenant,
                 exc=exc,

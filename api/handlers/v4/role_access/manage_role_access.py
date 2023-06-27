@@ -9,7 +9,7 @@ from common.handlers.base import BaseHandler
 from common.lib.filter import filter_data_with_sqlalchemy
 from common.models import WebResponse
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class ManageRoleAccessHandler(BaseHandler):
