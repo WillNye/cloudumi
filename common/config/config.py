@@ -58,20 +58,6 @@ def dict_merge(dct: dict, merge_dct: dict):
     return dct
 
 
-def positional_to_keyword_processor(logger, method_name, event_dict):
-    if event_dict.get("event") and isinstance(event_dict["event"], dict):
-        event_dict = {**event_dict["event"], **event_dict}
-        del event_dict["event"]
-    if not event_dict.get("event"):
-        if event_dict.get("message"):
-            event_dict["event"] = event_dict["message"]
-            del event_dict["message"]
-        elif event_dict.get("error"):
-            event_dict["event"] = event_dict["error"]
-            del event_dict["error"]
-    return event_dict
-
-
 class Configuration(metaclass=Singleton):
     """Load YAML configuration files. YAML files can be extended to extend each other, to include common configuration
     values."""
