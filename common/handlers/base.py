@@ -418,6 +418,7 @@ class BaseHandler(TornadoRequestHandler):
         """Perform high level authorization flow."""
         # TODO: Prevent any sites being created with a subdomain that is a yaml keyword, ie: false, no, yes, true, etc
         # TODO: Return Authentication prompt regardless of subdomain
+        # TODO: When it fails, all the process got truncated. e.g. when saml setting is enabled but idp_metadata_url is not correct.
 
         tenant = self.get_tenant_name()
         tenant_config = TenantConfig(tenant)
