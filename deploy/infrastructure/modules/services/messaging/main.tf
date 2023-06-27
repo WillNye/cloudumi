@@ -178,3 +178,27 @@ resource "aws_sns_topic_subscription" "github_app_webhook" {
   protocol  = "sqs"
   endpoint  = aws_sqs_queue.github_app_webhook.arn
 }
+
+resource "aws_sqs_queue_policy" "github_app_webhook_queue_policy" {
+  queue_url = aws_sqs_queue.github_app_webhook.url
+
+  policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Id": "${var.cluster_id}-github_app_webhook-policy",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "sqs:SendMessage",
+      "Resource": "${aws_sqs_queue.github_app_webhook.arn}",
+      "Condition": {
+        "ArnEquals": {
+          "aws:SourceArn": "arn:aws:sns:${var.region}:${var.global_tenant_data_account_id}:github-app-noq-webhook"
+        }
+      }
+    }
+  ]
+}
+POLICY
+}

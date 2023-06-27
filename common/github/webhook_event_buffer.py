@@ -12,7 +12,47 @@ from common.lib.asyncio import aio_wrapper
 from common.lib.messaging import iterate_event_messages
 
 
+def get_developer_queue_name() -> str:
+    region = config.get("_global_.integrations.aws.region", "us-west-2")
+    sts_client = boto3.client("sts", region_name=region)
+    response = sts_client.get_caller_identity()
+    arn = response["Arn"]
+    session_name = arn.split("/")[-1]
+    assert session_name.endswith("@noq.dev")
+    developer_name = session_name.split("@noq.dev")[0]
+    return f"local-dev-{developer_name}-github-app-webhook"
+
+
+def get_developer_queue_arn() -> str:
+    region = config.get("_global_.integrations.aws.region", "us-west-2")
+    account_id = config.get("_global_.integrations.aws.account_id")
+    queue_name = get_developer_queue_name()
+    developer_queue_arn = f"arn:aws:sqs:{region}:{account_id}:{queue_name}"
+    return developer_queue_arn
+
+
+def allow_sns_to_write_to_sqs(topic_arn, queue_arn):
+    policy_document = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Sid": "MyPolicy",
+                "Effect": "Allow",
+                "Principal": {"AWS": "*"},
+                "Action": "SQS:SendMessage",
+                "Resource": queue_arn,
+                "Condition": {"ArnEquals": {"aws:SourceArn": topic_arn}},
+            }
+        ],
+    }
+    return json.dumps(policy_document)
+
+
 async def webhook_request_handler(request):
+    """
+    Note: this is where we wire up the control plane between webhook events and
+    Noq SaaS Self Service request
+    """
 
     headers = request["headers"]
     body = request["body"]
@@ -54,14 +94,15 @@ async def handle_github_webhook_event_queue(
             100,
         )
 
-    account_id = config.get("_global_.integrations.aws.account_id")
-    cluster_id = config.get("_global_.deployment.cluster_id")
-    region = config.get("_global_.integrations.aws.region")
     queue_arn = config.get(
         "_global_.integrations.github.webhook_event_buffer.queue_arn",
-        f"arn:aws:sqs:{region}:{account_id}:{cluster_id}-github-app-webhook-buffer",
+        None,
     )
-    if not queue_arn:
+
+    if config.is_development:
+        queue_arn = get_developer_queue_arn()
+
+    if not queue_arn and not config.is_development:
         raise MissingConfigurationValue(
             "Unable to find required configuration value: "
             "`_global_.integrations.github.webhook_event_buffer.queue_arn`"
@@ -98,228 +139,15 @@ async def handle_github_webhook_event_queue(
                     }
                 )
 
+                # BEGIN Actual work done, the
                 webhook_request = message["body"]
                 await webhook_request_handler(webhook_request)
-
-                # action_type = message["body"]["ResourceProperties"]["ActionType"]
-                # if action_type not in [
-                #     "AWSSpokeAcctRegistration",
-                #     "AWSCentralAcctRegistration",
-                # ]:
-                #     log_data["message"] = f"ActionType {action_type} not supported"
-                #     log.debug(log_data)
-                #     continue
-
-                # body = message.get("body", {})
-                # request_type = body.get("RequestType")
-                # response_url = body.get("ResponseURL")
-                # resource_properties = body.get("ResourceProperties", {})
-                # tenant = resource_properties.get("Host")
-                # external_id = resource_properties.get("ExternalId")
-                # physical_resource_id = external_id
-                # stack_id = body.get("StackId")
-                # request_id = body.get("RequestId")
-                # logical_resource_id = body.get("LogicalResourceId")
-
-                # if not (
-                #     body
-                #     or physical_resource_id
-                #     or response_url
-                #     or tenant
-                #     or external_id
-                #     or resource_properties
-                #     or stack_id
-                #     or request_id
-                #     or logical_resource_id
-                # ):
-                #     # We don't have a CFN Physical Resource ID, so we can't respond to the request
-                #     # but we can make some noise in our logs
-                #     error_mesage = "SQS message doesn't have expected parameters"
-                #     sentry_sdk.capture_message(error_mesage, "error")
-                #     log.error(
-                #         {
-                #             **log_data,
-                #             "error": error_mesage,
-                #             "cf_message": body,
-                #             "physical_resource_id": physical_resource_id,
-                #             "response_url": response_url,
-                #             "tenant": tenant,
-                #             "external_id": external_id,
-                #             "resource_properties": resource_properties,
-                #             "stack_id": stack_id,
-                #             "request_id": request_id,
-                #         }
-                #     )
-                #     # There's no way to respond without some parameters
-                #     if (
-                #         response_url
-                #         and physical_resource_id
-                #         and stack_id
-                #         and request_id
-                #         and logical_resource_id
-                #         and tenant
-                #     ):
-                #         await return_cf_response(
-                #             "SUCCESS",
-                #             "OK",
-                #             response_url,
-                #             physical_resource_id,
-                #             stack_id,
-                #             request_id,
-                #             logical_resource_id,
-                #             tenant,
-                #         )
-                #     continue
-
-                # if request_type not in ["Create", "Update", "Delete"]:
-                #     log.error(
-                #         {
-                #             **log_data,
-                #             "error": "Unknown RequestType",
-                #             "cf_message": body,
-                #             "request_type": request_type,
-                #         }
-                #     )
-                #     await return_cf_response(
-                #         "FAILED",
-                #         "Unknown Request Type",
-                #         response_url,
-                #         physical_resource_id,
-                #         stack_id,
-                #         request_id,
-                #         logical_resource_id,
-                #         tenant,
-                #     )
-                #     continue
-
-                # if request_type in ["Update", "Delete"]:
-                #     # Send success message to CloudFormation
-                #     await return_cf_response(
-                #         "SUCCESS",
-                #         "OK",
-                #         response_url,
-                #         physical_resource_id,
-                #         stack_id,
-                #         request_id,
-                #         logical_resource_id,
-                #         tenant,
-                #     )
-                #     # TODO: Handle deletion in Noq. It's okay if this is manual for now.
-                #     continue
-
-                # if action_type == "AWSSpokeAcctRegistration":
-                #     res = await handle_spoke_account_registration(body)
-                # elif action_type == "AWSCentralAcctRegistration":
-                #     res = await handle_central_account_registration(body)
-                # else:
-                #     error_message = "ActionType not supported"
-                #     log.error(
-                #         {
-                #             **log_data,
-                #             "error": error_message,
-                #             "cf_message": body,
-                #             "request_type": request_type,
-                #             "action_type": action_type,
-                #             "physical_resource_id": physical_resource_id,
-                #             "response_url": response_url,
-                #             "tenant": tenant,
-                #             "external_id": external_id,
-                #             "resource_properties": resource_properties,
-                #             "stack_id": stack_id,
-                #             "request_id": request_id,
-                #         }
-                #     )
-                #     sentry_sdk.capture_message(error_message, "error")
-                #     await return_cf_response(
-                #         "FAILED",
-                #         error_message,
-                #         response_url,
-                #         physical_resource_id,
-                #         stack_id,
-                #         request_id,
-                #         logical_resource_id,
-                #         tenant,
-                #     )
-                #     continue
-
-                # if res["success"]:
-                #     await return_cf_response(
-                #         "SUCCESS",
-                #         "OK",
-                #         response_url,
-                #         physical_resource_id,
-                #         stack_id,
-                #         request_id,
-                #         logical_resource_id,
-                #         tenant,
-                #     )
-                # else:
-                #     await return_cf_response(
-                #         "FAILED",
-                #         res["message"],
-                #         response_url,
-                #         physical_resource_id,
-                #         stack_id,
-                #         request_id,
-                #         logical_resource_id,
-                #         tenant,
-                #     )
-                #     continue
-                # # TODO: Refresh configuration
-                # # Ensure it is written to Redis. trigger refresh job in worker
-
-                # account_id_for_role = body["ResourceProperties"]["AWSAccountId"]
-                # celery_app.send_task(
-                #     "common.celery_tasks.celery_tasks.cache_iam_resources_for_account",
-                #     args=[account_id_for_role],
-                #     kwargs={"tenant": tenant},
-                # )
-                # celery_app.send_task(
-                #     "common.celery_tasks.celery_tasks.cache_s3_buckets_for_account",
-                #     args=[account_id_for_role],
-                #     kwargs={"tenant": tenant},
-                # )
-                # celery_app.send_task(
-                #     "common.celery_tasks.celery_tasks.cache_sns_topics_for_account",
-                #     args=[account_id_for_role],
-                #     kwargs={"tenant": tenant},
-                # )
-                # celery_app.send_task(
-                #     "common.celery_tasks.celery_tasks.cache_sqs_queues_for_account",
-                #     args=[account_id_for_role],
-                #     kwargs={"tenant": tenant},
-                # )
-                # celery_app.send_task(
-                #     "common.celery_tasks.celery_tasks.cache_managed_policies_for_account",
-                #     args=[account_id_for_role],
-                #     kwargs={"tenant": tenant},
-                # )
-                # celery_app.send_task(
-                #     "common.celery_tasks.celery_tasks.cache_resources_from_aws_config_for_account",
-                #     args=[account_id_for_role],
-                #     kwargs={"tenant": tenant},
-                # )
-                # celery_app.send_task(
-                #     "common.celery_tasks.celery_tasks.cache_self_service_typeahead_task",
-                #     kwargs={"tenant": tenant},
-                #     countdown=120,
-                # )
-                # celery_app.send_task(
-                #     "common.celery_tasks.celery_tasks.cache_organization_structure",
-                #     kwargs={"tenant": tenant},
-                # )
-                # celery_app.send_task(
-                #     "common.celery_tasks.celery_tasks.cache_scps_across_organizations",
-                #     kwargs={"tenant": tenant},
-                #     countdown=120,
-                # )
+                # END special sauce, the rest is boilerplate
 
             except Exception:
                 # Questions: what is the expected Dead Letter Queue pattern?
                 raise
         if processed_messages:
-            # FIXME: temporary skip out delete messages during debugging
-            pass
             await aio_wrapper(
                 sqs_client.delete_message_batch,
                 QueueUrl=queue_url,
