@@ -14,7 +14,7 @@ data "aws_iam_policy_document" "sns_assume_role" {
 }
 
 resource "aws_iam_role" "sns_failure_feedback" {
-  name               = "SNSFailureFeedback"
+  name               = "GitHubSNSFailureFeedback"
   assume_role_policy = data.aws_iam_policy_document.sns_assume_role.json
 
   inline_policy {
@@ -101,31 +101,9 @@ data "aws_iam_policy_document" "assume_role" {
 
 # This is to optionally manage the CloudWatch Log Group for the Lambda Function.
 # If skipping this resource configuration, also add "logs:CreateLogGroup" to the IAM policy below.
-resource "aws_cloudwatch_log_group" "example" {
+resource "aws_cloudwatch_log_group" "github_app_noq_webhook" {
   name              = "/aws/lambda/${var.lambda_function_name}"
   retention_in_days = 14
-}
-
-# See also the following AWS managed policy: AWSLambdaBasicExecutionRole
-data "aws_iam_policy_document" "lambda_logging" {
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents",
-    ]
-
-    resources = ["arn:aws:logs:*:*:*"]
-  }
-}
-
-resource "aws_iam_policy" "lambda_logging" {
-  name        = "lambda_logging"
-  path        = "/"
-  description = "IAM policy for logging from a lambda"
-  policy      = data.aws_iam_policy_document.lambda_logging.json
 }
 
 resource "aws_iam_role" "github_app_noq_webhook_lambda" {
@@ -133,7 +111,7 @@ resource "aws_iam_role" "github_app_noq_webhook_lambda" {
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 
   inline_policy {
-    name = "my_inline_policy"
+    name = "sns_publish"
 
     policy = jsonencode({
       Version = "2012-10-17"
@@ -146,11 +124,25 @@ resource "aws_iam_role" "github_app_noq_webhook_lambda" {
       ]
     })
   }
-}
 
-resource "aws_iam_role_policy_attachment" "lambda_logs" {
-  role       = aws_iam_role.github_app_noq_webhook_lambda.name
-  policy_arn = aws_iam_policy.lambda_logging.arn
+  inline_policy {
+    name = "lambda_logs"
+
+    policy = jsonencode({
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Action = [
+            "logs:CreateLogGroup",
+            "logs:CreateLogStream",
+            "logs:PutLogEvents",
+          ]
+          Effect   = "Allow"
+          Resource = ["arn:aws:logs:*:*:*"]
+        },
+      ]
+    })
+  }
 }
 
 data "archive_file" "lambda_zip_file_int" {
