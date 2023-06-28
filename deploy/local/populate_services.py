@@ -43,10 +43,15 @@ tenant_secrets = yaml.load(get_aws_secret(tenant_secrets_arn))
 # FIXME once we are cool with the PR, either update it via secret manager
 # or just replace this whole tenant_secrets mechanism because repo_name is not much of secret
 tenant_secrets["iambic_repos"][0]["repo_name"] = "noqdev/iambic-templates"
-GITHUB_APP_ID_FOR_DEFAULT_LOCAL_DEV = 350775
-# The hardcoded ID is established when one install the GITHUB APP (noq-dev)
-# to GitHub noqdev organization.
-DEV_IAMBIC_TEMPLATES_INSTALLATION_ID = 38860442
+GITHUB_APP_ID_FOR_DEFAULT_LOCAL_DEV = config.get(
+    "_global_.integrations.github.local_dev.app_id"
+)
+assert GITHUB_APP_ID_FOR_DEFAULT_LOCAL_DEV
+DEV_IAMBIC_TEMPLATES_INSTALLATION_ID = config.get(
+    "_global_.integrations.github.local_dev.installation_id"
+)
+assert DEV_IAMBIC_TEMPLATES_INSTALLATION_ID
+
 
 GITHUB_APP_NOQ_DEV_WEBHOOK_SNS_ARN = (
     "arn:aws:sns:us-west-2:759357822767:github-app-noq-webhook"
@@ -700,10 +705,12 @@ if __name__ == "__main__":
     # they need to install their specific GitHub
     # to noqdev organization.
     if GITHUB_APP_ID == GITHUB_APP_ID_FOR_DEFAULT_LOCAL_DEV:
-        db_tenant: Tenant = async_to_sync(Tenant.get_by_attr)("name", "localhost")
-        async_to_sync(GitHubInstall.create)(
-            tenant=db_tenant, installation_id=DEV_IAMBIC_TEMPLATES_INSTALLATION_ID
-        )
+        local_tenants = ["localhost", "cloudumisamldev_com", "cloudumidev_com"]
+        for local_tenant in local_tenants:
+            db_tenant: Tenant = async_to_sync(Tenant.get_by_attr)("name", local_tenant)
+            async_to_sync(GitHubInstall.create)(
+                tenant=db_tenant, installation_id=DEV_IAMBIC_TEMPLATES_INSTALLATION_ID
+            )
 
     # Force a re-cache of cloud resources with updated configuration
     import common.scripts.initialize_redis  # noqa: F401,E402
