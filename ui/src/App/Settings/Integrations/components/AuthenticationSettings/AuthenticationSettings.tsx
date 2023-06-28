@@ -495,13 +495,25 @@ const AuthenticationSettings = () => {
     }
   });
 
+  // loading effect
   useEffect(() => {
-    if (samlQuery.isLoading || oidcQuery.isLoading) {
+    if (
+      samlQuery.isLoading ||
+      oidcQuery.isLoading ||
+      oidcQuery.isFetching ||
+      samlQuery.isFetching
+    ) {
       setIsLoading(true);
     } else {
       setIsLoading(false);
     }
-  }, [samlQuery.isLoading, oidcQuery.isLoading, isLoadingSave]);
+  }, [
+    samlQuery.isLoading,
+    oidcQuery.isLoading,
+    isLoadingSave,
+    oidcQuery.isFetching,
+    samlQuery.isFetching
+  ]);
 
   /**
    * Parse body to save settings
