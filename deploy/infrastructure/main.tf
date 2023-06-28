@@ -124,6 +124,7 @@ module "tenant_ecs_task_role" {
   cluster_id                       = local.cluster_id
   modify_ecs_task_role             = var.modify_ecs_task_role
   registration_queue_arn           = module.tenant_messaging.sqs_registration_queue_arn
+  github_app_noq_webhook_queue_arn = module.tenant_messaging.sqs_github_app_noq_webhook_queue_arn
   tenant_configuration_bucket_name = module.tenant_s3_service.tenant_configuration_bucket_name
   aws_secrets_manager_arn          = module.tenant_container_service.aws_secrets_manager_arn
   noq_core                         = var.noq_core
