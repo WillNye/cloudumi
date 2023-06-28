@@ -12,6 +12,7 @@ from common.config.globals import GITHUB_APP_URL, GITHUB_APP_WEBHOOK_SECRET
 from common.github.models import GitHubInstall, GitHubOAuthState
 from common.handlers.base import BaseAdminHandler, TornadoRequestHandler
 from common.iambic.utils import delete_iambic_repos, get_iambic_repo, save_iambic_repos
+from common.iambic_request.models import IambicRepo
 from common.lib.iambic.git import IambicGit
 from common.lib.pydantic import BaseModel
 from common.models import IambicRepoDetails, WebResponse
@@ -43,8 +44,9 @@ class GitHubCallbackHandler(TornadoRequestHandler):
         if self.repo_specified:
             from common.celery_tasks.celery_tasks import app as celery_app
 
+            # Trigger a full sync of all iambic tables/resources for the tenant
             celery_app.send_task(
-                "common.celery_tasks.celery_tasks.sync_iambic_templates_for_tenant",
+                "common.celery_tasks.celery_tasks.run_full_iambic_sync_for_tenant",
                 kwargs={"tenant": self.db_tenant.name},
             )
 
@@ -95,6 +97,7 @@ class GitHubCallbackHandler(TornadoRequestHandler):
             await save_iambic_repos(
                 db_tenant.name, iambic_repo, "GitHubCallbackHandler"
             )
+
         self.write("GitHub integration complete")
         self.db_tenant = db_tenant
 
@@ -143,6 +146,22 @@ class GitHubEventsHandler(TornadoRequestHandler):
         )
         if not tenant_github_install:
             raise HTTPError(400, "Unknown installation id")
+
+        if github_event_type == "push":
+            branch_name = github_event["ref"].split("/")[-1]
+            db_tenant: Tenant = await Tenant.get_by_id(tenant_github_install.tenant_id)
+            tenant_repos = await IambicRepo.get_all_tenant_repos(db_tenant.name)
+            for tenant_repo in tenant_repos:
+                if tenant_repo.repo_name == github_event["repository"]["full_name"]:
+                    if tenant_repo.default_branch_name == branch_name:
+                        celery_app.send_task(
+                            "common.celery_tasks.celery_tasks.sync_iambic_templates_for_tenant",
+                            kwargs={"tenant": db_tenant.name},
+                        )
+                    break
+
+            self.set_status(204)
+            return
 
         github_action = github_event["action"]
         if github_action == "deleted":

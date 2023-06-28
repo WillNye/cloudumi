@@ -407,6 +407,10 @@ class IambicRepo:
             gh_install = await GitHubInstall.get(tenant)
             if gh_install:
                 installation_id = gh_install.installation_id
+            else:
+                raise AttributeError(
+                    f"No GitHub installation found for tenant {tenant.name} github repo {repo_name}"
+                )
 
         iambic_repo_instance = cls(
             tenant=tenant,

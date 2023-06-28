@@ -6,6 +6,7 @@ from itertools import chain
 
 from sqlalchemy import select
 
+from common.config import config
 from common.config.globals import ASYNC_PG_SESSION
 from common.iambic.templates.models import IambicTemplate
 from common.pg_core.utils import bulk_add
@@ -16,6 +17,8 @@ from common.request_types.defaults.google_workspace import (
 )
 from common.request_types.utils import list_tenant_request_types
 from common.tenants.models import Tenant
+
+log = config.get_logger(__name__)
 
 
 async def upsert_tenant_request_types(tenant_name: str):
@@ -66,6 +69,15 @@ async def upsert_tenant_request_types(tenant_name: str):
     ):
         tenant.supported_template_types = tenant_template_types
         await tenant.write()
+
+        if not tenant.supported_template_types:
+            log.error(
+                {
+                    "message": "No template types supported for tenant",
+                    "tenant": tenant.name,
+                }
+            )
+            return
 
     tenant_request_types = await list_tenant_request_types(
         tenant.id, summary_only=False, exclude_deleted=False

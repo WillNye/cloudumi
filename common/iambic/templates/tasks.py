@@ -586,6 +586,36 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
         tenant_name (str): The name of the tenant.
     """
     tenant = await Tenant.get_by_name(tenant_name)
+    iambic_repos = await IambicRepo.get_all_tenant_repos(tenant.name)
+    if not iambic_repos:
+        log.error(
+            {
+                "message": "No valid IAMbic repos found for tenant",
+                "tenant": tenant.name,
+            }
+        )
+        tenant.supported_template_types = []
+        tenant.iambic_templates_last_parsed = None
+        await tenant.write()
+        await rollback_full_create(tenant)
+        return
+    elif len(iambic_repos) > 1:
+        log.warning(
+            {
+                "message": "More than 1 Iambic Template repo has been configured. "
+                "This will result in data being truncated in the cached template bucket.",
+                "tenant": tenant.name,
+            }
+        )
+
+    for iambic_repo in iambic_repos:
+        await iambic_repo.clone_or_pull_git_repo()
+
+    # TODO: Remove this legacy caching call
+    iambic_repo = iambic_repos[0]
+    iambic_config = IambicConfigInterface(iambic_repo)
+    await iambic_config.cache_aws_templates()
+
     iambic_templates_last_parsed = tenant.iambic_templates_last_parsed
     if iambic_templates_last_parsed:
         iambic_templates_last_parsed = pytz.UTC.localize(iambic_templates_last_parsed)
@@ -627,7 +657,6 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
             )
         return
 
-    iambic_repos = await IambicRepo.get_all_tenant_repos(tenant.name)
     # Iterate the tenants iambic repos
     for repo in iambic_repos:
         iambic_config_interface = IambicConfigInterface(repo)

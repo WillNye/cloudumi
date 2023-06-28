@@ -1,6 +1,5 @@
 import asyncio
 import json
-import sys
 from collections import defaultdict
 from typing import Optional
 
@@ -95,18 +94,11 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
     # Unfortunately, we don't currently have a way to get providers that are stored in a secret
     tenant = await Tenant.get_by_name(tenant_name)
     iambic_repos = await IambicRepo.get_all_tenant_repos(tenant_name)
-    iambic_repos = [
-        iambic_repo for iambic_repo in iambic_repos if iambic_repo.is_app_connected()
-    ]
     if not iambic_repos:
-        # early return because github app is not even connected.
-        # this is a cascade problem if github app is not connected,
-        # the repo cannot be fetched.
-        log.debug(
+        log.error(
             {
-                "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-                "tenant": tenant_name,
-                "message": "A git provider app is not connected to any configured repos.",
+                "message": "No valid IAMbic repos found for tenant",
+                "tenant": tenant.name,
             }
         )
         return
