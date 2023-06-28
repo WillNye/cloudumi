@@ -33,6 +33,11 @@ RUN apt-get update && \
     apt-get update && \
     apt-get install -y ncat openssh-server python3.11 python3.11-distutils python3-apt python3.11-dev python-is-python3 pkg-config awscli libpq-dev git-all python3.11-venv curl telnet iputils-ping sudo systemctl apt-transport-https libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb build-essential libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev unzip
 
+# Configure sshd
+RUN mkdir -p /var/run/sshd && \
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
 # Install pip, node and fluent-bit
 RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 && \
     curl -sL https://deb.nodesource.com/setup_18.x | bash && \
@@ -58,11 +63,6 @@ COPY ui/package.json ui/yarn.lock ./ui/
 RUN npm install yarn -g && \
     yarn --cwd frontend --dev && \
     yarn --cwd ui
-
-# Configure sshd
-RUN mkdir -p /var/run/sshd && \
-    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
-    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
 # Clean Up
 RUN apt-get clean && \
