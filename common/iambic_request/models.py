@@ -28,6 +28,7 @@ log = config.get_logger(__name__)
 
 RequestStatus = ENUM(
     "Pending",
+    "Pending in Git",
     "Approved",
     "Rejected",
     "Expired",
