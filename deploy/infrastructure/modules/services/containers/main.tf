@@ -65,6 +65,7 @@ resource "aws_ecr_repository" "noq_ecr_repository-api" {
 
 resource "aws_ecr_lifecycle_policy" "noq_ecr_repository-api-lifecycle_policy" {
   repository = aws_ecr_repository.noq_ecr_repository-api[0].name
+  count      = var.noq_core ? 1 : 0
 
   policy = <<EOF
 {
