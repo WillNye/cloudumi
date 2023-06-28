@@ -4,7 +4,6 @@ from typing import Any, Dict, Optional
 import boto3
 
 import common.lib.noq_json as json
-from api.handlers.v3.github.handler import verify_signature
 from common.config import config
 from common.exceptions.exceptions import DataNotRetrievable, MissingConfigurationValue
 from common.github.models import GitHubInstall
@@ -54,13 +53,14 @@ async def webhook_request_handler(request):
     Noq SaaS Self Service request
     """
 
-    headers = request["headers"]
     body = request["body"]
 
-    # the format is in sha256=<sig>
-    request_signature = headers["x-hub-signature-256"].split("=")[1]
-    # because this handler is unauthenticated, always verify signature before taking action
-    verify_signature(request_signature, body)
+    # signature is now being validated at the lambda serverless routing layer
+    # because that is deployed in a separate account. we are not re-validating
+    # the payload to avoid spreading the shared secret across account.
+    # payload is only propagated to the SaaS post signature validation
+    # see serverless/github-app-webhook-lambda.
+
     github_event = json.loads(body)
     github_installation_id = github_event["installation"]["id"]
 

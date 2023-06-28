@@ -1,5 +1,9 @@
 data "aws_organizations_organization" "owner" {}
 
+data "aws_secretsmanager_secret" "github_app_noq_webhook_secret" {
+  arn = var.github_app_noq_webhook_secret_arn
+}
+
 data "aws_iam_policy_document" "sns_assume_role" {
   statement {
     effect = "Allow"
@@ -111,6 +115,21 @@ resource "aws_iam_role" "github_app_noq_webhook_lambda" {
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 
   inline_policy {
+    name = "read_webhook_secret"
+
+    policy = jsonencode({
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Action   = ["secretsmanager:GetSecretValue"]
+          Effect   = "Allow"
+          Resource = data.aws_secretsmanager_secret.github_app_noq_webhook_secret.arn
+        },
+      ]
+    })
+  }
+
+  inline_policy {
     name = "sns_publish"
 
     policy = jsonencode({
@@ -160,11 +179,12 @@ resource "aws_lambda_function" "github_app_webhook" {
   function_name    = var.lambda_function_name
   role             = aws_iam_role.github_app_noq_webhook_lambda.arn
   handler          = "lambda_function.lambda_handler"
-  runtime          = "python3.9"
+  runtime          = "python3.10"
 
   environment {
     variables = {
-      topic_arn = aws_sns_topic.github_app_noq_webhook.arn
+      GITHUB_APP_NOQ_WEBHOOK_SNS_TOPIC_ARN = aws_sns_topic.github_app_noq_webhook.arn
+      GITHUB_APP_NOQ_WEBHOOK_SECRET_ARN    = data.aws_secretsmanager_secret.github_app_noq_webhook_secret.arn
     }
   }
 

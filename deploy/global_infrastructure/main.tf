@@ -37,6 +37,7 @@ module "tenant_dynamodb_service" {
 }
 
 module "github_app_integration" {
-  source = "./modules/services/github-app-integration"
-  tags   = var.tags
+  source                            = "./modules/services/github-app-integration"
+  tags                              = var.tags
+  github_app_noq_webhook_secret_arn = var.github_app_noq_webhook_secret_arn
 }

@@ -1,9 +1,9 @@
 # Associated account id
-account_id  = "615395543222"
-stage       = "staging"
-domain_name = "*.staging.noq.dev"
+account_id  = "759357822767"
+stage       = "dev"
+domain_name = "*.dev.noq.dev"
 
-profile = "noq_global_staging"
+profile = "development/development_admin"
 region  = "us-west-2"
 
 # Note tags cannot have variable names.
@@ -11,11 +11,11 @@ region  = "us-west-2"
 # Environment: {stage}
 tags = {
   "Name" : "noq.dev",
-  "Environment" : "staging",
+  "Environment" : "dev",
 }
 
 # Can be extended by adding regions to the list below
 dynamo_table_replica_regions = ["us-west-2"]
 s3_access_log_bucket         = "noq-global-staging-s3-access-logs"
 
-github_app_noq_webhook_secret_arn = "arn:aws:secretsmanager:us-west-2:615395543222:secret:global-staging/github-app-webhook-secret-z31r2p"
+github_app_noq_webhook_secret_arn = "arn:aws:secretsmanager:us-west-2:759357822767:secret:global-dev/github-app-noq-dev-webhook-secret-037YW9"

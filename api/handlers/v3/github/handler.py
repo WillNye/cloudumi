@@ -1,5 +1,3 @@
-import hashlib
-import hmac
 import uuid
 from typing import Optional
 from urllib.parse import urljoin
@@ -7,8 +5,7 @@ from urllib.parse import urljoin
 from pydantic import ValidationError
 from tornado.web import HTTPError
 
-import common.lib.noq_json as json
-from common.config.globals import GITHUB_APP_URL, GITHUB_APP_WEBHOOK_SECRET
+from common.config.globals import GITHUB_APP_URL
 from common.github.models import GitHubInstall, GitHubOAuthState
 from common.handlers.base import BaseAdminHandler, TornadoRequestHandler
 from common.iambic.utils import delete_iambic_repos, get_iambic_repo, save_iambic_repos
@@ -108,53 +105,6 @@ class DeleteGitHubInstallHandler(BaseAdminHandler):
         await github_install.delete()
         await delete_iambic_repos(self.ctx.tenant, self.user)
         self.set_status(204)
-
-
-# Use to verify Github App Webhook Secret Using SHA256
-def calculate_signature(webhook_secret: str, payload: str) -> str:
-    secret_in_bytes = bytes(webhook_secret, "utf-8")
-    digest = hmac.new(
-        key=secret_in_bytes, msg=payload.encode("utf-8"), digestmod=hashlib.sha256
-    )
-    signature = digest.hexdigest()
-    return signature
-
-
-def verify_signature(sig: str, payload: str) -> None:
-    good_sig = calculate_signature(GITHUB_APP_WEBHOOK_SECRET, payload)
-    if not hmac.compare_digest(good_sig, sig):
-        raise HTTPError(400, "Invalid signature")
-
-
-class GitHubEventsHandler(TornadoRequestHandler):
-    async def post(self):
-
-        # the format is in sha256=<sig>
-        request_signature = self.request.headers["x-hub-signature-256"].split("=")[1]
-        # because this handler is unauthenticated, always verify signature before taking action
-        verify_signature(request_signature, self.request.body.decode("utf-8"))
-        github_event = json.loads(self.request.body)
-        github_installation_id = github_event["installation"]["id"]
-
-        tenant_github_install = await GitHubInstall.get_with_installation_id(
-            github_installation_id
-        )
-        if not tenant_github_install:
-            raise HTTPError(400, "Unknown installation id")
-
-        github_action = github_event["action"]
-        if github_action == "deleted":
-            await tenant_github_install.delete()
-            self.set_status(204)
-            return
-        # TODO any clean up method if we need to call if webhook event
-        # notify us repos is removed
-        # elif github_action == "removed":
-        #     repositories_removed = github_event["repositories_removed"]
-        else:
-            self.set_status(
-                204
-            )  # such that sender won't attempt to re-send the event to us again.
 
 
 class GithubStatusHandler(BaseAdminHandler):
