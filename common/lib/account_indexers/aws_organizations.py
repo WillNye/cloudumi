@@ -20,7 +20,7 @@ from common.models import (
     SpokeAccount,
 )
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def retrieve_accounts_from_aws_organizations(tenant) -> CloudAccountModelArray:

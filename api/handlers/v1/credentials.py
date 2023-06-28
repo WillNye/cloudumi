@@ -15,7 +15,7 @@ from common.lib.duo import duo_mfa_user
 from common.lib.plugins import get_plugin_by_name
 from common.models import Environment
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class CredentialsSchema(Schema):

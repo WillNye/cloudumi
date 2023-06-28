@@ -18,7 +18,7 @@ from common.role_access.models import RoleAccess, RoleAccessTypes
 from common.tenants.models import Tenant
 from common.users.models import User
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 def get_role_arn(account_id: str, role_name: str) -> str:

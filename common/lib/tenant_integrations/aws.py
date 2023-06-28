@@ -16,7 +16,7 @@ from common.lib.asyncio import aio_wrapper
 from common.lib.messaging import iterate_event_messages
 from common.models import HubAccount, SpokeAccount
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def return_cf_response(

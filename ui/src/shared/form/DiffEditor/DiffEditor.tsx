@@ -37,7 +37,7 @@ export const DiffEditor: FC<DiffEditorProps> = ({
   language = 'yaml',
   onChange
 }) => {
-  const [renderSideBySide, setRenderSideBySide] = useState(true);
+  const [renderSideBySide, setRenderSideBySide] = useState(false);
   const monaco = useMonaco();
 
   const options = {
@@ -62,6 +62,13 @@ export const DiffEditor: FC<DiffEditorProps> = ({
     modifiedEditor.onDidChangeModelContent(_ => {
       onChange && onChange(modifiedEditor.getValue());
     });
+
+    // Create diff navigator and move to the first difference
+    const diffNavigator = monaco.editor.createDiffNavigator(editor, {
+      followsCaret: true,
+      ignoreCharChanges: true
+    });
+    diffNavigator.next();
   };
 
   return (
@@ -81,16 +88,19 @@ export const DiffEditor: FC<DiffEditorProps> = ({
         />
       </div>
 
-      <MonacoDiffEditor
-        language={language}
-        width="100%"
-        height="500px"
-        original={original}
-        modified={modified}
-        options={options}
-        theme="vs-dark"
-        onMount={editorDidMount}
-      />
+      {modified && (
+        <MonacoDiffEditor
+          language={language}
+          width="100%"
+          height="500px"
+          original={original}
+          modified={modified}
+          options={options}
+          theme="vs-dark"
+          onMount={editorDidMount}
+          className={styles.editor}
+        />
+      )}
     </div>
   );
 };

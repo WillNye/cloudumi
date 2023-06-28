@@ -11,7 +11,7 @@ from common.lib.filter import filter_data
 from common.lib.plugins import get_plugin_by_name
 from common.models import DataTableResponse
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class RolesHandlerV4(BaseHandler):

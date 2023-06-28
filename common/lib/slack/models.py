@@ -27,7 +27,7 @@ OAUTH_STATES_TABLE = SQLAlchemyOAuthStateStore.build_oauth_states_table(
     table_name=SQLAlchemyOAuthStateStore.default_table_name,
 )
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class SlackBot(Base):

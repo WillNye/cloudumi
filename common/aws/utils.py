@@ -7,7 +7,7 @@ from policy_sentry.util.arns import get_account_from_arn, parse_arn
 from common.config import config
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 def get_resource_tag(

@@ -17,7 +17,7 @@ from common.lib.plugins import get_plugin_by_name
 from common.models import ExtendedRequestModel, RequestStatus
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def send_email_via_ses(

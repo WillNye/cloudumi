@@ -20,7 +20,7 @@ from common.lib.v2.notifications import (
 from common.models import Status2, WebResponse
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class NotificationsHandler(BaseAPIV2Handler):

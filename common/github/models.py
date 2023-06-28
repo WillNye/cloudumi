@@ -22,7 +22,7 @@ class GitHubInstall(Base):
     )
     # installation_id is defined by Github and typed as integer
     # Note: when usage increase, check if installation_id looks up deserve an index
-    installation_id = Column(Integer(), nullable=False, unique=True)
+    installation_id = Column(Integer(), nullable=False)
 
     @classmethod
     async def create(cls, tenant, installation_id):

@@ -5,7 +5,7 @@ from common.handlers.base import BaseHandler
 from common.lib.web import handle_generic_error_response
 from common.models import WebResponse
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class LogOutHandler(BaseHandler):

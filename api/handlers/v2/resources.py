@@ -18,7 +18,7 @@ from common.lib.redis import RedisHandler, redis_hget
 from common.lib.web import handle_generic_error_response
 from common.models import WebResponse
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
 

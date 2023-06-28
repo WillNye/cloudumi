@@ -14,7 +14,7 @@ from identity.lib.requests import (
     request_access_to_group,
 )
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class IdentityGroupRequestReviewHandler(BaseHandler):
