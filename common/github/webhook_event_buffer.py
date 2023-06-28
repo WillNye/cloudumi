@@ -167,11 +167,11 @@ async def handle_github_webhook_event_queue(
                 await webhook_request_handler(webhook_request)
                 # END special sauce, the rest is boilerplate
 
-            except Exception:
+            except Exception as e:
                 # We setup the dead letter queue re-drive policy in terraform.
                 # How it works is typically after 4 (or N) attempt to consume
                 # it will automatically move to the associated DLQ
-                raise
+                log.error({**log_data, "error": e}, exc_info=True)
         if processed_messages:
             await aio_wrapper(
                 sqs_client.delete_message_batch,
