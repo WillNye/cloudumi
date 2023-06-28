@@ -139,18 +139,27 @@ const AuthenticationSettings = () => {
     .shape({
       ssoType: Yup.string()
         .oneOf(['none', 'oidc', 'saml'])
-        .required('Required'),
+        .required('Required')
+        .label('SSO Type'),
       auth: Yup.object()
         .shape({
           extra_auth_cookies: Yup.array()
             .of(Yup.string())
             .default([])
-            .nullable(),
-          force_redirect_to_identity_provider: Yup.boolean().default(false),
+            .nullable()
+            .label('Extra Auth Cookies'),
+          force_redirect_to_identity_provider: Yup.boolean()
+            .default(false)
+            .label('Force Redirect to Identity Provider'),
           challenge_url: Yup.object().shape({
-            enabled: Yup.boolean().default(true)
+            enabled: Yup.boolean()
+              .default(true)
+              .label("Challenge URL's Enabled")
           }),
-          logout_redirect_url: Yup.string().url().default('')
+          logout_redirect_url: Yup.string()
+            .url()
+            .default('')
+            .label('Logout Redirect URL')
         })
         .when('ssoType', {
           is: type => type != 'none',
@@ -163,24 +172,47 @@ const AuthenticationSettings = () => {
           schema
             .shape({
               get_user_by_oidc_settings: Yup.object().shape({
-                metadata_url: Yup.string().url().default(''),
-                client_scopes: Yup.array().of(Yup.string()).default([]),
-                include_admin_scope: Yup.boolean().default(false),
+                metadata_url: Yup.string()
+                  .url()
+                  .default('')
+                  .label('Metadata URL'),
+                client_scopes: Yup.array()
+                  .of(Yup.string())
+                  .default([])
+                  .label('Client Scopes'),
+                include_admin_scope: Yup.boolean()
+                  .default(false)
+                  .label('Include Admin Scope'),
                 grant_type: Yup.string()
                   .default('authorization_code')
-                  .required(),
+                  .required()
+                  .label('Grant Type'),
                 id_token_response_key: Yup.string()
                   .default('id_token')
-                  .required(),
+                  .required()
+                  .label('ID Token Response Key'),
                 access_token_response_key: Yup.string()
                   .default('access_token')
-                  .required(),
-                jwt_email_key: Yup.string().default('email').required(),
-                enable_mfa: Yup.boolean().default(false),
-                get_groups_from_access_token: Yup.boolean().default(false),
-                access_token_audience: Yup.string().required(),
-                get_groups_from_userinfo_endpoint: Yup.boolean().default(false),
-                user_info_groups_key: Yup.string().default('groups').required()
+                  .required()
+                  .label('Access Token Response Key'),
+                jwt_email_key: Yup.string()
+                  .default('email')
+                  .required()
+                  .label('JWT Email Key'),
+                enable_mfa: Yup.boolean().default(false).label('Enable MFA'),
+                get_groups_from_access_token: Yup.boolean()
+                  .default(false)
+                  .label('Get Groups from Access Token'),
+                access_token_audience: Yup.string()
+                  .required()
+                  .label('Access Token Audience'),
+                get_groups_from_userinfo_endpoint: Yup.boolean()
+                  .default(false)
+                  .label('Get Groups from User Info Endpoint'),
+                user_info_groups_key: Yup.string()
+                  .default('groups')
+                  .required()
+                  .label("User Info's Groups Key")
               }),
               secrets: Yup.object().shape({
                 use: Yup.boolean().default(false),
@@ -188,8 +220,14 @@ const AuthenticationSettings = () => {
                   is: true,
                   then: schema =>
                     schema.shape({
-                      client_id: Yup.string().required().min(1),
-                      client_secret: Yup.string().required().min(1)
+                      client_id: Yup.string()
+                        .required()
+                        .min(1)
+                        .label('Client ID'),
+                      client_secret: Yup.string()
+                        .required()
+                        .min(1)
+                        .label('Client Secret')
                     })
                 })
               })
@@ -203,30 +241,43 @@ const AuthenticationSettings = () => {
           schema
             .shape({
               get_user_by_saml_settings: Yup.object().shape({
-                idp_metadata_url: Yup.string().url().default(''),
+                idp_metadata_url: Yup.string()
+                  .url()
+                  .default('')
+                  .label('IDP Metadata URL'),
                 jwt: Yup.object().shape({
-                  expiration_hours: Yup.number().default(1),
-                  email_key: Yup.string().default('email'),
-                  group_key: Yup.string().default('groups')
+                  expiration_hours: Yup.number()
+                    .default(1)
+                    .label('Expiration Hours'),
+                  email_key: Yup.string().default('email').label('Email Key'),
+                  group_key: Yup.string().default('groups').label('Group Key')
                 }),
                 attributes: Yup.object().shape({
-                  user: Yup.string().default('user'),
-                  groups: Yup.string().default('groups'),
-                  email: Yup.string().default('email')
+                  user: Yup.string().default('user').label('Attribute User'),
+                  groups: Yup.string()
+                    .default('groups')
+                    .label('Attribute Groups'),
+                  email: Yup.string().default('email').label('Attribute Email')
                 }),
                 idp: Yup.object().when('idp_metadata_url', {
                   is: (idp_metadata_url: string) => !idp_metadata_url,
                   then: schema =>
                     schema
                       .shape({
-                        entityId: Yup.string().required(),
+                        entityId: Yup.string()
+                          .required()
+                          .label('IDP Entity ID'),
                         singleSignOnService: Yup.object()
                           .shape({
                             binding: Yup.string()
                               .oneOf(BINDINGS)
                               .default(BINDINGS[0])
-                              .required(),
-                            url: Yup.string().url().required()
+                              .required()
+                              .label('IDP Single Sign On Service Binding'),
+                            url: Yup.string()
+                              .url()
+                              .required()
+                              .label('IDP Single Sign On Service URL')
                           })
                           .notRequired(),
                         singleLogoutService: Yup.object()
@@ -234,11 +285,15 @@ const AuthenticationSettings = () => {
                             binding: Yup.string()
                               .oneOf(BINDINGS)
                               .default(BINDINGS[0])
-                              .required(),
-                            url: Yup.string().url().required()
+                              .required()
+                              .label('IDP Single Logout Service Binding'),
+                            url: Yup.string()
+                              .url()
+                              .required()
+                              .label('IDP Single Logout Service URL')
                           })
                           .notRequired(),
-                        x509cert: Yup.string().required()
+                        x509cert: Yup.string().required().label('X509Cert')
                       })
                       .required(),
                   otherwise: schema => schema.notRequired()
@@ -249,10 +304,11 @@ const AuthenticationSettings = () => {
                       binding: Yup.string()
                         .oneOf([...BINDINGS, '', null])
                         .default('')
-                        .notRequired(),
+                        .notRequired()
+                        .label('SP Assertion Consumer Service Binding'),
                       url: Yup.string().url().notRequired()
                     }),
-                    entityId: Yup.string()
+                    entityId: Yup.string().label('SP Entity ID')
                   })
                   .notRequired()
               })
