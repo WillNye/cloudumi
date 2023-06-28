@@ -17,7 +17,7 @@ from common.lib.cache import (
 from common.lib.git import clone_repo
 from common.lib.templated_resources.models import TemplatedFileModelArray, TemplateFile
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 yaml = YAML()
 yaml.preserve_quotes = True

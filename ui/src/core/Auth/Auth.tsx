@@ -69,10 +69,10 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
     );
   }
 
-  if (internalServerError) {
-    // Handle Internal Server Error
-    return <ErrorFallback fullPage />;
-  }
+  // if (internalServerError) {
+  //   // Handle Internal Server Error
+  //   return <ErrorFallback fullPage />;
+  // }
 
   return <AuthProvider value={values}>{children}</AuthProvider>;
 };

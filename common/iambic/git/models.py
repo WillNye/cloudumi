@@ -378,7 +378,9 @@ class IambicRepo:
                         ],
                         error=repo.__class__.__name__,
                     ),
-                    exc_info=True,
+                    # The documentation says passing just exception instance would
+                    # suffice but did not work. An alternative is to pass this tuple.
+                    exc_info=(type(repo), repo, repo.__traceback__),
                 )
         return [repo for repo in res if not isinstance(repo, Exception)]
 

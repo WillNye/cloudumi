@@ -201,7 +201,7 @@ if config.get("_global_.celery.purge"):
     with Timeout(seconds=5, error_message="Timeout: Are you sure Redis is running?"):
         app.control.purge()
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 internal_celery_tasks = get_plugin_by_name(
     config.get("_global_.plugins.internal_celery_tasks", "cmsaas_celery_tasks")
@@ -3108,11 +3108,11 @@ schedule = {
         "options": {"expires": 180},
         "schedule": schedule_minute,
     },
-    "cache_access_advisor_across_accounts_for_all_tenants": {
-        "task": "common.celery_tasks.celery_tasks.cache_access_advisor_across_accounts_for_all_tenants",
-        "options": {"expires": 180},
-        "schedule": get_schedule(60 * 24),
-    },
+    # "cache_access_advisor_across_accounts_for_all_tenants": {
+    #     "task": "common.celery_tasks.celery_tasks.cache_access_advisor_across_accounts_for_all_tenants",
+    #     "options": {"expires": 180},
+    #     "schedule": get_schedule(60 * 24),
+    # },
     # "cache_identities_for_all_tenants": {
     #     "task": "common.celery_tasks.celery_tasks.cache_identities_for_all_tenants",
     #     "options": {"expires": 180},

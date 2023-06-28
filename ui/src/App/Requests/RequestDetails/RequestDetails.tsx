@@ -1,12 +1,11 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useCallback, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import axios from 'core/Axios/Axios';
 import { Button } from 'shared/elements/Button';
 import { Table } from 'shared/elements/Table';
 
-import { DiffEditor } from 'shared/form/DiffEditor';
 import { LineBreak } from 'shared/elements/LineBreak';
-import { filePathColumns, mainTableColumns } from './constants';
+import { mainTableColumns } from './constants';
 import NotFound from 'App/NotFound';
 import { Segment } from 'shared/layout/Segment';
 import { TextArea } from 'shared/form/TextArea';
@@ -15,6 +14,8 @@ import { Block } from 'shared/layout/Block';
 import { useQuery } from '@tanstack/react-query';
 import { getIambicRequest } from 'core/API/iambicRequest';
 import { Loader } from 'shared/elements/Loader';
+import { Chip } from 'shared/elements/Chip';
+import ChangeViewer from './components/ChangeViewer';
 
 const RequestChangeDetails = () => {
   const { requestId } = useParams<{ requestId: string }>();
@@ -30,21 +31,7 @@ const RequestChangeDetails = () => {
     queryKey: ['getIambicRequest', requestId]
   });
 
-  const handleSave = async () => {
-    setIsSubmitting(true);
-    try {
-      await axios.put(`/api/v4/self-service/requests/${requestId}`, {
-        files: requestData.files
-      });
-      refetchData();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleComment = async () => {
+  const handleComment = useCallback(async () => {
     setIsSubmitting(true);
     try {
       await axios.post(`/api/v4/self-service/requests/${requestId}/comments`, {
@@ -55,8 +42,9 @@ const RequestChangeDetails = () => {
       console.error(error);
     } finally {
       setIsSubmitting(false);
+      setComment('');
     }
-  };
+  }, [comment, requestId, refetchData]);
 
   const handleApprove = async () => {
     setIsSubmitting(true);
@@ -96,6 +84,28 @@ const RequestChangeDetails = () => {
     }
   };
 
+  const handleModifyChange = useCallback(
+    async newFile => {
+      setIsSubmitting(true);
+      try {
+        await axios.put(`/api/v4/self-service/requests/${requestId}`, {
+          files: requestData?.data.files?.map(currentFile => {
+            if (newFile.file_path === currentFile.file_path) {
+              return newFile;
+            }
+            return currentFile;
+          })
+        });
+        refetchData();
+        setIsSubmitting(false);
+      } catch (error) {
+        console.error(error);
+        setIsSubmitting(false);
+      }
+    },
+    [refetchData, requestData, requestId]
+  );
+
   const mainTableData = [
     {
       header: 'Requested By',
@@ -110,24 +120,18 @@ const RequestChangeDetails = () => {
       value: requestData?.data?.updated_at || 'N/A'
     },
     {
-      header: 'Status',
-      value: requestData?.data?.status || 'N/A'
-    },
-    {
-      header: 'Title',
-      value: requestData?.data?.title || 'N/A'
-    },
-    {
-      header: 'Justification',
-      value: requestData?.data?.justification || 'N/A'
-    },
-    {
       header: 'Repository',
       value: requestData?.data?.repo_name || 'N/A'
     },
     {
       header: 'Pull Request URL',
-      value: requestData?.data?.pull_request_url || 'N/A'
+      value: requestData?.data?.pull_request_url ? (
+        <Link to={requestData?.data?.pull_request_url} target="_blank">
+          Click here
+        </Link>
+      ) : (
+        'N/A'
+      )
     }
   ];
 
@@ -143,31 +147,28 @@ const RequestChangeDetails = () => {
     <Segment isLoading={isSubmitting}>
       <div className={styles.container}>
         <h3>Request Review</h3>
-        <Table
-          data={mainTableData}
-          columns={mainTableColumns}
-          spacing="expanded"
-          border="row"
-        />
-        {requestData?.data?.files.map((file, i) => (
-          <div key={i}>
-            <Table
-              data={[{ header: 'File Path', value: file.file_path }]}
-              columns={filePathColumns}
-              spacing="expanded"
-            />
-            <DiffEditor
-              original={file.previous_body || ''}
-              modified={file.template_body || ''}
-            />
-            <LineBreak />
-            <Button onClick={handleSave} fullWidth size="small">
-              Modify
-            </Button>
-            <LineBreak />
-          </div>
+        <div className={styles.subTitle}>
+          <p className={styles.text}>{requestData?.data?.title}</p>
+          <Chip type="warning">{requestData?.data?.status}</Chip>
+        </div>
+        <Table data={mainTableData} columns={mainTableColumns} border="row" />
+        <LineBreak size="large" />
+        <h4 className={styles.sectionHeader}>Justification</h4>
+        <ul>
+          <li className={styles.text}>{requestData?.data?.justification}</li>
+        </ul>
+        <LineBreak />
+        {requestData?.data?.files.map((file, index) => (
+          <ChangeViewer
+            file={file}
+            handleModifyChange={handleModifyChange}
+            key={index}
+          />
         ))}
         <LineBreak size="large" />
+        {requestData?.data?.comments.map((commentData, index) => (
+          <div key={index}>{commentData?.body}</div>
+        ))}
         <Block disableLabelPadding label="Comment" />
         <TextArea
           value={comment}
@@ -175,16 +176,16 @@ const RequestChangeDetails = () => {
           placeholder="Add a comment"
         />
         <LineBreak size="small" />
-        <Button onClick={handleComment} size="small">
+        <Button onClick={handleComment} size="small" disabled={!comment}>
           Comment
         </Button>
         <LineBreak size="large" />
         <div className={styles.actions}>
-          <Button onClick={handleApprove} fullWidth size="small">
-            Approve
-          </Button>
           <Button onClick={handleReject} color="error" fullWidth size="small">
             Reject
+          </Button>
+          <Button onClick={handleApprove} fullWidth size="small">
+            Approve
           </Button>
           <Button onClick={handleApply} color="success" fullWidth size="small">
             Apply

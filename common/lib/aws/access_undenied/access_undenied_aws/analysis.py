@@ -16,7 +16,7 @@ from common.lib.aws.access_undenied.access_undenied_aws import (
 )
 from common.lib.aws.access_undenied.access_undenied_aws.results import AnalysisResult
 
-logger = config.get_logger()
+logger = config.get_logger(__name__)
 
 
 def _write_to_file(output_file: TextIO, output_json: Dict[str, Any]) -> None:

@@ -30,6 +30,7 @@ ASYNC_PG_SESSION = sessionmaker(
     expire_on_commit=False,
     class_=AsyncSession,
 )
+DEVELOPMENT_MODE = config.get("_global_.development", False)
 
 AUTH_COOKIE_NAME: str = config.get("_global_.auth.cookie.name", "noq_auth")
 

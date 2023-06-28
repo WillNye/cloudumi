@@ -3,7 +3,7 @@ from collections import defaultdict
 
 from common.config import config
 
-logger = config.get_logger()
+logger = config.get_logger(__name__)
 
 # SINGLETON: on purpose (we only want one)
 tracked_procs = defaultdict(dict)

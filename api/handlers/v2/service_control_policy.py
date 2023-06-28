@@ -6,7 +6,7 @@ from common.handlers.base import BaseAPIV2Handler
 from common.lib.aws.utils import get_scps_for_account_or_ou
 from common.models import Status2, WebResponse
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class ServiceControlPolicyHandler(BaseAPIV2Handler):

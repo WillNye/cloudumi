@@ -1,19 +1,21 @@
 import { LineBreak } from 'shared/elements/LineBreak';
 import { Button } from 'shared/elements/Button';
-import { useCallback, useEffect, useContext, useState } from 'react';
+import { useCallback, useEffect, useContext, useState, useMemo } from 'react';
 import styles from './CompletionForm.module.css';
 import SelfServiceContext from '../../SelfServiceContext';
 import { SubmittableRequest, TemplatePreview } from '../../types';
 import axios from 'core/Axios/Axios';
 import { DiffEditor } from 'shared/form/DiffEditor';
-import { Spinner } from 'shared/elements/Spinner';
 import { Link } from 'react-router-dom';
 import { convertToSubmittableRequest } from './utils';
 import { Segment } from 'shared/layout/Segment';
 import { Icon } from 'shared/elements/Icon';
+import { extractErrorMessage } from 'core/API/utils';
+import errorImg from '../../../../../assets/illustrations/empty.svg';
 
 const CompletionForm = () => {
   const [createdRequest, setCreatedRequest] = useState(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submittableRequest, setSubmittableRequest] =
     useState<SubmittableRequest | null>(null);
   const [templateResponse, setTemplateResponse] =
@@ -39,7 +41,10 @@ const CompletionForm = () => {
           setTemplateResponse(response?.data?.data);
         })
         .catch(error => {
-          console.error(error);
+          const errorMessage = extractErrorMessage(error?.response);
+          setErrorMessage(
+            errorMessage || 'Error while validating selected changes'
+          );
         })
         .finally(() => {
           setIsLoading(false);
@@ -87,8 +92,16 @@ const CompletionForm = () => {
         <LineBreak />
         <p className={styles.subText}>Please select a change type</p>
         <LineBreak size="large" />
-        {createdRequest?.request_id ? (
-          <div className={styles.successAlert}>
+        {errorMessage ? (
+          <div className={styles.notificationAlert}>
+            <LineBreak size="large" />
+            <img src={errorImg} />
+            <LineBreak size="large" />
+            <h5>Invalid Request</h5>
+            <p className={styles.text}>{errorMessage}</p>
+          </div>
+        ) : createdRequest?.request_id ? (
+          <div className={styles.notificationAlert}>
             <Icon name="notification-success" size="large" />
             <p className={styles.text}>
               Request successfully submitted. Click on the link below to view it

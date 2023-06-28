@@ -22,7 +22,7 @@ from common.lib.notifications.models import (
 from common.lib.slack import send_slack_notification_new_notification
 from common.models import SpokeAccount
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class CloudTrail:

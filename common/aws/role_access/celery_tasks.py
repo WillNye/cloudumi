@@ -14,6 +14,7 @@ from common.aws.role_access.models import AWSRoleAccess, RoleAccessTypes
 from common.config import config
 from common.groups.models import Group
 from common.iambic.interface import IambicConfigInterface
+from common.iambic.templates.utils import get_template_str_value_for_aws_account
 from common.iambic_request.models import IambicRepo
 from common.identity.models import AwsIdentityRole
 from common.pg_core.utils import bulk_delete
@@ -181,6 +182,12 @@ async def sync_role_access(
                             access_rule_users = list(users.values())
                         elif access_rule.users:
                             for user_rule in access_rule.users:
+                                if not user_rule:
+                                    continue
+
+                                user_rule = get_template_str_value_for_aws_account(
+                                    user_rule, effective_aws_account
+                                )
                                 if user := users.get(user_rule):
                                     access_rule_users.append(user)
                                 else:
@@ -211,6 +218,12 @@ async def sync_role_access(
                             access_rule_groups = list(groups.values())
                         elif access_rule.groups:
                             for group_rule in access_rule.groups:
+                                if not group_rule:
+                                    continue
+
+                                group_rule = get_template_str_value_for_aws_account(
+                                    group_rule, effective_aws_account
+                                )
                                 if group := groups.get(group_rule):
                                     access_rule_groups.append(group)
                                 else:
@@ -248,75 +261,6 @@ async def sync_role_access(
                             }
                         )
 
-        # TODO: Remove this once we have removed all usage of the legacy noq-authorized tag
-        if role_tags := [
-            tag for tag in role_template.properties.tags if tag.key == "noq-authorized"
-        ]:
-            for role_tag in role_tags:
-                effective_aws_accounts = [
-                    account
-                    for account in template_aws_accounts
-                    if evaluate_on_provider(role_tag, account, False)
-                ]
-                if not effective_aws_accounts:
-                    continue
-
-                access_rule_users = []
-                access_rule_groups = []
-                for auth_rule in role_tag.value.split(":"):
-                    if user := users.get(auth_rule):
-                        access_rule_users.append(user)
-                    elif group := groups.get(auth_rule):
-                        access_rule_groups.append(group)
-                    else:
-                        log.info(
-                            {
-                                "message": "Could not find matching rule",
-                                "auth_rule": auth_rule,
-                                "tenant": tenant.name,
-                            }
-                        )
-
-                for effective_aws_account in effective_aws_accounts:
-                    role_arn = get_role_arn(effective_aws_account, role_template)
-                    if identity_role := aws_identity_role_map.get(role_arn):
-                        for user in access_rule_users:
-                            existing_user_role_access_map[identity_role.id].pop(
-                                user.id, None
-                            )
-                            upserts.append(
-                                {
-                                    "tenant": tenant,
-                                    "type": RoleAccessTypes.credential_access,
-                                    "identity_role": identity_role,
-                                    "cli_only": False,
-                                    "expiration": role_tag.expires_at,
-                                    "user": user,
-                                }
-                            )
-                        for group in access_rule_groups:
-                            existing_group_role_access_map[identity_role.id].pop(
-                                group.id, None
-                            )
-                            upserts.append(
-                                {
-                                    "tenant": tenant,
-                                    "type": RoleAccessTypes.credential_access,
-                                    "identity_role": identity_role,
-                                    "cli_only": False,
-                                    "expiration": role_tag.expires_at,
-                                    "group": group,
-                                }
-                            )
-                    else:
-                        log.warning(
-                            {
-                                "message": "Could not find identity role",
-                                "role_arn": role_arn,
-                                "tenant": tenant.name,
-                            }
-                        )
-
         if upserts:
             await AWSRoleAccess.bulk_create(tenant, upserts)
 
@@ -333,6 +277,15 @@ async def sync_role_access(
 async def sync_all_iambic_data_for_tenant(tenant_name: str):
     fnc = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenant = await Tenant.get_by_name(tenant_name)
+    if not tenant:
+        log.warning(
+            {
+                "function": fnc,
+                "message": "Could not find tenant",
+                "tenant": tenant_name,
+            }
+        )
+        return
     iambic_repos = await IambicRepo.get_all_tenant_repos(tenant.name)
     if not iambic_repos:
         log.warning(
@@ -349,7 +302,7 @@ async def sync_all_iambic_data_for_tenant(tenant_name: str):
                 "function": fnc,
                 "message": "More than 1 Iambic Template repo has been configured. "
                 "This will result in data being truncated.",
-                "tenant": tenant.name,
+                "tenant": tenant_name,
             }
         )
 
@@ -361,7 +314,7 @@ async def sync_all_iambic_data_for_tenant(tenant_name: str):
             {
                 "function": fnc,
                 "message": "Error syncing aws accounts for tenant.",
-                "tenant": tenant.name,
+                "tenant": tenant_name,
             }
         )
     try:
@@ -371,7 +324,7 @@ async def sync_all_iambic_data_for_tenant(tenant_name: str):
             {
                 "function": fnc,
                 "message": "Error synching identity roles for tenant.",
-                "tenant": tenant.name,
+                "tenant": tenant_name,
             }
         )
     try:
@@ -381,7 +334,7 @@ async def sync_all_iambic_data_for_tenant(tenant_name: str):
             {
                 "function": fnc,
                 "message": "Error synching role access for tenant.",
-                "tenant": tenant.name,
+                "tenant": tenant_name,
             }
         )
 

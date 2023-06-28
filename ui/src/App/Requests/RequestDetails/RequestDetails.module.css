@@ -4,6 +4,21 @@
   margin: auto;
   padding-top: var(--spacing-md);
 
+  .subTitle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: var(--spacing-lg);
+    width: 100%;
+  }
+
+  .text {
+    color: var(--gray-100);
+    padding: var(--spacing-md);
+  }
+
   .actions {
     width: 100%;
     display: flex;

@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from mypy_boto3_iam.type_defs import EvaluationResultTypeDef
 else:
     EvaluationResultTypeDef = object
-logger = config.get_logger()
+logger = config.get_logger(__name__)
 
 
 class ResultDetails(object):

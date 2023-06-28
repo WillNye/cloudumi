@@ -176,7 +176,7 @@ class BaseDynamoHandler:
             log.error(
                 {
                     "function": function,
-                    "error": e,
+                    "error": str(e),
                     "tenant": tenant,
                 },
                 exc_info=True,

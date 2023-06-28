@@ -19,7 +19,7 @@ from common.iambic.templates.models import IambicTemplateProviderDefinition
 from common.pg_core.utils import bulk_add, bulk_delete
 from common.tenants.models import Tenant
 
-log = saas_config.get_logger()
+log = saas_config.get_logger(__name__)
 
 
 async def list_tenant_providers(tenant_id: int) -> list[TenantProvider]:

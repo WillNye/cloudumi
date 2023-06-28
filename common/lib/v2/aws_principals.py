@@ -35,7 +35,7 @@ from common.user_request.utils import (
 )
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def get_config_timeline_url_for_role(role, account_id, tenant):

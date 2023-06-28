@@ -9,7 +9,7 @@ from common.lib.aws.session import get_session_for_tenant
 from common.lib.plugins import get_plugin_by_name
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def duo_mfa_user(username, tenant, message="Noq Authorization Request"):

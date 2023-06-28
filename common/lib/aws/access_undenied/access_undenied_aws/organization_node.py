@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from common.config import config
 from common.lib.aws.access_undenied.access_undenied_aws import common
 
-logger = config.get_logger()
+logger = config.get_logger(__name__)
 
 
 class OrganizationNode(object):
