@@ -1,7 +1,7 @@
-from common.request_types.tasks import upsert_tenant_request_types
-from common.iambic.config.utils import update_tenant_providers_and_definitions
 from common.aws.role_access.celery_tasks import sync_all_iambic_data_for_tenant
+from common.iambic.config.utils import update_tenant_providers_and_definitions
 from common.iambic.templates.tasks import sync_tenant_templates_and_definitions
+from common.request_types.tasks import upsert_tenant_request_types
 
 
 async def run_all_iambic_tasks_for_tenant(tenant_name: str):
