@@ -192,6 +192,7 @@ from api.handlers.v4.groups.manage_groups import (
 from api.handlers.v4.role_access.manage_role_access import ManageRoleAccessHandler
 from api.handlers.v4.self_service.requests import (
     IambicRequestCommentHandler,
+    IambicRequestDataTableHandler,
     IambicRequestHandler,
     IambicRequestValidationHandler,
 )
@@ -477,6 +478,7 @@ def make_app(jwt_validator=None):
         # (r"/api/v3/api_keys/view", ViewApiKeysHandler),
         (r"/api/v2/.*", V2NotFoundHandler),
         (r"/api/v4/self-service/requests/?", IambicRequestHandler),
+        (r"/api/v4/self-service/requests/datatable?", IambicRequestDataTableHandler),
         (r"/api/v4/self-service/requests/validate?", IambicRequestValidationHandler),
         (
             rf"/api/v4/self-service/requests/(?P<request_id>{UUID_REGEX})",

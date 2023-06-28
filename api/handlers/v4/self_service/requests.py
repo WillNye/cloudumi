@@ -7,6 +7,7 @@ import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import NoMatchingRequest, Unauthorized
 from common.handlers.base import BaseHandler
+from common.iambic_request.models import Request
 from common.iambic_request.request_crud import (
     approve_request,
     create_request,
@@ -20,6 +21,7 @@ from common.iambic_request.request_crud import (
     update_request,
     update_request_comment,
 )
+from common.lib.filter import PaginatedQueryResponse, filter_data_with_sqlalchemy
 from common.models import SelfServiceRequestData, WebResponse
 
 log = config.get_logger(__name__)
@@ -403,3 +405,38 @@ class IambicRequestCommentHandler(BaseHandler):
                     status_code=403,
                 ).json(exclude_unset=True, exclude_none=True)
             )
+
+
+class IambicRequestDataTableHandler(BaseHandler):
+    async def post(self):
+        """
+        POST /api/v4/self-service/requests/datatable - Retrieve a filtered list of requests
+        """
+        data = tornado.escape.json_decode(self.request.body)
+        tenant = self.ctx.db_tenant
+        try:
+            query_response: PaginatedQueryResponse = await filter_data_with_sqlalchemy(
+                data.get("filter", {}), tenant, Request
+            )
+        except Exception as exc:
+            errors = [str(exc)]
+            self.write(
+                WebResponse(
+                    errors=errors,
+                    status_code=500,
+                    count=len(errors),
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            self.set_status(500, reason=str(exc))
+            raise tornado.web.Finish()
+
+        query_response.data = [
+            json.loads(json.dumps(x.dict())) for x in query_response.data
+        ]
+        self.write(
+            WebResponse(
+                success="success",
+                status_code=200,
+                data=query_response.dict(exclude_unset=True, exclude_none=True),
+            ).dict(exclude_unset=True, exclude_none=True)
+        )

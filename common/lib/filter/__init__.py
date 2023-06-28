@@ -1,6 +1,6 @@
 import math
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Optional, Type
 
 from sqlalchemy import and_, func, or_
 from sqlalchemy.sql import select
@@ -264,7 +264,9 @@ async def get_query_conditions(Table, token, conditions):
     return conditions
 
 
-async def filter_data_with_sqlalchemy(filter_obj, tenant, Table, allow_deleted=False):
+async def filter_data_with_sqlalchemy(
+    filter_obj: dict, tenant: Tenant, Table: Type[Base], allow_deleted: bool = False
+):
     options = FilterModel.parse_obj(filter_obj)
     filter = options.filtering
     sorting = options.sorting
@@ -330,3 +332,42 @@ async def filter_data_with_sqlalchemy(filter_obj, tenant, Table, allow_deleted=F
                 current_page_index=pagination.currentPageIndex,
                 data=res.unique().scalars().all(),
             )
+
+
+async def enrich_sqlalchemy_stmt_with_filter_obj(
+    filter_obj, sql_model: Type[Base], sql_stmt: select
+) -> select:
+    options = FilterModel.parse_obj(filter_obj)
+    filter = options.filtering
+    sorting = options.sorting
+    pagination = options.pagination
+    conditions = []
+
+    if filter and filter.tokens:
+        for token in filter.tokens:
+            try:
+                token = await get_dynamic_objects_from_filter_tokens(sql_model, token)
+            except AttributeError:
+                return []
+            conditions = await get_query_conditions(sql_model, token, conditions)
+
+        if conditions and filter.operation == FilterOperation._and:
+            sql_stmt = sql_stmt.filter(and_(*conditions))
+        elif conditions and filter.operation == FilterOperation._or:
+            sql_stmt = sql_stmt.filter(or_(*conditions))
+        elif conditions:
+            raise AttributeError(f"Unsupported filter operation: {filter.operation}")
+
+    if sorting and sorting.sortingColumn:
+        sql_stmt = sql_stmt.order_by(
+            getattr(sql_model, sorting.sortingColumn.sortingField).desc()
+            if sorting.sortingDescending
+            else getattr(sql_model, sorting.sortingColumn.sortingField).asc()
+        )
+
+    if pagination and pagination.pageSize and pagination.currentPageIndex:
+        sql_stmt = sql_stmt.offset(
+            (pagination.currentPageIndex - 1) * pagination.pageSize
+        ).limit(pagination.pageSize)
+
+    return sql_stmt
