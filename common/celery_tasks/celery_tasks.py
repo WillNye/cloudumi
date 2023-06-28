@@ -199,7 +199,7 @@ if config.get("_global_.celery.purge"):
     with Timeout(seconds=5, error_message="Timeout: Are you sure Redis is running?"):
         app.control.purge()
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 internal_celery_tasks = get_plugin_by_name(
     config.get("_global_.plugins.internal_celery_tasks", "cmsaas_celery_tasks")

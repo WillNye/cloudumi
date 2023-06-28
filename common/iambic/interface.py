@@ -132,8 +132,9 @@ class IambicConfigInterface:
         if not self.iambic_repo.is_app_connected():
             log.error(
                 {
-                    "message": "No IAMbic repos configured for tenant",
-                    "tenant": self.iambic_repo.repo_name,
+                    "message": "IAMbic repo not yet connected to App for tenant",
+                    "tenant": self.iambic_repo.tenant.name,
+                    "repo_name": self.iambic_repo.repo_name,
                 }
             )
             return

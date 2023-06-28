@@ -44,8 +44,9 @@ class GitHubCallbackHandler(TornadoRequestHandler):
         if self.repo_specified:
             from common.celery_tasks.celery_tasks import app as celery_app
 
+            # Trigger a full sync of all iambic tables/resources for the tenant
             celery_app.send_task(
-                "common.celery_tasks.celery_tasks.sync_iambic_templates_for_tenant",
+                "common.celery_tasks.celery_tasks.run_full_iambic_sync_for_tenant",
                 kwargs={"tenant": self.db_tenant.name},
             )
 
@@ -54,8 +55,6 @@ class GitHubCallbackHandler(TornadoRequestHandler):
         self.db_tenant: Tenant = None
 
     async def get(self):
-        from common.celery_tasks.celery_tasks import app as celery_app
-
         state = self.get_argument("state", default=None)
         installation_id = self.get_argument("installation_id", default=None)
         setup_action = self.get_argument("setup_action")
@@ -99,11 +98,6 @@ class GitHubCallbackHandler(TornadoRequestHandler):
                 db_tenant.name, iambic_repo, "GitHubCallbackHandler"
             )
 
-        # Trigger a full sync of all iambic tables/resources for the tenant
-        celery_app.send_task(
-            "common.celery_tasks.celery_tasks.run_full_iambic_sync_for_tenant",
-            kwargs={"tenant": self.ctx.tenant},
-        )
         self.write("GitHub integration complete")
         self.db_tenant = db_tenant
 
@@ -154,11 +148,11 @@ class GitHubEventsHandler(TornadoRequestHandler):
             raise HTTPError(400, "Unknown installation id")
 
         if github_event_type == "push":
+            branch_name = github_event["ref"].split("/")[-1]
             db_tenant: Tenant = await Tenant.get_by_id(tenant_github_install.tenant_id)
             tenant_repos = await IambicRepo.get_all_tenant_repos(db_tenant.name)
             for tenant_repo in tenant_repos:
                 if tenant_repo.repo_name == github_event["repository"]["full_name"]:
-                    branch_name = github_event["ref"].split("/")[-1]
                     if tenant_repo.default_branch_name == branch_name:
                         celery_app.send_task(
                             "common.celery_tasks.celery_tasks.sync_iambic_templates_for_tenant",
