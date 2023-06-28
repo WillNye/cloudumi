@@ -608,6 +608,9 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
             }
         )
 
+    for iambic_repo in iambic_repos:
+        await iambic_repo.clone_or_pull_git_repo()
+
     # TODO: Remove this legacy caching call
     iambic_repo = iambic_repos[0]
     iambic_config = IambicConfigInterface(iambic_repo)

@@ -74,7 +74,6 @@ class IambicConfigInterface:
     async def load_templates(
         self,
         template_paths,
-        use_multiprocessing=False,
         template_map: dict = None,
         *args,
         **kwargs,
@@ -92,7 +91,7 @@ class IambicConfigInterface:
         return iambic_load_templates(
             template_paths,
             template_map,
-            use_multiprocessing=use_multiprocessing,
+            use_multiprocessing=False,
             *args,
             **kwargs,
         )
