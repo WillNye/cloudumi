@@ -13,11 +13,8 @@ from common import (
     TenantProvider,
     TenantProviderDefinition,
 )
-from common.aws.role_access.celery_tasks import sync_all_iambic_data_for_tenant
 from common.config.globals import ASYNC_PG_SESSION
-from common.iambic.config.utils import update_tenant_providers_and_definitions
-from common.iambic.templates.tasks import sync_tenant_templates_and_definitions
-from common.request_types.tasks import upsert_tenant_request_types
+from common.iambic.tasks import run_all_iambic_tasks_for_tenant
 from common.request_types.utils import list_tenant_request_types
 from qa import TENANT_SUMMARY
 from qa.iambic_templates import teardown_refs
@@ -69,21 +66,14 @@ async def clear_iambic_install_refs() -> Union[str, None]:
     return github_install_id
 
 
-async def run_all_iambic_tasks():
-    await sync_tenant_templates_and_definitions(TENANT_SUMMARY.tenant_name)
-    await sync_all_iambic_data_for_tenant(TENANT_SUMMARY.tenant_name)
-    await update_tenant_providers_and_definitions(TENANT_SUMMARY.tenant_name)
-    await upsert_tenant_request_types(TENANT_SUMMARY.tenant_name)
-
-
 async def end_to_end_flow():
     # Each of these pieces should really be ran as steps so you can validate the state of the DB
     # This function is really here as a guide to how the steps should be ran
     github_install_id = await clear_iambic_install_refs()
-    await run_all_iambic_tasks()
+    await run_all_iambic_tasks_for_tenant(TENANT_SUMMARY.tenant_name)
     # Nothing should be populated at this point because the repo hasn't been fully configured
 
     # Set installation id and re-run tasks
     # Now everything should be populated
     await GitHubInstall.create(TENANT_SUMMARY.tenant, github_install_id)
-    await run_all_iambic_tasks()
+    await run_all_iambic_tasks_for_tenant(TENANT_SUMMARY.tenant_name)

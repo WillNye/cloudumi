@@ -53,6 +53,8 @@ class GitHubCallbackHandler(TornadoRequestHandler):
         self.db_tenant: Tenant = None
 
     async def get(self):
+        from common.celery_tasks.celery_tasks import app as celery_app
+
         state = self.get_argument("state", default=None)
         installation_id = self.get_argument("installation_id", default=None)
         setup_action = self.get_argument("setup_action")
@@ -95,6 +97,12 @@ class GitHubCallbackHandler(TornadoRequestHandler):
             await save_iambic_repos(
                 db_tenant.name, iambic_repo, "GitHubCallbackHandler"
             )
+
+        # Trigger a full sync of all iambic tables/resources for the tenant
+        celery_app.send_task(
+            "common.celery_tasks.celery_tasks.run_full_iambic_sync_for_tenant",
+            kwargs={"tenant": self.ctx.tenant},
+        )
         self.write("GitHub integration complete")
         self.db_tenant = db_tenant
 

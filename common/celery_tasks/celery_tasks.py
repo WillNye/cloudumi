@@ -9,7 +9,6 @@ command: celery -A common.celery_tasks.celery_tasks worker --loglevel=info -l DE
 """
 from __future__ import absolute_import
 
-import asyncio
 import json  # We use a separate SetEncoder here so we cannot use ujson
 import ssl
 import sys
@@ -64,8 +63,7 @@ from common.config import globals as config_globals
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.iambic.config.utils import update_tenant_providers_and_definitions
-from common.iambic.git.models import IambicRepo
-from common.iambic.interface import IambicConfigInterface
+from common.iambic.tasks import run_all_iambic_tasks_for_tenant
 from common.iambic.templates.tasks import sync_tenant_templates_and_definitions
 from common.iambic_request.tasks import handle_tenant_iambic_github_event
 from common.lib import noq_json as ujson
@@ -201,7 +199,7 @@ if config.get("_global_.celery.purge"):
     with Timeout(seconds=5, error_message="Timeout: Are you sure Redis is running?"):
         app.control.purge()
 
-log = config.get_logger(__name__)
+log = config.get_logger()
 
 internal_celery_tasks = get_plugin_by_name(
     config.get("_global_.plugins.internal_celery_tasks", "cmsaas_celery_tasks")
@@ -2857,35 +2855,8 @@ def sync_iambic_templates_for_tenant(tenant: str) -> Dict:
         "message": "Syncing Iambic Templates",
         "tenant": tenant,
     }
-
-    async def _sync_iambic_templates_for_tenant(tenant_name: str):
-        iambic_repos = await IambicRepo.get_all_tenant_repos(tenant_name)
-        iambic_repos = [
-            iambic_repo
-            for iambic_repo in iambic_repos
-            if iambic_repo.is_app_connected()
-        ]
-        if not iambic_repos:
-            return
-        await asyncio.gather(
-            *[iambic_repo.clone_or_pull_git_repo() for iambic_repo in iambic_repos]
-        )
-        if len(iambic_repos) > 1:
-            log.warning(
-                {
-                    **log_data,
-                    "message": "More than 1 Iambic Template repo has been configured. "
-                    "This will result in data being truncated in the cached template bucket.",
-                }
-            )
-
-        iambic_repo = iambic_repos[0]
-        iambic_config = IambicConfigInterface(iambic_repo)
-        await iambic_config.cache_aws_templates()
-        await sync_tenant_templates_and_definitions(tenant_name)
-
     log.debug(log_data)
-    async_to_sync(_sync_iambic_templates_for_tenant)(tenant)
+    async_to_sync(sync_tenant_templates_and_definitions)(tenant)
     return log_data
 
 
@@ -2984,6 +2955,19 @@ def cache_iambic_data_for_all_tenants() -> Dict:
     for tenant in tenants:
         cache_iambic_data_for_tenant.delay(tenant)
 
+    return log_data
+
+
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
+def run_full_iambic_sync_for_tenant(tenant: str) -> Dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    log_data = {
+        "function": function,
+        "message": "Syncing all Iambic data for tenant.",
+        "tenant": tenant,
+    }
+    log.debug(log_data)
+    async_to_sync(run_all_iambic_tasks_for_tenant)(tenant)
     return log_data
 
 
