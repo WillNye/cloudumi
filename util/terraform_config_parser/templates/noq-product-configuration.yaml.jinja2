@@ -34,7 +34,7 @@ _global_:
       registration_spoke_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml"
     github:
       webhook_event_buffer:
-        queue_arn: {{ sqs_github_app_webhook_queue_arn }}
+        queue_arn: {{ sqs_github_app_noq_webhook_queue_arn }}
   accounts:
     tenant_data:
       name: NoqServiceConnRole

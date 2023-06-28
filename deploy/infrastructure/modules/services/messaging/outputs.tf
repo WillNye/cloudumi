@@ -28,7 +28,7 @@ output "sqs_registration_response_queue_name" {
   value       = aws_sqs_queue.registration_response_queue.name
 }
 
-output "sqs_github_app_webhook_queue_arn" {
+output "sqs_github_app_noq_webhook_queue_arn" {
   description = "The SQS to see GitHub App Noq Webhook Events"
-  value       = aws_sqs_queue.github_app_webhook.arn
+  value       = aws_sqs_queue.github_app_noq_webhook.arn
 }

@@ -173,9 +173,9 @@ output "sqs_registration_response_queue_name" {
   value       = module.tenant_messaging.sqs_registration_response_queue_name
 }
 
-output "sqs_github_app_webhook_queue_arn" {
+output "sqs_github_app_noq_webhook_queue_arn" {
   description = "The SQS to see GitHub App Noq Webhook Events"
-  value       = module.tenant_messaging.sqs_github_app_webhook_queue_arn
+  value       = module.tenant_messaging.sqs_github_app_noq_webhook_queue_arn
 }
 
 output "stage" {

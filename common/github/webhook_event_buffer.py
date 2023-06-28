@@ -10,6 +10,8 @@ from common.github.models import GitHubInstall
 from common.lib.asyncio import aio_wrapper
 from common.lib.messaging import iterate_event_messages
 
+log = config.get_logger(__name__)
+
 
 def get_developer_queue_name() -> str:
     region = config.get("_global_.integrations.aws.region", "us-west-2")
@@ -52,7 +54,11 @@ async def webhook_request_handler(request):
     Note: this is where we wire up the control plane between webhook events and
     Noq SaaS Self Service request
     """
+    log_data = {
+        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+    }
 
+    headers = request["headers"]
     body = request["body"]
 
     # signature is now being validated at the lambda serverless routing layer
@@ -62,19 +68,36 @@ async def webhook_request_handler(request):
     # see serverless/github-app-webhook-lambda.
 
     github_event = json.loads(body)
+    github_event_type = headers["x-github-event"]
     github_installation_id = github_event["installation"]["id"]
 
     tenant_github_install = await GitHubInstall.get_with_installation_id(
         github_installation_id
     )
     if not tenant_github_install:
-        # What's the right handling?
-        # raise HTTPError(400, "Unknown installation id")
-        # FIXME
-        pass
+        # this is an opportunity to cause denial-of-service.
+        # anyone can install an app and forgot to
+        # complete the installation process. For example, installer
+        # does not have GitHub App install right and has not gotten
+        # the install token from their GitHub Administrator yet.
+        #
+        # The denial of service case is adversary install our public
+        # app and trigger large amount of web hook events.
+        # The remediation is the lambda routing layer needs to drop
+        # un-associated (adversary) github_installation requests.
+        #
+        # we must return to consume the event.
+        log.error(
+            {
+                **log_data,
+                "message": "Unassociated installation_id",
+                "github_installation_id": github_installation_id,
+            }
+        )
+        return
 
     github_action = github_event["action"]
-    if github_action == "deleted":
+    if github_action == "deleted" and github_event_type == "meta":
         await tenant_github_install.delete()
         return
 
@@ -145,7 +168,9 @@ async def handle_github_webhook_event_queue(
                 # END special sauce, the rest is boilerplate
 
             except Exception:
-                # Questions: what is the expected Dead Letter Queue pattern?
+                # We setup the dead letter queue re-drive policy in terraform.
+                # How it works is typically after 4 (or N) attempt to consume
+                # it will automatically move to the associated DLQ
                 raise
         if processed_messages:
             await aio_wrapper(
