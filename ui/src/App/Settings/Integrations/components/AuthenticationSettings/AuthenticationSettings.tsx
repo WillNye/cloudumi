@@ -7,11 +7,9 @@ import {
   updateOIDCSettings,
   updateSAMLSettings,
   deleteOidcSettings,
-  deleteSamlSettings,
-  fetchOidcWellKnownConfig
+  deleteSamlSettings
 } from 'core/API/ssoSettings';
 import { yupResolver } from '@hookform/resolvers/yup';
-import * as Yup from 'yup';
 import { Notification, NotificationType } from 'shared/elements/Notification';
 import { Segment } from 'shared/layout/Segment';
 import { Select, SelectOption } from 'shared/form/Select';
@@ -20,311 +18,21 @@ import { Checkbox } from 'shared/form/Checkbox';
 import { Input } from 'shared/form/Input';
 import { Block } from 'shared/layout/Block';
 import { LineBreak } from 'shared/elements/LineBreak';
-import { debounce, merge } from 'lodash';
-
-// SAML Bindings: https://en.wikipedia.org/wiki/SAML_2.0#Bindings
-const BINDINGS = [
-  'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
-  'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect'
-];
-
-const OKTA_SCOPES = [
-  'groups',
-  'openid',
-  'profile',
-  'email',
-  'address',
-  'phone',
-  'offline_access',
-  'device_sso'
-];
-
-const AUTH0_SCOPES = [
-  'openid',
-  'profile',
-  'offline_access',
-  'name',
-  'given_name',
-  'family_name',
-  'nickname',
-  'email',
-  'email_verified',
-  'picture',
-  'created_at',
-  'identities',
-  'phone',
-  'address'
-];
-
-const AZURE_SCOPES = ['openid', 'profile', 'email', 'offline_access'];
-
-// TODO: which component for multiselect? because for client_scopes we need to select multiple but in a suggestion way?
-// TODO: continue with SAML form
-
-const DEFAULT_OIDC_SETTINGS = {
-  oidc: {
-    get_user_by_oidc_settings: {
-      metadata_url: '',
-      client_scopes: [],
-      include_admin_scope: false,
-      grant_type: 'authorization_code',
-      id_token_response_key: 'id_token',
-      access_token_response_key: 'access_token',
-      jwt_email_key: 'email',
-      enable_mfa: false,
-      get_groups_from_access_token: true,
-      access_token_audience: '',
-      get_groups_from_userinfo_endpoint: true,
-      user_info_groups_key: 'groups'
-    },
-    secrets: {
-      use: false,
-      oidc: {
-        client_id: '',
-        client_secret: ''
-      }
-    }
-  }
-};
-
-const DEFAULT_SAML_SETTINGS = {
-  saml: {
-    get_user_by_saml_settings: {
-      jwt: {
-        expiration_hours: 2,
-        email_key: 'email',
-        group_key: 'groups'
-      },
-      attributes: {
-        user: 'user',
-        groups: 'groups',
-        email: 'email'
-      },
-      idp_metadata_url: '',
-      sp: {
-        entityId: '',
-        assertionConsumerService: {
-          binding: '',
-          url: ''
-        }
-      },
-      idp: {
-        entityId: '',
-        singleSignOnService: {
-          binding: '',
-          url: ''
-        },
-        singleLogoutService: {
-          binding: '',
-          url: ''
-        },
-        x509cert: ''
-      }
-    }
-  }
-};
-
-const AUTH_DEFAULT_VALUES = {
-  auth: {
-    force_redirect_to_identity_provider: false,
-    extra_auth_cookies: ['AWSELBAuthSessionCookie'],
-    challenge_url: { enabled: false },
-    logout_redirect_url: ''
-  }
-};
+import { merge } from 'lodash';
+import {
+  schema,
+  AUTH_DEFAULT_VALUES,
+  DEFAULT_OIDC_SETTINGS,
+  DEFAULT_SAML_SETTINGS,
+  BINDINGS
+} from './constants';
+import { parseSsoSettingsBody } from 'core/API/utils';
+import { transformStringIntoArray } from 'shared/form/Input/utils';
 
 // eslint-disable-next-line complexity
 const AuthenticationSettings = () => {
-  const schema = Yup.object()
-    .shape({
-      ssoType: Yup.string()
-        .oneOf(['none', 'oidc', 'saml'])
-        .required('Required')
-        .label('SSO Type'),
-      auth: Yup.object()
-        .shape({
-          extra_auth_cookies: Yup.array()
-            .of(Yup.string())
-            .default([])
-            .nullable()
-            .label('Extra Auth Cookies'),
-          force_redirect_to_identity_provider: Yup.boolean()
-            .default(false)
-            .label('Force Redirect to Identity Provider'),
-          challenge_url: Yup.object().shape({
-            enabled: Yup.boolean()
-              .default(true)
-              .label("Challenge URL's Enabled")
-          }),
-          logout_redirect_url: Yup.string()
-            .url()
-            .default('')
-            .label('Logout Redirect URL')
-        })
-        .when('ssoType', {
-          is: type => type != 'none',
-          then: schema => schema.required(),
-          otherwise: schema => schema.notRequired()
-        }),
-      oidc: Yup.object().when('ssoType', {
-        is: 'oidc',
-        then: schema =>
-          schema
-            .shape({
-              get_user_by_oidc_settings: Yup.object().shape({
-                metadata_url: Yup.string()
-                  .url()
-                  .default('')
-                  .label('Metadata URL'),
-                client_scopes: Yup.array()
-                  .of(Yup.string())
-                  .default([])
-                  .label('Client Scopes'),
-                include_admin_scope: Yup.boolean()
-                  .default(false)
-                  .label('Include Admin Scope'),
-                grant_type: Yup.string()
-                  .default('authorization_code')
-                  .required()
-                  .label('Grant Type'),
-                id_token_response_key: Yup.string()
-                  .default('id_token')
-                  .required()
-                  .label('ID Token Response Key'),
-                access_token_response_key: Yup.string()
-                  .default('access_token')
-                  .required()
-                  .label('Access Token Response Key'),
-                jwt_email_key: Yup.string()
-                  .default('email')
-                  .required()
-                  .label('JWT Email Key'),
-                enable_mfa: Yup.boolean().default(false).label('Enable MFA'),
-                get_groups_from_access_token: Yup.boolean()
-                  .default(false)
-                  .label('Get Groups from Access Token'),
-                access_token_audience: Yup.string()
-                  .required()
-                  .label('Access Token Audience'),
-                get_groups_from_userinfo_endpoint: Yup.boolean()
-                  .default(false)
-                  .label('Get Groups from User Info Endpoint'),
-                user_info_groups_key: Yup.string()
-                  .default('groups')
-                  .required()
-                  .label("User Info's Groups Key")
-              }),
-              secrets: Yup.object().shape({
-                use: Yup.boolean().default(false),
-                oidc: Yup.object().when('use', {
-                  is: true,
-                  then: schema =>
-                    schema.shape({
-                      client_id: Yup.string()
-                        .required()
-                        .min(1)
-                        .label('Client ID'),
-                      client_secret: Yup.string()
-                        .required()
-                        .min(1)
-                        .label('Client Secret')
-                    })
-                })
-              })
-            })
-            .required(),
-        otherwise: schema => schema.notRequired()
-      }),
-      saml: Yup.object().when('ssoType', {
-        is: 'saml',
-        then: schema =>
-          schema
-            .shape({
-              get_user_by_saml_settings: Yup.object().shape({
-                idp_metadata_url: Yup.string()
-                  .url()
-                  .default('')
-                  .label('IDP Metadata URL'),
-                jwt: Yup.object().shape({
-                  expiration_hours: Yup.number()
-                    .default(1)
-                    .label('Expiration Hours'),
-                  email_key: Yup.string().default('email').label('Email Key'),
-                  group_key: Yup.string().default('groups').label('Group Key')
-                }),
-                attributes: Yup.object().shape({
-                  user: Yup.string().default('user').label('Attribute User'),
-                  groups: Yup.string()
-                    .default('groups')
-                    .label('Attribute Groups'),
-                  email: Yup.string().default('email').label('Attribute Email')
-                }),
-                idp: Yup.object().when('idp_metadata_url', {
-                  is: (idp_metadata_url: string) => !idp_metadata_url,
-                  then: schema =>
-                    schema
-                      .shape({
-                        entityId: Yup.string()
-                          .required()
-                          .label('IDP Entity ID'),
-                        singleSignOnService: Yup.object()
-                          .shape({
-                            binding: Yup.string()
-                              .oneOf(BINDINGS)
-                              .default(BINDINGS[0])
-                              .required()
-                              .label('IDP Single Sign On Service Binding'),
-                            url: Yup.string()
-                              .url()
-                              .required()
-                              .label('IDP Single Sign On Service URL')
-                          })
-                          .notRequired(),
-                        singleLogoutService: Yup.object()
-                          .shape({
-                            binding: Yup.string()
-                              .oneOf(BINDINGS)
-                              .default(BINDINGS[0])
-                              .required()
-                              .label('IDP Single Logout Service Binding'),
-                            url: Yup.string()
-                              .url()
-                              .required()
-                              .label('IDP Single Logout Service URL')
-                          })
-                          .notRequired(),
-                        x509cert: Yup.string().required().label('X509Cert')
-                      })
-                      .required(),
-                  otherwise: schema => schema.notRequired()
-                }),
-                sp: Yup.object()
-                  .shape({
-                    assertionConsumerService: Yup.object().shape({
-                      binding: Yup.string()
-                        .oneOf([...BINDINGS, '', null])
-                        .default('')
-                        .notRequired()
-                        .label('SP Assertion Consumer Service Binding'),
-                      url: Yup.string().url().notRequired()
-                    }),
-                    entityId: Yup.string().label('SP Entity ID')
-                  })
-                  .notRequired()
-              })
-            })
-            .required(),
-        otherwise: schema => schema.notRequired()
-      })
-    })
-    .required();
-
-  // TODO: remove or use?
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  // available client scopes when metadata_url is set
-  const [clientScopesOptions, setClientScopesOptions] = useState<string[]>([]);
 
   const [isLoading, setIsLoading] = useState(false);
   const queryClient = useQueryClient();
@@ -341,8 +49,6 @@ const AuthenticationSettings = () => {
     handleSubmit,
     watch,
     setValue,
-    setError,
-    clearErrors,
     formState: { isSubmitting, errors, isValid },
     getValues
   } = useForm({
@@ -350,7 +56,6 @@ const AuthenticationSettings = () => {
     resolver: yupResolver(schema)
   });
 
-  // watch sso provider type
   const ssoType = watch('ssoType');
 
   const { data: oidcSettings, ...oidcQuery } = useQuery({
@@ -365,46 +70,7 @@ const AuthenticationSettings = () => {
     select: data => data.data
   });
 
-  /**
-   * Fetches the well-known config from the given url and sets the client scopes options.
-   * if not available, sets the client scopes options to the default scopes (azure, okta, auth0).
-   */
-  const onChangeOidcMetadataUrl = debounce(async (v: string) => {
-    if (!v) {
-      setClientScopesOptions([]);
-      clearErrors('oidc.get_user_by_oidc_settings.metadata_url');
-      return;
-    }
-
-    const data = await fetchOidcWellKnownConfig(v).catch(console.error);
-
-    if (data) {
-      setClientScopesOptions(data['scopes_supported']);
-      clearErrors('oidc.get_user_by_oidc_settings.metadata_url');
-    } else if (v.includes('microsoft')) {
-      setClientScopesOptions(AZURE_SCOPES);
-      clearErrors('oidc.get_user_by_oidc_settings.metadata_url');
-    } else if (v.includes('okta')) {
-      setClientScopesOptions(OKTA_SCOPES);
-      clearErrors('oidc.get_user_by_oidc_settings.metadata_url');
-    } else if (v.includes('auth0')) {
-      setClientScopesOptions(AUTH0_SCOPES);
-      clearErrors('oidc.get_user_by_oidc_settings.metadata_url');
-    } else {
-      setError('oidc.get_user_by_oidc_settings.metadata_url', {
-        message: 'URL is not a valid OIDC metadata URL'
-      });
-    }
-  }, 500);
-
-  useEffect(() => {
-    onChangeOidcMetadataUrl(
-      watch('oidc.get_user_by_oidc_settings.metadata_url')
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watch('oidc.get_user_by_oidc_settings.metadata_url')]);
-
-  // Get Current SSO type (without edition, source of truth)
+  // Get Current SSO type (source of truth)
   const getCurrentSsoType = useCallback(() => {
     if (
       oidcSettings?.auth.get_user_by_saml ||
@@ -421,8 +87,8 @@ const AuthenticationSettings = () => {
     }
   }, [oidcSettings?.auth, samlSettings?.auth]);
 
-  // Get Current SSO type (with edition)
-  const editMode = useMemo(() => {
+  // Get Current SSO type (during edition)
+  const upsertMode = useMemo(() => {
     if (ssoType != getCurrentSsoType()) {
       return true;
     } else {
@@ -430,18 +96,22 @@ const AuthenticationSettings = () => {
     }
   }, [getCurrentSsoType, ssoType]);
 
+  // If SSO type is OIDC and it is creating the OIDC settings, set the value of the checkbox to true
+  // to force adding the secrets
   useEffect(() => {
-    if (editMode && ssoType == 'oidc') {
+    if (upsertMode && ssoType == 'oidc') {
       setValue('oidc.secrets.use', true);
     } else {
       setValue('oidc.secrets.use', false);
     }
-  }, [ssoType, editMode, setValue]);
+  }, [ssoType, upsertMode, setValue]);
 
+  // update SSO type depending on the current server data
   useEffect(() => {
     setValue('ssoType', getCurrentSsoType());
   }, [getCurrentSsoType, setValue]);
 
+  // update OIDC current settings
   useEffect(() => {
     if (oidcSettings?.get_user_by_oidc_settings) {
       const data = merge(
@@ -457,6 +127,7 @@ const AuthenticationSettings = () => {
     }
   }, [getValues, oidcSettings?.get_user_by_oidc_settings, setValue]);
 
+  // update OIDC current settings
   useEffect(() => {
     if (samlSettings?.get_user_by_saml_settings) {
       const data = merge(
@@ -495,7 +166,7 @@ const AuthenticationSettings = () => {
     }
   });
 
-  // loading effect
+  // Loading effect should be shown when queries or mutations are loading, or when queries are fetching.
   useEffect(() => {
     if (
       samlQuery.isLoading ||
@@ -515,145 +186,8 @@ const AuthenticationSettings = () => {
     samlQuery.isFetching
   ]);
 
-  /**
-   * Parse body to save settings
-   * @param settings
-   * @returns
-   */
-  const parseBody = settings => {
-    if (ssoType == 'oidc') {
-      const secrets = settings?.oidc?.secrets?.use
-        ? {
-            secrets: {
-              oidc: {
-                ...settings.oidc.secrets.oidc
-              }
-            }
-          }
-        : {};
-
-      const get_user_by_oidc_settings = {
-        get_user_by_oidc_settings: {
-          metadata_url: settings.oidc.get_user_by_oidc_settings.metadata_url,
-          client_scopes: settings.oidc.get_user_by_oidc_settings.client_scopes,
-          include_admin_scope:
-            settings.oidc.get_user_by_oidc_settings.include_admin_scope,
-          grant_type: settings.oidc.get_user_by_oidc_settings.grant_type,
-          id_token_response_key:
-            settings.oidc.get_user_by_oidc_settings.id_token_response_key,
-          access_token_response_key:
-            settings.oidc.get_user_by_oidc_settings.access_token_response_key,
-          jwt_email_key: settings.oidc.get_user_by_oidc_settings.jwt_email_key,
-          enable_mfa: settings.oidc.get_user_by_oidc_settings.enable_mfa,
-          get_groups_from_access_token:
-            settings.oidc.get_user_by_oidc_settings
-              .get_groups_from_access_token,
-          access_token_audience:
-            settings.oidc.get_user_by_oidc_settings.access_token_audience,
-          get_groups_from_userinfo_endpoint:
-            settings.oidc.get_user_by_oidc_settings
-              .get_groups_from_userinfo_endpoint,
-          user_info_groups_key:
-            settings.oidc.get_user_by_oidc_settings.user_info_groups_key
-        }
-      };
-
-      const auth = {
-        auth: {
-          get_user_by_oidc: true,
-          get_user_by_saml: false,
-          extra_auth_cookies: settings.auth.extra_auth_cookies,
-          force_redirect_to_identity_provider:
-            settings.auth.force_redirect_to_identity_provider
-        }
-      };
-
-      return {
-        ...get_user_by_oidc_settings,
-        ...secrets,
-        ...auth
-      };
-    } else if (ssoType == 'saml') {
-      const get_user_by_saml_settings = {
-        get_user_by_saml_settings: {
-          jwt: {
-            expiration_hours: 2
-          },
-          attributes: {
-            user: settings.saml.get_user_by_saml_settings.attributes.user,
-            groups: settings.saml.get_user_by_saml_settings.attributes.groups,
-            email: settings.saml.get_user_by_saml_settings.attributes.email
-          },
-          idp_metadata_url:
-            settings.saml.get_user_by_saml_settings.idp_metadata_url ?? null,
-          // if idp_metadata_url is not set, use idp object
-          ...(!settings.saml.get_user_by_saml_settings.idp_metadata_url
-            ? {
-                idp: {
-                  entityId:
-                    settings.saml.get_user_by_saml_settings.idp.entityId,
-                  singleSignOnService: {
-                    binding:
-                      settings.saml.get_user_by_saml_settings.idp
-                        .singleSignOnService.binding,
-                    url: settings.saml.get_user_by_saml_settings.idp
-                      .singleSignOnService.url
-                  },
-                  singleLogoutService: {
-                    binding:
-                      settings.saml.get_user_by_saml_settings.idp
-                        .singleLogoutService.binding,
-                    url: settings.saml.get_user_by_saml_settings.idp
-                      .singleLogoutService.url
-                  },
-                  x509cert: settings.saml.get_user_by_saml_settings.idp.x509cert
-                }
-              }
-            : { idp: null }),
-          // if sp is not set, then set it to null
-          sp: {
-            // if entityId is not set, then set it to null
-            ...(settings.saml.get_user_by_saml_settings.sp.entityId && {
-              entityId: settings.saml.get_user_by_saml_settings.sp.entityId
-            }),
-            // if assertionConsumerService is not set, then set it to null
-            ...(settings.saml.get_user_by_saml_settings.sp
-              .assertionConsumerService
-              ? {
-                  assertionConsumerService: {
-                    binding:
-                      settings.saml.get_user_by_saml_settings.sp
-                        .assertionConsumerService.binding,
-                    url: settings.saml.get_user_by_saml_settings.sp
-                      .assertionConsumerService.url
-                  }
-                }
-              : { sp: null })
-          }
-        }
-      };
-
-      const auth = {
-        auth: {
-          get_user_by_oidc: false,
-          get_user_by_saml: true,
-          extra_auth_cookies: settings.auth.extra_auth_cookies,
-          force_redirect_to_identity_provider:
-            settings.auth.force_redirect_to_identity_provider
-        }
-      };
-
-      return {
-        ...get_user_by_saml_settings,
-        ...auth
-      };
-    } else {
-      return null;
-    }
-  };
-
   const handleSave = handleSubmit(async newSettings => {
-    const body = parseBody(newSettings);
+    const body = parseSsoSettingsBody(newSettings, ssoType);
     if (isValid) {
       await saveMutation(body);
     }
@@ -740,34 +274,39 @@ const AuthenticationSettings = () => {
                 errors?.oidc?.get_user_by_oidc_settings?.metadata_url.message}
             </Block>
             <LineBreak />
-            <Controller
-              name="oidc.get_user_by_oidc_settings.client_scopes"
-              control={control}
-              render={({ field }) => (
-                <Block disableLabelPadding label="Client Scopes" required>
-                  <Select
-                    multiple={true}
-                    closeOnSelect={false}
-                    name="oidc.get_user_by_oidc_settings.client_scopes"
-                    value={watch(
-                      'oidc.get_user_by_oidc_settings.client_scopes'
-                    )}
-                    onChange={v =>
+            <input
+              type="hidden"
+              {...register('oidc.get_user_by_oidc_settings.client_scopes')}
+            ></input>
+            {/* TOOD: add information about how to fill this field (string separated by comma) */}
+            <Block disableLabelPadding label="Client Scopes" required>
+              <Controller
+                control={control}
+                name="oidc.get_user_by_oidc_settings.client_scopes"
+                render={({ field }) => (
+                  <Input
+                    onChange={e =>
                       setValue(
                         'oidc.get_user_by_oidc_settings.client_scopes',
-                        v
+                        transformStringIntoArray.output(e)
                       )
                     }
-                  >
-                    {clientScopesOptions.map(cs => (
-                      <SelectOption key={cs} value={cs}>
-                        {cs}
-                      </SelectOption>
-                    ))}
-                  </Select>
-                </Block>
-              )}
-            />
+                    value={transformStringIntoArray.input(
+                      watch('oidc.get_user_by_oidc_settings.client_scopes')
+                    )}
+                  />
+                )}
+              />
+              {errors?.oidc?.get_user_by_oidc_settings?.client_scopes &&
+                errors?.oidc?.get_user_by_oidc_settings?.client_scopes.message}
+
+              {errors?.oidc?.get_user_by_oidc_settings?.client_scopes &&
+                errors?.oidc?.get_user_by_oidc_settings?.client_scopes
+                  ?.filter(x => x)
+                  .map(x => x.message)
+                  .join(',')}
+            </Block>
+
             <LineBreak />
 
             <Block disableLabelPadding label="Include Admin Scope">

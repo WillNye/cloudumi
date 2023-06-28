@@ -10,6 +10,7 @@ import {
 } from './constants';
 import { Breadcrumbs } from 'shared/elements/Breadcrumbs';
 import { useAuth } from 'core/Auth';
+import classNames from 'classnames';
 
 const SettingsMenu: FC = () => {
   const { user } = useAuth();
@@ -67,9 +68,9 @@ const SettingsMenu: FC = () => {
                     <Link to="/settings/user_management">User Management</Link>
                   </li>
                   <li
-                    className={`${styles.navItem} ${
-                      isAuthenticationPath && styles.isActive
-                    }`}
+                    className={classNames(styles.navItem, {
+                      [styles.isActive]: isAuthenticationPath
+                    })}
                   >
                     <Link to={'/settings/authentication-settings'}>
                       Auth Settings
