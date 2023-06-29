@@ -926,9 +926,7 @@ class BaseHandler(TornadoRequestHandler):
                 )
                 sentry_sdk.capture_exception()
             if not self.groups:
-                raise NoGroupsException(
-                    f"Groups not detected. Headers: {self.request.headers}"
-                )
+                raise NoGroupsException(f"Groups not detected for {self.user}.")
 
         except NoGroupsException:
             stats.count("Basehandler.authorization_flow.no_groups_detected")

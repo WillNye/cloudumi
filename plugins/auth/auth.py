@@ -184,9 +184,10 @@ class Auth(metaclass=Singleton):
         if not groups:
             log.error(
                 {
-                    "message": "auth.get_groups not configured properly or no groups were obtained."
+                    "message": "auth.get_groups not configured properly or no groups were obtained.",
+                    "tenant": tenant,
+                    "user": user,
                 },
-                exc_info=True,
             )
         if config.get_tenant_specific_key("auth.force_groups_lowercase", tenant, False):
             groups = [x.lower() for x in groups]
