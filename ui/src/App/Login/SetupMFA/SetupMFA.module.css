@@ -1,10 +1,12 @@
 .container {
   width: 100vw;
-  height: 100vh;
+  min-height: 100vh;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
   flex-direction: column;
+  overflow-y: auto;
 
   .title {
     padding: var(--spacing-lg) 0px;
@@ -14,6 +16,19 @@
     max-width: 450px;
     text-align: center;
     padding: 0px var(--spacing-lg);
+  }
+
+  .steps {
+    text-align: left;
+    color: var(--gray-200);
+    padding: 0px var(--spacing-sm);
+    line-height: 1.5rem;
+  }
+
+  .stepsHeader {
+    text-align: center;
+    color: var(--gray-100);
+    padding: var(--spacing-md);
   }
 
   .box {
