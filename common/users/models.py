@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import pyotp
 import ujson as json
+from furl import furl
 from sqlalchemy import (
     Boolean,
     Column,
@@ -350,13 +351,21 @@ class User(SoftDeleteMixin, Base):
             return items.scalars().first()
 
     @classmethod
-    async def create(cls, tenant, username, email, password, **kwargs):
+    async def create(
+        cls,
+        tenant,
+        username,
+        email,
+        password,
+        password_reset_required=True,
+        **kwargs,
+    ):
         user = cls(
             id=str(uuid4()),
             tenant_id=tenant.id,
             username=username,
             email=email,
-            password_reset_required=True,
+            password_reset_required=password_reset_required,
             **kwargs,
         )
         await user.set_password(password)
@@ -408,7 +417,8 @@ class User(SoftDeleteMixin, Base):
                 else:
                     return False
 
-    async def __get_verification_url(self, tenant, tenant_url):
+    async def __get_verification_url(self, tenant, tenant_url: furl):
+        tenant_url = tenant_url.copy()
         # Generate a unique ID for the verification link
         email_verify_token = str(uuid.uuid4())
         email_verify_blob = {
@@ -433,7 +443,7 @@ class User(SoftDeleteMixin, Base):
 
         return verification_url
 
-    async def send_verification_email(self, tenant, tenant_url):
+    async def send_verification_email(self, tenant: str, tenant_url: furl):
         """Sends an email to the given address with a URL to click on to verify their email.
 
         Args:
@@ -534,10 +544,13 @@ class User(SoftDeleteMixin, Base):
             body=password_reset_email,
         )
 
-    async def send_password_via_email(self, tenant: str, tenant_url, password: str):
-        domain = tenant_url.url
+    async def send_password_via_email(
+        self, tenant: str, tenant_url: furl, password: str, reset_password: bool = True
+    ):
         if not self.__is_verified:
             domain = await self.__get_verification_url(tenant, tenant_url)
+        else:
+            domain = tenant_url.url
 
         cognito_invitation_message = new_user_with_password_email_template.render(
             year=date.today().year,
@@ -545,6 +558,7 @@ class User(SoftDeleteMixin, Base):
             base_domain=tenant_url.url,
             username=self.email,
             password=password,
+            reset_password=reset_password,
         )
         await send_email_via_sendgrid(
             to_addresses=[self.email],
