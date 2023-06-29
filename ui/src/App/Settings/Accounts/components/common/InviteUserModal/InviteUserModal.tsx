@@ -48,8 +48,10 @@ const InviteUserModal = ({ refreshData }) => {
   useEffect(() => {
     if (!showDialog) {
       reset();
+      setSuccessMessage(null);
+      setErrorMessage(null);
     }
-  }, [showDialog]);
+  }, [reset, showDialog]);
 
   const { mutateAsync: createUserMutation } = useMutation({
     mutationFn: (data: CreateUserParams) => createUser(data)
