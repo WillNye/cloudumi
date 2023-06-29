@@ -56,7 +56,7 @@ const CompletionForm = () => {
     if (templateResponse) {
       setRevisedTemplateBody(templateResponse?.request_data?.template_body);
     }
-  }, []);
+  }, [templateResponse]);
 
   const onChange = (value: string) => {
     setRevisedTemplateBody(value);
