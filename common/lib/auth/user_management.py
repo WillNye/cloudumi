@@ -29,4 +29,9 @@ async def maybe_create_users_groups_in_database(
         new_groups = res.get("new_groups")
         await upsert_and_remove_group_memberships([db_user], all_groups)
     if new_groups:
-        pass  # TODO: Need to refresh role mapping for this user if they have new group memberships
+        from common.celery_tasks.celery_tasks import app as celery_app
+
+        celery_app.send_task(
+            "common.celery_tasks.celery_tasks.run_full_iambic_sync_for_tenant",
+            kwargs={"tenant": db_tenant.name},
+        )

@@ -553,7 +553,6 @@ class Configuration(metaclass=Singleton):
         )
 
         logger = structlog.get_logger(name)
-        logger.debug("Initializing logger")
         self.log = logger
         return self.log
 
