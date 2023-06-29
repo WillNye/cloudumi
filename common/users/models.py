@@ -96,6 +96,15 @@ class User(SoftDeleteMixin, Base):
         UniqueConstraint("tenant_id", "email", name="uq_tenant_email"),
     )
 
+    @property
+    def __is_verified(
+        self,
+    ) -> bool:
+        return self.email_verified or (
+            self.email_verify_token_expiration
+            and self.email_verify_token_expiration >= datetime.utcnow()
+        )
+
     def get_status(self):
         if not self.active:
             return "inactive"
@@ -399,18 +408,7 @@ class User(SoftDeleteMixin, Base):
                 else:
                     return False
 
-    async def send_verification_email(self, tenant, tenant_url):
-        """Sends an email to the given address with a URL to click on to verify their email.
-
-        Args:
-            email (str): The email address to send the verification email to.
-            expiration_time (datetime.datetime): The time at which the verification link will expire.
-        """
-        if self.email_verified or (
-            self.email_verify_token_expiration
-            and self.email_verify_token_expiration >= datetime.utcnow()
-        ):
-            return False
+    async def __get_verification_url(self, tenant, tenant_url):
         # Generate a unique ID for the verification link
         email_verify_token = str(uuid.uuid4())
         email_verify_blob = {
@@ -432,6 +430,20 @@ class User(SoftDeleteMixin, Base):
         verification_url = tenant_url.join(
             f"/api/v4/verify?token={email_verify_blob_j_url_safe}"
         ).url
+
+        return verification_url
+
+    async def send_verification_email(self, tenant, tenant_url):
+        """Sends an email to the given address with a URL to click on to verify their email.
+
+        Args:
+            email (str): The email address to send the verification email to.
+            expiration_time (datetime.datetime): The time at which the verification link will expire.
+        """
+        if self.__is_verified:
+            return False
+
+        verification_url = await self.__get_verification_url(tenant, tenant_url)
 
         body_text = (
             f'Please click on <a href="{verification_url}">this link</a> within the '
@@ -522,10 +534,15 @@ class User(SoftDeleteMixin, Base):
             body=password_reset_email,
         )
 
-    async def send_password_via_email(self, tenant_url, password: str):
+    async def send_password_via_email(self, tenant: str, tenant_url, password: str):
+        domain = tenant_url.url
+        if not self.__is_verified:
+            domain = await self.__get_verification_url(tenant, tenant_url)
+
         cognito_invitation_message = new_user_with_password_email_template.render(
             year=date.today().year,
-            domain=tenant_url.url,
+            domain=domain,
+            base_domain=tenant_url.url,
             username=self.email,
             password=password,
         )

@@ -139,7 +139,9 @@ class ManageUsersHandler(BaseAdminHandler):
         )
 
         if not password_supplied:
-            await created_user.send_password_via_email(tenant_url, password)
+            await created_user.send_password_via_email(
+                self.ctx.tenant, tenant_url, password
+            )
 
         # Return a JSON object with the user's ID
         self.write({"user_id": created_user.id, "username": created_user.username})
@@ -758,12 +760,4 @@ class UnauthenticatedEmailVerificationHandler(tornado.web.RequestHandler):
             # TODO: Log here
             raise tornado.web.Finish()
 
-        self.write(
-            WebResponse(
-                success="success",
-                status_code=200,
-                data={
-                    "message": "Successfully verified e-mail",
-                },
-            ).dict(exclude_unset=True, exclude_none=True)
-        )
+        self.redirect("/login?email_verified=true")
