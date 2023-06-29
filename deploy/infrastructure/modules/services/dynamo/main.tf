@@ -398,6 +398,12 @@ resource "aws_dynamodb_table" "noq_api_keys_v2" {
   #   }
   # }
 
+  # we are ignoring the life cycle because
+  # there is no way to get around the read_capacity, write_capacity
+  # drift of GSI
+  # see https://github.com/hashicorp/terraform-provider-aws/issues/671
+  lifecycle { ignore_changes = [global_secondary_index] }
+
   tags = merge(
     var.tags,
     {}
