@@ -674,6 +674,7 @@ class BaseHandler(TornadoRequestHandler):
                 await log.aerror(log_data)
                 self.write(log_data["message"])
                 raise tornado.web.Finish()
+        log_data["user"] = self.user
 
         if not self.eula_signed:
             try:
