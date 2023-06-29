@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Dialog } from 'shared/layers/Dialog';
 
 import { Block } from 'shared/layout/Block';
@@ -33,6 +33,7 @@ const InviteUserModal = ({ refreshData }) => {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { isSubmitting, isValid, errors, touchedFields }
   } = useForm({
     mode: 'onChange',
@@ -43,6 +44,12 @@ const InviteUserModal = ({ refreshData }) => {
       password: ''
     }
   });
+
+  useEffect(() => {
+    if (!showDialog) {
+      reset();
+    }
+  }, [showDialog]);
 
   const { mutateAsync: createUserMutation } = useMutation({
     mutationFn: (data: CreateUserParams) => createUser(data)
