@@ -586,6 +586,9 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
         tenant_name (str): The name of the tenant.
     """
     tenant = await Tenant.get_by_name(tenant_name)
+    if not tenant:
+        log.error("Not a valid tenant", tenant=tenant_name)
+        return
     iambic_repos = await IambicRepo.get_all_tenant_repos(tenant.name)
     if not iambic_repos:
         log.error(

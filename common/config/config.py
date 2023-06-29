@@ -521,7 +521,7 @@ class Configuration(metaclass=Singleton):
             # default
             level = logging.DEBUG
 
-        logging.basicConfig(level=level)
+        logging.basicConfig(format="%(message)s", level=level)
         root_logger = logging.getLogger(name)
         root_logger.setLevel(level)
         root_logger.addHandler(logging.StreamHandler())

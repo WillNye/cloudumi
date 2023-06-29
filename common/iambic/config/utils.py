@@ -93,6 +93,10 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
     # This is super hacky, and we should be using the config object to do all of this
     # Unfortunately, we don't currently have a way to get providers that are stored in a secret
     tenant = await Tenant.get_by_name(tenant_name)
+    if not tenant:
+        log.error("Not a valid tenant", tenant=tenant_name)
+        return
+
     iambic_repos = await IambicRepo.get_all_tenant_repos(tenant_name)
     if not iambic_repos:
         log.error(

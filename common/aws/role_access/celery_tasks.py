@@ -227,16 +227,29 @@ async def sync_role_access(
                                 if group := groups.get(group_rule):
                                     access_rule_groups.append(group)
                                 else:
-                                    group = Group(
-                                        managed_by="MANUAL",
-                                        description="Group automatically detected as part of IAMbic access rule",
-                                        name=group_rule,
-                                        email=group_rule,
-                                        tenant=tenant,
+                                    log.warning(
+                                        {
+                                            "message": "Could not find matching group in CloudUmi's Database.",
+                                            "group_rule": group_rule,
+                                            "tenant": tenant.name,
+                                        }
                                     )
-                                    await group.write()
-                                    groups[group_rule] = group
-                                    access_rule_groups.append(group)
+                                # TODO: Creating groups based purely on access rules and not through a trusted relationship
+                                # with a known identity provider is a bit dangerous. For now, we'll ignore these groups and log.
+                                # Below is the code that could create the group. See
+                                # https://noqglobal.slack.com/archives/C02HF22G4MU/p1687994448971969
+                                # for more details.
+                                # else:
+                                #     group = Group(
+                                #         managed_by="MANUAL",
+                                #         description="Group automatically detected as part of IAMbic access rule",
+                                #         name=group_rule,
+                                #         email=group_rule,
+                                #         tenant=tenant,
+                                #     )
+                                #     await group.write()
+                                #     groups[group_rule] = group
+                                #     access_rule_groups.append(group)
 
                         for group in access_rule_groups:
                             existing_group_role_access_map[identity_role.id].pop(
