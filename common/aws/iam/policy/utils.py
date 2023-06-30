@@ -8,7 +8,7 @@ import time
 from collections import defaultdict
 from copy import deepcopy
 from itertools import chain
-from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import boto3
 import sentry_sdk
@@ -74,7 +74,7 @@ async def get_aws_managed_policy_arns() -> set[str]:
         OnlyAttached=False,
         PathPrefix="/",
     )
-    return set(policy['Arn'] for policy in managed_policies)
+    return set(policy["Arn"] for policy in managed_policies)
 
 
 def is_tenant_policy(arn: str) -> bool:

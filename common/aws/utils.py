@@ -8,8 +8,9 @@ from iambic.plugins.v0_1_0.aws.iam.group.models import AWS_IAM_GROUP_TEMPLATE_TY
 from iambic.plugins.v0_1_0.aws.iam.policy.models import AWS_MANAGED_POLICY_TEMPLATE_TYPE
 from iambic.plugins.v0_1_0.aws.iam.role.models import AWS_IAM_ROLE_TEMPLATE_TYPE
 from iambic.plugins.v0_1_0.aws.iam.user.models import AWS_IAM_USER_TEMPLATE_TYPE
-from iambic.plugins.v0_1_0.aws.identity_center.permission_set.models import \
-    AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE
+from iambic.plugins.v0_1_0.aws.identity_center.permission_set.models import (
+    AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
+)
 from jinja2 import BaseLoader, Environment
 from policy_sentry.util.arns import get_account_from_arn, parse_arn
 
@@ -522,16 +523,16 @@ async def get_url_for_resource(resource_summary: ResourceSummary):
 
 
 async def get_resource_arn(
-        iambic_provider_def,
-        iambic_template: Type[IambicBaseTemplate]
+    iambic_provider_def, iambic_template: Type[IambicBaseTemplate]
 ) -> Union[str, None]:
-    if iambic_template.template_type == AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE:
+    if (
+        iambic_template.template_type
+        == AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE
+    ):
         # Not bothering with generating the ARN for this because it isn't being used
         return
 
-    variables = {
-        var.key: var.value for var in iambic_provider_def.variables
-    }
+    variables = {var.key: var.value for var in iambic_provider_def.variables}
     variables["account_id"] = iambic_provider_def.account_id
     variables["account_name"] = iambic_provider_def.account_name
     if hasattr(iambic_template, "owner") and (
