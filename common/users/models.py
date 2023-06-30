@@ -28,6 +28,7 @@ from common.config import config
 from common.config.globals import ASYNC_PG_SESSION
 from common.group_memberships.models import GroupMembership  # noqa
 from common.lib.notifications import send_email_via_sendgrid
+from common.lib.password import generate_random_password
 from common.pg_core.filters import (
     DEFAULT_SIZE,
     create_filter_from_url_params,
@@ -57,7 +58,9 @@ class User(SoftDeleteMixin, Base):
     email_verify_token_expiration: datetime = Column(DateTime, nullable=True)
     # TODO: Force password reset flow after temp password created (Or just send them a
     # password reset)
-    managed_by = Column(Enum("MANUAL", "SCIM", name="managed_by_enum"), nullable=True)
+    managed_by = Column(
+        Enum("MANUAL", "SCIM", "SSO", name="managed_by_enum"), nullable=True
+    )
     password_reset_required: bool = Column(Boolean, default=False)
     password_hash = Column(String, nullable=False)
     password_reset_token = Column(String, nullable=True)
@@ -77,6 +80,7 @@ class User(SoftDeleteMixin, Base):
     mfa_phone_number = Column(String(128), nullable=True)
     last_successful_mfa_code = Column(String(64), nullable=True)
     tenant_id = Column(Integer, ForeignKey("tenant.id"), nullable=False)
+    description = Column(String, nullable=True)
 
     tenant = relationship("Tenant")
 
@@ -269,6 +273,10 @@ class User(SoftDeleteMixin, Base):
                 await session.commit()
         return user
 
+    @property
+    def is_managed_externally(self):
+        return self.managed_by in {"SSO", "SCIM"}
+
     @classmethod
     async def get_by_id(cls, tenant, user_id, get_groups=False):
         async with ASYNC_PG_SESSION() as session:
@@ -314,7 +322,7 @@ class User(SoftDeleteMixin, Base):
                     )
                 )
                 if get_groups:
-                    stmt = stmt = stmt.options(selectinload(User.groups))
+                    stmt = stmt.options(selectinload(User.groups))
                 user = await session.execute(stmt)
                 return user.scalars().first()
 
@@ -368,6 +376,8 @@ class User(SoftDeleteMixin, Base):
             password_reset_required=password_reset_required,
             **kwargs,
         )
+        if not password:
+            password = await generate_random_password()
         await user.set_password(password)
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():

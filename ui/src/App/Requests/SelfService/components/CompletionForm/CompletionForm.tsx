@@ -56,7 +56,7 @@ const CompletionForm = () => {
     if (templateResponse) {
       setRevisedTemplateBody(templateResponse?.request_data?.template_body);
     }
-  }, []);
+  }, [templateResponse]);
 
   const onChange = (value: string) => {
     setRevisedTemplateBody(value);
@@ -89,9 +89,6 @@ const CompletionForm = () => {
     <Segment disablePadding isLoading={isLoading} className={styles.wrapper}>
       <div className={styles.container}>
         <h3>Request Summary</h3>
-        <LineBreak />
-        <p className={styles.subText}>Please select a change type</p>
-        <LineBreak size="large" />
         {errorMessage ? (
           <div className={styles.notificationAlert}>
             <LineBreak size="large" />

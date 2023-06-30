@@ -521,7 +521,7 @@ class Configuration(metaclass=Singleton):
             # default
             level = logging.DEBUG
 
-        logging.basicConfig(level=level)
+        logging.basicConfig(format="%(message)s", level=level)
         root_logger = logging.getLogger(name)
         root_logger.setLevel(level)
         root_logger.addHandler(logging.StreamHandler())
@@ -553,7 +553,6 @@ class Configuration(metaclass=Singleton):
         )
 
         logger = structlog.get_logger(name)
-        logger.debug("Initializing logger")
         self.log = logger
         return self.log
 
@@ -591,6 +590,21 @@ class Configuration(metaclass=Singleton):
             "spectator.HttpClient": "WARNING",
             "spectator.Registry": "WARNING",
             "urllib3": "ERROR",
+            "rediscluster.nodemanager": "WARNING",
+            "rediscluster.connection": "WARNING",
+            "rediscluster.client": "WARNING",
+            "git.cmd": "WARNING",
+            "elasticapm.metrics": "WARNING",
+            "elasticapm.conf": "WARNING",
+            "elasticapm.transport": "WARNING",
+            "elasticapm.transport.http": "WARNING",
+            "github.Requester": "WARNING",
+            "slack_sdk.web.async_base_client": "WARNING",
+            "root": "WARNING",
+            "httpx:": "WARNING",
+            "httpcore.http11": "WARNING",
+            "httpcore.connection": "WARNING",
+            "git.util": "WARNING",
         }
         logging.getLogger().setLevel("WARNING")  # For the root logger
         for logger, level in self.get(

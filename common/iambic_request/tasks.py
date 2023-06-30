@@ -3,19 +3,22 @@ from typing import Optional
 
 from sqlalchemy import select
 
+from common.config.config import get_logger
 from common.config.globals import ASYNC_PG_SESSION
 from common.iambic_request.models import Request
 from common.iambic_request.utils import get_iambic_pr_instance
 from common.tenants.models import Tenant
+
+log = get_logger(__name__)
 
 
 async def handle_tenant_iambic_github_event(
     tenant_id: int,
     repo_name: str,
     pull_request: int,
-    status: str,
     pr_created_at: datetime,
     approved_by: Optional[list[str]],
+    is_closed: Optional[bool],
     is_merged: Optional[bool],
 ):
     async with ASYNC_PG_SESSION() as session:
@@ -33,23 +36,36 @@ async def handle_tenant_iambic_github_event(
         # TODO: Support creating a new request when a PR is created outside of the SaaS app
         return
 
-    if status == request.status or (
-        status == "Pending" and request.status == "Running"
-    ):
-        return  # No change
-    elif status == "Closed":
-        request.status = "Approved" if is_merged else "Rejected"
-        if is_merged:
-            request.approved_by.extend(approved_by)
+    tenant = await Tenant.get_by_id(tenant_id)
+    request_pr = await get_iambic_pr_instance(
+        tenant, request.id, request.created_by, request.pull_request_id
+    )
+    await request_pr.load_pr()
 
-        tenant = await Tenant.get_by_id(tenant_id)
-        request_pr = await get_iambic_pr_instance(
-            tenant, request.id, request.created_by, request.pull_request_id
-        )
-        await request_pr.load_pr()
+    if approved_by and not is_closed and not is_merged:
+        if request_pr.merge_on_approval:
+            await request_pr.merge_request(request.approved_by)
+        else:
+            request.status = "Pending in Git"
+    elif is_merged:
+        request.status = "Approved"
+        approved_by = [approver for approver in approved_by if "[bot]" not in approver]
+        request.approved_by = list(set(request.approved_by + approved_by))
+        await request_pr.remove_branch(pull_default=True)
+    elif is_closed:
+        request.status = "Rejected"
         await request_pr.remove_branch(pull_default=True)
     else:
-        request.status = status
+        log.warning(
+            {
+                "message": "Received a Git callback event that could not be handled.",
+                "tenant_id": tenant_id,
+                "repo_name": repo_name,
+                "pull_request": pull_request,
+                "is_closed": is_closed,
+                "is_merged": is_merged,
+            }
+        )
 
     request.updated_at = datetime.utcnow()
     await request.write()
