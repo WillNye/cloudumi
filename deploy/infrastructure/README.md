@@ -22,7 +22,7 @@ To get started with Terraform for this project, follow these steps:
    tfenv use latest
    ```
 
-3. Make sure you have the latest `secrets.tfvars` file. You can find it in the AWS Secrets Manager in the respective account and region. The structure of the file should look like this (make sure to ask a coworker to double-check, as missing secrets could cause issues in staging or production environments):
+3. Make sure you have the latest `secret.tfvars` file. You can find it in the AWS Secrets Manager in the respective account and region. The structure of the file should look like this (make sure to ask a coworker to double-check, as missing secrets could cause issues in staging or production environments):
 
    ```
    # File must have a new line at the bottom

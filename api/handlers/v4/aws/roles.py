@@ -8,7 +8,6 @@ from common.handlers.base import BaseHandler
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.aws.cached_resources.iam import get_user_active_tra_roles_by_tag
 from common.lib.filter import filter_data
-from common.lib.plugins import get_plugin_by_name
 from common.models import DataTableResponse
 
 log = config.get_logger(__name__)
@@ -28,23 +27,7 @@ class RolesHandlerV4(BaseHandler):
         """
         tenant = self.ctx.tenant
         body = tornado.escape.json_decode(self.request.body or "{}")
-
-        group_mapping = get_plugin_by_name(
-            config.get_tenant_specific_key(
-                "plugins.group_mapping",
-                tenant,
-                "cmsaas_group_mapping",
-            )
-        )()
-
-        self.eligible_roles = await group_mapping.get_eligible_roles(
-            self.eligible_roles,
-            self.user,
-            self.groups,
-            self.user_role_name,
-            self.get_tenant_name(),
-            console_only=True,
-        )
+        await self.extend_eligible_roles()
 
         roles = []
         active_tra_roles = await get_user_active_tra_roles_by_tag(tenant, self.user)

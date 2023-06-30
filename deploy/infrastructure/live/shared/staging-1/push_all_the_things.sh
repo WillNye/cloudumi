@@ -72,15 +72,19 @@ export DOCKER_IMAGE_NAME=shared-staging-registry-api
 export DOCKER_IMAGE_TAG_LATEST=shared-staging-registry-api:latest
 export DOCKER_IMAGE_TAG_VERSIONED=shared-staging-registry-api:$VERSION
 export ECR_IMAGE_TAG_LATEST=259868150464.dkr.ecr.us-west-2.amazonaws.com:latest
+export DISK_USAGE_THRESHOLD=80
 
-echo
-echo "Removing older docker images"
-echo
+# Get the current disk usage percentage
+export DISK_USAGE_PERCENTAGE=$(df / | tail -1 | awk '{print $5}' | sed 's/%//g')
 
-# TODO: How do we capture the older versions?
-docker rmi --force $(docker images "$DOCKER_IMAGE_TAG_LATEST" -a -q) || true
-docker rmi --force $(docker images "$DOCKER_IMAGE_TAG_VERSIONED" -a -q) || true
-docker rmi --force $(docker images "$DOCKER_IMAGE_NAME" -a -q) || true
+if (( USAGE > THRESHOLD )); then
+  echo "Disk space above $THRESHOLD%. Removing older docker images."
+  docker rmi --force $(docker images "$DOCKER_IMAGE_TAG_LATEST" -a -q) || true
+  docker rmi --force $(docker images "$DOCKER_IMAGE_TAG_VERSIONED" -a -q) || true
+  docker rmi --force $(docker images "$DOCKER_IMAGE_NAME" -a -q) || true
+else
+  echo "Disk space is below threshold. Skipping docker image cleanup."
+fi
 
 echo
 echo "Building and tagging docker image"

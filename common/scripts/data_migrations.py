@@ -4,8 +4,8 @@ import asyncio
 async def typeahead_upgrade():
     from sqlalchemy.dialects import postgresql
 
-    from common import TypeAheadFieldHelper
     from common.config.globals import ASYNC_PG_SESSION
+    from common.request_types.models import TypeAheadFieldHelper
 
     aws_typeahead_field_helpers = [
         dict(

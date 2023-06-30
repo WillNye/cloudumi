@@ -62,13 +62,13 @@ def _get_default_aws_request_permission_request_types(
             change_fields=[
                 ChangeField(
                     change_element=0,
-                    field_key="resource_arn",
+                    field_key="resource_arns",
                     field_type="TextBox",
                     field_text="RDS Resource ARN",
                     description="The RDS Resource ARN the selected identity requires permissions to. "
                     "You must provide the full ARN. Wildcards supported.",
                     allow_none=False,
-                    allow_multiple=False,
+                    allow_multiple=True,
                 ),
                 ChangeField(
                     change_element=1,
@@ -95,9 +95,9 @@ def _get_default_aws_request_permission_request_types(
             change_template=ChangeTypeTemplate(
                 template="""
         {
-          "Action": {{form.resource_permissions}},
+          "Action": ["{{form.resource_permissions|join('","')}}"],
           "Effect":"Allow",
-          "Resource": ["{{form.resource_arn}}"]
+          "Resource": ["{{form.resource_arns|join('","')}}"]
         }"""
             ),
             created_by="Noq",
@@ -108,13 +108,13 @@ def _get_default_aws_request_permission_request_types(
             change_fields=[
                 ChangeField(
                     change_element=0,
-                    field_key="s3_bucket",
+                    field_key="s3_buckets",
                     field_type="TypeAhead",
                     field_text="S3 Bucket",
                     description="The S3 bucket the resource requires permissions to. "
                     "You must provide the full ARN. Wildcards supported.",
                     allow_none=False,
-                    allow_multiple=False,
+                    allow_multiple=True,
                     typeahead_field_helper_id=field_helper_map["S3 Bucket ARN"].id,
                 ),
                 ChangeField(
@@ -167,9 +167,9 @@ def _get_default_aws_request_permission_request_types(
             change_template=ChangeTypeTemplate(
                 template="""
         {
-          "Action":{{form.s3_permissions}},
+          "Action": ["{{form.s3_permissions|join('","')}}"],
           "Effect":"Allow",
-          "Resource": ["{{form.s3_bucket}}","{{form.s3_bucket}}/*"]
+          "Resource": [{% for s3_bucket in form.s3_buckets %}"{{ s3_bucket }}", "{{ s3_bucket }}/*"{% if not loop.last %}, {% endif %}{% endfor %}]
         }"""
             ),
             created_by="Noq",
@@ -180,13 +180,13 @@ def _get_default_aws_request_permission_request_types(
             change_fields=[
                 ChangeField(
                     change_element=0,
-                    field_key="sqs_queue",
+                    field_key="sqs_queues",
                     field_type="TypeAhead",
                     field_text="SQS Queue",
                     description="The SQS Queue the resource requires permissions to. "
                     "You must provide the full ARN. Wildcards supported.",
                     allow_none=False,
-                    allow_multiple=False,
+                    allow_multiple=True,
                     typeahead_field_helper_id=field_helper_map["SQS Queue ARN"].id,
                 ),
                 ChangeField(
@@ -230,9 +230,9 @@ def _get_default_aws_request_permission_request_types(
             change_template=ChangeTypeTemplate(
                 template="""
         {
-          "Action": {{form.sqs_permissions}},
+          "Action": ["{{form.sqs_permissions|join('","')}}"],
           "Effect":"Allow",
-          "Resource": ["{{form.sqs_queue}}"]
+          "Resource": ["{{form.sqs_queues|join('","')}}"]
         }"""
             ),
             created_by="Noq",
@@ -243,7 +243,7 @@ def _get_default_aws_request_permission_request_types(
             change_fields=[
                 ChangeField(
                     change_element=0,
-                    field_key="sns_topic",
+                    field_key="sns_topics",
                     field_type="TypeAhead",
                     field_text="SNS Topic",
                     description="The SNS Topic the resource requires permissions to. "
@@ -286,9 +286,9 @@ def _get_default_aws_request_permission_request_types(
             change_template=ChangeTypeTemplate(
                 template="""
         {
-          "Action": {{form.sns_permissions}},
+          "Action": ["{{form.sns_permissions|join('","')}}"],
           "Effect":"Allow",
-          "Resource": ["{{form.sns_topic}}"]
+          "Resource": ["{{form.sns_topics|join('","')}}"]
         }"""
             ),
             created_by="Noq",
@@ -319,13 +319,13 @@ def _get_default_aws_request_permission_request_types(
                 change_fields=[
                     ChangeField(
                         change_element=0,
-                        field_key="resource_arn",
+                        field_key="resource_arns",
                         field_type="TextBox",
                         field_text="Resource ARN",
                         description="The Resource ARN the selected identity requires permissions to. "
                         "You must provide the full ARN. Wildcards supported.",
                         allow_none=False,
-                        allow_multiple=False,
+                        allow_multiple=True,
                     ),
                     ChangeField(
                         change_element=1,
@@ -341,9 +341,9 @@ def _get_default_aws_request_permission_request_types(
                 change_template=ChangeTypeTemplate(
                     template="""
         {
-          "Action": {{form.service_permissions}},
+          "Action": ["{{form.service_permissions|join('","')}}"],
           "Effect":"Allow",
-          "Resource": ["{{form.resource_arn}}"]
+          "Resource": ["{{form.resource_arns|join('","')}}"]
         }"""
                 ),
                 created_by="Noq",
@@ -441,7 +441,7 @@ def _get_default_aws_request_access_request_types(
                 template="""
         {
             "users":["{{form.noq_email}}"],
-            "included_accounts": {{form.provider_definitions}}
+            "included_accounts": ["{{form.provider_definitions|join('","')}}"]
         }"""
             ),
             created_by="Noq",
@@ -464,8 +464,8 @@ def _get_default_aws_request_access_request_types(
             change_template=ChangeTypeTemplate(
                 template="""
         {
-            "users":[{{form.noq_group}}],
-            "included_accounts": {{form.provider_definitions}}
+            "groups":["{{form.noq_group}}"],
+            "included_accounts": ["{{form.provider_definitions|join('","')}}"]
         }"""
             ),
             created_by="Noq",
@@ -501,8 +501,8 @@ def _get_default_aws_request_access_request_types(
             change_template=ChangeTypeTemplate(
                 template="""
         {
-            "users":[{{form.sso_username}}],
-            "included_accounts": {{form.provider_definitions}}
+            "users":["{{form.sso_username}}"],
+            "included_accounts": ["{{form.provider_definitions|join('","')}}"]
         }"""
             ),
             created_by="Noq",
@@ -513,7 +513,7 @@ def _get_default_aws_request_access_request_types(
             change_fields=[
                 ChangeField(
                     change_element=0,
-                    field_key="noq_group",
+                    field_key="sso_group",
                     field_type="TextBox",
                     field_text="Group",
                     description="The SSO group that requires access.",
@@ -524,8 +524,8 @@ def _get_default_aws_request_access_request_types(
             change_template=ChangeTypeTemplate(
                 template="""
         {
-            "users":[{{form.noq_group}}],
-            "included_accounts": {{form.provider_definitions}}
+            "groups":["{{form.sso_group}}"],
+            "included_accounts": ["{{form.provider_definitions|join('","')}}"]
         }"""
             ),
             created_by="Noq",

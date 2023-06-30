@@ -35,7 +35,6 @@ cloudumi_plugins = [
 
 plugin_dist = Distribution("plugins")
 entrypoints = dict()
-log.info("Adding plugins to entrypoint")
 for plugin in cloudumi_plugins:
     entrypoint = EntryPoint(
         plugin.Name, plugin.ModulePath, tuple([plugin.Attr]), dist=plugin_dist
