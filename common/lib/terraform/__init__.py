@@ -16,7 +16,7 @@ from common.lib.terraform.models import (
     TerraformResourceModelArray,
 )
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 def get_TerraformLocalGraph():

@@ -19,7 +19,7 @@ from common.lib.cache import (
 )
 from common.models import HubAccount, OrgAccount, SpokeAccount
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 def get_organizations_client(

@@ -12,6 +12,7 @@ import styles from './SelfService.module.css';
 import { ChangeTypeDetails, IRequest, Identity, RequestType } from './types';
 import { Divider } from 'shared/elements/Divider';
 import { DateTime } from 'luxon';
+import classNames from 'classnames';
 
 const SelfService = () => {
   const [currentStep, setCurrentStep] = useState(
@@ -46,13 +47,6 @@ const SelfService = () => {
   const setSelectedIdentityType = (identityType: string) => {
     setSelfServiceRequest(prev => {
       const newRequest = { ...prev, identityType };
-      return newRequest;
-    });
-  };
-
-  const setRequestTypes = (requestTypes: RequestType[]) => {
-    setSelfServiceRequest(prev => {
-      const newRequest = { ...prev, requestTypes };
       return newRequest;
     });
   };
@@ -108,6 +102,14 @@ const SelfService = () => {
   const showFooter = useMemo(
     () => canClickNext || canClickBack,
     [canClickNext, canClickBack]
+  );
+
+  const wrapperClasses = useMemo(
+    () =>
+      classNames(styles.wrapper, {
+        [styles.fullWidth]: currentStep === SELF_SERVICE_STEPS.COMPLETION_FORM
+      }),
+    [currentStep]
   );
 
   const handleNext = useCallback(() => {
@@ -178,7 +180,7 @@ const SelfService = () => {
     >
       <div className={styles.container}>
         <div className={styles.content}>
-          <div className={styles.wrapper}>
+          <div className={wrapperClasses}>
             <RequestViewer />
           </div>
         </div>

@@ -12,7 +12,7 @@ from common.config import config
 from common.exceptions.exceptions import TenantNoCentralRoleConfigured
 from common.lib.slack import send_slack_notification_sync
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 global_slack_webhook_url = config.get("_global_.slack_webhook_url", None)
 send_events_to_slack = config.get("_global_.send_exceptions_to_slack", False)
 

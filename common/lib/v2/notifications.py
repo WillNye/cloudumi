@@ -21,7 +21,7 @@ from common.lib.notifications.models import (
 )
 from common.lib.singleton import Singleton
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class RetrieveNotifications(metaclass=Singleton):

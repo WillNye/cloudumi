@@ -1,19 +1,24 @@
 import axios from '../Axios';
 import { V4_API_URL } from './constants';
-import { IWebResponse } from './types';
+import { AxiosResponse } from 'axios';
 
 const SAML_URL = `${V4_API_URL}/auth/sso/saml`;
 const OIDC_URL = `${V4_API_URL}/auth/sso/oidc`;
 
+export const fetchOidcWellKnownConfig = async (url): Promise<any> => {
+  const { data } = await axios.get(url);
+  return data;
+};
+
 export const fetchOidcSettings = async (): Promise<
-  IWebResponse<OIDCResponse>
+  AxiosResponse<OIDCResponse>
 > => {
   const { data } = await axios.get(OIDC_URL);
   return data;
 };
 
 export const fetchSamlSettings = async (): Promise<
-  IWebResponse<SAMLResponse>
+  AxiosResponse<SAMLResponse>
 > => {
   const { data } = await axios.get(SAML_URL);
   return data;
@@ -21,26 +26,25 @@ export const fetchSamlSettings = async (): Promise<
 
 export const updateSAMLSettings = async (
   data: any
-): Promise<IWebResponse<any>> => {
+): Promise<AxiosResponse<any>> => {
   return axios.post(SAML_URL, data);
 };
 
 export const updateOIDCSettings = async (
   data: any
-): Promise<IWebResponse<any>> => {
+): Promise<AxiosResponse<any>> => {
   return axios.post(OIDC_URL, data);
 };
 
-export const deleteSamlSettings = async (): Promise<IWebResponse<void>> => {
+export const deleteSamlSettings = async (): Promise<AxiosResponse<void>> => {
   return axios.delete(SAML_URL);
 };
 
-export const deleteOidcSettings = async (): Promise<IWebResponse<void>> => {
+export const deleteOidcSettings = async (): Promise<AxiosResponse<void>> => {
   return axios.delete(OIDC_URL);
 };
 
 // Response Types
-// TODO: move these to a shared or special location
 export interface OIDCResponse {
   get_user_by_oidc_settings: GetUserByOidcSettings;
   auth: Auth;

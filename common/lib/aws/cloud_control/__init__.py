@@ -10,7 +10,7 @@ from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
 from common.models import SpokeAccount
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def get_supported_resource_types() -> Set[str]:

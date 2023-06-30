@@ -6,7 +6,7 @@ import common.lib.noq_json as json
 from common.config import config
 from common.lib.redis import RedisHandler
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def delete_expired_challenges(all_challenges, tenant):

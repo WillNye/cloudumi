@@ -13,7 +13,7 @@ from common.lib.challenge import delete_expired_challenges, retrieve_user_challe
 from common.lib.jwt import generate_jwt_token
 from common.lib.redis import RedisHandler
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class ChallengeGeneratorHandler(TornadoRequestHandler):

@@ -15,7 +15,7 @@ from common.handlers.base import BaseAPIV2Handler
 from common.lib.asyncio import aio_wrapper
 from common.models import SpokeAccount, Status2, WebResponse
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class ManagedPoliciesOnPrincipalHandler(BaseAPIV2Handler):

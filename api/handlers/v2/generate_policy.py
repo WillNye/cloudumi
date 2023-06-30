@@ -3,7 +3,7 @@ from common.handlers.base import BaseAPIV2Handler
 from common.lib.plugins import get_plugin_by_name
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 BASE_INLINE_POLICY = {"Statement": [{"Action": [], "Effect": "Allow", "Resource": []}]}
 

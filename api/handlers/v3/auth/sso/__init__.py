@@ -22,7 +22,7 @@ from common.models import (
     SSOIDPProviders,
 )
 
-LOG = config.get_logger()
+LOG = config.get_logger(__name__)
 
 
 class IdpConfigurationCrudHandler(ConfigurationCrudHandler):

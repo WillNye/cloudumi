@@ -37,6 +37,7 @@
   background: var(--input-background);
   font-family: var(--font-family);
   border-radius: var(--border-radius-lg);
+  padding: var(--spacing-sm);
 
   &[disabled] {
     cursor: not-allowed;

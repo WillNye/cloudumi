@@ -7,7 +7,7 @@ from common.lib.dynamo import UserDynamoHandler
 from identity.lib.groups.models import OktaIdentityProvider, User
 from identity.lib.groups.plugins.okta.plugin import OktaGroupManagementPlugin
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 def get_identity_user_storage_keys(tenant):

@@ -9,7 +9,7 @@ from common.models import PaginatedRequestQueryParams, WebResponse
 from common.users.utils import list_tenant_users
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class NoqUserQueryParams(PaginatedRequestQueryParams):

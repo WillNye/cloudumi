@@ -13,6 +13,7 @@ from botocore.config import Config
 from cloudaux.aws.decorators import RATE_LIMITING_ERRORS
 
 from common.config import config as noq_config
+from common.config import globals as config_globals
 from common.exceptions.exceptions import TenantNoCentralRoleConfigured
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.sanitize import sanitize_session_name
@@ -21,7 +22,7 @@ from common.models import AWSCredentials, SpokeAccount
 
 CACHE = {}
 
-log = noq_config.get_logger()
+log = noq_config.get_logger(__name__)
 
 
 class ConsoleMeCloudAux:
@@ -194,19 +195,20 @@ class BotoCallableWrapper:
 
                 request_data[k] = v
 
-            log.info(
-                {
-                    "tenant": self._tenant,
-                    "account_id": self._account_id,
-                    "user": self._user,
-                    "role": self._role,
-                    "action": self._fnc_name,
-                    "service_name": self._service,
-                    "region": self._region,
-                    "request_data": request_data,
-                    "message": "Tenant AWS request",
-                }
-            )
+            if not config_globals.DEVELOPMENT_MODE:
+                log.info(
+                    {
+                        "tenant": self._tenant,
+                        "account_id": self._account_id,
+                        "user": self._user,
+                        "role": self._role,
+                        "action": self._fnc_name,
+                        "service_name": self._service,
+                        "region": self._region,
+                        "request_data": request_data,
+                        "message": "Tenant AWS request",
+                    }
+                )
 
             return response
 

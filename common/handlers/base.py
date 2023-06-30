@@ -48,7 +48,7 @@ from common.lib.workos import WorkOS
 from common.models import WebResponse
 from common.tenants.models import Tenant
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 def maybe_set_security_headers(req):
@@ -125,7 +125,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
             "message": "Invalid tenant specified. Redirecting to main page",
             "tenant": tenant,
         }
-        log.debug(log_data)
+        await log.adebug(log_data)
         self.set_status(406)
         self.write(
             {
@@ -209,7 +209,7 @@ class BaseJSONHandler(TornadoRequestHandler):
                 "message": "Invalid tenant specified. Redirecting to main page",
                 "tenant": tenant,
             }
-            log.debug(log_data)
+            await log.adebug(log_data)
             self.set_status(406)
             self.write(
                 {
@@ -316,7 +316,7 @@ class BaseHandler(TornadoRequestHandler):
                 "message": "Invalid tenant specified. Redirecting to main page",
                 "tenant": tenant,
             }
-            log.debug(log_data)
+            await log.adebug(log_data)
             self.set_status(406)
             self.write(
                 {
@@ -418,6 +418,7 @@ class BaseHandler(TornadoRequestHandler):
         """Perform high level authorization flow."""
         # TODO: Prevent any sites being created with a subdomain that is a yaml keyword, ie: false, no, yes, true, etc
         # TODO: Return Authentication prompt regardless of subdomain
+        # TODO: When it fails, all the process got truncated. e.g. when saml setting is enabled but idp_metadata_url is not correct.
 
         tenant = self.get_tenant_name()
         tenant_config = TenantConfig(tenant)
@@ -472,7 +473,7 @@ class BaseHandler(TornadoRequestHandler):
             "message": "Incoming request",
             "tenant": tenant,
         }
-        log.debug(log_data)
+        await log.adebug(log_data)
 
         # Check to see if user has a valid auth cookie
         auth_cookie = self.get_cookie(self.get_noq_auth_cookie_key())
@@ -663,7 +664,7 @@ class BaseHandler(TornadoRequestHandler):
                     },
                 )
                 log_data["message"] = "No user detected. Please login first."
-                log.error(log_data)
+                await log.aerror(log_data)
                 self.write(log_data["message"])
                 raise tornado.web.Finish()
 
@@ -694,7 +695,7 @@ class BaseHandler(TornadoRequestHandler):
                 cache_r = None
             if cache_r:
                 log_data["message"] = "Loading from cache"
-                log.debug(log_data)
+                await log.adebug(log_data)
                 cache = json.loads(cache_r)
                 self.groups = cache.get("groups", [])
                 self.eligible_roles = cache.get("eligible_roles", [])
@@ -717,10 +718,10 @@ class BaseHandler(TornadoRequestHandler):
                 )
                 log_data["eligible_accounts"] = len(self.eligible_accounts)
                 log_data["message"] = "Successfully authorized user."
-                log.debug(log_data)
+                await log.adebug(log_data)
             except Exception:
                 stats.count("Basehandler.authorization_flow.exception")
-                log.error(log_data, exc_info=True)
+                await log.aerror(log_data, exc_info=True)
                 raise
         if (
             config.get_tenant_specific_key(
@@ -905,7 +906,7 @@ class BaseHandler(TornadoRequestHandler):
                     self.groups, self.user, self, headers=self.request.headers
                 )
             except Exception as e:
-                log.error(
+                await log.aerror(
                     {
                         **log_data,
                         "error": str(e),
@@ -924,7 +925,7 @@ class BaseHandler(TornadoRequestHandler):
             log_data[
                 "message"
             ] = "No groups detected for user. Check configuration. Letting user continue."
-            log.warning(log_data)
+            await log.awarning(log_data)
 
     async def set_eligible_roles(self, console_only: bool):
         tenant = self.get_tenant_name()
@@ -1080,7 +1081,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 "message": "Invalid tenant specified. Redirecting to main page",
                 "tenant": tenant,
             }
-            log.debug(log_data)
+            await log.adebug(log_data)
             self.set_status(406)
             self.write(
                 {
@@ -1258,7 +1259,7 @@ class StaticFileHandler(tornado.web.StaticFileHandler):
                 "message": "Invalid tenant specified. Redirecting to main page",
                 "tenant": tenant,
             }
-            log.debug(log_data)
+            await log.adebug(log_data)
             self.set_status(418)
             raise tornado.web.Finish()
         self.ctx = RequestContext(

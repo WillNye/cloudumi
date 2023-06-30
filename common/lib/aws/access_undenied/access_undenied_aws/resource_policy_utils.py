@@ -14,7 +14,7 @@ from common.lib.aws.access_undenied.access_undenied_aws import (
 )
 from common.models import SpokeAccount
 
-logger = config.get_logger()
+logger = config.get_logger(__name__)
 
 
 def _get_ecr_resource_policy(
