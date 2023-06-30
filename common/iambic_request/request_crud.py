@@ -174,10 +174,11 @@ async def create_request(
     request_link = (
         f"{config.get_tenant_specific_key('url', tenant.name)}/requests/{request_id}"
     )
+
     comment = (
-        f"Request: {request_link}\n"
-        f"Created by: {created_by}\n"
-        f"Justification: {justification}"
+        f"| Request | Created by | Justification |\n"
+        f"|:-------:|:----------:|:-------------:|\n"
+        f"| {request_link} | {created_by}  | {justification} |\n"
     )
 
     branch_name = await request_pr.create_request(
