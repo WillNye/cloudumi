@@ -176,10 +176,10 @@ async def create_request(
     )
 
     comment = (
-        f"| Request | {request_link} |\n"
+        f"| **Request** | {request_link} |\n"
         f"|-------:|:----------|\n"
-        f"| Created by | {created_by} |\n"
-        f"| Justification  | {justification} |\n"
+        f"| **Created by** | {created_by} |\n"
+        f"| **Justification**  | {justification} |\n"
     )
 
     branch_name = await request_pr.create_request(
