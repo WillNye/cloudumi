@@ -674,6 +674,7 @@ class BaseHandler(TornadoRequestHandler):
                 await log.aerror(log_data)
                 self.write(log_data["message"])
                 raise tornado.web.Finish()
+        log_data["user"] = self.user
 
         if not self.eula_signed:
             try:
@@ -926,9 +927,7 @@ class BaseHandler(TornadoRequestHandler):
                 )
                 sentry_sdk.capture_exception()
             if not self.groups:
-                raise NoGroupsException(
-                    f"Groups not detected. Headers: {self.request.headers}"
-                )
+                raise NoGroupsException(f"Groups not detected for {self.user}.")
 
         except NoGroupsException:
             stats.count("Basehandler.authorization_flow.no_groups_detected")

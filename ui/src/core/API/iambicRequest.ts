@@ -59,3 +59,9 @@ export const getIambicRequest = async ({ queryKey }) => {
   const response = await axios.get(url);
   return response.data;
 };
+
+export const createIambicRequest = async data => {
+  const url = `${V4_API_URL}/self-service/requests/`;
+  const response = await axios.post(url, data);
+  return response.data;
+};
