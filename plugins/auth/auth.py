@@ -160,19 +160,23 @@ class Auth(metaclass=Singleton):
         headers=None,
         get_header_groups=False,
         only_direct=True,
+        only_google=False,
     ):
         """Get the user's groups."""
         tenant = request_object.get_tenant_name()
         groups_to_add_for_all_users = config.get_tenant_specific_key(
             "auth.groups_to_add_for_all_users", tenant, []
         )
-        if get_header_groups or config.get_tenant_specific_key(
-            "auth.get_groups_by_header", tenant
-        ):
+        if (
+            get_header_groups
+            or config.get_tenant_specific_key("auth.get_groups_by_header", tenant)
+        ) and not only_google:
             header_groups = await self.get_groups_by_header(headers, request_object)
             if header_groups:
                 groups.extend(header_groups)
-        elif config.get_tenant_specific_key("auth.get_groups_from_google", tenant):
+        elif only_google or config.get_tenant_specific_key(
+            "auth.get_groups_from_google", tenant
+        ):
             from common.lib.google import get_group_memberships
 
             google_groups = await get_group_memberships(tenant, user)
