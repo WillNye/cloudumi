@@ -254,7 +254,11 @@ auth:
             tenant_config, tenant.email, dev_domain
         )
 
-        await user.send_password_via_email(furl.furl(dev_domain_url), password)
+        await user.send_password_via_email(
+            dev_domain,
+            furl.furl(dev_domain_url),
+            password,
+        )
         return_data = {
             "success": True,
             "username": tenant.email,

@@ -44,7 +44,7 @@ containerDefinitions:
     command:
       - bash
       - -c
-      - pip install argh watchdog; watchmedo auto-restart --recursive --pattern="api/*.py" --directory="." --verbose python3.11 api/__main__.py
+      - pip install argh watchdog; watchmedo auto-restart --recursive --pattern="api/*.py" --directory="." --ignore-patterns="./env/*" --verbose python3.11 api/__main__.py
     {% endif %}
 placementConstraints: [ ]
 memory: '8192'

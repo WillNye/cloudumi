@@ -1,7 +1,7 @@
 extends:
   - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:940552945933:secret:shared-prod-noq_secrets-qTayVS
 _global_:
-  landing_page_domains: ["shared.noq.dev"]
+  landing_page_domains: ["shared.noq.dev", "registration.noq.dev"]
   metrics:
     cloudwatch:
       namespace: noq-dev-shared-prod-1

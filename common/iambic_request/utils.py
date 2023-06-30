@@ -409,13 +409,16 @@ async def get_iambic_pr_instance(
     tenant: Tenant, request_id: str, requested_by: str, pull_request_id: int = None
 ):
     iambic_repo_details: IambicRepoDetails = await get_iambic_repo(tenant.name)
-    iambic_repo = await IambicRepo.setup(
-        tenant,
-        iambic_repo_details.repo_name,
-        request_id,
-        requested_by,
-        use_request_branch=True,
-    )
+    try:
+        iambic_repo = await IambicRepo.setup(
+            tenant,
+            iambic_repo_details.repo_name,
+            request_id,
+            requested_by,
+            use_request_branch=True,
+        )
+    except AttributeError:
+        return None
 
     if iambic_repo_details.git_provider == "github":
         return GitHubPullRequest(

@@ -74,8 +74,9 @@ async def teardown_db():
     except sqlalchemy.exc.IntegrityError:
         pass
     try:
+
         await tenant.delete()
-    except sqlalchemy.exc.IntegrityError:
+    except (sqlalchemy.exc.IntegrityError, sqlalchemy.orm.exc.StaleDataError):
         pass
 
 

@@ -57,6 +57,12 @@ class SamlHandler(BaseHandler):
                     ),
                     [],
                 )
+                auth = get_plugin_by_name(
+                    config.get_tenant_specific_key(
+                        "plugins.auth", tenant, "cmsaas_auth"
+                    )
+                )()
+                groups = await auth.get_groups(groups, email, self)
 
                 self_url = await aio_wrapper(OneLogin_Saml2_Utils.get_self_url, req)
                 expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
