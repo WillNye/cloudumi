@@ -170,8 +170,18 @@ async def create_request(
 ):
     request_id = str(uuid.uuid4())
     request_pr = await get_iambic_pr_instance(tenant, request_id, created_by)
+
+    request_link = (
+        f"{config.get_tenant_specific_key('url', tenant.name)}/requests/{request_id}"
+    )
+    comment = (
+        f"Request: {request_link}\n"
+        f"Created by: {created_by}\n"
+        f"Justification: {justification}"
+    )
+
     branch_name = await request_pr.create_request(
-        justification, changes, request_notes=request_notes
+        comment, changes, request_notes=request_notes
     )
 
     request = Request(
@@ -195,14 +205,6 @@ async def create_request(
         branch_name=branch_name,
     )
     await request.write()
-
-    request_link = config.get_tenant_specific_key("url", tenant.name)
-    request_link = f"{request_link}/requests/{request.id}"
-    await request_pr.add_comment(
-        f"Request: {request_link}\n"
-        f"Created by: {created_by}\n"
-        f"Justification: {justification}"
-    )
 
     response = await get_request_response(request, request_pr, False)
     del request_pr
