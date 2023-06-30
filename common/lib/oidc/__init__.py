@@ -23,6 +23,7 @@ from common.lib.auth.user_management import maybe_create_users_groups_in_databas
 from common.lib.cognito.identity import CognitoUserClient
 from common.lib.generic import should_force_redirect
 from common.lib.jwt import generate_jwt_token
+from common.lib.plugins import get_plugin_by_name
 
 log = config.get_logger(__name__)
 
