@@ -101,6 +101,7 @@ class IambicTemplateProviderDefinition(Base):
     tenant_id = Column(Integer, ForeignKey("tenant.id"), nullable=False)
     iambic_template_id = Column(UUID, ForeignKey("iambic_template.id"), nullable=False)
     resource_id = Column(String, nullable=False)
+    secondary_resource_id = Column(String, nullable=True)
     tenant_provider_definition_id = Column(
         UUID, ForeignKey("tenant_provider_definition.id"), nullable=False
     )
@@ -114,6 +115,10 @@ class IambicTemplateProviderDefinition(Base):
     __table_args__ = (
         Index("itpd_template_id_idx", "iambic_template_id"),
         Index("itpd_template_resource_id_idx", "iambic_template_id", "resource_id"),
+        Index("itpd_tenant_resource_idx", "tenant_id", "resource_id"),
+        Index(
+            "itpd_tenant_secondary_resource_idx", "tenant_id", "secondary_resource_id"
+        ),
         Index("itpd_provider_def_idx", "tenant_provider_definition_id"),
         Index(
             "itpd_template_and_provider_def_uix",

@@ -363,8 +363,24 @@ def _get_default_aws_request_permission_request_types(
         template_attribute="properties.inline_policies",
         apply_attr_behavior="Append",
         created_by="Noq",
+        provider_definition_field="Allow Multiple",
     )
     add_permission_to_identity_request.change_types = deepcopy(permission_changes)
+
+    add_permission_to_permission_set_request = RequestType(
+        name="Add permissions to a permission set.",
+        description="Add permissions to a permission set in your AWS Org.",
+        provider=aws_provider_resolver.provider,
+        template_types=[
+            AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
+        ],
+        template_attribute="properties.inline_policies",
+        apply_attr_behavior="Append",
+        created_by="Noq",
+        provider_definition_field="Allow None",
+    )
+    add_permission_to_permission_set_request.change_types = deepcopy(permission_changes)
+
     for elem, change_type in enumerate(add_permission_to_identity_request.change_types):
         for change_field in change_type.change_fields:
             change_field.change_element += 1
@@ -400,10 +416,15 @@ def _get_default_aws_request_permission_request_types(
         template_attribute="properties.policy_document.statement",
         apply_attr_behavior="Append",
         created_by="Noq",
+        provider_definition_field="Allow Multiple",
     )
     add_permission_to_mp_request.change_types = deepcopy(permission_changes)
 
-    return [add_permission_to_identity_request, add_permission_to_mp_request]
+    return [
+        add_permission_to_identity_request,
+        add_permission_to_mp_request,
+        add_permission_to_permission_set_request,
+    ]
 
 
 def _get_default_aws_request_access_request_types(
@@ -420,6 +441,7 @@ def _get_default_aws_request_access_request_types(
         template_attribute="access_rules",
         apply_attr_behavior="Append",
         created_by="Noq",
+        provider_definition_field="Allow Multiple",
     )
     access_to_role_request.change_types = [
         ChangeType(
@@ -482,6 +504,7 @@ def _get_default_aws_request_access_request_types(
         template_attribute="access_rules",
         apply_attr_behavior="Append",
         created_by="Noq",
+        provider_definition_field="Allow Multiple",
     )
     access_to_permission_set_request.change_types = [
         ChangeType(

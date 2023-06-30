@@ -228,6 +228,17 @@ async def render_change_type_template(
     Returns:
         EnrichedChangeType: ChangeType with rendered change type template
     """
+    pd_count = len(request_change_type.provider_definition_ids)
+    pd_field = change_type.request_type.provider_definition_field
+    if pd_field == "Allow None" and pd_count:
+        raise AssertionError(
+            f"Change type {change_type.name} does not allow providers definitions"
+        )
+    elif pd_field == "Allow One" and pd_count > 1:
+        raise AssertionError(
+            f"Change type {change_type.name} does not allow multiple providers definitions"
+        )
+
     field_element_map = {f.field_key: f for f in change_type.change_fields}
 
     # Set jinja2 template vars
@@ -409,16 +420,13 @@ async def get_iambic_pr_instance(
     tenant: Tenant, request_id: str, requested_by: str, pull_request_id: int = None
 ):
     iambic_repo_details: IambicRepoDetails = await get_iambic_repo(tenant.name)
-    try:
-        iambic_repo = await IambicRepo.setup(
-            tenant,
-            iambic_repo_details.repo_name,
-            request_id,
-            requested_by,
-            use_request_branch=True,
-        )
-    except AttributeError:
-        return None
+    iambic_repo = await IambicRepo.setup(
+        tenant,
+        iambic_repo_details.repo_name,
+        request_id,
+        requested_by,
+        use_request_branch=True,
+    )
 
     if iambic_repo_details.git_provider == "github":
         return GitHubPullRequest(

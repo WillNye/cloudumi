@@ -166,6 +166,7 @@ async def upsert_tenant_request_types(tenant_name: str):
                 "template_attribute",
                 "template_types",
                 "apply_attr_behavior",
+                "provider_definition_field",
             ]:
                 if getattr(request_type, attr) != getattr(default_request_type, attr):
                     setattr(request_type, attr, getattr(default_request_type, attr))

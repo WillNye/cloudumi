@@ -17,10 +17,26 @@ FieldType = ENUM(
     "TextBox",
     "TypeAhead",
     "EnforcedTypeAhead",
+    "TypeAheadTemplateRef",
     "CheckBox",
     "Choice",
     name="FieldTypeEnum",
 )
+ProviderDefinitionField = ENUM(
+    "Allow One", "Allow Multiple", "Allow None", name="ProviderDefinitionFieldEnum"
+)
+"""
+Allow One
+    Example usage
+      - With a IAM Managed Policy attachments an arn is provided that is account specific
+Allow Multiple
+    The most common scenario with things like IAM Role policies
+Allow None
+    Used for templates and template attributes without an access rule
+    If there is no access rule an attr that scopes by provider definition id is pointless
+    Example
+      - Request to add permissions to a PermissionSet
+"""
 ApplyAttrBehavior = ENUM("Append", "Merge", "Replace", name="ApplyAttrBehaviorEnum")
 """ApplyAttrBehavior describes how the value is added to the template.
 Append:
@@ -58,6 +74,8 @@ class TypeAheadFieldHelper(Base):
     endpoint = Column(String, nullable=False)
     query_param_key = Column(String, nullable=True)
     provider = Column(TrustedProvider, nullable=False)
+    # This is used to expose a schema for the change template builder
+    iambic_template_type = Column(String, nullable=True)
 
     __table_args__ = (
         Index("typeahead_provider_idx", "provider"),
@@ -82,6 +100,7 @@ class RequestType(SoftDeleteMixin, Base):
     template_types = Column(ARRAY(String), nullable=False)
     template_attribute = Column(String, nullable=False)
     apply_attr_behavior = Column(ApplyAttrBehavior, nullable=False)
+    provider_definition_field = Column(ProviderDefinitionField, nullable=True)
 
     tenant = relationship("Tenant")
     change_types = relationship(
