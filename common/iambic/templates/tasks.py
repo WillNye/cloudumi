@@ -14,6 +14,7 @@ from psycopg.errors import IntegrityError, UniqueViolation
 from sqlalchemy import and_, cast, delete, select, update
 from sqlalchemy.orm import contains_eager
 
+from common.aws.utils import get_resource_arn
 from common.config import config as saas_config
 from common.config.globals import ASYNC_PG_SESSION
 from common.iambic.config.models import (
@@ -183,6 +184,10 @@ async def create_tenant_templates_and_definitions(
                     )
                     # Get the tenant provider definition instance using the provider definition name
                     tpd = provider_definition_map[provider].get(pd_name)
+                    secondary_resource_id = None
+                    if provider == "aws":
+                        secondary_resource_id = await get_resource_arn(iambic_template, tpd)
+
                     iambic_template_provider_definitions.append(
                         IambicTemplateProviderDefinition(
                             tenant=tenant,
@@ -191,6 +196,7 @@ async def create_tenant_templates_and_definitions(
                                 provider_def, raw_iambic_template
                             ),
                             tenant_provider_definition=tpd,
+                            secondary_resource_id=secondary_resource_id
                         )
                     )
 
@@ -358,11 +364,15 @@ async def update_tenant_template(
                     # The reference already exists and is in the template so skip it
                     existing_provider_definition_id_map.pop(tpd.id, None)
                 else:
+                    secondary_resource_id = None
+                    if provider == "aws":
+                        secondary_resource_id = await get_resource_arn(iambic_template, tpd)
                     iambic_template_provider_definitions.append(
                         IambicTemplateProviderDefinition(
                             tenant_id=tenant.id,
                             iambic_template_id=iambic_template.id,
                             tenant_provider_definition_id=tpd.id,
+                            secondary_resource_id=secondary_resource_id,
                         )
                     )
 

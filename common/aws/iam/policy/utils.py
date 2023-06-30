@@ -8,11 +8,14 @@ import time
 from collections import defaultdict
 from copy import deepcopy
 from itertools import chain
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 
+import boto3
 import sentry_sdk
 from botocore.exceptions import ClientError, ParamValidationError
+from cachetools import TTLCache
 from deepdiff import DeepDiff
+from iambic.plugins.v0_1_0.aws.utils import paginated_search
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from joblib import Parallel, delayed
 from parliament import analyze_policy_string, enhance_finding
@@ -23,6 +26,7 @@ from common.aws.iam.user.utils import fetch_iam_user
 from common.aws.utils import ResourceAccountCache, ResourceSummary
 from common.config import config
 from common.config.models import ModelAdapter
+from common.core.async_cached import noq_cached
 from common.lib import noq_json as json
 from common.lib.assume_role import ConsoleMeCloudAux, rate_limited, sts_conn
 from common.lib.asyncio import NoqSemaphore, aio_wrapper
@@ -45,6 +49,32 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 PERMISSIONS_SEPARATOR = "||"
 ALL_IAM_MANAGED_POLICIES = defaultdict(dict)
 TENANT_CREATED_POLICY_REGEX = re.compile(r"arn:aws:iam::[0-9]{12}:policy/.*")
+
+
+@noq_cached(cache=TTLCache(maxsize=1024, ttl=120))
+async def get_aws_managed_policy_names() -> set[str]:
+    iam_client = boto3.client("iam")
+    managed_policies = await paginated_search(
+        iam_client.list_policies,
+        response_key="Policies",
+        Scope="AWS",
+        OnlyAttached=False,
+        PathPrefix="/",
+    )
+    return set(f"{policy['Path']}{policy['PolicyName']}" for policy in managed_policies)
+
+
+@noq_cached(cache=TTLCache(maxsize=1024, ttl=120))
+async def get_aws_managed_policy_arns() -> set[str]:
+    iam_client = boto3.client("iam")
+    managed_policies = await paginated_search(
+        iam_client.list_policies,
+        response_key="Policies",
+        Scope="AWS",
+        OnlyAttached=False,
+        PathPrefix="/",
+    )
+    return set(policy['Arn'] for policy in managed_policies)
 
 
 def is_tenant_policy(arn: str) -> bool:
