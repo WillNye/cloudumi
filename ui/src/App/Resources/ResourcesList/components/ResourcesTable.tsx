@@ -38,11 +38,11 @@ const ResourcesTable = () => {
     return (resourcesData?.data || []).map(item => {
       const strippedPath = item.file_path.replace(/\.yaml$/, '');
       const provider = item.provider.toLowerCase();
-      const repo = item.repo_name;
+      const repoName = item.repo_name.toLowerCase();
       return {
         ...item,
         file_path: (
-          <Link to={`/resources/${provider}/${repo}${strippedPath}`}>
+          <Link to={`/resources/${provider}/${repoName}${strippedPath}`}>
             {item.file_path}
           </Link>
         )

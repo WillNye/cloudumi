@@ -127,6 +127,7 @@ node_modules/
 **/node_modules/
 tmp/*
 tmp*
+**__local**
 
 # FrontEnd Ignores
 **/static/bundles/

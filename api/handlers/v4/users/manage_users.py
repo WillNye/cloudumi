@@ -14,7 +14,7 @@ from common.lib.jwt import generate_jwt_token
 from common.lib.password import check_password_strength, generate_random_password
 from common.lib.tenant.models import TenantDetails
 from common.lib.web import handle_generic_error_response
-from common.models import WebResponse
+from common.models import Status2, WebResponse
 from common.tenants.models import Tenant
 from common.users.models import User
 
@@ -90,10 +90,9 @@ class ManageUsersHandler(BaseAdminHandler):
         username = (
             email  # We need to support separate username/email when we support SCIM
         )
-        password_supplied = True
+
         password = data.get("password")
-        if not password:
-            password_supplied = False
+        if not (password_supplied := bool(data.get("password"))):
             password = await generate_random_password()
 
         if not validate_email(email):
@@ -112,7 +111,7 @@ class ManageUsersHandler(BaseAdminHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    success=Status2.error,
                     status_code=403,
                     data={"message": "Username or email already taken"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -135,11 +134,20 @@ class ManageUsersHandler(BaseAdminHandler):
             raise tornado.web.Finish()
 
         created_user = await User.create(
-            self.ctx.db_tenant, username, email, password, managed_by="MANUAL"
+            self.ctx.db_tenant,
+            username,
+            email,
+            password,
+            password_reset_required=not password_supplied,
+            managed_by="MANUAL",
         )
 
-        if not password_supplied:
-            await created_user.send_password_via_email(tenant_url, password)
+        await created_user.send_password_via_email(
+            self.ctx.tenant,
+            tenant_url,
+            password,
+            reset_password=not password_supplied,
+        )
 
         # Return a JSON object with the user's ID
         self.write({"user_id": created_user.id, "username": created_user.username})
@@ -407,7 +415,6 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
             raise tornado.web.Finish()
 
         user = await User.get_by_email(self.ctx.db_tenant, email)
-
         if not user:
             self.set_status(400)
             self.write(
@@ -415,6 +422,18 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
                     success="error",
                     status_code=400,
                     data={"message": "Invalid token"},
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            raise tornado.web.Finish()
+        elif user.is_managed_externally:
+            self.set_status(400)
+            self.write(
+                WebResponse(
+                    success="error",
+                    status_code=400,
+                    data={
+                        "message": "Unable to reset password for externally managed users like Okta"
+                    },
                 ).dict(exclude_unset=True, exclude_none=True)
             )
             raise tornado.web.Finish()
@@ -711,8 +730,9 @@ class UnauthenticatedEmailVerificationHandler(tornado.web.RequestHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status=Status2.error,
                     status_code=400,
+                    reason=None,
                     data={"message": "Invalid email address"},
                 ).dict(exclude_unset=True, exclude_none=True)
             )
@@ -723,8 +743,9 @@ class UnauthenticatedEmailVerificationHandler(tornado.web.RequestHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status=Status2.error,
                     status_code=400,
+                    reason=None,
                     data={"message": "Invalid tenant"},
                 ).dict(exclude_unset=True, exclude_none=True)
             )
@@ -735,8 +756,9 @@ class UnauthenticatedEmailVerificationHandler(tornado.web.RequestHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status=Status2.error,
                     status_code=400,
+                    reason=None,
                     data={"message": "Invalid token"},
                 ).dict(exclude_unset=True, exclude_none=True)
             )
@@ -750,20 +772,13 @@ class UnauthenticatedEmailVerificationHandler(tornado.web.RequestHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status=Status2.error,
                     status_code=400,
                     data={"message": "failed to verify email"},
+                    reason=None,
                 ).dict(exclude_unset=True, exclude_none=True)
             )
             # TODO: Log here
             raise tornado.web.Finish()
 
-        self.write(
-            WebResponse(
-                success="success",
-                status_code=200,
-                data={
-                    "message": "Successfully verified e-mail",
-                },
-            ).dict(exclude_unset=True, exclude_none=True)
-        )
+        self.redirect("/login")
