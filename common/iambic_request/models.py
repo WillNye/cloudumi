@@ -155,7 +155,7 @@ class BasePullRequest(PydanticBaseModel):
     ):
         await self._set_repo(use_request_branch=False)
 
-        self.title = f"Noq Self Service Request: {self.request_id} on behalf of {self.requested_by}"
+        self.title = f"Request on behalf of {self.requested_by}"
         self.description = description
         branch_name = await self.iambic_repo.create_branch(
             self.request_id, self.requested_by, template_changes, request_notes

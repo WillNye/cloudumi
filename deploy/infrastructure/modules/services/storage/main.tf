@@ -37,6 +37,7 @@ resource "aws_efs_file_system_policy" "policy" {
                 "AWS": "*"
             },
             "Action": "*",
+            "Resource": "${aws_efs_file_system.data_storage.arn}",
             "Condition": {
                 "Bool": {
                     "aws:SecureTransport": "false"
