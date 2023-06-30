@@ -7,8 +7,10 @@ import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import DataNotRetrievable, MissingConfigurationValue
 from common.github.models import GitHubInstall
+from common.iambic_request.models import IambicRepo
 from common.lib.asyncio import aio_wrapper
 from common.lib.messaging import iterate_event_messages
+from common.tenants.models import Tenant
 
 log = config.get_logger(__name__)
 
@@ -54,6 +56,8 @@ async def webhook_request_handler(request):
     Note: this is where we wire up the control plane between webhook events and
     Noq SaaS Self Service request
     """
+    from common.celery_tasks.celery_tasks import app as celery_app
+
     log_data = {
         "function": f"{__name__}.{sys._getframe().f_code.co_name}",
     }
@@ -96,10 +100,67 @@ async def webhook_request_handler(request):
         )
         return
 
+    if github_event_type == "push":
+        branch_name = github_event["ref"].split("/")[-1]
+        db_tenant: Tenant = await Tenant.get_by_id(tenant_github_install.tenant_id)
+        tenant_repos = await IambicRepo.get_all_tenant_repos(db_tenant.name)
+        for tenant_repo in tenant_repos:
+            if tenant_repo.repo_name == github_event["repository"]["full_name"]:
+                if tenant_repo.default_branch_name == branch_name:
+                    celery_app.send_task(
+                        "common.celery_tasks.celery_tasks.sync_iambic_templates_for_tenant",
+                        kwargs={"tenant": db_tenant.name},
+                    )
+                break
+
+        return
+
     github_action = github_event["action"]
-    if github_action == "deleted" and github_event_type == "meta":
+    if github_event_type == "meta" and github_action == "deleted":
         await tenant_github_install.delete()
         return
+    elif (github_event_type == "pull_request" and github_action == "closed") or (
+        github_event_type == "pull_request_review"
+        and github_action == "submitted"
+        and github_event["review"]["state"] == "approved"
+    ):
+        if github_event_type == "pull_request":
+            # per merged_by, there is only 1 approver; however, there can be multiple review, and
+            # saas may need to aggregate them for audit? maybe. especially for complex review
+            # rule that requires multiple approvers.
+            approved_by = (
+                github_event.get("pull_request", {})
+                .get("merged_by", {})
+                .get("login", None)
+            )
+        else:
+            # per review, there is only 1 approver; however, there can be multiple review, and
+            # saas may need to aggregate them for audit? maybe. especially for complex review
+            # rule that requires multiple approvers.
+            approved_by = github_event["review"]["user"]["login"]
+
+        if isinstance(approved_by, str):
+            approved_by = [approved_by]
+
+        celery_app.send_task(
+            "common.celery_tasks.celery_tasks.update_self_service_state",
+            kwargs={
+                "tenant_id": tenant_github_install.tenant_id,
+                "repo_name": github_event["repository"]["full_name"],
+                "pull_request": github_event["pull_request"]["number"],
+                "pr_created_at": github_event["pull_request"]["created_at"],
+                "approved_by": approved_by,
+                "is_merged": bool(github_event["pull_request"]["merged_at"]),
+                "is_closed": bool(github_event["pull_request"]["closed_at"]),
+            },
+        )
+    elif (
+        github_event_type == "installation_repositories" and github_action == "removed"
+    ):
+        # TODO any clean up method if we need to call if webhook event
+        # notify us repos is removed
+        # repositories_removed = github_event["repositories_removed"]
+        pass
 
 
 async def handle_github_webhook_event_queue(

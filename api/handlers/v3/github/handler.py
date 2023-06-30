@@ -9,7 +9,6 @@ from common.config.globals import GITHUB_APP_URL
 from common.github.models import GitHubInstall, GitHubOAuthState
 from common.handlers.base import BaseAdminHandler, TornadoRequestHandler
 from common.iambic.utils import delete_iambic_repos, get_iambic_repo, save_iambic_repos
-from common.iambic_request.models import IambicRepo
 from common.lib.iambic.git import IambicGit
 from common.lib.pydantic import BaseModel
 from common.models import IambicRepoDetails, WebResponse
@@ -108,106 +107,6 @@ class DeleteGitHubInstallHandler(BaseAdminHandler):
         await github_install.delete()
         await delete_iambic_repos(self.ctx.tenant, self.user)
         self.set_status(204)
-
-
-# Use to verify Github App Webhook Secret Using SHA256
-def calculate_signature(webhook_secret: str, payload: str) -> str:
-    secret_in_bytes = bytes(webhook_secret, "utf-8")
-    digest = hmac.new(
-        key=secret_in_bytes, msg=payload.encode("utf-8"), digestmod=hashlib.sha256
-    )
-    signature = digest.hexdigest()
-    return signature
-
-
-def verify_signature(sig: str, payload: str) -> None:
-    good_sig = calculate_signature(GITHUB_APP_WEBHOOK_SECRET, payload)
-    if not hmac.compare_digest(good_sig, sig):
-        raise HTTPError(400, "Invalid signature")
-
-
-class GitHubEventsHandler(TornadoRequestHandler):
-    async def post(self):
-        from common.celery_tasks.celery_tasks import app as celery_app
-
-        # the format is in sha256=<sig>
-        request_signature = self.request.headers["x-hub-signature-256"].split("=")[1]
-        # because this handler is unauthenticated, always verify signature before taking action
-        verify_signature(request_signature, self.request.body.decode("utf-8"))
-        github_event_type = self.request.headers.get("x-github-event")
-        github_event = json.loads(self.request.body)
-        github_installation_id = github_event["installation"]["id"]
-
-        tenant_github_install = await GitHubInstall.get_with_installation_id(
-            github_installation_id
-        )
-        if not tenant_github_install:
-            raise HTTPError(400, "Unknown installation id")
-
-        if github_event_type == "push":
-            branch_name = github_event["ref"].split("/")[-1]
-            db_tenant: Tenant = await Tenant.get_by_id(tenant_github_install.tenant_id)
-            tenant_repos = await IambicRepo.get_all_tenant_repos(db_tenant.name)
-            for tenant_repo in tenant_repos:
-                if tenant_repo.repo_name == github_event["repository"]["full_name"]:
-                    if tenant_repo.default_branch_name == branch_name:
-                        celery_app.send_task(
-                            "common.celery_tasks.celery_tasks.sync_iambic_templates_for_tenant",
-                            kwargs={"tenant": db_tenant.name},
-                        )
-                    break
-
-            self.set_status(204)
-            return
-
-        github_action = github_event["action"]
-        if github_action == "deleted":
-            await tenant_github_install.delete()
-            self.set_status(204)
-            return
-        elif (github_event_type == "pull_request" and github_action == "closed") or (
-            github_event_type == "pull_request_review"
-            and github_action == "submitted"
-            and github_event["review"]["state"] == "approved"
-        ):
-            if github_event_type == "pull_request":
-                # per merged_by, there is only 1 approver; however, there can be multiple review, and
-                # saas may need to aggregate them for audit? maybe. especially for complex review
-                # rule that requires multiple approvers.
-                approved_by = (
-                    github_event.get("pull_request", {})
-                    .get("merged_by", {})
-                    .get("login", None)
-                )
-            else:
-                # per review, there is only 1 approver; however, there can be multiple review, and
-                # saas may need to aggregate them for audit? maybe. especially for complex review
-                # rule that requires multiple approvers.
-                approved_by = github_event["review"]["user"]["login"]
-
-            if isinstance(approved_by, str):
-                approved_by = [approved_by]
-
-            celery_app.send_task(
-                "common.celery_tasks.celery_tasks.update_self_service_state",
-                kwargs={
-                    "tenant_id": tenant_github_install.tenant_id,
-                    "repo_name": github_event["repository"]["full_name"],
-                    "pull_request": github_event["pull_request"]["number"],
-                    "pr_created_at": github_event["pull_request"]["created_at"],
-                    "approved_by": approved_by,
-                    "is_merged": bool(github_event["pull_request"]["merged_at"]),
-                    "is_closed": bool(github_event["pull_request"]["closed_at"]),
-                },
-            )
-        # TODO any clean up method if we need to call if webhook event
-        # notify us repos is removed
-        # elif github_action == "removed":
-        #     repositories_removed = github_event["repositories_removed"]
-        else:
-            self.set_status(
-                204
-            )  # such that sender won't attempt to re-send the event to us again.
 
 
 class GithubStatusHandler(BaseAdminHandler):
