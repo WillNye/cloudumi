@@ -14,7 +14,7 @@ from common.lib.aws.typeahead_cache import get_all_resource_arns
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler, redis_get
-from common.models import ArnArray, PaginatedRequestQueryParams, WebResponse
+from common.models import ArnArray, TypeAheadPaginatedRequestQueryParams, WebResponse
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger(__name__)
@@ -86,22 +86,27 @@ async def handle_aws_resource_type_ahead_request(
     groups: list[str],
     tenant_name: str,
     service: str,
-    resource_arn: str,
+    resource_id: str,
     page: int,
     page_size: int,
+    provider_definitions_ids: list[str] = None,
+    template_id: str = None,
 ) -> list[str]:
     if service == "all":
         return await handle_aws_resource_type_ahead_request_for_all(
-            user, groups, tenant_name, resource_arn, page, page_size
+            user, groups, tenant_name, resource_id, page, page_size
         )
 
     account_id = None
     topic_is_hash = True
-    resource_arn = resource_arn.lower()
+    resource_id = resource_id.lower()
     max_results = page * page_size
     allowed_accounts_for_viewing_resources = (
         await get_accounts_user_can_view_resources_for(user, groups, tenant_name)
     )
+
+    if service == "managed_policy":
+        ...
 
     role_name = bool(service == "iam_role")
     if service in ["iam_arn", "iam_role"]:
@@ -191,7 +196,7 @@ async def handle_aws_resource_type_ahead_request(
         account_ids_to_names = await get_account_id_to_name_mapping(tenant_name)
         for account_id, account_name in account_ids_to_names.items():
             account_str = f"{account_name} ({account_id})"
-            if resource_arn in account_str.lower():
+            if resource_id in account_str.lower():
                 results.append(account_str)
     else:
         if not data:
@@ -207,19 +212,19 @@ async def handle_aws_resource_type_ahead_request(
                     r = k.split("role/")[1]
                 except IndexError:
                     continue
-                if resource_arn in r.lower():
+                if resource_id in r.lower():
                     if r not in unique_roles:
                         unique_roles.append(r)
                         results.append(r)
             elif service == "iam_arn":
-                if k.startswith("arn:") and resource_arn in k.lower():
+                if k.startswith("arn:") and resource_id in k.lower():
                     results.append(k)
             else:
                 list_of_items = json.loads(v)
                 for item in list_of_items:
                     if service == "s3":
                         item = f"arn:aws:s3:::{item}"
-                    if resource_arn in item.lower():
+                    if resource_id in item.lower():
                         results.append(item)
                     if len(results) > max_results:
                         break
@@ -229,8 +234,10 @@ async def handle_aws_resource_type_ahead_request(
     return results[(page - 1) * page_size : page * page_size]
 
 
-class AWSResourceQueryParams(PaginatedRequestQueryParams):
-    resource_arn: str = None
+class AWSResourceQueryParams(TypeAheadPaginatedRequestQueryParams):
+    resource_id: str = None
+    as_name: bool = False
+    aws_managed_only: bool = False
     page_size: int = 50
 
 
