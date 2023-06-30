@@ -19,9 +19,11 @@ from tornado import httputil
 import common.lib.noq_json as json
 from common.config import config
 from common.exceptions.exceptions import MissingConfigurationValue, UnableToAuthenticate
+from common.lib.auth.user_management import maybe_create_users_groups_in_database
 from common.lib.cognito.identity import CognitoUserClient
 from common.lib.generic import should_force_redirect
 from common.lib.jwt import generate_jwt_token
+from common.lib.plugins import get_plugin_by_name
 
 log = config.get_logger(__name__)
 
@@ -226,15 +228,14 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
         raise tornado.web.Finish()
     if not id_token or not access_token:
         try:
+            client_id = oidc_config["client_id"]
             # exchange the authorization code with the access token
             grant_type = config.get_tenant_specific_key(
                 "get_user_by_oidc_settings.grant_type",
                 tenant,
                 "authorization_code",
             )
-            authorization_header = (
-                f"{oidc_config['client_id']}:{oidc_config['client_secret']}"
-            )
+            authorization_header = f"{client_id}:{oidc_config['client_secret']}"
             authorization_header_encoded = base64.b64encode(
                 authorization_header.encode("UTF-8")
             ).decode("UTF-8")
@@ -252,7 +253,6 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
             if client_scope:
                 client_scope = " ".join(client_scope)
             try:
-                client_id = oidc_config.get("client_id")
                 client_secret = oidc_config.get("client_secret")
                 headers = {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -270,7 +270,7 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
                     url,
                     method="POST",
                     headers=headers,
-                    body=f"grant_type={grant_type}&client_id={client_id}&code={code}&redirect_uri={oidc_redirect_uri}&scope={client_scope}",
+                    body=body,
                 )
             except tornado.httpclient.HTTPError:
                 raise
@@ -319,7 +319,6 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
             )
         )
         mfa_setup_required = None
-
         if cognito_enabled and not decoded_id_token.get("identities"):
             user_client = CognitoUserClient.tenant_client(tenant)
             mfa_configured = user_client.user_mfa_enabled(email)
@@ -463,6 +462,10 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
             )
 
         if config.get("_global_.auth.set_auth_cookie", True):
+            auth = get_plugin_by_name(
+                config.get_tenant_specific_key("plugins.auth", tenant, "cmsaas_auth")
+            )()
+            groups = await auth.get_groups(groups, email, request, only_google=True)
             expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
                 minutes=config.get_tenant_specific_key(
                     "jwt.expiration_minutes", tenant, 1200
@@ -507,6 +510,13 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
                     "message": "User has been authenticated and needs to be redirected to their intended destination",
                 }
             )
+        await maybe_create_users_groups_in_database(
+            request.ctx.db_tenant,
+            email,
+            groups,
+            description="Created by SSO Sign-In",
+            managed_by="SSO",
+        )
         raise tornado.web.Finish()
 
     except Exception as e:

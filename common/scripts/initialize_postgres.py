@@ -14,61 +14,55 @@ from common.users.models import User  # noqa: E402
 
 
 async def rebuild_tables():
+    tenants = [
+        {"name": "localhost", "user": "user@noq.dev", "group": "noq_admins@noq.dev"},
+        {
+            "name": "cloudumidev_com",
+            "user": "admin_user@noq.dev",
+            "group": "noq_admins@noq.dev",
+        },
+        {
+            "name": "cloudumisamldev_com",
+            "user": "admin_user@noq.dev",
+            "group": "noq_admins@noq.dev",
+        },
+    ]
     async with ASYNC_PG_ENGINE.begin():
-        tenant = await Tenant.create(
-            name="localhost",
-            organization_id="localhost",
-        )
-        tenant_cloudumidev = await Tenant.create(
-            name="cloudumidev_com",
-            organization_id="cloudumidev_com",
-        )
-        tenant_cloudumisamldev = await Tenant.create(
-            name="cloudumisamldev_com",
-            organization_id="cloudumisamldev_com",
-        )
-        user = await User.create(
-            tenant,
-            "admin_user@noq.dev",
-            "admin_user@noq.dev",
-            "Password!1",
-            email_verified=True,
-            managed_by="MANUAL",
-        )
-        group = await Group.create(
-            tenant=tenant,
-            name="noq_admins",
-            email="noq_admins@noq.dev",
-            description="test",
-            managed_by="MANUAL",
-        )
-        await GroupMembership.create(user, group)
-        user2 = await User.create(
-            tenant_cloudumidev,
-            "admin_user@noq.dev",
-            "admin_user@noq.dev",
-            "Password!1",
-            email_verified=True,
-        )
-        group2 = await Group.create(
-            tenant=tenant_cloudumidev,
-            name="noq_admins",
-            email="noq_admins@noq.dev",
-            description="test",
-        )
-        await GroupMembership.create(user2, group2)
+        for tenant_info in tenants:
+            existing_tenant = await Tenant.get_by_name(tenant_info["name"])
+            if not existing_tenant:
+                tenant = await Tenant.create(
+                    name=tenant_info["name"],
+                    organization_id=tenant_info["name"],
+                )
+            else:
+                tenant = existing_tenant
 
-        user3 = await User.create(
-            tenant_cloudumisamldev,
-            "admin_user@noq.dev",
-            "admin_user@noq.dev",
-            "Password!1",
-            email_verified=True,
-        )
-        group3 = await Group.create(
-            tenant=tenant_cloudumisamldev,
-            name="noq_admins",
-            email="noq_admins@noq.dev",
-            description="test",
-        )
-        await GroupMembership.create(user3, group3)
+            existing_user = await User.get_by_email(tenant, tenant_info["user"])
+            if not existing_user:
+                user = await User.create(
+                    tenant,
+                    tenant_info["user"],
+                    tenant_info["user"],
+                    "Password!1",
+                    email_verified=True,
+                    managed_by="MANUAL",
+                )
+            else:
+                user = existing_user
+
+            existing_group = await Group.get_by_email(tenant, tenant_info["group"])
+            if not existing_group:
+                group = await Group.create(
+                    tenant=tenant,
+                    name=tenant_info["group"],
+                    email=tenant_info["group"],
+                    description="test",
+                    managed_by="MANUAL",
+                )
+            else:
+                group = existing_group
+
+            existing_membership = await GroupMembership.get(user=user, group=group)
+            if not existing_membership:
+                await GroupMembership.create(user, group)

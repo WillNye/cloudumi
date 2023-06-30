@@ -105,9 +105,9 @@ export const SetupMFA: FC = () => {
               Scan the QR code to enable Multi-Factor Authentication and add an
               extra layer of security to your account.
             </p>
-            <LineBreak size="large" />
+            <LineBreak />
             <QRCode value={totpCode?.totp_uri ?? ''} />
-            <LineBreak size="large" />
+            <LineBreak />
             <div>or use manual code</div>
             <div className={styles.box} data-testid="manual-code">
               <pre>{totpCode?.mfa_secret}</pre>
@@ -124,14 +124,35 @@ export const SetupMFA: FC = () => {
                 }
               }}
             />
-            <LineBreak />
             {submittingError && (
-              <Notification
-                type={NotificationType.ERROR}
-                header={submittingError}
-                showCloseIcon={false}
-              />
+              <>
+                <LineBreak />
+                <Notification
+                  type={NotificationType.ERROR}
+                  header={submittingError}
+                  showCloseIcon={false}
+                />
+              </>
             )}
+            <LineBreak size="large" />
+            <h4 className={styles.stepsHeader}>Steps to setup MFA</h4>
+            <div className={styles.steps}>
+              <ol>
+                <li>
+                  Download the Google Authenticator or Authy app from the App
+                  Store or Google Play Store.
+                </li>
+                <li>Open the app and choose to add a new account.</li>
+                <li>
+                  Choose &apos;Scan QR code&apos; and scan the QR code displayed
+                  below.
+                </li>
+                <li>
+                  After scanning, the app will display a temporary 6-digit code.
+                  Enter this code in the field above.
+                </li>
+              </ol>
+            </div>
           </>
         )}
       </div>

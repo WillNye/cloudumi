@@ -36,6 +36,7 @@ from iambic.plugins.v0_1_0.okta.models import Assignment
 from jinja2.environment import Environment
 from jinja2.loaders import BaseLoader
 
+from common.aws.accounts.models import AWSAccount
 from common.config import models
 from common.config.globals import (
     GITHUB_APP_ID,
@@ -114,6 +115,11 @@ class IambicGit:
             self.db_tenant = await Tenant.get_by_name(self.tenant)
         if not self.installation_id:
             self.gh_installation = await GitHubInstall.get(self.db_tenant)
+            if not self.gh_installation:
+                raise Exception(
+                    f"Github App not connected for tenant {self.tenant}. "
+                    "Please connect the Github App before using this feature."
+                )
             self.installation_id = self.gh_installation.installation_id
 
         # Generate the JWT
@@ -237,7 +243,6 @@ class IambicGit:
         return f"https://github.com/{org_name}/{repo_name}/blob/{default_branch}/{file_path}"
 
     async def clone_or_pull_git_repos(self) -> None:
-        # TODO: Formalize the model for secrets
         await self.set_git_repositories()
         for repository in self.git_repositories:
             repo_name = repository.repo_name
@@ -462,6 +467,46 @@ class IambicGit:
                 [full_path], iambic_config.template_map, use_multiprocessing=False
             )
         raise Exception("Template not found")
+
+    async def sync_aws_accounts(self):
+        await self.set_git_repositories()
+        if not self.db_tenant:
+            self.db_tenant = await Tenant.get_by_name(self.tenant)
+        for repository in self.git_repositories:
+            config_template = await self.load_iambic_config(repository.repo_name)
+            aws_accounts = config_template.aws.accounts
+            known_accounts = await AWSAccount.get_by_tenant(self.db_tenant)
+            remove_accounts = [
+                x
+                for x in known_accounts
+                if x.name not in [x.account_name for x in aws_accounts]
+            ]
+            if remove_accounts:
+                await AWSAccount.delete(
+                    self.db_tenant, [x.account_id for x in remove_accounts]
+                )
+            if aws_accounts:
+                await AWSAccount.bulk_create(
+                    self.db_tenant,
+                    [
+                        {"name": x.account_name, "account_id": x.account_id}
+                        for x in aws_accounts
+                    ],
+                )
+
+    async def sync_identity_roles(self):
+        from common.aws.role_access.celery_tasks import (
+            sync_identity_roles,
+            sync_role_access,
+        )
+
+        await self.set_git_repositories()
+        if not self.db_tenant:
+            self.db_tenant = await Tenant.get_by_name(self.tenant)
+        for repository in self.git_repositories:
+            config_template = await self.load_iambic_config(repository.repo_name)
+            await sync_identity_roles(self.db_tenant, config_template)
+            await sync_role_access(self.db_tenant, config_template)
 
     async def okta_add_user_to_app(
         self,

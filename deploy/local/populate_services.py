@@ -65,6 +65,7 @@ _development_user_override: {override_email}
 _development_run_celery_tasks_1_min: true
 _development_groups_override:
   - engineering@noq.dev
+  - noq_admins
   - {override_email}
 cloudtrail:
   enabled: true
@@ -72,6 +73,9 @@ cloudtrail:
   queue_arn: arn:aws:sqs:us-west-2:759357822767:noq-cloudtrail-access-denies
 cache_self_service_typeahead:
   cache_resource_templates: true
+groups:
+  can_admin:
+    - noq_admins
 cache_resource_templates:
   repositories:
     - type: git

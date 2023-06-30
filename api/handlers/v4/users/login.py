@@ -27,7 +27,17 @@ class LoginHandler(TornadoRequestHandler):
                 self.ctx.db_tenant, username, get_groups=True
             )
 
-        if not db_user or not await db_user.check_password(request.password):
+        if db_user and db_user.is_managed_externally:
+            self.set_status(400)
+            self.write(
+                WebResponse(
+                    success="error",
+                    status_code=403,
+                    data={"message": "Please login using your identity provider"},
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            raise tornado.web.Finish()
+        elif not db_user or not await db_user.check_password(request.password):
             self.set_status(400)
             self.write(
                 WebResponse(
