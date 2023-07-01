@@ -1,7 +1,7 @@
 data "aws_organizations_organization" "owner" {}
 
-data "aws_secretsmanager_secret" "github_app_noq_webhook_secret" {
-  arn = var.github_app_noq_webhook_secret_arn
+data "aws_secretsmanager_secret" "github_app_noq_secret" {
+  arn = var.github_app_noq_secret_arn
 }
 
 data "aws_iam_policy_document" "sns_assume_role" {
@@ -123,7 +123,7 @@ resource "aws_iam_role" "github_app_noq_webhook_lambda" {
         {
           Action   = ["secretsmanager:GetSecretValue"]
           Effect   = "Allow"
-          Resource = data.aws_secretsmanager_secret.github_app_noq_webhook_secret.arn
+          Resource = data.aws_secretsmanager_secret.github_app_noq_secret.arn
         },
       ]
     })
@@ -184,7 +184,7 @@ resource "aws_lambda_function" "github_app_webhook" {
   environment {
     variables = {
       GITHUB_APP_NOQ_WEBHOOK_SNS_TOPIC_ARN = aws_sns_topic.github_app_noq_webhook.arn
-      GITHUB_APP_NOQ_WEBHOOK_SECRET_ARN    = data.aws_secretsmanager_secret.github_app_noq_webhook_secret.arn
+      GITHUB_APP_NOQ_SECRET_ARN            = data.aws_secretsmanager_secret.github_app_noq_secret.arn
     }
   }
 
@@ -196,4 +196,20 @@ resource "aws_lambda_function" "github_app_webhook" {
 resource "aws_lambda_function_url" "github_app_webhook" {
   function_name      = aws_lambda_function.github_app_webhook.function_name
   authorization_type = "NONE"
+}
+
+
+resource "null_resource" "github_app_config" {
+
+  triggers = {
+    lambda_function_url = aws_lambda_function_url.github_app_webhook.function_url,
+    # uncomment always_run if you want to force
+    always_run = "${timestamp()}"
+  }
+
+  provisioner "local-exec" {
+    command = <<EOF
+    python3 update_github_app.py ${var.profile} ${data.aws_secretsmanager_secret.github_app_noq_secret.arn} ${aws_lambda_function_url.github_app_webhook.function_url}
+    EOF
+  }
 }

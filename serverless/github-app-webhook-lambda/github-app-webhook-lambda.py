@@ -24,11 +24,11 @@ sns = boto3.client("sns", region_name=topic_region)
 
 # Load from os.environ because this is executed by lambda
 # Lambda environment is configured in terraform
-GITHUB_APP_NOQ_WEBHOOK_SECRET_ARN = os.environ["GITHUB_APP_NOQ_WEBHOOK_SECRET_ARN"]
+GITHUB_APP_NOQ_SECRET_ARN = os.environ["GITHUB_APP_NOQ_SECRET_ARN"]
 # Example format: arn:aws:secretsmanager:us-west-2:759357822767:secret:dev/github-app-noq-dev-HwkrMi
 
 
-def get_secret(secret_arn):
+def get_webhook_secret(secret_arn):
 
     region_name = secret_arn.split(":")[3]
 
@@ -46,14 +46,19 @@ def get_secret(secret_arn):
     # Decrypts secret using the associated KMS key.
     secret = get_secret_value_response["SecretString"]
 
-    # Your code goes here.
-    return secret
+    # secret is in yaml format, but i do not want to deal with
+    # building or packaging yaml at this moment...
+    # ["_global_"]["secrets"]["github_app"]["webhook_secret"]
+    for line in secret.split("\n"):
+        if "webhook_secret" in line:
+            return line.strip().split(":")[1].strip()
+    raise RuntimeError("Cannot parse webhook_secret")
 
 
 # Ensure you read SECRET during function load time;
 # This saves a lot of API request and cost. since
 # Lambda function remains warm after 1 execution
-GITHUB_APP_NOQ_WEBHOOK_SECRET = get_secret(GITHUB_APP_NOQ_WEBHOOK_SECRET_ARN)
+GITHUB_APP_NOQ_WEBHOOK_SECRET = get_webhook_secret(GITHUB_APP_NOQ_SECRET_ARN)
 
 
 # Use to verify Github App Webhook Secret Using SHA256

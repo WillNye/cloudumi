@@ -3,8 +3,8 @@ variable "account_id" {
   type        = string
 }
 
-variable "github_app_noq_webhook_secret_arn" {
-  description = "github_app_noq_webhook_secret_arn"
+variable "github_app_noq_secret_arn" {
+  description = "github_app_noq_secret_arn"
   type        = string
 }
 

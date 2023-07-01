@@ -9,7 +9,12 @@ variable "lambda_function_name" {
   default     = "github_app_noq_webhook"
 }
 
-variable "github_app_noq_webhook_secret_arn" {
-  description = "github_app_noq_webhook_secret_arn"
+variable "github_app_noq_secret_arn" {
+  description = "github_app_noq_secret_arn"
+  type        = string
+}
+
+variable "profile" {
+  description = "The AWS PROFILE, as configured in the file ~/.aws/credentials to be used for deployment"
   type        = string
 }
