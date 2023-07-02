@@ -72,11 +72,6 @@ export const ProfileSettings: FC = () => {
 
   return (
     <div className={css.container}>
-      <p>
-        Manage and customize your personal account information. Update your
-        profile details, change your password, set notifications preferences,
-        and and manage your privacy preferences.
-      </p>
       <LineBreak />
       <div>
         <nav className={css.nav}>

@@ -48,7 +48,7 @@ class RoleConsoleLoginHandler(BaseAPIV2Handler):
         """
         console_only = True
         if not self.eligible_roles:
-            await self.set_eligible_roles(console_only)
+            await self.extend_eligible_roles(console_only)
         tenant = self.ctx.tenant
         arguments = {k: self.get_argument(k) for k in self.request.arguments}
         role = role.lower()
@@ -241,7 +241,7 @@ class RolesHandler(BaseAPIV2Handler):
 
     async def get(self):
         if not self.eligible_roles:
-            await self.set_eligible_roles(self.console_only)
+            await self.extend_eligible_roles(self.console_only)
 
         payload = {
             "eligible_roles": self.eligible_roles,
@@ -824,7 +824,7 @@ class GetRolesMTLSHandler(BaseMtlsHandler):
             console_only = False
 
         if not self.eligible_roles:
-            await self.set_eligible_roles(console_only)
+            await self.extend_eligible_roles(console_only)
 
         log_data = {
             "function": f"{__name__}.{self.__class__.__name__}.{sys._getframe().f_code.co_name}",
@@ -846,7 +846,7 @@ class GetRolesMTLSHandler(BaseMtlsHandler):
 
         await self.authorization_flow(user=self.user, console_only=console_only)
         if not self.eligible_roles:
-            await self.set_eligible_roles(console_only=console_only)
+            await self.extend_eligible_roles(console_only=console_only)
         eligible_roles_details_array = await get_eligible_role_details(
             sorted(self.eligible_roles),
             tenant,

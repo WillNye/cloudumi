@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import concurrent.futures
 import inspect
 import os
@@ -10,6 +11,7 @@ from asgiref.sync import async_to_sync
 
 from common.celery_tasks import celery_tasks as celery
 from common.lib.account_indexers import get_account_id_to_name_mapping
+from common.lib.password import generate_random_password
 from common.lib.tenant import get_all_tenants
 
 total_start_time = int(time.time())
@@ -41,6 +43,31 @@ def log_end(task_name, start_time):
     print(f"Finished task: {task_name}. It took {end_time - start_time:.2f} seconds")
 
 
+async def maybe_set_user():
+    # This should only run for localhost. Let's not create users in prod environments
+    # dynamically based on iambic tempalte data.
+    from common import Tenant, User
+
+    all_tenants = await Tenant.get_all()
+    for local_tenant in all_tenants:
+        auth_rule = "user@noq.dev"
+        user = await User.get_by_email(local_tenant, auth_rule)
+        if user:
+            continue
+
+        user = User(
+            managed_by="SCIM",
+            username=auth_rule,
+            email=auth_rule,
+            email_verified=True,
+            tenant=local_tenant,
+            display_name="Test User",
+            full_name="Test User",
+        )
+        await user.set_password(await generate_random_password())
+        await user.write()
+
+
 if args.use_celery:
     tasks = [
         celery.cache_iam_resources_across_accounts_for_all_tenants,
@@ -49,8 +76,8 @@ if args.use_celery:
         celery.cache_sqs_queues_across_accounts_for_all_tenants,
         celery.cache_managed_policies_across_accounts_for_all_tenants,
         celery.cache_resources_from_aws_config_across_accounts_for_all_tenants,
-        celery.cache_access_advisor_across_accounts_for_all_tenants,
         celery.sync_iambic_templates_all_tenants,
+        celery.cache_iambic_data_for_all_tenants,
         celery.update_providers_and_provider_definitions_all_tenants,
         celery.upsert_tenant_request_types_for_all_tenants,
     ]
@@ -82,7 +109,6 @@ else:
             celery.cache_sns_topics_for_account,
             celery.cache_sqs_queues_for_account,
             celery.cache_managed_policies_for_account,
-            celery.cache_access_advisor_for_account,
             celery.cache_resources_from_aws_config_for_account,
         ]
         if parallel:
@@ -146,6 +172,7 @@ else:
             celery.cache_organization_structure,
             celery.cache_scps_across_organizations,
             celery.sync_iambic_templates_for_tenant,
+            celery.cache_iambic_data_for_tenant,
             celery.update_providers_and_provider_definitions_for_tenant,
             celery.upsert_tenant_request_types_for_tenant,
         ]
@@ -168,5 +195,6 @@ else:
                 start_time,
             )
 
+asyncio.run(maybe_set_user())
 total_time = int(time.time()) - total_start_time
 print(f"Done caching data in Redis. It took {total_time} seconds")

@@ -134,7 +134,7 @@ def templatize_form_val(form_val: any) -> any:
         except Exception:
             # This is to catch values that can't be cast to a set
             pass
-        return json.dumps(sorted(form_val))
+        return sorted(json.loads(json.dumps(form_val)))
     else:
         return form_val
 
@@ -168,6 +168,9 @@ async def get_field_value(change_field: ChangeField, form_value: any) -> any:
     elif change_field.field_type != "Choice":
         if not allow_multiple and isinstance(form_value, list):
             raise AssertionError(f"Field {field_text} does not allow multiple values")
+
+        if allow_multiple and not isinstance(form_value, list):
+            form_value = [form_value]
 
         if change_field.field_type == "EnforcedTypeAhead":
             # TODO: Add validation for enforced type ahead fields
@@ -397,20 +400,25 @@ async def get_allowed_approvers(
     Not using template_bodies for now but may be used to resolve approvers in the future.
     The idea being that
     """
-    return config.get_tenant_specific_key("groups.can_admin", tenant_name)
+    return config.get_tenant_specific_key(
+        "groups.can_admin", tenant_name, ["noq_admins"]
+    )
 
 
 async def get_iambic_pr_instance(
     tenant: Tenant, request_id: str, requested_by: str, pull_request_id: int = None
 ):
     iambic_repo_details: IambicRepoDetails = await get_iambic_repo(tenant.name)
-    iambic_repo = await IambicRepo.setup(
-        tenant,
-        iambic_repo_details.repo_name,
-        request_id,
-        requested_by,
-        use_request_branch=True,
-    )
+    try:
+        iambic_repo = await IambicRepo.setup(
+            tenant,
+            iambic_repo_details.repo_name,
+            request_id,
+            requested_by,
+            use_request_branch=True,
+        )
+    except AttributeError:
+        return None
 
     if iambic_repo_details.git_provider == "github":
         return GitHubPullRequest(

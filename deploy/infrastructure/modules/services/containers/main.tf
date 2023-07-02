@@ -63,6 +63,29 @@ resource "aws_ecr_repository" "noq_ecr_repository-api" {
   )
 }
 
+resource "aws_ecr_lifecycle_policy" "noq_ecr_repository-api-lifecycle_policy" {
+  repository = aws_ecr_repository.noq_ecr_repository-api[0].name
+  count      = var.noq_core ? 1 : 0
+
+  policy = <<EOF
+{
+  "rules": [
+    {
+      "rulePriority": 1,
+      "description": "Keep last 20 images",
+      "selection": {
+        "tagStatus": "any",
+        "countType": "imageCountMoreThan",
+        "countNumber": 20
+      },
+      "action": {
+        "type": "expire"
+      }
+    }
+  ]
+}
+EOF
+}
 
 resource "aws_secretsmanager_secret" "noq_secrets" {
   name       = "${var.namespace}-${var.stage}-noq_secrets"

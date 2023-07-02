@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from common import Tenant
+from common import Tenant, User
 from common.lib.pydantic import BaseModel
 
 
@@ -8,6 +8,7 @@ class RequestContext(BaseModel):
     tenant: str
     db_tenant: Optional[Tenant]
     user: Optional[str]
+    db_user: Optional[User]
     groups: Optional[List[str]]
     request_uuid: str
     uri: str
