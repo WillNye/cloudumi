@@ -227,7 +227,7 @@ const AuthenticationSettings = () => {
                 value={watch('ssoType')}
                 onChange={v => setValue('ssoType', v)}
               >
-                <SelectOption value="none">Not use SSO</SelectOption>
+                <SelectOption value="none">SSO not configured</SelectOption>
                 <SelectOption value="oidc">OpenID Connect</SelectOption>
                 <SelectOption value="saml">SAML</SelectOption>
               </Select>

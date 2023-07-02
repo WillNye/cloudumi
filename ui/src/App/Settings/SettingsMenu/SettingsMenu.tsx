@@ -73,7 +73,7 @@ const SettingsMenu: FC = () => {
                     })}
                   >
                     <Link to={'/settings/authentication-settings'}>
-                      Auth Settings
+                      Authentication Settings
                     </Link>
                   </li>
                 </>
@@ -84,10 +84,6 @@ const SettingsMenu: FC = () => {
 
         <div className={styles.outlet}>
           <Breadcrumbs items={breadCrumbsPaths} />
-          <p className={styles.description}>
-            Manage and customize all aspects of your account and system
-            integrations.
-          </p>
 
           <Outlet />
         </div>

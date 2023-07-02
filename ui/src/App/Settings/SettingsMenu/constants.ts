@@ -27,7 +27,7 @@ export const BREAD_CRUMBS_ACCOUNTS_PATH = [
 export const BREAD_CRUMBS_AUTH_SETTINGS_PATH = [
   {
     id: 'auth_settings',
-    name: 'Auth Settings',
+    name: 'Authentication Settings',
     url: '/settings/auth_settings'
   }
 ];

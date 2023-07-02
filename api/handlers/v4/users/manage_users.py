@@ -597,7 +597,7 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
                 )
                 raise tornado.web.Finish()
             if not await user.reset_password(
-                tenant, email, password_reset_token, password
+                self.ctx.db_tenant, email, password_reset_token, password
             ):
                 self.set_status(400)
                 self.write(
