@@ -68,9 +68,12 @@ class AWSMarketplaceTenantDetails(GlobalNoqModel):
     updated_at = NumberAttribute()
     change_history = NoqListAttribute(null=True)
     company_name = UnicodeAttribute(null=True)
+    contact_person_first_name = UnicodeAttribute(null=True)
+    contact_person_last_name = UnicodeAttribute(null=True)
     contact_person = UnicodeAttribute(null=True)
     contact_phone = UnicodeAttribute(null=True)
     contact_email = UnicodeAttribute(null=True)
+    domain = UnicodeAttribute(null=True)
 
     @classmethod
     async def customer_id_exists(cls, customer_identifier: str) -> bool:

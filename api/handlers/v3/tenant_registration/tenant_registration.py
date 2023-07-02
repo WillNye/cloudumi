@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 import boto3
 import furl
 import sentry_sdk
+import tldextract
 import tornado.escape
 import tornado.web
 from email_validator import validate_email
@@ -31,6 +32,25 @@ from common.tenants.models import Tenant
 from common.users.models import User
 
 log = config.get_logger(__name__)
+
+
+# TODO: Move this to a common location
+def email_to_prioritized_subdomains(email):
+    """Convert an email address to a list of potential subdomains."""
+    extracted = tldextract.extract(email)
+
+    subdomains = []
+    if extracted.subdomain:
+        subdomains = extracted.subdomain.split(".")
+
+    domains = [extracted.domain] + [f"{d}-{extracted.domain}" for d in subdomains[::-1]]
+
+    # Include the suffix in the last item
+    if extracted.suffix:
+        suffix = extracted.suffix.replace(".", "-")
+        domains.append(f"{domains[-1]}-{suffix}")
+
+    return domains
 
 
 async def create_tenant(
@@ -115,29 +135,25 @@ async def create_tenant(
         )
         sentry_sdk.capture_exception(e)
         return
-    dev_domain = (email.split("@")[1] + ".noq.dev").replace(".", "_")
-    dev_domain_url = f'https://{dev_domain.replace("_", ".")}'
+    dev_domain_candidates = email_to_prioritized_subdomains(email)
+    dev_domain = None
+    for dev_domain_candidate in dev_domain_candidates:
+        dev_domain_temp = dev_domain_candidate + "_noq_dev"
+        if not await TenantDetails.tenant_exists(dev_domain_temp):
+            dev_domain = dev_domain_temp
+            break
+    if not dev_domain:
+        dev_domain = await generate_dev_domain(dev_mode)
     if await TenantDetails.tenant_exists(dev_domain):
         request.set_status(400)
         request.write(
             {
-                "error": f"A domain associated with your e-mail address has already been registered ({dev_domain_url}). "
-                f"Please specify a different domain or contact your admin for next steps.",
+                "error": "Unable to generate a suitable domain",
+                "error_description": "Failed to generate a dev domain. Please try again.",
             }
         )
         return
-    else:
-        # Generate a valid dev domain
-        dev_domain = await generate_dev_domain(dev_mode)
-        if not dev_domain:
-            request.set_status(400)
-            request.write(
-                {
-                    "error": "Unable to generate a suitable domain",
-                    "error_description": "Failed to generate a dev domain. Please try again.",
-                }
-            )
-            return
+    dev_domain_url = f'https://{dev_domain.replace("_", ".")}'
 
     log_data["dev_domain"] = dev_domain
     log_data["dev_domain_url"] = dev_domain_url
@@ -207,11 +223,12 @@ auth:
     ddb = RestrictedDynamoHandler()
     await ddb.update_static_config_for_tenant(tenant_config, tenant.email, dev_domain)
 
-    await user.send_password_via_email(furl.furl(dev_domain_url), password)
+    await user.send_password_via_email(dev_domain, furl.furl(dev_domain_url), password)
     return_data = {
         "success": True,
         "username": tenant.email,
         "domain": dev_domain_url,
+        "message": "An email has been sent to you with login information.",
     }
 
     # For our functional tests, we want to return the password
@@ -230,8 +247,7 @@ auth:
                     email_suffix
                 ):
                     return_data["password"] = password
-    log_data["message"] = "Tenant registration POST request processed successfully"
-    log.debug(log_data)
+    log.debug("Tenant registration POST request processed successfully", **log_data)
     return return_data
 
 
@@ -239,11 +255,42 @@ class TenantRegistrationAwsMarketplaceFormSubmissionHandler(TornadoRequestHandle
     async def post(self):
         body = self.request.body
         data = parse_qs_bytes(body)
-        company_name = data.get("company_name", [b""])[0].decode("utf-8")
-        contact_person = data.get("contact_person", [b""])[0].decode("utf-8")
-        contact_phone = data.get("contact_phone", [b""])[0].decode("utf-8")
-        contact_email = data.get("contact_email", [b""])[0].decode("utf-8")
+        company_name = data.get("companyName", [b""])[0].decode("utf-8")
+        contact_person_first_name = data.get("contactPersonFirstName", [b""])[0].decode(
+            "utf-8"
+        )
+        contact_person_last_name = data.get("contactPersonLastName", [b""])[0].decode(
+            "utf-8"
+        )
+        contact_phone = data.get("contactPhone", [b""])[0].decode("utf-8")
+        contact_email = data.get("contactEmail", [b""])[0].decode("utf-8")
         registration_token = data.get("registration_token", [b""])[0].decode("utf-8")
+        log_data = {
+            "company_name": company_name,
+            "contact_person_first_name": contact_person_first_name,
+            "contact_person_last_name": contact_person_last_name,
+            "contact_phone": contact_phone,
+            "contact_email": contact_email,
+            "registration_token": registration_token,
+        }
+        log.debug("AWS Marketplace Registration Request Received", **log_data)
+        if not (
+            registration_token
+            and contact_email
+            and company_name
+            and contact_person_first_name
+            and contact_person_last_name
+            and contact_phone
+        ):
+            log.error("Invalid AWS Marketplace Registration Request", **log_data)
+            self.set_status(400)
+            self.write(
+                {
+                    "error": "Invalid AWS Marketplace Registration Request",
+                    "error_description": "Missing required fields",
+                }
+            )
+            return
         marketplace_client = boto3.client(
             "meteringmarketplace", region_name="us-west-2"
         )
@@ -256,18 +303,77 @@ class TenantRegistrationAwsMarketplaceFormSubmissionHandler(TornadoRequestHandle
         customer_data = marketplace_client.resolve_customer(
             RegistrationToken=registration_token
         )
+        log_data["customer_data"] = customer_data
         customer_id = customer_data.get("CustomerIdentifier")
-        customer_awsmp_data = await AWSMarketplaceTenantDetails.get(customer_id)
+        if not customer_id:
+            log.error(
+                "Customer ID doesn't exist",
+                **log_data,
+            )
+            self.set_status(400)
+            self.write(
+                {
+                    "error": "Invalid registration token",
+                    "error_description": "The registration token provided is invalid.",
+                }
+            )
+            return
+        try:
+            customer_awsmp_data = await AWSMarketplaceTenantDetails.get(customer_id)
+        except AWSMarketplaceTenantDetails.DoesNotExist:
+            log.error(
+                "Customer ID doesn't exist in our database",
+                **log_data,
+            )
+            self.set_status(400)
+            self.write(
+                {
+                    "error": "Customer ID doesn't exist in our database",
+                    "error_description": (
+                        "Customer ID doesn't exist in our database. "
+                        "Please click on the Registration icon for Noq Software in the Amazon Marketplace"
+                    ),
+                }
+            )
+            return
+        if domain := customer_awsmp_data.domain:
+            log_data["domain"] = domain
+            log.error(
+                "Customer already has a registered domain",
+                **log_data,
+            )
+            self.set_status(400)
+            self.write(
+                {
+                    "error": "Customer already has a registered domain",
+                    "error_description": f"You've already been registered. Please visit {domain} to login",
+                }
+            )
+            return
         customer_awsmp_data.company_name = company_name
-        customer_awsmp_data.contact_person = contact_person
+        customer_awsmp_data.contact_person = (
+            contact_person_first_name + " " + contact_person_last_name
+        )
+        customer_awsmp_data.contact_person_first_name = contact_person_first_name
+        customer_awsmp_data.contact_person_last_name = contact_person_last_name
         customer_awsmp_data.contact_phone = contact_phone
         customer_awsmp_data.contact_email = contact_email
         await customer_awsmp_data.save()
-        # TODO: Register Tenant if there's not already a tenant associated with this customer_id
-        # Registration code is not required because the customer has already paid for the service
-        # through Amazon Marketplace
         return_data = await create_tenant(
-            self, contact_email, registation_code_required=False
+            self,
+            contact_email,
+            contact_person_first_name,
+            contact_person_last_name,
+            registation_code_required=False,
+        )
+
+        if domain := return_data.get("domain"):
+            customer_awsmp_data.domain = domain
+            await customer_awsmp_data.save()
+        log_data["domain"] = domain
+        log.info(
+            "Tenant successfully created through AWS Marketplace",
+            **log_data,
         )
         self.write(return_data)
 
@@ -283,6 +389,7 @@ class TenantRegistrationAwsMarketplaceHandler(TornadoRequestHandler):
             profile_name="prod/prod_admin", region_name="us-west-2"
         )
         marketplace_client = prod.client("meteringmarketplace")
+        # For testing in PostMan, ensure that the registration token is URL encoded
         # Example Response: {'CustomerIdentifier': 'hmCyPXguf9s', 'ProductCode': 'ci3g7nysfa7luy3vlhw4g7zwa', 'CustomerAWSAccountId': '940552945933'}
         customer_data = marketplace_client.resolve_customer(
             RegistrationToken=registration_token
@@ -305,10 +412,7 @@ class TenantRegistrationAwsMarketplaceHandler(TornadoRequestHandler):
         # Render registration page
         self.render(
             "templates/aws_marketplace_registration/index.html",
-            customer_id=customer_id,
-            product_code=product_code,
             registration_token=registration_token,
-            customer_account_id=customer_account_id,
         )
 
     async def get(self):

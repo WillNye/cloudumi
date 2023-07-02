@@ -105,13 +105,27 @@
           autofocus
         />
 
-        <label for="contactPerson" class="sr-only">Contact person</label>
+        <label for="contactPersonFirstName" class="sr-only"
+          >Contact person</label
+        >
         <input
           type="text"
-          id="contactPerson"
-          name="contactPerson"
+          id="contactPersonFirstName"
+          name="contactPersonFirstName"
           class="form-control"
-          placeholder="Contact person"
+          placeholder="First Name"
+          required
+          autofocus
+        />
+        <label for="contactPersonLastName" class="sr-only"
+          >Contact person</label
+        >
+        <input
+          type="text"
+          id="contactPersonLastName"
+          name="contactPersonLastName"
+          class="form-control"
+          placeholder="Last Name"
           required
           autofocus
         />
