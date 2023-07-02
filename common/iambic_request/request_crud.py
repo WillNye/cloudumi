@@ -170,8 +170,20 @@ async def create_request(
 ):
     request_id = str(uuid.uuid4())
     request_pr = await get_iambic_pr_instance(tenant, request_id, created_by)
+
+    request_link = (
+        f"{config.get_tenant_specific_key('url', tenant.name)}/requests/{request_id}"
+    )
+
+    comment = (
+        f"| **Request** | {request_link} |\n"
+        f"|-------:|:----------|\n"
+        f"| **Created by** | {created_by} |\n"
+        f"| **Justification**  | {justification} |\n"
+    )
+
     branch_name = await request_pr.create_request(
-        justification, changes, request_notes=request_notes
+        comment, changes, request_notes=request_notes
     )
 
     request = Request(
@@ -195,14 +207,6 @@ async def create_request(
         branch_name=branch_name,
     )
     await request.write()
-
-    request_link = config.get_tenant_specific_key("url", tenant.name)
-    request_link = f"{request_link}/requests/{request.id}"
-    await request_pr.add_comment(
-        f"Request: {request_link}\n"
-        f"Created by: {created_by}\n"
-        f"Justification: {justification}"
-    )
 
     response = await get_request_response(request, request_pr, False)
     del request_pr
@@ -295,14 +299,13 @@ async def approve_request(
         raise Unauthorized("Unable to approve this request")
 
     request.status = "Running"
-
     request_pr = await get_iambic_pr_instance(
         tenant, request_id, request.created_by, request.pull_request_id
     )
     await request_pr.load_pr()
 
-    if request_pr.mergeable and request_pr.merge_on_approval:
-        await request_pr.approve_request()
+    if request_pr.mergeable:
+        await request_pr.approve_request(approved_by)
     elif request_pr.closed_at and not request_pr.merged_at:
         # The PR has already been closed (Rejected) but the status was not updated in the DB
         request.status = "Rejected"
@@ -313,7 +316,8 @@ async def approve_request(
         # The PR has already been merged but the status was not updated in the DB
         # request.approved_by.append(?)
         pass
-    else:
+
+    if request.status != "Rejected":
         request.approved_by.append(approved_by)
 
     await request.write()

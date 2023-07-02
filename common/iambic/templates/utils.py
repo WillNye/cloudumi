@@ -1,3 +1,6 @@
+from iambic.core.utils import sanitize_string
+from iambic.plugins.v0_1_0.aws.models import AWSAccount
+from jinja2 import BaseLoader, Environment
 from sqlalchemy import or_, select
 from sqlalchemy.orm import contains_eager
 
@@ -75,3 +78,17 @@ async def list_tenant_templates(
     if resource_id:
         return items.scalars().unique().all()
     return items.scalars().all()
+
+
+def get_template_str_value_for_aws_account(
+    template_str_attr, aws_account: AWSAccount
+) -> str:
+    variables = {var.key: var.value for var in aws_account.variables}
+    variables["account_id"] = aws_account.account_id
+    variables["account_name"] = aws_account.account_name
+    valid_characters_re = r"[\w_+=,.@-]"
+    variables = {
+        k: sanitize_string(v, valid_characters_re) for k, v in variables.items()
+    }
+    rtemplate = Environment(loader=BaseLoader()).from_string(template_str_attr)
+    return rtemplate.render(var=variables)

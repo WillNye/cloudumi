@@ -1,13 +1,23 @@
 import asyncio
-from typing import Dict, Optional
+from typing import Dict, Optional, Type, Union
 
 from cachetools import TTLCache
+from iambic.core.models import BaseTemplate as IambicBaseTemplate
+from iambic.core.utils import sanitize_string
+from iambic.plugins.v0_1_0.aws.iam.group.models import AWS_IAM_GROUP_TEMPLATE_TYPE
+from iambic.plugins.v0_1_0.aws.iam.policy.models import AWS_MANAGED_POLICY_TEMPLATE_TYPE
+from iambic.plugins.v0_1_0.aws.iam.role.models import AWS_IAM_ROLE_TEMPLATE_TYPE
+from iambic.plugins.v0_1_0.aws.iam.user.models import AWS_IAM_USER_TEMPLATE_TYPE
+from iambic.plugins.v0_1_0.aws.identity_center.permission_set.models import (
+    AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
+)
+from jinja2 import BaseLoader, Environment
 from policy_sentry.util.arns import get_account_from_arn, parse_arn
 
 from common.config import config
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 def get_resource_tag(
@@ -510,3 +520,41 @@ async def get_url_for_resource(resource_summary: ResourceSummary):
         url = f"/role/{account}?redirect=" f"https://console.aws.amazon.com/wafv2/home"
 
     return url
+
+
+async def get_resource_arn(
+    iambic_provider_def, iambic_template: Type[IambicBaseTemplate]
+) -> Union[str, None]:
+    if (
+        iambic_template.template_type
+        == AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE
+    ):
+        # Not bothering with generating the ARN for this because it isn't being used
+        return
+
+    variables = {var.key: var.value for var in iambic_provider_def.variables}
+    variables["account_id"] = iambic_provider_def.account_id
+    variables["account_name"] = iambic_provider_def.account_name
+    if hasattr(iambic_template, "owner") and (
+        owner := getattr(iambic_template, "owner", None)
+    ):
+        variables["owner"] = owner
+    valid_characters_re = r"[\w_+=,.@-]"
+    variables = {
+        k: sanitize_string(v, valid_characters_re) for k, v in variables.items()
+    }
+
+    if iambic_template.template_type == AWS_IAM_GROUP_TEMPLATE_TYPE:
+        resource_name = "group"
+    elif iambic_template.template_type == AWS_IAM_ROLE_TEMPLATE_TYPE:
+        resource_name = "role"
+    elif iambic_template.template_type == AWS_IAM_USER_TEMPLATE_TYPE:
+        resource_name = "user"
+    elif iambic_template.template_type == AWS_MANAGED_POLICY_TEMPLATE_TYPE:
+        resource_name = "policy"
+    else:
+        raise ValueError(f"Unknown template type: {iambic_template.template_type}")
+
+    role_arn = f"arn:aws:iam::{iambic_provider_def.account_id}:{resource_name}{iambic_template.properties.path}{iambic_template.properties.role_name}"
+    rtemplate = Environment(loader=BaseLoader()).from_string(role_arn)
+    return rtemplate.render(var=variables)

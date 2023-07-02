@@ -1,7 +1,3 @@
-import sys
-from typing import Optional
-
-import sentry_sdk
 from tornado.web import Finish
 
 import common.lib.noq_json as json
@@ -9,51 +5,14 @@ from common.config import config
 from common.handlers.base import BaseHandler, JwtAuthType, TornadoRequestHandler
 from common.models import WebResponse
 
-log = config.get_logger()
-
-
-def log_dict_handler(
-    log_level: str,
-    handler_class: BaseHandler,
-    account_id: Optional[str] = None,
-    role_name: Optional[str] = None,
-    tenant: Optional[str] = None,
-    exc: dict = {},
-    **kwargs: dict,
-):
-    if not log_level.upper() in [
-        "debug",
-        "info",
-        "warning",
-        "error",
-        "critical",
-        "exception",
-    ]:
-        log_level = "info"
-    if not tenant:
-        tenant = handler_class.get_tenant_name()
-    log_data = {
-        "function": f"{__name__}.{handler_class.__class__.__name__}.{sys._getframe().f_code.co_name}",
-        "user-agent": handler_class.request.headers.get("User-Agent"),
-        "account_id": account_id if account_id else "unknown",
-        "role_name": role_name if role_name else "unknown",
-        "tenant": tenant,
-    }
-    log_data.update(kwargs)  # Add any other log data
-    if log_level.upper() in ["ERROR", "CRITICAL", "EXCEPTION"]:
-        log_data["exception"] = exc
-    # TODO: @mdaue to fix:
-    # TypeError: getattr(): attribute name must be string
-    # getattr(log, getattr(logging, log_level.upper()))(log_data)
-    log.debug(log_data)
-    sentry_sdk.capture_exception()
+log = config.get_logger(__name__)
 
 
 class AuthHandler(BaseHandler):
     async def prepare(self):
         tenant = self.get_tenant_name()
         if not config.is_tenant_configured(tenant):
-            log_dict_handler("debug", self, tenant=tenant)
+            log.debug("Invalid tenant specified", tenant=tenant)
             self.set_status(406)
             self.write(
                 {
@@ -109,7 +68,7 @@ class CognitoAuthHandler(BaseHandler):
             )
             return self.finish()
         except Exception as exc:
-            log_dict_handler("exception", self, exc=exc)
+            log.exception("Invalid JWT token", exc=exc)
             self.write(
                 {
                     "type": "redirect",
@@ -141,7 +100,6 @@ class UnauthenticatedAuthSettingsHandler(TornadoRequestHandler):
         pass
 
     async def get(self, *args, **kwargs):
-        log_dict_handler("info", self)
         tenant = self.get_tenant_name()
         user_pool_region = config.get_tenant_specific_key(
             "secrets.cognito.config.user_pool_region", tenant, config.region

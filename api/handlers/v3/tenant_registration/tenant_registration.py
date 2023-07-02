@@ -30,7 +30,7 @@ from common.lib.tenant.models import AWSMarketplaceTenantDetails, TenantDetails
 from common.tenants.models import Tenant
 from common.users.models import User
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def create_tenant(
@@ -381,6 +381,174 @@ class TenantRegistrationHandler(TornadoRequestHandler):
 
         return_data = await create_tenant(self, email, registration_code)
 
+        log_data["email"] = data["email"]
+        dev_mode = config.get("_global_.development")
+
+        # Validate registration code
+        valid_registration_code = hashlib.sha256(
+            "noq_tenant_{}".format(data.get("email")).encode()
+        ).hexdigest()[0:20]
+
+        if not dev_mode:
+            if data.get("registration_code") != valid_registration_code:
+                self.set_status(400)
+                self.write(
+                    {
+                        "error": "Invalid registration code",
+                        "error_description": "The registration code is invalid",
+                    }
+                )
+                return
+
+        # Validate tenant
+        try:
+            tenant = NewTenantRegistration.parse_obj(data)
+        except Exception as e:
+            self.set_status(400)
+            self.write(
+                {
+                    "error": "Invalid data",
+                    "error_description": str(e),
+                }
+            )
+            sentry_sdk.capture_exception(e)
+            return
+
+        dev_domain = data.get("domain", "").replace(".", "_")
+
+        if dev_domain:
+            if await TenantDetails.tenant_exists(dev_domain):
+                self.set_status(400)
+                self.write(
+                    {
+                        "error": f"The provided domain has already been registered ({dev_domain}). "
+                        f"Please specify a different domain or contact your admin for next steps.",
+                    }
+                )
+                return
+        elif not dev_mode:  # Don't generate domains on prod
+            self.set_status(400)
+            self.write(
+                {
+                    "error": "A valid domain that has not already been registered must be provided."
+                }
+            )
+            return
+        else:
+            # Generate a valid dev domain
+            dev_domain = await generate_dev_domain(dev_mode)
+            if not dev_domain:
+                self.set_status(400)
+                self.write(
+                    {
+                        "error": "Unable to generate a suitable domain",
+                        "error_description": "Failed to generate a dev domain. Please try again.",
+                    }
+                )
+                return
+
+        # TODO: Validate domain ends in a valid suffix / or just the prefix, just get the subdomain
+
+        dev_domain_url = f'https://{dev_domain.replace("_", ".")}'
+        log_data["dev_domain"] = dev_domain
+        log_data["dev_domain_url"] = dev_domain_url
+
+        async with ASYNC_PG_ENGINE.begin():
+            tenant_db = await Tenant.create(
+                name=dev_domain,
+                organization_id=dev_domain,
+            )
+            email_domain = tenant.email.split("@")[1]
+            password = generate_password()
+            user = await User.create(
+                tenant_db,
+                tenant.email,
+                tenant.email,
+                password,
+                email_verified=True,
+                managed_by="MANUAL",
+            )
+            group = await Group.create(
+                tenant=tenant_db,
+                name="noq_admins",
+                email=f"noq_admins@{email_domain}",
+                description="Noq Admins",
+                managed_by="MANUAL",
+            )
+            await GroupMembership.create(user, group)
+
+        external_id = await get_external_id(dev_domain, tenant.email)
+
+        tenant_config = f"""
+cloud_credential_authorization_mapping:
+  role_tags:
+    enabled: false
+    authorized_groups_tags:
+      - noq_authorized
+    authorized_groups_cli_only_tags:
+      - noq_authorized_cli
+challenge_url:
+  enabled: true
+environment: prod
+tenant_details:
+  external_id: {external_id}
+  creator: {tenant.email}
+  creation_time: {int(time.time())}
+site_config:
+  landing_url: /
+headers:
+  identity:
+    enabled: false
+  role_login:
+    enabled: true
+url: {dev_domain_url}
+application_admin:
+  - {ADMIN_GROUP_NAME}
+secrets:
+  jwt_secret: {token_urlsafe(32)}
+auth:
+  extra_auth_cookies:
+    - AWSELBAuthSessionCookie
+  force_redirect_to_identity_provider: false
+"""
+
+        # Store tenant information in DynamoDB
+        await TenantDetails.create(dev_domain, tenant.email)
+
+        ddb = RestrictedDynamoHandler()
+        await ddb.update_static_config_for_tenant(
+            tenant_config, tenant.email, dev_domain
+        )
+
+        await user.send_password_via_email(
+            dev_domain,
+            furl.furl(dev_domain_url),
+            password,
+        )
+        return_data = {
+            "success": True,
+            "username": tenant.email,
+            "domain": dev_domain_url,
+        }
+
+        # For our functional tests, we want to return the password
+        if config.get("_global_.environment") in ["dev", "staging"]:
+            # Make sure dev_domain_url starts with `test_`
+            if dev_domain_url.startswith("https://test-") and (
+                dev_domain_url.endswith(".staging.noq.dev")
+                or dev_domain_url.endswith(".example.com")
+            ):
+                # Make sure self.request.host is localhost
+                if self.request.host == "localhost:8092":
+                    # Make sure email starts with `cypress_ui_saas_functional_tests+` and ends in `@noq.dev`
+                    email_prefix = "cypress_ui_saas_functional_tests+"
+                    email_suffix = "@noq.dev"
+                    if tenant.email.startswith(email_prefix) and tenant.email.endswith(
+                        email_suffix
+                    ):
+                        return_data["password"] = password
+        log_data["message"] = "Tenant registration POST request processed successfully"
+        log.debug(log_data)
         self.write(return_data)
 
     async def delete(self):

@@ -72,7 +72,7 @@ from common.user_request.utils import (
 )
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def validate_create_resource_change(
@@ -153,7 +153,7 @@ async def validate_request_creation(
     ):
         role_arn = tra_change.principal.principal_arn
         if not handler.eligible_roles:
-            await handler.set_eligible_roles(handler.console_only)
+            await handler.extend_eligible_roles(handler.console_only)
         tra_supported_roles = await get_tra_supported_roles_by_tag(
             handler.eligible_roles, handler.groups, handler.user, tenant
         )

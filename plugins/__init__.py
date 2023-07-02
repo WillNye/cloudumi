@@ -1,14 +1,10 @@
-import logging
 from collections import namedtuple
 
 from pkg_resources import Distribution, EntryPoint
 
-logging.basicConfig(
-    format="%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s",
-    datefmt="%Y-%m-%d:%H:%M:%S",
-    level=logging.DEBUG,
-)
-logger = logging.getLogger()
+from common.config import config
+
+log = config.get_logger(__name__)
 
 Plugin = namedtuple("Plugin", "Name ModulePath Attr")
 
@@ -39,7 +35,6 @@ cloudumi_plugins = [
 
 plugin_dist = Distribution("plugins")
 entrypoints = dict()
-logger.info("Adding plugins to entrypoint")
 for plugin in cloudumi_plugins:
     entrypoint = EntryPoint(
         plugin.Name, plugin.ModulePath, tuple([plugin.Attr]), dist=plugin_dist

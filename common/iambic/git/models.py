@@ -55,8 +55,11 @@ class IambicRepo:
         self.db_tenant = None
         self._default_branch_name = None
         self._storage_handler = TenantFileStorageHandler(self.tenant)
-        tenant_repo_base_path: str = os.path.expanduser(
-            os.path.join(TENANT_STORAGE_BASE_PATH, tenant.name, "iambic_template_repos")
+        self._tenant_storage_base_path = os.path.expanduser(
+            os.path.join(TENANT_STORAGE_BASE_PATH, f"{tenant.name}_{tenant.id}")
+        )
+        tenant_repo_base_path: str = os.path.join(
+            self._tenant_storage_base_path, "iambic_template_repos"
         )
         os.makedirs(os.path.dirname(tenant_repo_base_path), exist_ok=True)
         self._default_file_path = os.path.join(tenant_repo_base_path, self.repo_name)
@@ -280,8 +283,12 @@ class IambicRepo:
         )
 
     async def delete_branch(self):
-        remote = self.repo.remote(name=self.remote_name)
-        await aio_wrapper(remote.push, refspec=f":{self.request_branch_name}")
+        try:
+            remote = self.repo.remote(name=self.remote_name)
+            await aio_wrapper(remote.push, refspec=f":{self.request_branch_name}")
+        except GitCommandError as err:
+            if "remote ref does not exist" not in err.stderr:
+                raise
 
     async def pull_current_branch(self):
         branch_name = (
@@ -325,8 +332,8 @@ class IambicRepo:
         assert self.request_id
         assert self.requested_by
         return os.path.join(
-            TENANT_STORAGE_BASE_PATH,
-            f"{self.tenant.name}/iambic_template_user_workspaces/{self.requested_by}/{self.repo_name}/{self.request_branch_name}",
+            self._tenant_storage_base_path,
+            f"iambic_template_user_workspaces/{self.requested_by}/{self.repo_name}/{self.request_branch_name}",
         )
 
     @property
@@ -366,12 +373,14 @@ class IambicRepo:
                     dict(
                         message="Error setting up repo",
                         tenant=tenant_name,
-                        repo_names=[
+                        repo_name=[
                             repo_detail.repo_name for repo_detail in repo_details
                         ],
                         error=repo.__class__.__name__,
                     ),
-                    exc_info=True,
+                    # The documentation says passing just exception instance would
+                    # suffice but did not work. An alternative is to pass this tuple.
+                    exc_info=(type(repo), repo, repo.__traceback__),
                 )
         return [repo for repo in res if not isinstance(repo, Exception)]
 
@@ -395,8 +404,13 @@ class IambicRepo:
 
         installation_id = None
         if repo_details.git_provider == "github":
-            if gh_installation := (await GitHubInstall.get(tenant)):
-                installation_id = gh_installation.installation_id
+            gh_install = await GitHubInstall.get(tenant)
+            if gh_install:
+                installation_id = gh_install.installation_id
+            else:
+                raise AttributeError(
+                    f"No GitHub installation found for tenant {tenant.name} github repo {repo_name}"
+                )
 
         iambic_repo_instance = cls(
             tenant=tenant,

@@ -16,7 +16,7 @@ from common.models import DataTableResponse, WebResponse
 
 # from common.user_request.models import IAMRequest
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 # TODO, move followings to util file
@@ -105,7 +105,7 @@ class EligibleRoleHandler(BaseHandler):
         friendly_names = await get_account_id_to_name_mapping(tenant)
 
         if not self.eligible_roles:
-            await self.set_eligible_roles(self.console_only)
+            await self.extend_eligible_roles(self.console_only)
 
         for arn in self.eligible_roles:
             role_name = arn.split("/")[-1]
@@ -314,7 +314,7 @@ class FrontendHandler(StaticFileHandler):
                 "You are trying to run Cloudumi via 8092, but the frontend has not been installed"
             )
             log.error("Use the following command to install the frontend:")
-            log.error("cd frontend && yarn && yarn build_template")
+            log.error("yarn --cwd ui; yarn --cwd ui build")
             if exc.status_code == 404 and self.default_filename is not None:
                 absolute_path = self.get_absolute_path(self.root, self.default_filename)
                 return super().validate_absolute_path(root, absolute_path)

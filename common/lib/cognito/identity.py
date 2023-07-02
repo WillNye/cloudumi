@@ -2,7 +2,6 @@ import asyncio
 import base64
 import hashlib
 import hmac
-import logging
 import random
 import string
 import urllib.parse
@@ -28,7 +27,7 @@ from common.models import (
 
 ADMIN_GROUP_NAME = "noq_admins"
 CLIENT_SECRET_MASK = "********"
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def __get_google_provider(
@@ -704,7 +703,7 @@ async def create_user_pool(noq_subdomain, domain_fqdn):
                 user_pool_already_exists = True
                 break
     if user_pool_already_exists:
-        logging.warning(
+        log.warning(
             {"message": "User pool already exists", "user_pool": user_pool_name}
         )
         raise Exception("User Pool Already Exists")

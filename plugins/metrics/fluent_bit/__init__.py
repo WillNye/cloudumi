@@ -11,7 +11,7 @@ import sentry_sdk
 from common.config import config
 from plugins.metrics.base_metric import Metric
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 KBYTE = 1024

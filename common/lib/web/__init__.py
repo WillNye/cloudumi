@@ -5,7 +5,7 @@ import ujson as json
 from common.config import config
 from common.models import WebResponse
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 async def handle_generic_error_response(

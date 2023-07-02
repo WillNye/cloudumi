@@ -41,7 +41,7 @@ if config.get("_global_.redis.cluster_mode.enabled"):
         cluster_mode_nodes
     )
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
 automatically_backup_to_s3 = config.get(
@@ -134,7 +134,7 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
                     "function": function,
                     "message": "Unable to perform redis operation",
                     "key": args[0],
-                    "error": e,
+                    "error": str(e),
                 },
                 exc_info=True,
             )
@@ -153,7 +153,7 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
                         "function": function,
                         "message": "Unable to perform S3 operation",
                         "key": args[0],
-                        "error": e,
+                        "error": str(e),
                     },
                     exc_info=True,
                 )
@@ -181,7 +181,7 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
                     "function": function,
                     "message": "Unable to perform redis operation",
                     "key": args[0],
-                    "error": e,
+                    "error": str(e),
                 },
                 exc_info=True,
             )
@@ -198,7 +198,7 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
                         "function": function,
                         "message": "Unable to perform S3 operation",
                         "key": args[0],
-                        "error": e,
+                        "error": str(e),
                     },
                     exc_info=True,
                 )
@@ -224,7 +224,7 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
                     "function": function,
                     "message": "Unable to perform redis operation",
                     "key": args[0],
-                    "error": e,
+                    "error": str(e),
                 },
                 exc_info=True,
             )
@@ -250,7 +250,7 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
                     "function": function,
                     "message": "Unable to perform redis operation",
                     "key": args[0],
-                    "error": e,
+                    "error": str(e),
                 },
                 exc_info=True,
             )
@@ -272,7 +272,7 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
                         "function": function,
                         "message": "Unable to perform S3 operation",
                         "key": args[0],
-                        "error": e,
+                        "error": str(e),
                     },
                     exc_info=True,
                 )
@@ -297,7 +297,7 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
                     "function": function,
                     "message": "Unable to perform redis operation",
                     "key": args[0],
-                    "error": e,
+                    "error": str(e),
                 },
                 exc_info=True,
             )
@@ -323,7 +323,7 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
                         "function": function,
                         "message": "Unable to perform S3 operation",
                         "key": args[0],
-                        "error": e,
+                        "error": str(e),
                     },
                     exc_info=True,
                 )
@@ -348,7 +348,7 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
                     "function": function,
                     "message": "Unable to perform redis operation",
                     "key": args[0],
-                    "error": e,
+                    "error": str(e),
                 },
                 exc_info=True,
             )
@@ -371,7 +371,7 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
                         "function": function,
                         "message": "Unable to perform S3 operation",
                         "key": args[0],
-                        "error": e,
+                        "error": str(e),
                     },
                     exc_info=True,
                 )
@@ -396,7 +396,7 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
                     "function": function,
                     "message": "Unable to perform redis operation",
                     "key": args[0],
-                    "error": e,
+                    "error": str(e),
                 },
                 exc_info=True,
             )
@@ -422,7 +422,7 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
                     "function": function,
                     "message": "Unable to perform redis operation",
                     "key": args[0],
-                    "error": e,
+                    "error": str(e),
                 },
                 exc_info=True,
             )
@@ -444,7 +444,7 @@ class ConsoleMeRedis(redis.RedisCluster if cluster_mode else redis.StrictRedis):
                         "function": function,
                         "message": "Unable to perform S3 operation",
                         "key": args[0],
-                        "error": e,
+                        "error": str(e),
                     },
                     exc_info=True,
                 )

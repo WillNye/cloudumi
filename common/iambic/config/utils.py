@@ -1,6 +1,5 @@
 import asyncio
 import json
-import sys
 from collections import defaultdict
 from typing import Optional
 
@@ -20,7 +19,7 @@ from common.iambic.templates.models import IambicTemplateProviderDefinition
 from common.pg_core.utils import bulk_add, bulk_delete
 from common.tenants.models import Tenant
 
-log = saas_config.get_logger()
+log = saas_config.get_logger(__name__)
 
 
 async def list_tenant_providers(tenant_id: int) -> list[TenantProvider]:
@@ -94,19 +93,16 @@ async def update_tenant_providers_and_definitions(tenant_name: str):
     # This is super hacky, and we should be using the config object to do all of this
     # Unfortunately, we don't currently have a way to get providers that are stored in a secret
     tenant = await Tenant.get_by_name(tenant_name)
+    if not tenant:
+        log.error("Not a valid tenant", tenant=tenant_name)
+        return
+
     iambic_repos = await IambicRepo.get_all_tenant_repos(tenant_name)
-    iambic_repos = [
-        iambic_repo for iambic_repo in iambic_repos if iambic_repo.is_app_connected()
-    ]
     if not iambic_repos:
-        # early return because github app is not even connected.
-        # this is a cascade problem if github app is not connected,
-        # the repo cannot be fetched.
-        log.debug(
+        log.error(
             {
-                "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-                "tenant": tenant_name,
-                "message": "A git provider app is not connected to any configured repos.",
+                "message": "No valid IAMbic repos found for tenant",
+                "tenant": tenant.name,
             }
         )
         return

@@ -17,6 +17,8 @@ from furl import furl
 from tornado import httputil
 
 import common.lib.noq_json as json
+from common import User
+from common.aws.role_access.utils import get_user_eligible_roles
 from common.config import config
 from common.config.tenant_config import TenantConfig
 from common.exceptions.exceptions import (
@@ -29,7 +31,6 @@ from common.exceptions.exceptions import (
 )
 from common.lib.alb_auth import authenticate_user_by_alb_auth
 from common.lib.auth import AuthenticationError, is_tenant_admin
-from common.lib.aws.cached_resources.iam import get_user_active_tra_roles_by_tag
 from common.lib.dynamo import UserDynamoHandler
 from common.lib.jwt import (
     JwtAuthType,
@@ -48,7 +49,7 @@ from common.lib.workos import WorkOS
 from common.models import WebResponse
 from common.tenants.models import Tenant
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 def maybe_set_security_headers(req):
@@ -107,8 +108,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
                 request_uuid=str(uuid.uuid4()),
                 uri=self.request.uri,
             )
-            if not config.get("_global_.environment") == "test":
-                self.ctx.db_tenant = await Tenant.get_by_name(tenant)
+            await self.maybe_set_db_fields()
             return
 
         # Ignore unprotected routes, like /healthcheck
@@ -125,7 +125,7 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
             "message": "Invalid tenant specified. Redirecting to main page",
             "tenant": tenant,
         }
-        log.debug(log_data)
+        await log.adebug(log_data)
         self.set_status(406)
         self.write(
             {
@@ -172,6 +172,14 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
             return self.request.headers[trusted_remote_ip_header].split(",")[0]
         return self.request.remote_ip
 
+    async def maybe_set_db_fields(self):
+        if not config.get("_global_.environment") == "test":
+            if not self.ctx.db_tenant:
+                self.ctx.db_tenant = await Tenant.get_by_name(self.ctx.tenant)
+            if not self.ctx.db_user and self.ctx.db_tenant:
+                user = getattr(self, "user", None) or self.ctx.user
+                self.ctx.db_user = await User.get_by_email(self.ctx.db_tenant, user)
+
 
 class BaseJSONHandler(TornadoRequestHandler):
     # These methods are returned in OPTIONS requests.
@@ -209,7 +217,7 @@ class BaseJSONHandler(TornadoRequestHandler):
                 "message": "Invalid tenant specified. Redirecting to main page",
                 "tenant": tenant,
             }
-            log.debug(log_data)
+            await log.adebug(log_data)
             self.set_status(406)
             self.write(
                 {
@@ -316,7 +324,7 @@ class BaseHandler(TornadoRequestHandler):
                 "message": "Invalid tenant specified. Redirecting to main page",
                 "tenant": tenant,
             }
-            log.debug(log_data)
+            await log.adebug(log_data)
             self.set_status(406)
             self.write(
                 {
@@ -472,7 +480,7 @@ class BaseHandler(TornadoRequestHandler):
             "message": "Incoming request",
             "tenant": tenant,
         }
-        log.debug(log_data)
+        await log.adebug(log_data)
 
         # Check to see if user has a valid auth cookie
         auth_cookie = self.get_cookie(self.get_noq_auth_cookie_key())
@@ -663,9 +671,10 @@ class BaseHandler(TornadoRequestHandler):
                     },
                 )
                 log_data["message"] = "No user detected. Please login first."
-                log.error(log_data)
+                await log.aerror(log_data)
                 self.write(log_data["message"])
                 raise tornado.web.Finish()
+        log_data["user"] = self.user
 
         if not self.eula_signed:
             try:
@@ -694,7 +703,7 @@ class BaseHandler(TornadoRequestHandler):
                 cache_r = None
             if cache_r:
                 log_data["message"] = "Loading from cache"
-                log.debug(log_data)
+                await log.adebug(log_data)
                 cache = json.loads(cache_r)
                 self.groups = cache.get("groups", [])
                 self.eligible_roles = cache.get("eligible_roles", [])
@@ -703,6 +712,7 @@ class BaseHandler(TornadoRequestHandler):
                 refreshed_user_roles_from_cache = True
         if not refreshed_user_roles_from_cache:
             await self.set_groups()
+
         self.is_admin = is_tenant_admin(self.user, self.groups, tenant)
         self.console_only = console_only
 
@@ -717,10 +727,10 @@ class BaseHandler(TornadoRequestHandler):
                 )
                 log_data["eligible_accounts"] = len(self.eligible_accounts)
                 log_data["message"] = "Successfully authorized user."
-                log.debug(log_data)
+                await log.adebug(log_data)
             except Exception:
                 stats.count("Basehandler.authorization_flow.exception")
-                log.error(log_data, exc_info=True)
+                await log.aerror(log_data, exc_info=True)
                 raise
         if (
             config.get_tenant_specific_key(
@@ -820,6 +830,7 @@ class BaseHandler(TornadoRequestHandler):
             )
             raise tornado.web.Finish()
         elif not self.eula_signed:
+            await self.maybe_set_db_fields()
             self.ctx = RequestContext(
                 tenant=tenant,
                 db_tenant=self.ctx.db_tenant,
@@ -861,6 +872,7 @@ class BaseHandler(TornadoRequestHandler):
                 self.set_status(403)
                 raise tornado.web.Finish()
 
+        await self.maybe_set_db_fields()
         self.ctx = RequestContext(
             tenant=tenant,
             db_tenant=self.ctx.db_tenant,
@@ -905,7 +917,7 @@ class BaseHandler(TornadoRequestHandler):
                     self.groups, self.user, self, headers=self.request.headers
                 )
             except Exception as e:
-                log.error(
+                await log.aerror(
                     {
                         **log_data,
                         "error": str(e),
@@ -915,36 +927,21 @@ class BaseHandler(TornadoRequestHandler):
                 )
                 sentry_sdk.capture_exception()
             if not self.groups:
-                raise NoGroupsException(
-                    f"Groups not detected. Headers: {self.request.headers}"
-                )
+                raise NoGroupsException(f"Groups not detected for {self.user}.")
 
         except NoGroupsException:
             stats.count("Basehandler.authorization_flow.no_groups_detected")
             log_data[
                 "message"
             ] = "No groups detected for user. Check configuration. Letting user continue."
-            log.warning(log_data)
+            await log.awarning(log_data)
 
-    async def set_eligible_roles(self, console_only: bool):
-        tenant = self.get_tenant_name()
-        group_mapping = get_plugin_by_name(
-            config.get_tenant_specific_key(
-                "plugins.group_mapping",
-                tenant,
-                "cmsaas_group_mapping",
-            )
-        )()
-
-        # self.eligible_roles += await get_user_active_tra_roles_by_tag(tenant, self.user)
-        self.eligible_roles = await group_mapping.get_eligible_roles(
-            self.eligible_roles,
-            self.user,
-            self.groups,
-            self.user_role_name,
-            self.get_tenant_name(),
-            console_only=console_only,
+    async def extend_eligible_roles(self, console_only: bool = False):
+        await self.maybe_set_db_fields()
+        eligible_roles = await get_user_eligible_roles(
+            self.ctx.db_tenant, self.ctx.db_user, self.groups
         )
+        self.eligible_roles = list(set(eligible_roles + self.eligible_roles))
 
     async def clear_jwt_cookie(self):
         cookie_name = self.get_noq_auth_cookie_key()
@@ -1080,7 +1077,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 "message": "Invalid tenant specified. Redirecting to main page",
                 "tenant": tenant,
             }
-            log.debug(log_data)
+            await log.adebug(log_data)
             self.set_status(406)
             self.write(
                 {
@@ -1145,10 +1142,7 @@ class BaseMtlsHandler(BaseAPIV2Handler):
                 self.user = res.get("user")
                 self.groups = res.get("groups")
                 self.eligible_roles += res.get("additional_roles")
-                # TODO: Fix expensive call
-                self.eligible_roles += await get_user_active_tra_roles_by_tag(
-                    tenant, self.user
-                )
+                await self.extend_eligible_roles()
                 self.eligible_roles = list(set(self.eligible_roles))
                 self.password_reset_required = res.get("password_reset_required")
                 self.sso_user = res.get("sso_user")
@@ -1258,7 +1252,7 @@ class StaticFileHandler(tornado.web.StaticFileHandler):
                 "message": "Invalid tenant specified. Redirecting to main page",
                 "tenant": tenant,
             }
-            log.debug(log_data)
+            await log.adebug(log_data)
             self.set_status(418)
             raise tornado.web.Finish()
         self.ctx = RequestContext(

@@ -12,8 +12,8 @@ class Tenant(SoftDeleteMixin, Base):
     __tablename__ = "tenant"
 
     id = Column(Integer(), primary_key=True, autoincrement=True)
-    name = Column(String, index=True)
-    organization_id = Column(String)
+    name = Column(String, index=True, unique=True)
+    organization_id = Column(String, unique=True)
     groups = relationship(
         "Group", back_populates="tenant", cascade="all, delete-orphan"
     )

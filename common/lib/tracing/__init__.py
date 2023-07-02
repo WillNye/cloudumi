@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from common.config import config
 
 SERVER = "SERVER"
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class ConsoleMeTracerObject(BaseModel):

@@ -13,7 +13,7 @@ cloudwatch = boto3.client(
     region_name=config.region,
     **config.get("_global_.boto3.client_kwargs", {}),
 )
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 def log_metric_error(future):

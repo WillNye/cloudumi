@@ -4,7 +4,7 @@ from common.handlers.base import BaseMtlsHandler
 from common.lib.plugins import get_plugin_by_name
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class GetRolesHandler(BaseMtlsHandler):
@@ -38,7 +38,7 @@ class GetRolesHandler(BaseMtlsHandler):
             console_only = False
 
         if not self.eligible_roles:
-            await self.set_eligible_roles(console_only)
+            await self.extend_eligible_roles(console_only)
 
         log_data = {
             "function": "GetRolesHandler.get",
@@ -60,7 +60,7 @@ class GetRolesHandler(BaseMtlsHandler):
 
         await self.authorization_flow(user=self.user, console_only=console_only)
         if not self.eligible_roles:
-            await self.set_eligible_roles(console_only=console_only)
+            await self.extend_eligible_roles(console_only=console_only)
 
         self.write(json.dumps(sorted(self.eligible_roles)))
         self.set_header("Content-Type", "application/json")

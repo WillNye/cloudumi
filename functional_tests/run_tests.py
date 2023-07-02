@@ -24,7 +24,7 @@ from common.config import config
 
 # locust_env = Environment(user_classes=[LoadTest], events=events)
 
-logger = config.get_logger()
+logger = config.get_logger(__name__)
 timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
 parser = argparse.ArgumentParser(description="Stage")

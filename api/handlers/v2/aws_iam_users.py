@@ -17,7 +17,7 @@ from common.lib.plugins import get_plugin_by_name
 from common.lib.v2.aws_principals import get_user_details
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class UserDetailHandler(BaseAPIV2Handler):

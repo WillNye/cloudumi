@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import pyotp
 import ujson as json
+from furl import furl
 from sqlalchemy import (
     Boolean,
     Column,
@@ -27,6 +28,7 @@ from common.config import config
 from common.config.globals import ASYNC_PG_SESSION
 from common.group_memberships.models import GroupMembership  # noqa
 from common.lib.notifications import send_email_via_sendgrid
+from common.lib.password import generate_random_password
 from common.pg_core.filters import (
     DEFAULT_SIZE,
     create_filter_from_url_params,
@@ -38,7 +40,7 @@ from common.templates import (
     new_user_with_password_email_template,
 )
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 class User(SoftDeleteMixin, Base):
@@ -56,7 +58,9 @@ class User(SoftDeleteMixin, Base):
     email_verify_token_expiration: datetime = Column(DateTime, nullable=True)
     # TODO: Force password reset flow after temp password created (Or just send them a
     # password reset)
-    managed_by = Column(Enum("MANUAL", "SCIM", name="managed_by_enum"), nullable=True)
+    managed_by = Column(
+        Enum("MANUAL", "SCIM", "SSO", name="managed_by_enum"), nullable=True
+    )
     password_reset_required: bool = Column(Boolean, default=False)
     password_hash = Column(String, nullable=False)
     password_reset_token = Column(String, nullable=True)
@@ -76,6 +80,7 @@ class User(SoftDeleteMixin, Base):
     mfa_phone_number = Column(String(128), nullable=True)
     last_successful_mfa_code = Column(String(64), nullable=True)
     tenant_id = Column(Integer, ForeignKey("tenant.id"), nullable=False)
+    description = Column(String, nullable=True)
 
     tenant = relationship("Tenant")
 
@@ -95,6 +100,15 @@ class User(SoftDeleteMixin, Base):
         UniqueConstraint("tenant_id", "username", name="uq_tenant_username"),
         UniqueConstraint("tenant_id", "email", name="uq_tenant_email"),
     )
+
+    @property
+    def __is_verified(
+        self,
+    ) -> bool:
+        return self.email_verified or (
+            self.email_verify_token_expiration
+            and self.email_verify_token_expiration >= datetime.utcnow()
+        )
 
     def get_status(self):
         if not self.active:
@@ -259,6 +273,10 @@ class User(SoftDeleteMixin, Base):
                 await session.commit()
         return user
 
+    @property
+    def is_managed_externally(self):
+        return self.managed_by in {"SSO", "SCIM"}
+
     @classmethod
     async def get_by_id(cls, tenant, user_id, get_groups=False):
         async with ASYNC_PG_SESSION() as session:
@@ -304,7 +322,7 @@ class User(SoftDeleteMixin, Base):
                     )
                 )
                 if get_groups:
-                    stmt = stmt = stmt.options(selectinload(User.groups))
+                    stmt = stmt.options(selectinload(User.groups))
                 user = await session.execute(stmt)
                 return user.scalars().first()
 
@@ -341,15 +359,25 @@ class User(SoftDeleteMixin, Base):
             return items.scalars().first()
 
     @classmethod
-    async def create(cls, tenant, username, email, password, **kwargs):
+    async def create(
+        cls,
+        tenant,
+        username,
+        email,
+        password,
+        password_reset_required=True,
+        **kwargs,
+    ):
         user = cls(
             id=str(uuid4()),
             tenant_id=tenant.id,
             username=username,
             email=email,
-            password_reset_required=True,
+            password_reset_required=password_reset_required,
             **kwargs,
         )
+        if not password:
+            password = await generate_random_password()
         await user.set_password(password)
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
@@ -399,18 +427,8 @@ class User(SoftDeleteMixin, Base):
                 else:
                     return False
 
-    async def send_verification_email(self, tenant, tenant_url):
-        """Sends an email to the given address with a URL to click on to verify their email.
-
-        Args:
-            email (str): The email address to send the verification email to.
-            expiration_time (datetime.datetime): The time at which the verification link will expire.
-        """
-        if self.email_verified or (
-            self.email_verify_token_expiration
-            and self.email_verify_token_expiration >= datetime.utcnow()
-        ):
-            return False
+    async def __get_verification_url(self, tenant, tenant_url: furl):
+        tenant_url = tenant_url.copy()
         # Generate a unique ID for the verification link
         email_verify_token = str(uuid.uuid4())
         email_verify_blob = {
@@ -432,6 +450,20 @@ class User(SoftDeleteMixin, Base):
         verification_url = tenant_url.join(
             f"/api/v4/verify?token={email_verify_blob_j_url_safe}"
         ).url
+
+        return verification_url
+
+    async def send_verification_email(self, tenant: str, tenant_url: furl):
+        """Sends an email to the given address with a URL to click on to verify their email.
+
+        Args:
+            email (str): The email address to send the verification email to.
+            expiration_time (datetime.datetime): The time at which the verification link will expire.
+        """
+        if self.__is_verified:
+            return False
+
+        verification_url = await self.__get_verification_url(tenant, tenant_url)
 
         body_text = (
             f'Please click on <a href="{verification_url}">this link</a> within the '
@@ -522,12 +554,21 @@ class User(SoftDeleteMixin, Base):
             body=password_reset_email,
         )
 
-    async def send_password_via_email(self, tenant_url, password: str):
+    async def send_password_via_email(
+        self, tenant: str, tenant_url: furl, password: str, reset_password: bool = True
+    ):
+        if not self.__is_verified:
+            domain = await self.__get_verification_url(tenant, tenant_url)
+        else:
+            domain = tenant_url.url
+
         cognito_invitation_message = new_user_with_password_email_template.render(
             year=date.today().year,
-            domain=tenant_url.url,
+            domain=domain,
+            base_domain=tenant_url.url,
             username=self.email,
             password=password,
+            reset_password=reset_password,
         )
         await send_email_via_sendgrid(
             to_addresses=[self.email],

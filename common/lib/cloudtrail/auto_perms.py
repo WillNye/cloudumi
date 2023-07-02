@@ -19,7 +19,7 @@ from common.models import (
     SpokeAccount,
 )
 
-log = config.get_logger()
+log = config.get_logger(__name__)
 
 
 def process_event(event: Dict[str, Any], account_id: str, tenant: str):

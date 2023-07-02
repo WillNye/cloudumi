@@ -14,9 +14,3 @@ export const getResource = async ({ queryKey }) => {
   const response = await axios.get(url);
   return response.data;
 };
-
-export const updateResource = async data => {
-  const url = `${V4_API_URL}/requests`;
-  const response = await axios.post(url, data);
-  return response.data;
-};

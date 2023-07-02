@@ -11,7 +11,7 @@ from common.lib.aws.access_undenied.access_undenied_aws import (
     results,
 )
 
-logger = config.get_logger()
+logger = config.get_logger(__name__)
 
 if TYPE_CHECKING:
     from mypy_boto3_iam.type_defs import (
