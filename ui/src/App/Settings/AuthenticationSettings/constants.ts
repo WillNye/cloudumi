@@ -262,3 +262,8 @@ export const schema = Yup.object()
     })
   })
   .required();
+
+export enum AUTH_SETTINGS_TABS {
+  SAML = 'SAML',
+  OIDC = 'OIDC'
+}

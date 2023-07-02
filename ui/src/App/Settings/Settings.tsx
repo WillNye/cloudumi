@@ -9,7 +9,7 @@ import { Helmet } from 'react-helmet-async';
 import OnBoarding from './Integrations/components/CloudProviderSettings/AWSProvider/AWSOnboarding';
 import AWSProvider from './Integrations/components/CloudProviderSettings/AWSProvider';
 import AdminAuthRoute from 'core/Auth/AdminAuthRoute';
-import AuthenticationSettings from './Integrations/components/AuthenticationSettings/AuthenticationSettings';
+import AuthenticationSettings from './AuthenticationSettings';
 
 export const Settings: FC = () => {
   return (

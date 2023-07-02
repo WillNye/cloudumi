@@ -46,4 +46,10 @@
       border-bottom: solid 2px var(--blue-600);
     }
   }
+
+  .content {
+    padding: var(--spacing-lg);
+    overflow-y: auto;
+    height: 100%;
+  }
 }
