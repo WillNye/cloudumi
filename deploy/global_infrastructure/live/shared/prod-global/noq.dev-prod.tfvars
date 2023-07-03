@@ -18,5 +18,4 @@ tags = {
 dynamo_table_replica_regions = ["us-west-2"]
 s3_access_log_bucket         = "noq-global-prod-s3-access-logs.us-west-2"
 
-# FIXME make sure this is prep
-github_app_noq_secret_arn = "arn:aws:secretsmanager:us-west-2:306086318698:secret:global-prod/github-app-webhook-secret-IBrD3R"
+github_app_noq_secret_arn = "arn:aws:secretsmanager:us-west-2:306086318698:secret:global-prod/github-app-noq-MdxtTr"
