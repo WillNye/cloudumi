@@ -90,6 +90,13 @@ const CreateAWSStack: FC<CreateAWSStackProps> = ({
       )}
       <LineBreak />
       <h4>2. ‘CREATE STACK’ in that account</h4>
+      <br />
+      <p>
+        This will create a CloudFormation stack in your AWS account. This stack
+        will have read-only access to your cloud resources, and the ability to
+        assume roles that you explicitly provide access to.
+      </p>
+      <br />
 
       <div className={styles.header}>
         <h5>What to expect in AWS</h5>
