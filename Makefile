@@ -151,7 +151,7 @@ ecsgo-prod:
 ecs-set-ssh-password-staging:
 	@TASK_ID=$$(aws ecs list-tasks --cluster staging-noq-dev-shared-staging-1 --service api --profile staging/staging_admin --region us-west-2 --query 'taskArns[0]' --output text | awk -F/ '{print $$NF}') && \
 	CONTAINER_NAME=$$(aws ecs describe-tasks --tasks $$TASK_ID --cluster staging-noq-dev-shared-staging-1 --profile staging/staging_admin --region us-west-2 --query 'tasks[0].containers[0].name' --output text) && \
-	aws ecs execute-command --cluster staging-noq-dev-shared-staging-1 --task $$TASK_ID --container $$CONTAINER_NAME --command "/bin/sh -c 'echo root:TEMP_PASS | chpasswd'" --profile staging/staging_admin --region us-west-2 --interactive
+	aws ecs execute-command --cluster staging-noq-dev-shared-staging-1 --task $$TASK_ID --container $$CONTAINER_NAME --command "/bin/sh -c '/etc/init.d/ssh start; echo root:TEMP_PASS | chpasswd'" --profile staging/staging_admin --region us-west-2 --interactive
 
 .PHONY: ecs-tunnel-staging-ssh
 ecs-tunnel-staging-ssh: ecs-set-ssh-password-staging
@@ -166,7 +166,7 @@ ecs-tunnel-staging-ssh: ecs-set-ssh-password-staging
 ecs-set-ssh-password-prod:
 	@TASK_ID=$$(aws ecs list-tasks --cluster noq-dev-shared-prod-1 --service api --profile prod/prod_admin --region us-west-2 --query 'taskArns[0]' --output text | awk -F/ '{print $$NF}') && \
 	CONTAINER_NAME=$$(aws ecs describe-tasks --tasks $$TASK_ID --cluster noq-dev-shared-prod-1 --profile prod/prod_admin --region us-west-2 --query 'tasks[0].containers[0].name' --output text) && \
-	aws ecs execute-command --cluster noq-dev-shared-prod-1 --task $$TASK_ID --container $$CONTAINER_NAME --command "/bin/sh -c 'echo root:TEMP_PASS | chpasswd'" --profile prod/prod_admin --region us-west-2 --interactive
+	aws ecs execute-command --cluster noq-dev-shared-prod-1 --task $$TASK_ID --container $$CONTAINER_NAME --command "/bin/sh -c '/etc/init.d/ssh start; echo root:TEMP_PASS | chpasswd'" --profile prod/prod_admin --region us-west-2 --interactive
 
 tf-staging-refresh:
 	@cd deploy/infrastructure && \

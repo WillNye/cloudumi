@@ -31,7 +31,7 @@ RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata software-properties-common gcc && \
     add-apt-repository -y ppa:deadsnakes/ppa && \
     apt-get update && \
-    apt-get install -y ncat openssh-server python3.11 python3.11-distutils python3-apt python3.11-dev python-is-python3 pkg-config awscli libpq-dev git-all python3.11-venv curl telnet iputils-ping sudo systemctl apt-transport-https libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb build-essential libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev unzip
+    apt-get install -y gdb ncat openssh-server python3.11 python3.11-distutils python3-apt python3.11-dev python-is-python3 pkg-config awscli libpq-dev git-all python3.11-venv curl telnet iputils-ping sudo systemctl apt-transport-https libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb build-essential libxml2-dev libxmlsec1-dev libxmlsec1-openssl musl-dev libcurl4-nss-dev unzip
 
 # Configure sshd
 RUN mkdir -p /var/run/sshd && \
