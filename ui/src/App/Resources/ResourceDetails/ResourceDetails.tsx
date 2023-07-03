@@ -208,7 +208,6 @@ const ResourceDetails = () => {
           </>
         )}
         <div className={styles.section}>
-          <h4 className={styles.sidebar}>Resource History</h4>
           <div className={styles.content}>
             <div className={styles.editor}>
               <CodeEditor
