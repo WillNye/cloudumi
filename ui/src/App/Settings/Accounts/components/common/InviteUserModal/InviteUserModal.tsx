@@ -102,6 +102,22 @@ const InviteUserModal = ({ refreshData }) => {
               <Input fullWidth name="last_name" />
               </div>
             </div> */}
+            <Notification
+              type={NotificationType.INFO}
+              header={
+                'A secure password will be automatically generated if none is supplied.'
+              }
+              showCloseIcon={false}
+              fullWidth
+            >
+              <p>
+                An email will be sent to the user with login instructions and
+                their temporary password.
+              </p>
+              <p>They will be required to change it after their first login.</p>
+            </Notification>
+            <LineBreak />
+
             <Block disableLabelPadding label="Email" required></Block>
             <Input
               fullWidth
@@ -125,6 +141,7 @@ const InviteUserModal = ({ refreshData }) => {
               autoCorrect="off"
               {...register('password')}
             />
+
             {/* TODO: Password validatio required */}
             {errors?.password && touchedFields.password && (
               <p>{errors.password.message}</p>

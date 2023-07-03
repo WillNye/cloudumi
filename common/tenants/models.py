@@ -63,13 +63,6 @@ class Tenant(SoftDeleteMixin, Base):
                 await session.commit()
         return True
 
-    async def write(self):
-        async with ASYNC_PG_SESSION() as session:
-            async with session.begin():
-                session.add(self)
-                await session.commit()
-            return True
-
     @classmethod
     @cached(cache=TTLCache(maxsize=1024, ttl=30))
     async def get_by_name(cls, tenant_name, session=None):

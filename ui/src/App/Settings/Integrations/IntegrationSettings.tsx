@@ -1,12 +1,11 @@
 import styles from './IntegrationSettings.module.css';
 import { useMemo, useState } from 'react';
 import IntegrationCard from './components/IntegrationCard/IntegrationCard';
-import slackIcon from 'assets/integrations/slackIcon.svg';
+// import slackIcon from 'assets/integrations/slackIcon.svg';
 import awsIcon from 'assets/integrations/awsIcon.svg';
 // import gcpIcon from 'assets/integrations/gcpIcon.svg';
 // import azureIcon from 'assets/integrations/azureIcon.svg';
 import githubIcon from 'assets/integrations/githubIcon.svg';
-import oktaIcon from 'assets/integrations/oktaIcon.svg';
 import SectionHeader from 'shared/elements/SectionHeader/SectionHeader';
 import SlackIntegrationModal from './components/SlackIntegrationsModal';
 import GithubIntegrationModal from './components/GithubIntegrationsModal';
@@ -18,11 +17,11 @@ import {
   AWS_CARD_DESCRIPTION,
   // AZURE_CARD_DESCRIPTION,
   CLOUD_PROVIDER_SECTION_DESCRIPTION,
-  GENERAL_SECTION_DESCRPTION,
-  GITHUB_CARD_DESCRIPTION,
+  // GENERAL_SECTION_DESCRPTION,
+  GENERAL_SECTION_DESCRPTION_WITHOUT_SLACK,
+  GITHUB_CARD_DESCRIPTION
   // GOOGLE_WORKSPACE_CARD_DESCRIPTION,
-  OKTA_CARD_DESCRIPTION,
-  SLACK_CARD_DESCRIPTION
+  // SLACK_CARD_DESCRIPTION
 } from './constants';
 import { useQuery } from '@tanstack/react-query';
 
@@ -87,36 +86,24 @@ const IntegrationSettings = () => {
             disableBtn
           /> */}
         </div>
-        <SectionHeader title="General" subtitle={GENERAL_SECTION_DESCRPTION} />
+        <SectionHeader
+          title="General"
+          subtitle={GENERAL_SECTION_DESCRPTION_WITHOUT_SLACK}
+        />
         <div className={styles.gridContainer}>
-          <IntegrationCard
+          {/* <IntegrationCard
             description={SLACK_CARD_DESCRIPTION}
             title="Connect to Slack"
             icon={slackIcon}
             buttonText={isSlackConnected ? 'Connected' : 'Connect'}
             handleConnect={() => setShowSlackModal(true)}
-          />
+          /> */}
           <IntegrationCard
             description={GITHUB_CARD_DESCRIPTION}
             title="Connect to Github"
             icon={githubIcon}
             buttonText="Connect"
             handleConnect={() => setShowGithubModal(true)}
-          />
-        </div>
-        <SectionHeader
-          title="SCIM/SSO"
-          subtitle="Set up Single Sign-On (SSO) and System for Cross-domain Identity
-        Management (SCIM) integrations, receive notifications, and connect with
-        cloud providers for secure and streamlined operations."
-        />
-        <div className={styles.gridContainer}>
-          <IntegrationCard
-            description={OKTA_CARD_DESCRIPTION}
-            title="Connect to Okta"
-            icon={oktaIcon}
-            buttonText="Connect"
-            disableBtn
           />
         </div>
       </div>
