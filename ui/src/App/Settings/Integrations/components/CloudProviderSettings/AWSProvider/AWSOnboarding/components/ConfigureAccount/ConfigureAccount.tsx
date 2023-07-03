@@ -1,16 +1,16 @@
 import { Input } from 'shared/form/Input';
 import { Block } from 'shared/layout/Block';
-import { Icon } from 'shared/elements/Icon';
-import { MODES } from '../../constants';
 import styles from '../../AWSOnBoarding.module.css';
-import { Radio } from 'shared/form/Radio';
-import { LineBreak } from 'shared/elements/LineBreak';
+// import { Icon } from 'shared/elements/Icon';
+// import { MODES } from '../../constants';
+// import { Radio } from 'shared/form/Radio';
+// import { LineBreak } from 'shared/elements/LineBreak';
 
 const ConfigureAccount = ({
   handleAccNameChange,
-  accountName,
-  selectedMode,
-  handleModeChange
+  accountName
+  // selectedMode,
+  // handleModeChange
 }) => {
   return (
     <div className={styles.configureAccount}>
@@ -23,7 +23,7 @@ const ConfigureAccount = ({
           minLength={1}
           value={accountName}
         />
-        <LineBreak />
+        {/* <LineBreak />
         <Block disableLabelPadding>2. Select Installation Mode:</Block>
         <div className={styles.container}>
           <div className={styles.permissionsBlock}>
@@ -72,7 +72,7 @@ const ConfigureAccount = ({
               approval and removed automatically after expiration.
             </p>
           </div>
-        </div>
+        </div> */}
       </form>
     </div>
   );
