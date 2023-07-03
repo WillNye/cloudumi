@@ -73,7 +73,7 @@ async def get_aws_managed_policy_names() -> set[str]:
 
 
 @noq_cached(cache=TTLCache(maxsize=1024, ttl=120))
-async def get_aws_managed_policy_arns() -> set[str]:
+async def get_aws_managed_policy_arns() -> list[str]:
     iam_client = boto3.client("iam")
     managed_policies = await paginated_search(
         iam_client.list_policies,
@@ -82,7 +82,7 @@ async def get_aws_managed_policy_arns() -> set[str]:
         OnlyAttached=False,
         PathPrefix="/",
     )
-    return set(policy["Arn"] for policy in managed_policies)
+    return sorted(list(set(policy["Arn"] for policy in managed_policies)))
 
 
 async def list_customer_managed_policy_arn_typeahead(
@@ -91,7 +91,7 @@ async def list_customer_managed_policy_arn_typeahead(
     provider_definitions_ids: list[str] = None,
     page: int = None,
     page_size: int = None,
-) -> list[IambicTemplate]:
+) -> list[str]:
     template_type = AWS_MANAGED_POLICY_TEMPLATE_TYPE
     async with ASYNC_PG_SESSION() as session:
         stmt = (

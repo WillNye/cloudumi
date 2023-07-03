@@ -3,7 +3,7 @@ import sys
 from collections import defaultdict
 from datetime import datetime
 from itertools import chain
-from typing import Optional, Union
+from typing import Optional, Type, Union
 
 import pytz
 from git import Repo
@@ -41,20 +41,20 @@ log = saas_config.get_logger(__name__)
 
 
 def get_template_provider_resource_id(
-    iambic_provider_def, template: IambicBaseTemplate
+    iambic_provider_def, template: Type[IambicBaseTemplate]
 ) -> str:
-    variables = {var.key: var.value for var in iambic_provider_def.variables}
-    extra_attr_checks = ["account_id", "account_name"]
-
-    for extra_attr in extra_attr_checks:
-        if attr_val := getattr(iambic_provider_def, extra_attr, None):
-            variables[extra_attr] = attr_val
-
-    rtemplate = Environment(loader=BaseLoader()).from_string(template.resource_id)
     valid_characters_re = r"[\w_+=,.@-]"
+    variables = {var.key: var.value for var in iambic_provider_def.variables}
+    if not isinstance(iambic_provider_def, TenantProviderDefinition):
+        variables["account_id"] = iambic_provider_def.account_id
+        variables["account_name"] = iambic_provider_def.account_name
+    if hasattr(template, "owner") and (owner := getattr(template, "owner", None)):
+        variables["owner"] = owner
     variables = {
         k: sanitize_string(v, valid_characters_re) for k, v in variables.items()
     }
+
+    rtemplate = Environment(loader=BaseLoader()).from_string(template.resource_id)
 
     return str(rtemplate.render(var=variables))
 
@@ -189,7 +189,7 @@ async def create_tenant_templates_and_definitions(
                     secondary_resource_id = None
                     if provider == "aws":
                         secondary_resource_id = await get_resource_arn(
-                            iambic_template, tpd
+                            tpd, raw_iambic_template
                         )
 
                     iambic_template_provider_definitions.append(
@@ -264,7 +264,7 @@ async def update_tenant_template(
     tenant: Tenant,
     iambic_config_interface: IambicConfigInterface,
     provider_definition_map: dict[dict[str, TenantProviderDefinition]],
-    raw_iambic_template: IambicBaseTemplate,
+    raw_iambic_template: Type[IambicBaseTemplate],
     provider: TrustedProvider,
 ) -> tuple[Union[str, None], list[IambicTemplateProviderDefinition]]:
     """
@@ -343,6 +343,7 @@ async def update_tenant_template(
 
     provider_resolver = TRUSTED_PROVIDER_RESOLVER_MAP.get(provider)
     if provider_resolver.provider_defined_in_template:
+        # Currently no support of secondary resource id here
         pd_name = provider_resolver.get_name_from_iambic_template(raw_iambic_template)
         tpd = provider_definition_map[provider].get(pd_name)
         if tpd.id in existing_provider_definition_id_map:
@@ -370,13 +371,23 @@ async def update_tenant_template(
                 )
                 tpd = provider_definition_map[provider].get(pd_name)
                 if tpd.id in existing_provider_definition_id_map:
+                    if provider == "aws":
+                        secondary_resource_id = await get_resource_arn(
+                            tpd, raw_iambic_template
+                        )
+                        if tpd.secondary_resource_id != secondary_resource_id:
+                            # Secondary resource id is out of sync
+                            # This is most likely due to a change in the resource path
+                            tpd.secondary_resource_id = secondary_resource_id
+                            await tpd.write()
+
                     # The reference already exists and is in the template so skip it
                     existing_provider_definition_id_map.pop(tpd.id, None)
                 else:
                     secondary_resource_id = None
                     if provider == "aws":
                         secondary_resource_id = await get_resource_arn(
-                            iambic_template, tpd
+                            tpd, raw_iambic_template
                         )
                     iambic_template_provider_definitions.append(
                         IambicTemplateProviderDefinition(
@@ -679,6 +690,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
                 },
                 exc_info=True,
             )
+            raise
         return
 
     # Iterate the tenants iambic repos

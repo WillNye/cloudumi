@@ -15,6 +15,7 @@ from jinja2 import BaseLoader, Environment
 from policy_sentry.util.arns import get_account_from_arn, parse_arn
 
 from common.config import config
+from common.iambic.config.models import TenantProviderDefinition
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 
 log = config.get_logger(__name__)
@@ -532,14 +533,15 @@ async def get_resource_arn(
         # Not bothering with generating the ARN for this because it isn't being used
         return
 
+    valid_characters_re = r"[\w_+=,.@-]"
     variables = {var.key: var.value for var in iambic_provider_def.variables}
-    variables["account_id"] = iambic_provider_def.account_id
-    variables["account_name"] = iambic_provider_def.account_name
+    if not isinstance(iambic_provider_def, TenantProviderDefinition):
+        variables["account_id"] = iambic_provider_def.account_id
+        variables["account_name"] = iambic_provider_def.account_name
     if hasattr(iambic_template, "owner") and (
         owner := getattr(iambic_template, "owner", None)
     ):
         variables["owner"] = owner
-    valid_characters_re = r"[\w_+=,.@-]"
     variables = {
         k: sanitize_string(v, valid_characters_re) for k, v in variables.items()
     }
@@ -555,6 +557,9 @@ async def get_resource_arn(
     else:
         raise ValueError(f"Unknown template type: {iambic_template.template_type}")
 
-    role_arn = f"arn:aws:iam::{iambic_provider_def.account_id}:{resource_name}{iambic_template.properties.path}{iambic_template.properties.role_name}"
+    arn_base = "arn:aws:iam::{{ var.account_id }}:"
+    path = iambic_template.properties.path
+    resource_id = iambic_template.resource_id
+    role_arn = f"{arn_base}:{resource_name}{path}{resource_id}"
     rtemplate = Environment(loader=BaseLoader()).from_string(role_arn)
     return rtemplate.render(var=variables)

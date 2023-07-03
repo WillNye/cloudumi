@@ -4,7 +4,10 @@ import tornado.web
 import common.lib.noq_json as json
 from api.handlers.utils import get_paginated_typeahead_response
 from common import Tenant
-from common.aws.iam.policy.utils import get_aws_managed_policy_arns
+from common.aws.iam.policy.utils import (
+    get_aws_managed_policy_arns,
+    list_customer_managed_policy_arn_typeahead,
+)
 from common.aws.iam.role.models import IAMRole
 from common.config import config
 from common.exceptions.exceptions import DataNotRetrievable, InvalidRequest
@@ -92,13 +95,11 @@ async def handle_aws_resource_type_ahead_request(
     page: int,
     page_size: int,
     provider_definitions_ids: list[str] = None,
-    template_id: str = None,
-    as_name: bool = False,
     aws_managed_only: bool = False,
 ) -> list[str]:
-    if service != "managed_policy" and (as_name or aws_managed_only):
+    if service != "managed_policy" and aws_managed_only:
         raise InvalidRequest(
-            "The as_name and aws_managed_only parameters are only supported for managed_policy"
+            "The aws_managed_only parameter is only supported for managed_policy"
         )
 
     if service == "all":
@@ -119,14 +120,11 @@ async def handle_aws_resource_type_ahead_request(
             policy_arns = await get_aws_managed_policy_arns()
             if resource_id:
                 policy_arns = [arn for arn in policy_arns if resource_id in arn.lower()]
-        elif as_name:
-            # Used to attach customer managed policies to an SSO Permission Set
-            ...
         else:
-            # managed_policy_arns = await get_aws_managed_policy_arns()
-            # Get account policy arns
-            # Combine
-            ...
+            policy_arns = await list_customer_managed_policy_arn_typeahead(
+                tenant, resource_id, provider_definitions_ids
+            )
+            policy_arns.extend(await get_aws_managed_policy_arns())
 
         return policy_arns[(page - 1) * page_size : page * page_size]
 
@@ -258,7 +256,6 @@ async def handle_aws_resource_type_ahead_request(
 
 class AWSResourceQueryParams(TypeAheadPaginatedRequestQueryParams):
     resource_id: str = None
-    as_name: bool = False
     aws_managed_only: bool = False
     page_size: int = 50
 

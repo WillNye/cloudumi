@@ -151,7 +151,16 @@ class TenantProviderDefinition(Base):
 
     @property
     def variables(self) -> list[Variable]:
-        return [Variable(**v) for v in self.definition.get("variables", [])]
+        variables = [Variable(**v) for v in self.definition.get("variables", [])]
+        if self.provider == "aws" and self.sub_type == "accounts":
+            variables.extend(
+                [
+                    Variable(key="account_id", value=self.definition["account_id"]),
+                    Variable(key="account_name", value=self.definition["account_name"]),
+                ]
+            )
+
+        return variables
 
     @property
     def preferred_identifier(self) -> str:
