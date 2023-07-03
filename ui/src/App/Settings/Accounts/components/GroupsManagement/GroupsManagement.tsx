@@ -62,7 +62,7 @@ const GroupsManagement = () => {
         name: <div>{item.name}</div>,
         delete: (
           <Delete
-            canEdit={canEdit}
+            canEdit
             dataType={DELETE_DATA_TYPE.GROUP}
             dataId={item.name}
             title="Delete Group"

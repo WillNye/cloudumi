@@ -61,7 +61,7 @@ const UsersManagement = () => {
         email: <div>{item.email}</div>,
         delete: (
           <Delete
-            canEdit={canEdit}
+            canEdit
             dataType={DELETE_DATA_TYPE.USER}
             dataId={item.email}
             title="Delete User"
