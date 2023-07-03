@@ -733,6 +733,6 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
                     "function": f"{__name__}.{sys._getframe().f_code.co_name}",
                     "repo": repo.repo_name,
                     "tenant": tenant.name,
-                }
+                },
             )
             return
