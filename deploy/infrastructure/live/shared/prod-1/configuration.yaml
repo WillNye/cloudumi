@@ -32,6 +32,9 @@ _global_:
       registration_queue_arn: arn:aws:sqs:us-west-2:940552945933:noq-dev-shared-prod-1-registration-queue
       registration_central_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_central_role.yaml"
       registration_spoke_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml"
+    github:
+      webhook_event_buffer:
+        queue_arn: arn:aws:sqs:us-west-2:940552945933:staging-noq-dev-shared-prod-1-github-app-noq-webhook
   accounts:
     tenant_data:
       name: NoqServiceConnRole
