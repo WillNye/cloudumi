@@ -132,6 +132,10 @@ const RequestChangeDetails = () => {
       ) : (
         'N/A'
       )
+    },
+    {
+      header: 'Justification',
+      value: requestData?.data?.justification
     }
   ];
 
@@ -153,11 +157,7 @@ const RequestChangeDetails = () => {
         </div>
         <Table data={mainTableData} columns={mainTableColumns} border="row" />
         <LineBreak size="large" />
-        <h4 className={styles.sectionHeader}>Justification</h4>
-        <ul>
-          <li className={styles.text}>{requestData?.data?.justification}</li>
-        </ul>
-        <LineBreak />
+
         {requestData?.data?.files.map((file, index) => (
           <ChangeViewer
             file={file}
