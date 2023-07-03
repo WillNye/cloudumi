@@ -10,8 +10,8 @@ from git import Repo
 from iambic.core.models import BaseTemplate as IambicBaseTemplate
 from iambic.core.utils import sanitize_string
 from jinja2 import BaseLoader, Environment
-from psycopg.errors import IntegrityError, UniqueViolation
 from sqlalchemy import and_, cast, delete, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import contains_eager
 
 from common.config import config as saas_config
@@ -81,6 +81,8 @@ async def create_tenant_templates_and_definitions(
     iambic_config = await iambic_config_interface.get_iambic_config()
     repo_name = iambic_config_interface.iambic_repo.repo_name
     repo_dir = iambic_config_interface.iambic_repo.file_path
+    tenant_id = int(tenant.id)
+    tenant_name = tenant.name
 
     # If no template paths provided, gather all templates from the repository directory
     if not template_paths:
@@ -89,7 +91,7 @@ async def create_tenant_templates_and_definitions(
     log.info(
         {
             "message": "Creating templates",
-            "tenant": tenant.name,
+            "tenant": tenant_name,
             "template_count": len(template_paths),
             "repo": repo_name,
         }
@@ -121,7 +123,7 @@ async def create_tenant_templates_and_definitions(
                 {
                     "function": f"{__name__}.{sys._getframe().f_code.co_name}",
                     "repo": repo_name,
-                    "tenant": tenant.name,
+                    "tenant": tenant_name,
                     "template_type": raw_iambic_template.template_type,
                     "error": "Could not find provider for template type.",
                 }
@@ -164,7 +166,7 @@ async def create_tenant_templates_and_definitions(
                 IambicTemplateProviderDefinition(
                     tenant=tenant,
                     iambic_template=iambic_template,
-                    resource_id=iambic_template.resource_id,  # Not able to resolve variable usage on these templates
+                    resource_id=raw_iambic_template.resource_id,
                     tenant_provider_definition=tpd,
                 )
             )
@@ -187,21 +189,17 @@ async def create_tenant_templates_and_definitions(
                         IambicTemplateProviderDefinition(
                             tenant=tenant,
                             iambic_template=iambic_template,
+                            tenant_provider_definition=tpd,
                             resource_id=get_template_provider_resource_id(
                                 provider_def, raw_iambic_template
                             ),
-                            tenant_provider_definition=tpd,
                         )
                     )
 
     try:
         if iambic_templates:
             await bulk_add(iambic_templates)
-        if iambic_template_content_list:
-            await bulk_add(iambic_template_content_list)
-        if iambic_template_provider_definitions:
-            await bulk_add(iambic_template_provider_definitions)
-    except (IntegrityError, UniqueViolation):
+    except IntegrityError:
         if is_full_create:
             # Rollback everything and try again if the tenant is new
             await rollback_full_create(tenant)
@@ -212,7 +210,7 @@ async def create_tenant_templates_and_definitions(
                 stmt = (
                     select(IambicTemplate)
                     .filter(
-                        IambicTemplate.tenant_id == tenant.id,
+                        IambicTemplate.tenant_id == tenant_id,
                         IambicTemplate.repo_name == repo_name,
                         IambicTemplate.file_path.in_(
                             [t.file_path for t in iambic_templates]
@@ -224,26 +222,34 @@ async def create_tenant_templates_and_definitions(
                     )
                     .join(
                         IambicTemplateProviderDefinition,
-                        IambicTemplateProviderDefinition.iambic_template_id,
+                        IambicTemplateProviderDefinition.iambic_template_id
+                        == IambicTemplate.id,
                     )
                     .options(
-                        contains_eager(IambicTemplate.iambic_template_content),
-                        contains_eager(
-                            IambicTemplate.iambic_template_provider_definitions
-                        ),
+                        contains_eager(IambicTemplate.content),
+                        contains_eager(IambicTemplate.provider_definition_refs),
                     )
                 )
                 items = await session.execute(stmt)
-                existing_templates = items.scalars().all()
-                # Deletes templates, their content, and their definitions
-                await bulk_delete(existing_templates, False)
+                existing_templates = items.scalars().unique().all()
+
+            log.warning(
+                "Removing de-synced templates and trying again.",
+                tenant=tenant_name,
+                repo=repo_name,
+                templates=[t.file_path for t in existing_templates],
+            )
+
+            # Deletes templates, their content, and their definitions
+            await bulk_delete(existing_templates, False)
 
         if iambic_templates:
             await bulk_add(iambic_templates)
-        if iambic_template_content_list:
-            await bulk_add(iambic_template_content_list)
-        if iambic_template_provider_definitions:
-            await bulk_add(iambic_template_provider_definitions)
+
+    if iambic_template_content_list:
+        await bulk_add(iambic_template_content_list)
+    if iambic_template_provider_definitions:
+        await bulk_add(iambic_template_provider_definitions)
 
 
 async def update_tenant_template(
@@ -340,6 +346,7 @@ async def update_tenant_template(
                     tenant_id=tenant.id,
                     iambic_template_id=iambic_template.id,
                     tenant_provider_definition_id=tpd.id,
+                    resource_id=raw_iambic_template.resource_id,
                 )
             )
     else:
@@ -363,6 +370,9 @@ async def update_tenant_template(
                             tenant_id=tenant.id,
                             iambic_template_id=iambic_template.id,
                             tenant_provider_definition_id=tpd.id,
+                            resource_id=get_template_provider_resource_id(
+                                provider_def, raw_iambic_template
+                            ),
                         )
                     )
 
@@ -466,7 +476,7 @@ async def upsert_tenant_templates_and_definitions(
                 tenant,
                 iambic_config_interface,
                 provider_definition_map,
-                list(chain.from_iterable(new_template_paths)),
+                new_template_paths,
             )
         )
     if iambic_template_provider_definitions:
@@ -717,12 +727,12 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
         except Exception as err:
             tenant.iambic_templates_last_parsed = iambic_templates_last_parsed
             await tenant.write()
-            log.error(
+            log.exception(
+                str(err),
                 {
                     "function": f"{__name__}.{sys._getframe().f_code.co_name}",
                     "repo": repo.repo_name,
                     "tenant": tenant.name,
-                    "error": str(err),
-                }
+                },
             )
             return
