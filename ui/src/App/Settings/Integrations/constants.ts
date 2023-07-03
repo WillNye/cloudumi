@@ -13,3 +13,6 @@ export const CLOUD_PROVIDER_SECTION_DESCRIPTION =
   'Configure and connect with cloud service providers (CSPs) to take advantage of benefits such as improved manageability, greater transparency, and the implementation of robust security measures, including the principle of least privilege.';
 export const GENERAL_SECTION_DESCRPTION =
   'Integrating Slack and GitHub can help streamline your workflow, improve team collaboration, and increase productivity. With a Slack and GitHub integration, you can receive notifications directly in Slack when new code is pushed, pull requests are created, or issues are opened or closed in GitHub.';
+// When Slack Integration will be done, we will remove this constant and use GENERAL_SECTION_DESCRPTION
+export const GENERAL_SECTION_DESCRPTION_WITHOUT_SLACK =
+  'Integrating GitHub can help streamline your workflow, improve team collaboration, and increase productivity. With GitHub integration, you can handle notifications when new code is pushed, pull requests are created, or issues are opened or closed in GitHub.';
