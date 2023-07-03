@@ -309,6 +309,8 @@ async def update_tenant_template(
         return raw_iambic_template.file_path, []
 
     file_path = str(raw_iambic_template.file_path).replace(repo_dir, "")
+    if file_path.startswith("/"):
+        file_path = file_path[1:]
     if iambic_template.file_path != file_path:
         iambic_template.file_path = file_path
         await iambic_template.write()
