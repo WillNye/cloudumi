@@ -1,41 +1,12 @@
-// import React, { useCallback, useEffect, useMemo, useState } from 'react';
-// import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-// import { Controller, useForm } from 'react-hook-form';
-// import {
-//   fetchOidcSettings,
-//   fetchSamlSettings,
-//   updateOIDCSettings,
-//   updateSAMLSettings,
-//   deleteOidcSettings,
-//   deleteSamlSettings
-// } from 'core/API/ssoSettings';
-// import { yupResolver } from '@hookform/resolvers/yup';
-// import { Notification, NotificationType } from 'shared/elements/Notification';
-// import { Segment } from 'shared/layout/Segment';
-// import { Select, SelectOption } from 'shared/form/Select';
-// import { Button } from 'shared/elements/Button';
-// import { Checkbox } from 'shared/form/Checkbox';
-// import { Input } from 'shared/form/Input';
-// import { Block } from 'shared/layout/Block';
-// import { LineBreak } from 'shared/elements/LineBreak';
-// import { merge } from 'lodash';
-// import {
-//   schema,
-//   AUTH_DEFAULT_VALUES,
-//   DEFAULT_OIDC_SETTINGS,
-//   DEFAULT_SAML_SETTINGS,
-//   BINDINGS
-// } from './constants';
-// import { parseSsoSettingsBody } from 'core/API/utils';
-// import { transformStringIntoArray } from 'shared/form/Input/utils';
-
 import { Fragment, useMemo, useState } from 'react';
 import { AUTH_SETTINGS_TABS } from './constants';
 import SAMLSettings from './components/SAMLSettings';
 import OIDCSettings from './components/OIDCSettings';
-import { LineBreak } from 'shared/elements/LineBreak';
 import styles from './AuthenticationSettings.module.css';
-import { Segment } from 'shared/layout/Segment';
+import { Button } from 'shared/elements/Button';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { deleteOidcSettings, deleteSamlSettings } from 'core/API/ssoSettings';
+import { toast } from 'react-toastify';
 
 // // eslint-disable-next-line complexity
 // const AuthenticationSettings = () => {
@@ -235,7 +206,7 @@ import { Segment } from 'shared/layout/Segment';
 //                 value={watch('ssoType')}
 //                 onChange={v => setValue('ssoType', v)}
 //               >
-//                 <SelectOption value="none">Not use SSO</SelectOption>
+//                 <SelectOption value="none">SSO not configured</SelectOption>
 //                 <SelectOption value="oidc">OpenID Connect</SelectOption>
 //                 <SelectOption value="saml">SAML</SelectOption>
 //               </Select>
@@ -663,22 +634,48 @@ const AuthenticationSettings = () => {
   const [currentTab, setCurrentTab] = useState<AUTH_SETTINGS_TABS>(
     AUTH_SETTINGS_TABS.SAML
   );
+  const queryClient = useQueryClient();
+
+  const { isLoading, mutateAsync: saveMutation } = useMutation({
+    mutationFn: async () => {
+      await deleteOidcSettings();
+      await deleteSamlSettings();
+    },
+    mutationKey: ['removeAuthSettings'],
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`samlSettings`] });
+      queryClient.invalidateQueries({ queryKey: [`oidcSettings`] });
+      toast.success('Successfully removed SAML/OIDC Settings');
+    },
+    onError: () => {
+      toast.error('An error occured, unable remove SAML/OIDC Settings');
+    }
+  });
 
   const content = useMemo(() => {
     if (currentTab === AUTH_SETTINGS_TABS.OIDC) {
-      return <OIDCSettings />;
+      return <OIDCSettings isFetching={isLoading} />;
     }
 
     if (currentTab === AUTH_SETTINGS_TABS.SAML) {
-      return <SAMLSettings />;
+      return <SAMLSettings isFetching={isLoading} />;
     }
 
     return <Fragment />;
-  }, [currentTab]);
+  }, [currentTab, isLoading]);
 
   return (
     <div className={styles.container}>
-      <LineBreak />
+      <div className={styles.remove}>
+        <Button
+          onClick={() => saveMutation()}
+          color="secondary"
+          variant="outline"
+          disabled={isLoading}
+        >
+          Deactivate
+        </Button>
+      </div>
       <div>
         <nav className={styles.nav}>
           <ul className={styles.navList}>

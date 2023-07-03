@@ -61,15 +61,6 @@ export const oidcSchema = Yup.object()
   })
   .required();
 
-export const AUTH_DEFAULT_VALUES = {
-  auth: {
-    force_redirect_to_identity_provider: false,
-    extra_auth_cookies: ['AWSELBAuthSessionCookie'],
-    challenge_url: { enabled: false },
-    logout_redirect_url: ''
-  }
-};
-
 export const DEFAULT_OIDC_SETTINGS = {
   get_user_by_oidc_settings: {
     metadata_url: '',

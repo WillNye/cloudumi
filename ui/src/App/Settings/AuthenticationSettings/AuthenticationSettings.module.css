@@ -48,8 +48,16 @@
   }
 
   .content {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-sm);
     overflow-y: auto;
     height: 100%;
+  }
+
+  .remove {
+    padding: var(--spacing-lg) var(--spacing-md);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    width: 100%;
   }
 }
