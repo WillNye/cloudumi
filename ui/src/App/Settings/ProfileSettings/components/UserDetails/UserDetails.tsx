@@ -15,10 +15,10 @@ const UserDetails = () => {
           <div>{user.user}</div>
         </div>
       </Card>
-      <LineBreak />
+      {/* <LineBreak />
       <Card header="My Groups"></Card>
       <LineBreak />
-      <Card header="My Requests"></Card>
+      <Card header="My Requests"></Card> */}
     </Segment>
   );
 };
