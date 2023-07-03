@@ -20,15 +20,6 @@
     margin-bottom: 20px;
   }
 
-  .sidebar {
-    width: 345px;
-    margin-right: 10px;
-    background: var(--gray-700);
-    padding: var(--spacing-lg);
-    border-radius: var(--border-radius-md);
-    height: 100%;
-  }
-
   .content {
     width: 100%;
     max-width: 1000px;
