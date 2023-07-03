@@ -43,7 +43,8 @@ def __extract_subscription_notification_message_body(payload: dict) -> dict:
 
 
 def iterate_event_messages(
-    region: str, queue_name: str, messages: List[Dict[str, str]]
+    queue_arn: str,
+    messages: List[Dict[str, str]],
 ) -> Generator[dict, None, None]:
     """Return iterator of messages with the following structure:
     - message_id
@@ -53,14 +54,6 @@ def iterate_event_messages(
 
     Handles SQS events or SNS -> SQS subscription notification events the same
     """
-    client = boto3.client("sqs", region_name=region)
-    resp = client.get_queue_url(QueueName=queue_name)
-    queue_url = resp.get("QueueUrl")
-    if not queue_url:
-        raise RuntimeError(f"Invalid queue name: {queue_name}")
-    resp = client.get_queue_attributes(QueueUrl=queue_url, AttributeNames=["QueueArn"])
-    queue_arn = resp.get("Attributes", {}).get("QueueArn")
-
     for message in messages:
         receipt_handle = message.get("ReceiptHandle")
         if not receipt_handle:

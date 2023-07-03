@@ -228,6 +228,7 @@ auth:
         "success": True,
         "username": tenant.email,
         "domain": dev_domain_url,
+        "tenant": dev_domain,
         "message": "An email has been sent to you with login information.",
     }
 
@@ -358,6 +359,8 @@ class TenantRegistrationAwsMarketplaceFormSubmissionHandler(TornadoRequestHandle
         customer_awsmp_data.contact_person_last_name = contact_person_last_name
         customer_awsmp_data.contact_phone = contact_phone
         customer_awsmp_data.contact_email = contact_email
+        customer_awsmp_data.subscription_expired = False
+        customer_awsmp_data.successfully_subscribed = True
         await customer_awsmp_data.save()
         return_data = await create_tenant(
             self,
@@ -370,7 +373,11 @@ class TenantRegistrationAwsMarketplaceFormSubmissionHandler(TornadoRequestHandle
         if domain := return_data.get("domain"):
             customer_awsmp_data.domain = domain
             await customer_awsmp_data.save()
+        if tenant := return_data.get("tenant"):
+            customer_awsmp_data.tenant = tenant
+            await customer_awsmp_data.save()
         log_data["domain"] = domain
+        log_data["tenant"] = tenant
         log.info(
             "Tenant successfully created through AWS Marketplace",
             **log_data,

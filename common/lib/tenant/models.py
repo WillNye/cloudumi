@@ -73,6 +73,7 @@ class AWSMarketplaceTenantDetails(GlobalNoqModel):
     contact_person = UnicodeAttribute(null=True)
     contact_phone = UnicodeAttribute(null=True)
     contact_email = UnicodeAttribute(null=True)
+    tenant = UnicodeAttribute(null=True)
     domain = UnicodeAttribute(null=True)
 
     @classmethod

@@ -75,7 +75,11 @@ from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.access_advisor import AccessAdvisor
 from common.lib.aws.cached_resources.iam import store_iam_managed_policies_for_tenant
 from common.lib.aws.cloudtrail import CloudTrail
-from common.lib.aws.marketplace import handle_aws_marketplace_queue
+from common.lib.aws.marketplace import (
+    handle_aws_marketplace_metering,
+    handle_aws_marketplace_queue,
+    retrieve_and_update_marketplace_entitlements,
+)
 from common.lib.aws.s3 import list_buckets
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.sns import list_topics
@@ -3206,3 +3210,11 @@ app.conf.timezone = "UTC"
 
 # TODO: Message user with information about this being reviewed
 # TODO: Determine how to map IdP groups to Slack channels
+
+# handle_aws_marketplace_subscription_queue()
+import asyncio
+
+asyncio.run(retrieve_and_update_marketplace_entitlements())
+
+# TODO: Set up Celery Task to run aws_marketplace_metering every 30 minutes
+# asyncio.run(handle_aws_marketplace_metering())

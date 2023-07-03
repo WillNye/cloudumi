@@ -78,5 +78,9 @@ assert REDIS_PASSWORD
 AWS_MARKETPLACE_SUBSCRIPTION_QUEUE = config.get(
     "_global_.integrations.aws.aws_marketplace_subscription_queue_arn"
 )
+AWS_MARTKETPLACE_PRODUCT_CODE = config.get(
+    "_global_.integrations.aws.aws_marketplace_product_code"
+)
 if ENVIRONMENT == "prod":
     assert AWS_MARKETPLACE_SUBSCRIPTION_QUEUE
+    assert AWS_MARTKETPLACE_PRODUCT_CODE

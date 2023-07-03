@@ -268,3 +268,9 @@ variable "aws_marketplace_subscription_sns_topic_arn" {
   type        = string
   default     = ""
 }
+
+variable "aws_marketplace_product_code" {
+  description = "The AWS Marketplace product code for this product"
+  type        = string
+  default     = ""
+}

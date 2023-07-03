@@ -183,6 +183,11 @@ output "aws_marketplace_subscription_queue_name" {
   value       = module.tenant_messaging_us-east-1.aws_marketplace_subscription_queue_name
 }
 
+output "aws_marketplace_product_code" {
+  description = "The AWS Marketplace product code"
+  value       = var.aws_marketplace_product_code
+}
+
 output "stage" {
   description = "The configured stage (for automation)"
   value       = var.stage

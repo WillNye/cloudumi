@@ -6,17 +6,21 @@ from typing import Any, Dict, Optional
 import boto3
 import sentry_sdk
 from botocore.exceptions import ClientError
+from distutils.util import strtobool
 from tenacity import AsyncRetrying, RetryError, stop_after_attempt, wait_fixed
 from tornado.httpclient import AsyncHTTPClient, HTTPClientError, HTTPRequest
 
 import common.lib.noq_json as json
-from common.config import config, models
+from common.config import config
+from common.config import globals as config_globals
+from common.config import models
 from common.exceptions.exceptions import DataNotRetrievable, MissingConfigurationValue
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.messaging import iterate_event_messages
-from common.lib.tenant.models import AWSMarketplaceTenantDetails
+from common.lib.tenant.models import AWSMarketplaceTenantDetails, TenantDetails
 from common.models import HubAccount, SpokeAccount
+from common.tenants.models import Tenant
 
 log = config.get_logger()
 
@@ -638,7 +642,14 @@ async def handle_aws_marketplace_queue(
     queue_name = queue_arn.split(":")[-1]
     queue_region = queue_arn.split(":")[3]
 
-    sqs_client = boto3.client("sqs", region_name=queue_region)
+    # TODO: REMOVE Test code (which uses the prod profile for dev purposes)
+    prod = boto3.session.Session(
+        profile_name="prod/prod_admin", region_name=queue_region
+    )
+
+    sqs_client = prod.client("sqs")
+
+    # sqs_client = boto3.client("sqs", region_name=queue_region)
 
     queue_url_res = await aio_wrapper(sqs_client.get_queue_url, QueueName=queue_name)
     queue_url = queue_url_res.get("QueueUrl")
@@ -655,7 +666,7 @@ async def handle_aws_marketplace_queue(
             break
         processed_messages = []
 
-        for message in iterate_event_messages(queue_region, queue_name, messages):
+        for message in iterate_event_messages(queue_arn, messages):
             num_events += 1
             try:
                 message_id = message.get("message_id")
@@ -666,7 +677,7 @@ async def handle_aws_marketplace_queue(
                         "ReceiptHandle": receipt_handle,
                     }
                 )
-                customer_id = message["body"].get("customer_identifier")
+                customer_id = message["body"].get("customer-identifier")
                 try:
                     customer_awsmp_data = await AWSMarketplaceTenantDetails.get(
                         customer_id
@@ -677,21 +688,40 @@ async def handle_aws_marketplace_queue(
                     customer_awsmp_data = await AWSMarketplaceTenantDetails.create(
                         customer_id,
                     )
+                # If tenant has been created, we will update subscription status. If not, it means they
+                # haven't filled out the registration form yet. When they do, a tenant is created
+                # and automagically given a valid subscription
+                tenant_details = None
+                if customer_awsmp_data.tenant:
+                    tenant_details = await TenantDetails.get(customer_awsmp_data.tenant)
                 action = message["body"]["action"]
                 if action == "subscribe-success":
                     customer_awsmp_data.successfully_subscribed = True
                     customer_awsmp_data.subscription_action = "subscribe-success"
+                    if tenant_details:
+                        tenant_details.is_active = True
                 elif action == "subscribe-fail":
                     customer_awsmp_data.successfully_subscribed = False
                     customer_awsmp_data.subscription_action = "subscribe-fail"
+                    if tenant_details:
+                        tenant_details.is_active = False
                 elif action == "unsubscribe-pending":
                     customer_awsmp_data.subscription_expired = True
                     customer_awsmp_data.subscription_action = "unsubscribe-pending"
+                    if tenant_details:
+                        tenant_details.is_active = False
                 elif action == "unsubscribe-success":
                     customer_awsmp_data.subscription_expired = True
                     customer_awsmp_data.subscription_action = "unsubscribe-success"
-                customer_awsmp_data.is_free_trial_term_present = message.get(
+                    if tenant_details:
+                        tenant_details.is_active = False
+                is_free_trial_term_present = message.get(
                     "isFreeTrialTermPresent", False
+                )
+                if isinstance(is_free_trial_term_present, str):
+                    is_free_trial_term_present = strtobool(is_free_trial_term_present)
+                customer_awsmp_data.is_free_trial_term_present = (
+                    is_free_trial_term_present
                 )
                 customer_awsmp_data.product_code = message.get("product-code")
                 customer_awsmp_data.updated_at = int((datetime.utcnow()).timestamp())
@@ -706,9 +736,8 @@ async def handle_aws_marketplace_queue(
                     ]
 
                 await customer_awsmp_data.save()
-                #  TODO: Need to resolve tenant_details and update tenant there if it exists
-                # Update tenant tier/status
-                # Limit usage based on tier
+                if tenant_details:
+                    await tenant_details.save()
             except Exception as e:
                 log.exception(
                     {
@@ -730,3 +759,99 @@ async def handle_aws_marketplace_queue(
         )
         messages = messages_awaitable.get("Messages", [])
     return {"message": "Successfully processed all messages", "num_events": num_events}
+
+
+async def handle_aws_marketplace_metering():
+    tenant_active_user_counts: dict[str, int] = await Tenant.get_all_with_user_count()
+    all_aws_marketplace_tenants = [x for x in await AWSMarketplaceTenantDetails.scan()]
+    # TODO: REMOVE Test code (which uses the prod profile for dev purposes)
+    prod = boto3.session.Session(
+        profile_name="prod/prod_admin", region_name="us-east-1"
+    )
+
+    marketplace_metering = prod.client("meteringmarketplace")
+
+    usage_records = []
+    for tenant in all_aws_marketplace_tenants:
+        tenant_name = tenant.tenant
+        if not tenant_name:
+            continue
+        user_count = tenant_active_user_counts.get(tenant_name, 0)
+        usage_records.append(
+            {
+                "Timestamp": datetime.utcnow(),
+                "CustomerIdentifier": tenant.customer_identifier,
+                "Dimension": "Users",
+                "Quantity": user_count,
+            },
+        )
+
+    # Batch the usage records into groups of 25 and call batch_meter_usage
+    usage_record_batches = [
+        usage_records[i : i + 24] for i in range(0, len(usage_records), 24)
+    ]
+
+    for batch in usage_record_batches:
+        try:
+            response = marketplace_metering.batch_meter_usage(
+                ProductCode=config_globals.AWS_MARTKETPLACE_PRODUCT_CODE,
+                UsageRecords=batch,
+            )
+
+            # Check if any usage record failed
+            if response.get("UnprocessedRecords"):
+                for record in response["UnprocessedRecords"]:
+                    log.error(f"Failed to report usage metrics", record=record)
+
+        except Exception as e:
+            log.exception(f"Failed to report usage metrics", batch=batch)
+
+
+# TODO: I don't think this is needed?
+async def retrieve_and_update_marketplace_entitlements():
+    aws_marketplace_product_code = config_globals.AWS_MARTKETPLACE_PRODUCT_CODE
+    if not aws_marketplace_product_code:
+        log.debug("AWS Marketplace Integration not configured")
+        return True
+
+    # TODO: REMOVE Test code (which uses the prod profile for dev purposes)
+    prod = boto3.session.Session(
+        profile_name="prod/prod_admin", region_name="us-east-1"
+    )
+    marketplace_entitlement = prod.client("marketplace-entitlement")
+    next_token = None
+
+    while True:
+        try:
+            args = dict(ProductCode=aws_marketplace_product_code, MaxResults=25)
+            if next_token:
+                args["NextToken"] = next_token
+            response = marketplace_entitlement.get_entitlements(**args)
+        except Exception as e:
+            log.exception("Failed to fetch entitlements", error=str(e))
+            return
+
+        # Iterate over entitlements and update DynamoDB
+        for entitlement in response.get("Entitlements", []):
+            try:
+                customer_identifier = entitlement["CustomerIdentifier"]
+                tenant_details = AWSMarketplaceTenantDetails.get(customer_identifier)
+                # TODO: Need to update tenant subscription status and also TenantDetails
+                tenant_details.updated_at = int(datetime.now().timestamp())
+                tenant_details.save()
+            except AWSMarketplaceTenantDetails.DoesNotExist:
+                log.warning(
+                    "Tenant not found in DynamoDB",
+                    customer_identifier=customer_identifier,
+                )
+            except Exception as e:
+                log.error(
+                    "Failed to update tenant details",
+                    customer_identifier=customer_identifier,
+                    error=str(e),
+                )
+
+        # If there is a next token, continue the loop, else break
+        next_token = response.get("NextToken")
+        if not next_token:
+            break

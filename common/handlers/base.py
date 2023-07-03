@@ -685,6 +685,26 @@ class BaseHandler(TornadoRequestHandler):
                 #   Also, this should redirect to a sign-up page per https://perimy.atlassian.net/browse/EN-930
                 self.eula_signed = False
 
+            # This is also our chance to validate subscription status
+            if not tenant_details:
+                self.write(
+                    f"Tenant {tenant} was not found. Please contact your administrator. "
+                    "If you are an administrator, please confirm your subscription status in "
+                    "Amazon MarketPlace."
+                )
+                raise tornado.web.Finish(
+                    f"Tenant {tenant} not found. Please contact your administrator."
+                )
+            if not tenant_details.is_active:
+                self.write(
+                    f"Tenant {tenant} is not active. Please contact your administrator. "
+                    "If you are an administrator, please confirm your subscription status in "
+                    "Amazon MarketPlace."
+                )
+                raise tornado.web.Finish(
+                    f"Tenant {tenant} is not active. Please contact your administrator."
+                )
+
         self.contractor = False  # TODO: Add functionality later for contractor detection via regex or something else
 
         if (
