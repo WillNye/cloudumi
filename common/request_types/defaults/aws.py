@@ -427,6 +427,52 @@ def _get_default_aws_request_permission_request_types(
     ]
 
 
+def _get_default_aws_attach_managed_policy_request_types(
+    field_helper_map: dict[str:TypeAheadFieldHelper],
+) -> list[RequestType]:
+
+    attach_to_permission_set_request = RequestType(
+        name="Attach a managed policy to AWS PermissionSet",
+        description="Attach a managed policy to AWS PermissionSet in your AWS Org.",
+        provider=aws_provider_resolver.provider,
+        template_types=[
+            AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
+        ],
+        template_attribute="properties.customer_managed_policy_references",
+        apply_attr_behavior="Append",
+        created_by="Noq",
+        provider_definition_field="Allow None",
+    )
+    attach_to_permission_set_request.change_types = [
+        ChangeType(
+            name="Noq User access request",
+            description="Request Noq User access to an AWS IAM Role.",
+            change_fields=[
+                ChangeField(
+                    change_element=0,
+                    field_key="policy",
+                    field_type="TypeAheadTemplateRef",
+                    field_text="Managed Policy",
+                    description="The managed policy that will be attached/added to the permission set.",
+                    allow_none=False,
+                    allow_multiple=False,
+                    typeahead_field_helper_id=field_helper_map["Noq User"].id,
+                )
+            ],
+            change_template=ChangeTypeTemplate(
+                template="""
+        {
+            "name": "{{ form.policy.properties.name }}"
+            "path": "{{ form.policy.properties.path }}"
+        }"""
+            ),
+            created_by="Noq",
+        )
+    ]
+
+    return [attach_to_permission_set_request]
+
+
 def _get_default_aws_request_access_request_types(
     field_helper_map: dict[str:TypeAheadFieldHelper],
 ) -> list[RequestType]:
@@ -570,6 +616,9 @@ async def get_default_aws_request_types() -> list[RequestType]:
     )
     default_request_types.extend(
         _get_default_aws_request_access_request_types(field_helper_map)
+    )
+    default_request_types.extend(
+        _get_default_aws_attach_managed_policy_request_types(field_helper_map)
     )
 
     return default_request_types
