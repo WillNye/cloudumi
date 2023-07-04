@@ -50,8 +50,6 @@ const ResourcesTable = () => {
     });
   }, [resourcesData]);
 
-  console.log('----------resources---data----------', resourcesData);
-
   const handleOnPageChange = useCallback((newPageIndex: number) => {
     setQuery(query => ({
       ...query,
