@@ -42,11 +42,11 @@ const AuthenticationSettings = () => {
 
   const content = useMemo(() => {
     if (currentTab === AUTH_SETTINGS_TABS.OIDC) {
-      return <OIDCSettings isFetching={isLoading} />;
+      return <OIDCSettings isFetching={isLoading || authQuery.isLoading} />;
     }
 
     if (currentTab === AUTH_SETTINGS_TABS.SAML) {
-      return <SAMLSettings isFetching={isLoading} />;
+      return <SAMLSettings isFetching={isLoading || authQuery.isLoading} />;
     }
 
     return <Fragment />;
