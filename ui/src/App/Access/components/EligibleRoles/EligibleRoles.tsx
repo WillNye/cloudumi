@@ -1,6 +1,5 @@
 import { PropertyFilter, PropertyFilterProps } from '@noqdev/cloudscape';
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import RoleCredentialSummary from '../common/RoleCredentialSummary';
 
 import MoreActions from '../common/MoreActions';
