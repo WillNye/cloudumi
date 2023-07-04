@@ -62,9 +62,7 @@ const OIDCSettings = ({ isFetching }) => {
       const data = merge(
         { ...DEFAULT_OIDC_SETTINGS },
         {
-          oidc: {
-            get_user_by_oidc_settings: oidcSettings?.get_user_by_oidc_settings
-          }
+          get_user_by_oidc_settings: oidcSettings?.get_user_by_oidc_settings
         }
       );
       setFormValues(merge({ ...getValues() }, { ...data }));
