@@ -11,6 +11,12 @@ containerDefinitions:
       - hostPort: 7071
         protocol: tcp
         containerPort: 7071
+    {% if stage == "staging" %}
+    entryPoint:
+      - bash
+      - -c
+      - pip install argh watchdog; watchmedo auto-restart --recursive --pattern="api/*.py;common/*.py" --directory="." --ignore-patterns="./env/*" --verbose 'python /app/common/celery_tasks/run.py --profile CELERY_SCHEDULER & python /app/common/celery_tasks/run.py --profile CELERY_FLOWER & python /app/common/celery_tasks/run.py --profile CELERY_WORKER'
+    {% else %}
     entryPoint:
       - /bin/sh
       - "-c"
@@ -18,6 +24,7 @@ containerDefinitions:
          python /app/common/celery_tasks/run.py --profile CELERY_SCHEDULER & \
          python /app/common/celery_tasks/run.py --profile CELERY_FLOWER & \
          python /app/common/celery_tasks/run.py --profile CELERY_WORKER
+    {% endif %}
     linuxParameters:
       devices: [ ]
       initProcessEnabled: true
