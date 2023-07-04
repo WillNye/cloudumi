@@ -71,7 +71,7 @@ export const DEFAULT_OIDC_SETTINGS = {
     jwt_email_key: 'email',
     enable_mfa: false,
     get_groups_from_access_token: true,
-    access_token_audience: '',
+    access_token_audience: 'noq',
     get_groups_from_userinfo_endpoint: true,
     user_info_groups_key: 'groups'
   },

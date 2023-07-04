@@ -3741,7 +3741,7 @@ components:
           type: boolean
         access_token_audience:
           title: Access Token Audience
-          default: consoleme
+          default: noq
           type: string
         get_groups_from_userinfo_endpoint:
           title: Get Groups From Userinfo Endpoint

@@ -1375,9 +1375,7 @@ class GetUserByOIDCSettings(BaseModel):
     get_groups_from_access_token: Optional[bool] = Field(
         True, title="Get Groups From Access Token"
     )
-    access_token_audience: Optional[str] = Field(
-        "consoleme", title="Access Token Audience"
-    )
+    access_token_audience: Optional[str] = Field("noq", title="Access Token Audience")
     get_groups_from_userinfo_endpoint: Optional[bool] = Field(
         True, title="Get Groups From Userinfo Endpoint"
     )
