@@ -18,35 +18,41 @@ const AuthenticationSettings = () => {
   );
   const queryClient = useQueryClient();
 
-  const { data: authSettings, ...authQuery } = useQuery({
+  const { isLoading: isLoadingAuth, data: authSettings } = useQuery({
     queryKey: ['authSettings'],
     queryFn: fetchAuthSettings,
     select: data => data.data
   });
 
-  const { isLoading, mutateAsync: saveMutation } = useMutation({
-    mutationFn: async () => {
-      await deleteOidcSettings();
-      await deleteSamlSettings();
-    },
-    mutationKey: ['removeAuthSettings'],
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`samlSettings`] });
-      queryClient.invalidateQueries({ queryKey: [`oidcSettings`] });
-      toast.success('Successfully removed SAML/OIDC Settings');
-    },
-    onError: () => {
-      toast.error('An error occured, unable remove SAML/OIDC Settings');
-    }
-  });
+  const { isLoading: isLoadingMutation, mutateAsync: saveMutation } =
+    useMutation({
+      mutationFn: async () => {
+        await deleteOidcSettings();
+        await deleteSamlSettings();
+      },
+      mutationKey: ['removeAuthSettings'],
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [`samlSettings`] });
+        queryClient.invalidateQueries({ queryKey: [`oidcSettings`] });
+        toast.success('Successfully removed SAML/OIDC Settings');
+      },
+      onError: () => {
+        toast.error('An error occured, unable remove SAML/OIDC Settings');
+      }
+    });
+
+  const isLoading = useMemo(
+    () => isLoadingMutation || isLoadingAuth,
+    [isLoadingMutation, isLoadingAuth]
+  );
 
   const content = useMemo(() => {
     if (currentTab === AUTH_SETTINGS_TABS.OIDC) {
-      return <OIDCSettings isFetching={isLoading || authQuery.isLoading} />;
+      return <OIDCSettings isFetching={isLoading} />;
     }
 
     if (currentTab === AUTH_SETTINGS_TABS.SAML) {
-      return <SAMLSettings isFetching={isLoading || authQuery.isLoading} />;
+      return <SAMLSettings isFetching={isLoading} />;
     }
 
     return <Fragment />;
@@ -67,7 +73,7 @@ const AuthenticationSettings = () => {
           onClick={() => saveMutation()}
           color="secondary"
           variant="outline"
-          disabled={isLoading}
+          disabled={isLoadingMutation}
         >
           Deactivate
         </Button>

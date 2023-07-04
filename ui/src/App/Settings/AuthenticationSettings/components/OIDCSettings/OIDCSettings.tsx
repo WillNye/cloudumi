@@ -6,7 +6,7 @@ import {
   updateOIDCSettings
 } from 'core/API/ssoSettings';
 import merge from 'lodash/merge';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { Button } from 'shared/elements/Button';
@@ -42,7 +42,7 @@ const OIDCSettings = ({ isFetching }) => {
     resolver: yupResolver(oidcSchema)
   });
 
-  const { data: oidcSettings, isLoading } = useQuery({
+  const { data: oidcSettings, isLoading: isLoadingQuery } = useQuery({
     queryKey: ['oidcSettings'],
     queryFn: fetchOidcSettings,
     select: data => data.data
@@ -79,8 +79,13 @@ const OIDCSettings = ({ isFetching }) => {
     }
   });
 
+  const isLoading = useMemo(
+    () => isSubmitting || isLoadingQuery || isFetching,
+    [isSubmitting, isLoadingQuery, isFetching]
+  );
+
   return (
-    <Segment isLoading={isSubmitting || isLoading || isFetching}>
+    <Segment isLoading={isLoading}>
       <form onSubmit={handleSave}>
         <LineBreak />
         <Block disableLabelPadding label="Set Secrets" />

@@ -2,7 +2,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { Input } from 'shared/form/Input';
 import { Block } from 'shared/layout/Block';
 import { LineBreak } from 'shared/elements/LineBreak';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Select, SelectOption } from 'shared/form/Select';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { BINDINGS, DEFAULT_SAML_SETTINGS, samlSchema } from './constants';
@@ -40,7 +40,7 @@ const SAMLSettings = ({ isFetching }) => {
     resolver: yupResolver(samlSchema)
   });
 
-  const { data: samlSettings, isLoading } = useQuery({
+  const { data: samlSettings, isLoading: isLoadingQuery } = useQuery({
     queryKey: ['samlSettings'],
     queryFn: fetchSamlSettings,
     select: data => data.data
@@ -82,8 +82,13 @@ const SAMLSettings = ({ isFetching }) => {
     }
   });
 
+  const isLoading = useMemo(
+    () => isSubmitting || isLoadingQuery || isFetching,
+    [isSubmitting, isLoadingQuery, isFetching]
+  );
+
   return (
-    <Segment isLoading={isSubmitting || isLoading || isFetching}>
+    <Segment isLoading={isLoading}>
       <form onSubmit={handleSave}>
         <Block disableLabelPadding label="Attributes User" required>
           <Input
