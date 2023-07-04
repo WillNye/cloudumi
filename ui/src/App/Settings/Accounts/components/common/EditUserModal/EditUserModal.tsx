@@ -95,6 +95,8 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
     }
   });
 
+  const NOT_MANUAL = user.managed_by != 'MANUAL';
+
   const resultRenderer = result => <p>{result.name}</p>;
   const onSelectResult = group => {
     setSearchValue(group.name);
@@ -200,6 +202,10 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
     setIsUpdatingGroups(false);
   }, [user.email, userGroups, reseActions, createUserGroupsMutation]);
 
+  const handleDeleteChip = index => {
+    setUserGroups([...new Set([...userGroups.filter((ug, i) => i != index)])]);
+  };
+
   if (!canEdit) {
     return <Fragment />;
   }
@@ -265,12 +271,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
             <Button
               size="small"
               type="submit"
-              disabled={
-                isSubmitting ||
-                !isValid ||
-                isLoading ||
-                user.managed_by != 'MANUAL'
-              }
+              disabled={isSubmitting || !isValid || isLoading || NOT_MANUAL}
               fullWidth
             >
               {isSubmitting ? 'Updating User...' : 'Update User'}
@@ -278,16 +279,20 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
           </form>
           <LineBreak />
           <div className={styles.userGroups}>
-            <Block disableLabelPadding label="Add Groups" required></Block>
-            <Search
-              fullWidth
-              resultRenderer={resultRenderer}
-              results={searchResults}
-              onChange={handleSearch}
-              value={searchValue}
-              onResultSelect={onSelectResult}
-              isLoading={isSearching}
-            />
+            {!NOT_MANUAL && (
+              <>
+                <Block disableLabelPadding label="Add Groups" required></Block>
+                <Search
+                  fullWidth
+                  resultRenderer={resultRenderer}
+                  results={searchResults}
+                  onChange={handleSearch}
+                  value={searchValue}
+                  onResultSelect={onSelectResult}
+                  isLoading={isSearching}
+                />
+              </>
+            )}
             <div className={styles.groups}>
               <h5>User Groups</h5>
               <Divider />
@@ -296,6 +301,16 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
                   {userGroups.map((group, index) => (
                     <Chip className={styles.group} key={index}>
                       {group}
+                      {!NOT_MANUAL && (
+                        <>
+                          {' '}
+                          <Icon
+                            name="close"
+                            size="small"
+                            onClick={() => handleDeleteChip(index)}
+                          />
+                        </>
+                      )}
                     </Chip>
                   ))}
                 </div>
@@ -304,7 +319,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
               )}
             </div>
             <Button
-              disabled={isUpdatingGroups || user.managed_by != 'MANUAL'}
+              disabled={isUpdatingGroups || NOT_MANUAL}
               size="small"
               fullWidth
               onClick={updateGroupMemberships}
@@ -316,7 +331,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
           <div
             className={classNames(
               {
-                [styles.hidden]: user.managed_by != 'MANUAL'
+                [styles.hidden]: NOT_MANUAL
               },
               styles.actions
             )}

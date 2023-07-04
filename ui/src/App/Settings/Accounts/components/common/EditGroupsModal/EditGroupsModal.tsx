@@ -169,6 +169,12 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
     setIsUpdatingGroups(false);
   }, [group.name, groupUsers, reseActions, createGroupUsersMutation]);
 
+  const handleDeleteChip = index => {
+    setGroupUsers([...new Set([...groupUsers.filter((ug, i) => i != index)])]);
+  };
+
+  const NOT_MANUAL = group.managed_by != 'MANUAL';
+
   if (!canEdit) {
     return <Fragment />;
   }
@@ -211,7 +217,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
               placeholder="name"
               autoCapitalize="none"
               autoCorrect="off"
-              {...register('name', { disabled: group.managed_by != 'MANUAL' })}
+              {...register('name', { disabled: NOT_MANUAL })}
             />
             {errors?.name && touchedFields.name && <p>{errors.name.message}</p>}
             <LineBreak />
@@ -222,7 +228,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
               autoCapitalize="none"
               autoCorrect="off"
               {...register('description', {
-                disabled: group.managed_by != 'MANUAL'
+                disabled: NOT_MANUAL
               })}
             />
             {errors?.description && touchedFields.description && (
@@ -231,9 +237,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
             <LineBreak />
             <Button
               type="submit"
-              disabled={
-                isSubmitting || !isValid || group.managed_by != 'MANUAL'
-              }
+              disabled={isSubmitting || !isValid || NOT_MANUAL}
               fullWidth
             >
               {isSubmitting ? 'Updating Group...' : 'Update Group'}
@@ -241,16 +245,20 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
           </form>
 
           <div className={styles.groupUsers}>
-            <Block disableLabelPadding label="Add Users"></Block>
-            <Search
-              fullWidth
-              resultRenderer={resultRenderer}
-              results={searchResults}
-              onChange={handleSearch}
-              value={searchValue}
-              isLoading={isSearching}
-              onResultSelect={onSelectResult}
-            />
+            {!NOT_MANUAL && (
+              <>
+                <Block disableLabelPadding label="Add Users"></Block>
+                <Search
+                  fullWidth
+                  resultRenderer={resultRenderer}
+                  results={searchResults}
+                  onChange={handleSearch}
+                  value={searchValue}
+                  isLoading={isSearching}
+                  onResultSelect={onSelectResult}
+                />
+              </>
+            )}
             <div className={styles.users}>
               <h5>Group Users</h5>
               <Divider />
@@ -259,6 +267,16 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
                   {groupUsers.map((user, index) => (
                     <Chip className={styles.user} key={index}>
                       {user}
+                      {!NOT_MANUAL && (
+                        <>
+                          {' '}
+                          <Icon
+                            name="close"
+                            size="small"
+                            onClick={() => handleDeleteChip(index)}
+                          />
+                        </>
+                      )}
                     </Chip>
                   ))}
                 </div>
@@ -267,7 +285,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
               )}
             </div>
             <Button
-              disabled={isUpdatingGroups || group.managed_by != 'MANUAL'}
+              disabled={isUpdatingGroups || NOT_MANUAL}
               size="small"
               fullWidth
               onClick={updateGroupMemberships}
