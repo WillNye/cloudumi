@@ -2,7 +2,6 @@ aiocache
 aiofiles
 aiopath
 asyncache
-celery-singleton
 cryptography
 httpx
 locust

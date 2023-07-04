@@ -38,7 +38,6 @@ from celery.signals import (
     task_success,
     task_unknown,
 )
-from celery_singleton import Singleton
 from more_itertools import chunked
 
 # from celery_progress.backend import ProgressRecorder
@@ -130,9 +129,6 @@ default_celery_task_kwargs = {
         "max_retries": config.get("_global_.celery.default_max_retries", 5)
     },
 }
-
-if not config.get("_global_.environment") == "test":
-    default_celery_task_kwargs["base"] = Singleton
 
 
 class Celery(celery.Celery):
