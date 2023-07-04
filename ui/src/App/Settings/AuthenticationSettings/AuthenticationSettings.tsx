@@ -1,11 +1,15 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { AUTH_SETTINGS_TABS } from './constants';
 import SAMLSettings from './components/SAMLSettings';
 import OIDCSettings from './components/OIDCSettings';
 import styles from './AuthenticationSettings.module.css';
 import { Button } from 'shared/elements/Button';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { deleteOidcSettings, deleteSamlSettings } from 'core/API/ssoSettings';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  deleteOidcSettings,
+  deleteSamlSettings,
+  fetchAuthSettings
+} from 'core/API/ssoSettings';
 import { toast } from 'react-toastify';
 
 // // eslint-disable-next-line complexity
@@ -636,6 +640,12 @@ const AuthenticationSettings = () => {
   );
   const queryClient = useQueryClient();
 
+  const { data: authSettings, ...authQuery } = useQuery({
+    queryKey: ['authSettings'],
+    queryFn: fetchAuthSettings,
+    select: data => data.data
+  });
+
   const { isLoading, mutateAsync: saveMutation } = useMutation({
     mutationFn: async () => {
       await deleteOidcSettings();
@@ -663,6 +673,14 @@ const AuthenticationSettings = () => {
 
     return <Fragment />;
   }, [currentTab, isLoading]);
+
+  useEffect(() => {
+    if (authSettings?.get_user_by_saml) {
+      setCurrentTab(AUTH_SETTINGS_TABS.SAML);
+    } else if (authSettings?.get_user_by_oidc) {
+      setCurrentTab(AUTH_SETTINGS_TABS.OIDC);
+    }
+  }, [authSettings]);
 
   return (
     <div className={styles.container}>

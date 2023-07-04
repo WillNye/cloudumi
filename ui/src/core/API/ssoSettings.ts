@@ -2,11 +2,17 @@ import axios from '../Axios';
 import { V4_API_URL } from './constants';
 import { AxiosResponse } from 'axios';
 
+const AUTH_URL = `${V4_API_URL}/auth/sso`;
 const SAML_URL = `${V4_API_URL}/auth/sso/saml`;
 const OIDC_URL = `${V4_API_URL}/auth/sso/oidc`;
 
 export const fetchOidcWellKnownConfig = async (url): Promise<any> => {
   const { data } = await axios.get(url);
+  return data;
+};
+
+export const fetchAuthSettings = async (): Promise<AxiosResponse<Auth>> => {
+  const { data } = await axios.get(AUTH_URL);
   return data;
 };
 
