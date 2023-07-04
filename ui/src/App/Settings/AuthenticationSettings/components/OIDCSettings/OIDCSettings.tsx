@@ -5,20 +5,23 @@ import {
   fetchOidcSettings,
   updateOIDCSettings
 } from 'core/API/ssoSettings';
+import merge from 'lodash/merge';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { toast } from 'react-toastify';
+import { Button } from 'shared/elements/Button';
 import { LineBreak } from 'shared/elements/LineBreak';
+import { Notification, NotificationType } from 'shared/elements/Notification';
 import { Checkbox } from 'shared/form/Checkbox';
 import { Input } from 'shared/form/Input';
-import { Block } from 'shared/layout/Block';
-import { DEFAULT_OIDC_SETTINGS, oidcSchema } from './constants';
 import { transformStringIntoArray } from 'shared/form/Input/utils';
-import { Button } from 'shared/elements/Button';
-import { AUTH_DEFAULT_VALUES } from '../../constants';
+import { Block } from 'shared/layout/Block';
 import { Segment } from 'shared/layout/Segment';
+import { AUTH_DEFAULT_VALUES } from '../../constants';
+import { DEFAULT_OIDC_SETTINGS, oidcSchema } from './constants';
 import { parseOIDCFormData } from './utils';
-import { toast } from 'react-toastify';
-import merge from 'lodash/merge';
+import { Tooltip } from 'shared/elements/Tooltip';
+import { Icon } from 'shared/elements/Icon';
 
 const OIDCSettings = ({ isFetching }) => {
   const [formValues, setFormValues] = useState({
@@ -116,27 +119,35 @@ const OIDCSettings = ({ isFetching }) => {
         {...register('get_user_by_oidc_settings.client_scopes')}
       ></Input> */}
         {/* TOOD: add information about how to fill this field (string separated by comma) */}
+
         <Block disableLabelPadding label="Client Scopes" required>
           <Controller
             control={control}
             name="get_user_by_oidc_settings.client_scopes"
             render={({ field }) => (
-              <Input
-                onChange={e =>
-                  setValue(
-                    'get_user_by_oidc_settings.client_scopes',
-                    transformStringIntoArray.output(e)
-                  )
-                }
-                value={transformStringIntoArray.input(
-                  watch('get_user_by_oidc_settings.client_scopes')
-                )}
-                // error={errors?.get_user_by_oidc_settings?.client_scopes?.message}
-                error={errors?.get_user_by_oidc_settings?.client_scopes
-                  ?.filter(x => x)
-                  .map(x => x.message)
-                  .join(',')}
-              />
+              <Tooltip
+                text="Client Scopes should be separated by commas"
+                alignment="top"
+              >
+                <div>
+                  <Input
+                    onChange={e =>
+                      setValue(
+                        'get_user_by_oidc_settings.client_scopes',
+                        transformStringIntoArray.output(e)
+                      )
+                    }
+                    value={transformStringIntoArray.input(
+                      watch('get_user_by_oidc_settings.client_scopes')
+                    )}
+                    // error={errors?.get_user_by_oidc_settings?.client_scopes?.message}
+                    error={errors?.get_user_by_oidc_settings?.client_scopes
+                      ?.filter(x => x)
+                      .map(x => x.message)
+                      .join(',')}
+                  />
+                </div>
+              </Tooltip>
             )}
           />
         </Block>
