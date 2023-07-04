@@ -203,7 +203,7 @@ resource "aws_iam_role" "ecs_task_role" {
           ],
           "Effect" : "Allow",
           "Resource" : [
-            "${var.registration_queue_arn}",
+            "${var.github_app_noq_webhook_queue_arn}",
           ]
         }
       ],
