@@ -47,13 +47,13 @@ export const oidcSchema = Yup.object()
         .label("User Info's Groups Key")
     }),
     secrets: Yup.object().shape({
-      use: Yup.boolean().default(false),
-      oidc: Yup.object().when('use', {
-        is: true,
-        then: schema =>
-          schema.shape({
-            client_id: Yup.string().required().min(1).label('Client ID'),
-            client_secret: Yup.string().required().min(1).label('Client Secret')
+      oidc: Yup.object().shape({
+        client_id: Yup.string().label('Client ID'),
+        client_secret: Yup.string()
+          .label('Client Secret')
+          .when('client_id', {
+            is: v => v != '',
+            then: schema => schema.required().min(1)
           })
       })
     })

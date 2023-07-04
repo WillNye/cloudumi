@@ -1,13 +1,15 @@
 export const parseOIDCFormData = settings => {
-  const secrets = settings?.oidc?.secrets?.use
-    ? {
-        secrets: {
-          oidc: {
-            ...settings.secrets.oidc
-          }
+  let secrets = {};
+
+  if (settings.secrets.oidc.client_id) {
+    secrets = {
+      secrets: {
+        oidc: {
+          ...settings.secrets.oidc
         }
       }
-    : {};
+    };
+  }
 
   const get_user_by_oidc_settings = {
     get_user_by_oidc_settings: {

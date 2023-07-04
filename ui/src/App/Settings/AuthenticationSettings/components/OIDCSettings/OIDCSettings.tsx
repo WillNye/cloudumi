@@ -1,5 +1,5 @@
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   deleteSamlSettings,
   fetchOidcSettings,
@@ -11,7 +11,6 @@ import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { Button } from 'shared/elements/Button';
 import { LineBreak } from 'shared/elements/LineBreak';
-import { Notification, NotificationType } from 'shared/elements/Notification';
 import { Checkbox } from 'shared/form/Checkbox';
 import { Input } from 'shared/form/Input';
 import { transformStringIntoArray } from 'shared/form/Input/utils';
@@ -21,13 +20,14 @@ import { AUTH_DEFAULT_VALUES } from '../../constants';
 import { DEFAULT_OIDC_SETTINGS, oidcSchema } from './constants';
 import { parseOIDCFormData } from './utils';
 import { Tooltip } from 'shared/elements/Tooltip';
-import { Icon } from 'shared/elements/Icon';
 
 const OIDCSettings = ({ isFetching }) => {
   const [formValues, setFormValues] = useState({
     ...AUTH_DEFAULT_VALUES,
     ...DEFAULT_OIDC_SETTINGS
   });
+
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -53,7 +53,11 @@ const OIDCSettings = ({ isFetching }) => {
     mutationFn: async (data: any) => {
       await updateOIDCSettings(data);
       await deleteSamlSettings();
-      toast.success('Successfully update OIDC settings');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`samlSettings`] });
+      queryClient.invalidateQueries({ queryKey: [`oidcSettings`] });
+      toast.success('Successfully update OID settings');
     },
     onError: () => {
       toast.error('An error occured, unable update OIDC Settings');
@@ -88,27 +92,20 @@ const OIDCSettings = ({ isFetching }) => {
     <Segment isLoading={isLoading}>
       <form onSubmit={handleSave}>
         <LineBreak />
-        <Block disableLabelPadding label="Set Secrets" />
-        <Checkbox {...register('secrets.use')} />
-        {watch('secrets.use') && (
-          <>
-            <LineBreak />
-            <Block disableLabelPadding label="Client ID" required>
-              <Input
-                {...register('secrets.oidc.client_id')}
-                error={errors?.secrets?.oidc?.client_id?.message}
-              />
-            </Block>
+        <Block disableLabelPadding label="Client ID">
+          <Input
+            {...register('secrets.oidc.client_id')}
+            error={errors?.secrets?.oidc?.client_id?.message}
+          />
+        </Block>
 
-            <LineBreak />
-            <Block disableLabelPadding label="Client Secret" required>
-              <Input
-                {...register('secrets.oidc.client_secret')}
-                error={errors?.secrets?.oidc?.client_secret?.message}
-              />
-            </Block>
-          </>
-        )}
+        <LineBreak />
+        <Block disableLabelPadding label="Client Secret">
+          <Input
+            {...register('secrets.oidc.client_secret')}
+            error={errors?.secrets?.oidc?.client_secret?.message}
+          />
+        </Block>
         <Block disableLabelPadding label="Metadata URL" required>
           <Input
             {...register('get_user_by_oidc_settings.metadata_url')}
