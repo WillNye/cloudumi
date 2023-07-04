@@ -3127,7 +3127,7 @@ schedule = {
         "schedule": schedule_15_seconds,
     },
     "handle_github_webhook_integration_queue": {
-        "task": "common.celery_tasks.celery_tasks.handle_github_webhook_integration_queue",
+        "task": "common.celery_tasks.celery_tasks.handle_github_webhook_event_queue",
         "options": {"expires": 180},
         "schedule": schedule_15_seconds,
     },
