@@ -19,6 +19,7 @@ from api.handlers.v3.slack.install import (
     AsyncSlackOAuthHandler,
 )
 from api.handlers.v3.typeahead import UserAndGroupTypeAheadHandler
+from api.handlers.v4.auth_settings.auth_settings import AuthSettingsReader
 from api.handlers.v4.aws.roles import RolesHandlerV4
 from api.handlers.v4.groups.manage_group_memberships import (
     ManageGroupMembershipsHandler,
@@ -392,6 +393,10 @@ def make_app(jwt_validator=None):
         (
             r"/api/v3/services/aws/ip-access/origin/(?P<_enabled>enable|disable)/?",
             IpRestrictionsRequesterIpOnlyToggleHandler,
+        ),
+        (
+            r"/api/v4/auth/sso/?",
+            AuthSettingsReader,
         ),
         (
             r"/api/v3/auth/sso/google/?",
