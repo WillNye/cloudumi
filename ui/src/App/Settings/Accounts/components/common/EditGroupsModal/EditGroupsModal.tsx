@@ -19,9 +19,9 @@ import { Group } from '../../../types';
 import styles from './EditGroupsModal.module.css';
 import { Search } from 'shared/form/Search';
 import { Divider } from 'shared/elements/Divider';
-import { Chip } from 'reablocks';
 import { useMutation } from '@tanstack/react-query';
 import { LineBreak } from 'shared/elements/LineBreak';
+import { Chip } from 'shared/elements/Chip';
 
 type EditGroupsModalProps = {
   canEdit: boolean;
