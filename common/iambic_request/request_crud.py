@@ -45,7 +45,7 @@ async def get_request_response(
     request: Request, request_pr, include_comments: bool = True
 ) -> dict:
     pr_details = await request_pr.get_request_details()
-    pr_details["justification"] = pr_details.pop("description", "")
+    pr_details["justification"] = request.justification
     pr_details["status"] = request.status
     pr_details["approved_by"] = request.approved_by
     pr_details["rejected_by"] = request.rejected_by
@@ -188,6 +188,7 @@ async def create_request(
 
     request = Request(
         id=request_id,
+        justification=justification,
         tenant=tenant,
         pull_request_id=request_pr.pull_request_id,
         pull_request_url=request_pr.pull_request_url,

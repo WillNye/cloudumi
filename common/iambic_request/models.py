@@ -378,7 +378,6 @@ class GitHubPullRequest(BasePullRequest):
         )
 
     async def sign_and_comment(self, body: str, approved_by: Union[str, list[str]]):
-
         loaded_private_key = serialization.load_pem_private_key(
             GITHUB_APP_APPROVE_PRIVATE_PEM_1, None
         )
@@ -473,6 +472,7 @@ class Request(SoftDeleteMixin, Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     repo_name = Column(String)
+    justification = Column(String, default="N/A")
     pull_request_id = Column(Integer)
     pull_request_url = Column(String)
     tenant_id = Column(Integer, ForeignKey("tenant.id"))

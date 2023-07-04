@@ -29,7 +29,8 @@ const OnBoarding = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [activeId, setActiveId] = useState(CONNECTION_METHOD.id);
   const [accountName, setAccountName] = useState('');
-  const [selectedMode, setSelectedMode] = useState(MODES.READ_WRTE);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [selectedMode, _setSelectedMode] = useState(MODES.READ_ONLY);
   const [isLoading, setIsLoading] = useState(false);
   const [isHubAccount, setIsHubAccount] = useState(true);
 
@@ -43,7 +44,7 @@ const OnBoarding = () => {
     }
   });
 
-  const handleModeChange = ({ target: { value } }) => setSelectedMode(value);
+  // const handleModeChange = ({ target: { value } }) => setSelectedMode(value);
 
   const handleAccNameChange = event => {
     event.preventDefault();
@@ -59,9 +60,10 @@ const OnBoarding = () => {
       [CONFIGURE.id]: (
         <ConfigureAccount
           handleAccNameChange={handleAccNameChange}
-          handleModeChange={handleModeChange}
           accountName={accountName}
-          selectedMode={selectedMode}
+          // INFO: EN-2217: The SaaS will only be installed in read-only mode
+          // selectedMode={selectedMode}
+          // handleModeChange={handleModeChange}
         />
       ),
       [CREATE_STACK.id]: (
