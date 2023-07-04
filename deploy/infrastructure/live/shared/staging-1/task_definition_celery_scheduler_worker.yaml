@@ -17,9 +17,9 @@ containerDefinitions:
       - -c
       - |
         pip install argh watchdog;
-        watchmedo auto-restart --recursive --pattern="*.py" --directory="." --ignore-patterns="./env/*" --verbose '
-          python /app/common/celery_tasks/run.py --profile CELERY_SCHEDULER &
-          python /app/common/celery_tasks/run.py --profile CELERY_FLOWER &
+        watchmedo auto-restart --recursive --pattern="*.py" --directory="." --ignore-patterns="./env/*" --verbose sh -- -c ' \
+          python /app/common/celery_tasks/run.py --profile CELERY_SCHEDULER & \
+          python /app/common/celery_tasks/run.py --profile CELERY_FLOWER & \
           python /app/common/celery_tasks/run.py --profile CELERY_WORKER
         '
 
