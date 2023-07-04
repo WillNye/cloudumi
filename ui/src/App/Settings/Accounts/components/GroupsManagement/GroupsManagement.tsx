@@ -55,8 +55,6 @@ const GroupsManagement = () => {
 
   const tableRows = useMemo(() => {
     return (allGroupsData?.data || []).map(item => {
-      const canEdit = item.managed_by === 'MANUAL';
-
       return {
         ...item,
         name: <div>{item.name}</div>,
@@ -69,7 +67,7 @@ const GroupsManagement = () => {
             refreshData={callGetAllGroups}
           />
         ),
-        edit: <GroupsModal canEdit={canEdit} group={item} />,
+        edit: <GroupsModal canEdit group={item} />,
         users: item.users.length
       };
     });

@@ -44,6 +44,7 @@ const updatingGroupSchema = Yup.object().shape({
   description: Yup.string().required('Required')
 });
 
+// eslint-disable-next-line complexity
 const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
   const [showDialog, setShowDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -210,7 +211,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
               placeholder="name"
               autoCapitalize="none"
               autoCorrect="off"
-              {...register('name')}
+              {...register('name', { disabled: group.managed_by != 'MANUAL' })}
             />
             {errors?.name && touchedFields.name && <p>{errors.name.message}</p>}
             <LineBreak />
@@ -220,13 +221,21 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
               placeholder="description"
               autoCapitalize="none"
               autoCorrect="off"
-              {...register('description')}
+              {...register('description', {
+                disabled: group.managed_by != 'MANUAL'
+              })}
             />
             {errors?.description && touchedFields.description && (
               <p>{errors.description.message}</p>
             )}
             <LineBreak />
-            <Button type="submit" disabled={isSubmitting || !isValid} fullWidth>
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting || !isValid || group.managed_by != 'MANUAL'
+              }
+              fullWidth
+            >
               {isSubmitting ? 'Updating Group...' : 'Update Group'}
             </Button>
           </form>
@@ -258,7 +267,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
               )}
             </div>
             <Button
-              disabled={isUpdatingGroups}
+              disabled={isUpdatingGroups || group.managed_by != 'MANUAL'}
               size="small"
               fullWidth
               onClick={updateGroupMemberships}

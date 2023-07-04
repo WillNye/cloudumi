@@ -55,7 +55,6 @@ const UsersManagement = () => {
 
   const tableRows = useMemo(() => {
     return (allUsersData?.data || []).map(item => {
-      const canEdit = item.managed_by === 'MANUAL';
       return {
         ...item,
         email: <div>{item.email}</div>,
@@ -68,7 +67,7 @@ const UsersManagement = () => {
             refreshData={callGetAllUsers}
           />
         ),
-        edit: <UserModal canEdit={canEdit} user={item} />,
+        edit: <UserModal canEdit user={item} />,
         groups: item.groups.length
       };
     });

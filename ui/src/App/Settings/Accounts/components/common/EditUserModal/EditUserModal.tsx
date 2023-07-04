@@ -23,6 +23,7 @@ import { Divider } from 'shared/elements/Divider';
 import { useMutation } from '@tanstack/react-query';
 import styles from './EditUserModal.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
+import classNames from 'classnames';
 
 type UpdateUserParams = {
   data: { id: string; email?: string; username?: string };
@@ -44,6 +45,7 @@ const updatingUserSchema = Yup.object().shape({
   username: Yup.string().required('Required')
 });
 
+// eslint-disable-next-line complexity
 const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
   const [showDialog, setShowDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -240,7 +242,9 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
               placeholder="username"
               autoCapitalize="none"
               autoCorrect="off"
-              {...register('username')}
+              {...register('username', {
+                disabled: user?.managed_by != 'MANUAL'
+              })}
             />
             {errors?.username && touchedFields.username && (
               <p>{errors.username.message}</p>
@@ -252,7 +256,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
               placeholder="email"
               autoCapitalize="none"
               autoCorrect="off"
-              {...register('email')}
+              {...register('email', { disabled: user?.managed_by != 'MANUAL' })}
             />
             {errors?.email && touchedFields.email && (
               <p>{errors.email.message}</p>
@@ -261,7 +265,12 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
             <Button
               size="small"
               type="submit"
-              disabled={isSubmitting || !isValid || isLoading}
+              disabled={
+                isSubmitting ||
+                !isValid ||
+                isLoading ||
+                user.managed_by != 'MANUAL'
+              }
               fullWidth
             >
               {isSubmitting ? 'Updating User...' : 'Update User'}
@@ -295,7 +304,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
               )}
             </div>
             <Button
-              disabled={isUpdatingGroups}
+              disabled={isUpdatingGroups || user.managed_by != 'MANUAL'}
               size="small"
               fullWidth
               onClick={updateGroupMemberships}
@@ -304,7 +313,14 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
             </Button>
           </div>
           <LineBreak />
-          <div className={styles.actions}>
+          <div
+            className={classNames(
+              {
+                [styles.hidden]: user.managed_by != 'MANUAL'
+              },
+              styles.actions
+            )}
+          >
             <Button
               color="secondary"
               variant="outline"
