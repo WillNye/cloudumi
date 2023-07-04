@@ -33,6 +33,7 @@ type UpdateUserParams = {
 type CreateUserGroupsParams = {
   users: string[];
   groups: string[];
+  check_deleted?: boolean;
 };
 
 type EditUserModalProps = {
@@ -63,7 +64,8 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
   });
 
   const { mutateAsync: createUserGroupsMutation } = useMutation({
-    mutationFn: (data: CreateUserGroupsParams) => createGroupMemberships(data)
+    mutationFn: (data: CreateUserGroupsParams) =>
+      createGroupMemberships({ ...data, check_deleted: true })
   });
 
   const { mutateAsync: searchMutation } = useMutation({

@@ -37,6 +37,7 @@ type UpdateGroupParams = {
 type CreateGroupUserParams = {
   users: string[];
   groups: string[];
+  check_deleted?: boolean;
 };
 
 const updatingGroupSchema = Yup.object().shape({
@@ -60,7 +61,8 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
   });
 
   const { mutateAsync: createGroupUsersMutation } = useMutation({
-    mutationFn: (data: CreateGroupUserParams) => createGroupMemberships(data)
+    mutationFn: (data: CreateGroupUserParams) =>
+      createGroupMemberships({ ...data, check_deleted: true })
   });
 
   const { mutateAsync: searchMutation } = useMutation({
