@@ -104,9 +104,6 @@ const OIDCSettings = ({ isFetching }) => {
             </Block>
           </>
         )}
-        <Block disableLabelPadding label="Force Redirect to IP">
-          <Checkbox {...register('auth.force_redirect_to_identity_provider')} />
-        </Block>
         <Block disableLabelPadding label="Metadata URL" required>
           <Input
             {...register('get_user_by_oidc_settings.metadata_url')}
@@ -154,13 +151,6 @@ const OIDCSettings = ({ isFetching }) => {
 
         <LineBreak />
 
-        <Block disableLabelPadding label="Include Admin Scope">
-          <Checkbox
-            {...register('get_user_by_oidc_settings.include_admin_scope')}
-          />
-        </Block>
-        <LineBreak />
-
         <Block disableLabelPadding label="Grant Tpe" required>
           <Input
             {...register('get_user_by_oidc_settings.grant_type')}
@@ -194,9 +184,6 @@ const OIDCSettings = ({ isFetching }) => {
           />
         </Block>
         <LineBreak />
-        <Block disableLabelPadding label="Enable MFA">
-          <Checkbox {...register('get_user_by_oidc_settings.enable_mfa')} />
-        </Block>
         <Block disableLabelPadding label="Get Groups from Access Token">
           <Checkbox
             {...register(

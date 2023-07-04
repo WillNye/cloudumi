@@ -32,7 +32,6 @@ export const oidcSchema = Yup.object()
         .default('email')
         .required()
         .label('JWT Email Key'),
-      enable_mfa: Yup.boolean().default(false).label('Enable MFA'),
       get_groups_from_access_token: Yup.boolean()
         .default(false)
         .label('Get Groups from Access Token'),

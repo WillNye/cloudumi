@@ -1371,7 +1371,7 @@ class GetUserByOIDCSettings(BaseModel):
         "access_token", title="Access Token Response Key"
     )
     jwt_email_key: Optional[str] = Field("email", title="Jwt Email Key")
-    enable_mfa: Optional[bool] = Field(False, title="Enable Mfa")
+    enable_mfa: Optional[bool] = Field(False, title="Enable MFA")
     get_groups_from_access_token: Optional[bool] = Field(
         True, title="Get Groups From Access Token"
     )
