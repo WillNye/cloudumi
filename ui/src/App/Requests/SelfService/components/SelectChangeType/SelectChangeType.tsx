@@ -245,156 +245,167 @@ const SelectChangeType = () => {
 
   return (
     <Segment isLoading={isLoading}>
-      <div className={styles.content}>
+      <div className={styles.container}>
+        <h3>Select Change Type</h3>
+        <LineBreak size="small" />
+        <p className={styles.subText}>Please select a change type</p>
         <LineBreak size="large" />
         <div className={styles.content}>
-          <Block disableLabelPadding label="Change Type" />
-          <CloudScapeSelect
-            selectedOption={
-              selectedChangeType && {
-                label: selectedChangeType.name,
-                value: selectedChangeType.id,
-                description: selectedChangeType.description
-              }
-            }
-            onChange={({ detail }) => handleSelectChange(detail.selectedOption)}
-            options={options}
-            filteringType="auto"
-            selectedAriaLabel="Selected"
-            placeholder="Select change type"
-          />
           <LineBreak size="large" />
-          {selectedChangeType && (
-            <RequestChangeDetails
-              selectedChangeType={selectedChangeType}
-              providerDefinition={providerDefinition?.data || []}
+          <div className={styles.content}>
+            <Block disableLabelPadding label="Change Type" />
+            <CloudScapeSelect
+              selectedOption={
+                selectedChangeType && {
+                  label: selectedChangeType.name,
+                  value: selectedChangeType.id,
+                  description: selectedChangeType.description
+                }
+              }
+              onChange={({ detail }) =>
+                handleSelectChange(detail.selectedOption)
+              }
+              options={options}
+              filteringType="auto"
+              selectedAriaLabel="Selected"
+              placeholder="Select change type"
             />
-          )}
+            <LineBreak size="large" />
+            {selectedChangeType && (
+              <RequestChangeDetails
+                selectedChangeType={selectedChangeType}
+                providerDefinition={providerDefinition?.data || []}
+              />
+            )}
+            {tableRows.length > 0 && (
+              <>
+                <LineBreak size="large" />
+                <h4>Selected Changes</h4>
+                <LineBreak size="small" />
+                <Table
+                  data={tableRows}
+                  columns={changesColumns}
+                  noResultsComponent={
+                    <div className={styles.subText}>
+                      Please add changes to the request
+                    </div>
+                  }
+                  border="row"
+                />
+              </>
+            )}
+          </div>
           {tableRows.length > 0 && (
             <>
               <LineBreak size="large" />
-              <h4>Selected Changes</h4>
+              <Block disableLabelPadding label="Expiration" />
+              <div className={styles.radioGroup}>
+                <div className={styles.radioInput}>
+                  <Radio
+                    name="durationType"
+                    value={EXPIRATION_TYPE.RELATIVE}
+                    checked={expirationType === EXPIRATION_TYPE.RELATIVE}
+                    onChange={handleDurationTypeChange}
+                  />
+                  <div>Relative</div>
+                </div>
+
+                <div className={styles.radioInput}>
+                  <Radio
+                    name="durationType"
+                    value={EXPIRATION_TYPE.ABSOLUTE}
+                    checked={expirationType === EXPIRATION_TYPE.ABSOLUTE}
+                    onChange={handleDurationTypeChange}
+                  />
+                  <div>Absolute</div>
+                </div>
+
+                <div className={styles.radioInput}>
+                  <Radio
+                    name="durationType"
+                    value={EXPIRATION_TYPE.NEVER}
+                    checked={expirationType === EXPIRATION_TYPE.NEVER}
+                    onChange={handleDurationTypeChange}
+                  />
+                  <div>Never</div>
+                </div>
+              </div>
               <LineBreak size="small" />
-              <Table
-                data={tableRows}
-                columns={changesColumns}
-                noResultsComponent={
-                  <div className={styles.subText}>
-                    Please add changes to the request
-                  </div>
-                }
-                border="row"
+              <Divider />
+              <LineBreak size="small" />
+              {expirationType === EXPIRATION_TYPE.RELATIVE && (
+                <div className={styles.relative}>
+                  <Input
+                    type="number"
+                    value={relativeValue}
+                    onChange={e => {
+                      setRelativeValue(e.target.value);
+                      setExpirationFromRelativeate(
+                        e.target.value,
+                        relativeUnit
+                      );
+                    }}
+                    fullWidth
+                  />
+                  <LineBreak size="small" />
+                  <Select
+                    value={relativeUnit}
+                    onChange={value => {
+                      setRelativeUnit(value);
+                      setExpirationFromRelativeate(relativeValue, value);
+                    }}
+                    name="time"
+                  >
+                    <SelectOption value="hours">Hours</SelectOption>
+                    <SelectOption value="days">Days</SelectOption>
+                    <SelectOption value="weeks">Weeks</SelectOption>
+                    <SelectOption value="months">Months</SelectOption>
+                  </Select>
+                </div>
+              )}
+              {expirationType === EXPIRATION_TYPE.ABSOLUTE && (
+                <div className={styles.absolute}>
+                  <DatePicker
+                    placeholder="YYYY/MM/DD"
+                    value={dateValue}
+                    onChange={({ detail: { value } }) => {
+                      setDateValue(value);
+                      setExpirationFromAbsoluteDate(value, timeValue);
+                    }}
+                    ariaLabelledby="duration-date-label"
+                    previousMonthAriaLabel="Previous month"
+                    nextMonthAriaLabel="Next month"
+                    todayAriaLabel="Today"
+                  />
+                  <LineBreak size="small" />
+                  <TimeInput
+                    ariaLabelledby="duration-time-label"
+                    use24Hour={true}
+                    placeholder="hh:mm:ss"
+                    value={timeValue}
+                    onChange={({ detail: { value } }) => {
+                      setTimeValue(value);
+                      setExpirationFromAbsoluteDate(dateValue, value);
+                    }}
+                  />
+                </div>
+              )}
+              {expirationType === EXPIRATION_TYPE.NEVER && (
+                <div className={styles.subText}>
+                  Warning: The request changes will never expire (they will need
+                  to be removed manually after use)
+                </div>
+              )}
+              <LineBreak size="large" />
+              <Block disableLabelPadding label="Justification" />
+              <TextArea
+                fullWidth
+                value={selfServiceRequest.justification}
+                onChange={e => setJustification(e.target.value)}
               />
             </>
           )}
         </div>
-        {tableRows.length > 0 && (
-          <>
-            <LineBreak size="large" />
-            <Block disableLabelPadding label="Expiration" />
-            <div className={styles.radioGroup}>
-              <div className={styles.radioInput}>
-                <Radio
-                  name="durationType"
-                  value={EXPIRATION_TYPE.RELATIVE}
-                  checked={expirationType === EXPIRATION_TYPE.RELATIVE}
-                  onChange={handleDurationTypeChange}
-                />
-                <div>Relative</div>
-              </div>
-
-              <div className={styles.radioInput}>
-                <Radio
-                  name="durationType"
-                  value={EXPIRATION_TYPE.ABSOLUTE}
-                  checked={expirationType === EXPIRATION_TYPE.ABSOLUTE}
-                  onChange={handleDurationTypeChange}
-                />
-                <div>Absolute</div>
-              </div>
-
-              <div className={styles.radioInput}>
-                <Radio
-                  name="durationType"
-                  value={EXPIRATION_TYPE.NEVER}
-                  checked={expirationType === EXPIRATION_TYPE.NEVER}
-                  onChange={handleDurationTypeChange}
-                />
-                <div>Never</div>
-              </div>
-            </div>
-            <LineBreak size="small" />
-            <Divider />
-            <LineBreak size="small" />
-            {expirationType === EXPIRATION_TYPE.RELATIVE && (
-              <div className={styles.relative}>
-                <Input
-                  type="number"
-                  value={relativeValue}
-                  onChange={e => {
-                    setRelativeValue(e.target.value);
-                    setExpirationFromRelativeate(e.target.value, relativeUnit);
-                  }}
-                  fullWidth
-                />
-                <LineBreak size="small" />
-                <Select
-                  value={relativeUnit}
-                  onChange={value => {
-                    setRelativeUnit(value);
-                    setExpirationFromRelativeate(relativeValue, value);
-                  }}
-                  name="time"
-                >
-                  <SelectOption value="hours">Hours</SelectOption>
-                  <SelectOption value="days">Days</SelectOption>
-                  <SelectOption value="weeks">Weeks</SelectOption>
-                  <SelectOption value="months">Months</SelectOption>
-                </Select>
-              </div>
-            )}
-            {expirationType === EXPIRATION_TYPE.ABSOLUTE && (
-              <div className={styles.absolute}>
-                <DatePicker
-                  placeholder="YYYY/MM/DD"
-                  value={dateValue}
-                  onChange={({ detail: { value } }) => {
-                    setDateValue(value);
-                    setExpirationFromAbsoluteDate(value, timeValue);
-                  }}
-                  ariaLabelledby="duration-date-label"
-                  previousMonthAriaLabel="Previous month"
-                  nextMonthAriaLabel="Next month"
-                  todayAriaLabel="Today"
-                />
-                <LineBreak size="small" />
-                <TimeInput
-                  ariaLabelledby="duration-time-label"
-                  use24Hour={true}
-                  placeholder="hh:mm:ss"
-                  value={timeValue}
-                  onChange={({ detail: { value } }) => {
-                    setTimeValue(value);
-                    setExpirationFromAbsoluteDate(dateValue, value);
-                  }}
-                />
-              </div>
-            )}
-            {expirationType === EXPIRATION_TYPE.NEVER && (
-              <div className={styles.subText}>
-                Warning: The request changes will never expire (they will need
-                to be removed manually after use)
-              </div>
-            )}
-            <LineBreak size="large" />
-            <Block disableLabelPadding label="Justification" />
-            <TextArea
-              fullWidth
-              value={selfServiceRequest.justification}
-              onChange={e => setJustification(e.target.value)}
-            />
-          </>
-        )}
       </div>
     </Segment>
   );

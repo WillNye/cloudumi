@@ -10,6 +10,9 @@ import { getChangeRequestType } from 'core/API/iambicRequest';
 import { ChangeType } from '../../types';
 import { SELF_SERVICE_STEPS } from '../../constants';
 import { Card } from 'shared/layout/Card';
+import { Search } from 'shared/form/Search';
+import { Button } from 'shared/elements/Button';
+import { Link } from 'react-router-dom';
 
 const SUGGESTED_CHANGES = [
   {
@@ -90,8 +93,13 @@ const SelectSuggestedChangeTypes = () => {
     <Segment isLoading={isLoading}>
       <div className={styles.container}>
         <h3>What Permissions would you like?</h3>
-        <LineBreak size="medium" />
-        <div className={styles.link}>
+        <LineBreak />
+        <p className={styles.subText}>
+          Please select from the provided template suggestions
+        </p>
+        <LineBreak />
+        <div className={styles.search}>
+          Can&apos;t find what you&apos;re looking for?{' '}
           <a
             href="#"
             onClick={e => {
@@ -99,21 +107,21 @@ const SelectSuggestedChangeTypes = () => {
               setCurrentStep(SELF_SERVICE_STEPS.SELECT_IDENTITY);
             }}
           >
-            I don’t see what I need, let me customize it
-          </a>
+            click here
+          </a>{' '}
+          to customize your request
         </div>
-        <br />
+        <LineBreak />
         <div className={styles.cardContainer}>
           {SUGGESTED_CHANGES.map(changeType => (
             <Card
               variant="outlined"
               color="secondary"
               className={`${styles.card}`}
-              contentClassName={styles.cardContent}
               key={changeType.header}
               clickable
+              header={changeType.header}
             >
-              <h4>{changeType.header}</h4>
               <p>{changeType.subtext}</p>
             </Card>
           ))}

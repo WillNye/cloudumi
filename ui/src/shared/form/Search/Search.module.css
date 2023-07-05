@@ -10,8 +10,8 @@
     width: 100%;
     top: calc(100% + 10px);
     left: 0;
-    background-color: var(--gray-600);
-    border: 2px solid var(--gray-300);
+    background-color: var(--gray-700);
+    border: 1px solid var(--gray-300);
     border-radius: var(--border-radius-md);
     z-index: 12;
     overflow-y: scroll;
@@ -20,12 +20,12 @@
   .result {
     padding: var(--spacing-md);
     cursor: pointer;
-    border: 1px solid var(--gray-300);
-    /* border-radius: var(--spacing-sm); */
+    border: 1px solid var(--gray-500);
+    font-size: var(--font-size-sm);
 
     &:hover {
-      background-color: var(--gray-700);
-      border: 1px solid var(--gray-500);
+      background-color: var(--gray-600);
+      border: 1px solid var(--gray-400);
       border-radius: var(--spacing-sm);
     }
   }

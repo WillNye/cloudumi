@@ -20,8 +20,9 @@
   }
 
   .content {
-    max-width: 720px;
-    margin: auto;
+    /* max-width: 720px;
+    margin: auto; */
+    width: 100%;
   }
 
   .tabLabel {
@@ -58,14 +59,5 @@
     p {
       font-size: var(--font-size-sm);
     }
-  }
-
-  /* Update the class name as per actual class name in the component */
-  .tabLabel {
-    font-weight: normal;
-  }
-
-  .selectInput {
-    width: 100% !important;
   }
 }

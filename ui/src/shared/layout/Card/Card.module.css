@@ -3,7 +3,7 @@
 }
 
 .card {
-  padding: var(--spacing-md);
+  padding: var(--spacing-lg);
   border-radius: var(--border-radius-md);
   position: relative;
   display: flex;
@@ -55,6 +55,7 @@
   .header {
     display: flex;
     align-items: center;
+    margin-bottom: var(--spacing-md);
 
     .push {
       flex: 1;
@@ -62,12 +63,14 @@
     }
 
     .headerText {
-      font-size: 14px;
+      font-size: var(--font-size-md);
       font-weight: 500;
+      color: var(--white);
     }
   }
 
   .content {
     flex: 1;
+    color: var(--gray-200);
   }
 }

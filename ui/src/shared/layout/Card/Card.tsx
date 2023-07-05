@@ -47,7 +47,7 @@ export const Card: FC<CardProps & { ref?: Ref<HTMLDivElement> }> = forwardRef(
       >
         {header && (
           <header className={classNames(css.header, headerClassName)}>
-            {header && <h3 className={css.headerText}>{header}</h3>}
+            <h3 className={css.headerText}>{header}</h3>
           </header>
         )}
         <div className={classNames(css.content, contentClassName)}>

@@ -110,8 +110,8 @@ const SelfService = () => {
       classNames(styles.wrapper, {
         [styles.fullWidth]: [
           SELF_SERVICE_STEPS.COMPLETION_FORM,
-          SELF_SERVICE_STEPS.SELECT_IDENTITY,
-          SELF_SERVICE_STEPS.CHANGE_TYPE,
+          // SELF_SERVICE_STEPS.SELECT_IDENTITY,
+          // SELF_SERVICE_STEPS.CHANGE_TYPE,
           SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES
         ].includes(currentStep)
       }),
