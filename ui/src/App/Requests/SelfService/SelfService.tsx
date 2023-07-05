@@ -108,7 +108,10 @@ const SelfService = () => {
   const wrapperClasses = useMemo(
     () =>
       classNames(styles.wrapper, {
-        [styles.fullWidth]: currentStep === SELF_SERVICE_STEPS.COMPLETION_FORM
+        [styles.fullWidth]: [
+          SELF_SERVICE_STEPS.COMPLETION_FORM,
+          SELF_SERVICE_STEPS.SELECT_IDENTITY
+        ].includes(currentStep)
       }),
     [currentStep]
   );
