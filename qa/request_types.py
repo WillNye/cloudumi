@@ -7,6 +7,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import contains_eager, joinedload
 
 from common.config.globals import ASYNC_PG_SESSION
+from common.iambic.templates.models import IambicTemplate
 from common.pg_core.utils import bulk_delete
 from common.request_types.models import (
     ChangeField,
@@ -56,6 +57,19 @@ async def run_all_tests():
 
 asyncio.run(run_all_tests())
 """
+
+
+async def get_iambic_template(template_type, resource_id):
+    async with ASYNC_PG_SESSION() as session:
+        stmt = (
+            select(IambicTemplate)
+            .filter(IambicTemplate.template_type == template_type)
+            .filter(IambicTemplate.resource_id == resource_id)
+        )
+
+        items = await session.execute(stmt)
+
+        return items.scalars().unique().one_or_none()
 
 
 async def get_request_type_by_id(request_type_id):
@@ -553,6 +567,45 @@ async def api_typeahead_list_users(email: Optional[str] = None):
     generic_api_get_request("v4/self-service/typeahead/noq/users", **request_params)
 
 
+async def api_add_change_type():
+    tenant = TENANT_SUMMARY.tenant
+    request_types = await list_tenant_request_types(
+        tenant.id, "aws", summary_only=False
+    )
+    request_type = [
+        r
+        for r in request_types
+        if r.name == "Request access to AWS Identity Center (SSO) PermissionSet"
+    ][0]
+
+    # Select IAMbic Template with a certain resource ID
+    iambic_template = await get_iambic_template(
+        template_type="NOQ::AWS::IdentityCenter::PermissionSet",
+        resource_id="AWSReadOnlyAccess",
+    )
+
+    assert iambic_template
+
+    access_change_type = ChangeType(
+        name="Readonly Access for CustomerA",
+        description="Read Only Access to CustomerA's S3 buckets and Glue tables",
+        change_fields=[],
+        tenant_id=tenant.id,
+        change_template=ChangeTypeTemplate(
+            template="""
+        {
+            "users":["{{form.current_user}}"],
+            "included_accounts": ["development"]
+        }"""
+        ),
+        created_by="Noq",
+        included_iambic_templates=[iambic_template],
+    )
+
+    request_type.change_types.append(access_change_type)
+    await request_type.write()
+
+
 if __name__ == "__main__":
     asyncio.run(TENANT_SUMMARY.setup())
-    asyncio.run(reset_request_type_tables())
+    asyncio.run(api_add_change_type())

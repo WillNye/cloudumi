@@ -1,5 +1,7 @@
 import os
 
+from common.request_types.models import ChangeType, ChangeTypeTemplate
+
 os.environ.setdefault(
     "CONFIG_LOCATION", "configs/development_account/saas_development.yaml"
 )

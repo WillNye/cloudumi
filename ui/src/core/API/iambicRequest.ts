@@ -14,9 +14,13 @@ export const getProviderDefinitions = async ({ queryKey }) => {
   return response.data;
 };
 
-export const getChangeRequestType = async ({ queryKey }) => {
+export const getChangeRequestType = async ({
+  queryKey,
+  iambic_templates_specified = false
+}) => {
   const [_, id] = queryKey;
-  const url = `${V4_API_URL}/self-service/request-types/${id}/change-types/`;
+  // eslint-disable-next-line max-len
+  const url = `${V4_API_URL}/self-service/request-types/${id}/change-types/?iambic_templates_specified=${iambic_templates_specified}`;
   const response = await axios.get(url);
   return response.data;
 };

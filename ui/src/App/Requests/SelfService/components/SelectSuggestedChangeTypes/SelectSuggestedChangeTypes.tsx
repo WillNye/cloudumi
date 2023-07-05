@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Segment } from 'shared/layout/Segment';
 import styles from './SelectSuggestedChangeTypes.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
@@ -14,54 +14,75 @@ import { Search } from 'shared/form/Search';
 import { Button } from 'shared/elements/Button';
 import { Link } from 'react-router-dom';
 
-const SUGGESTED_CHANGES = [
+let SUGGESTED_CHANGES = [
   {
-    header: 'Base Application Policy',
-    subtext: 'Provides access to essential services like S3, RDS, and EC2.'
+    id: 1,
+    name: 'Base Application Policy',
+    description: 'Provides access to essential services like S3, RDS, and EC2.',
+    request_type_id: 1
   },
   {
-    header: 'Lambda with EventBridge',
-    subtext: 'Lambda Permissions with EventBridge'
+    id: 2,
+    name: 'Lambda with EventBridge',
+    description: 'Lambda Permissions with EventBridge',
+    request_type_id: 1
   },
   {
-    header: 'App-Specific Lambda',
-    subtext:
-      'Create, update, and manage a Lambda function specific to the application.'
+    id: 3,
+    name: 'App-Specific Lambda',
+    description:
+      'Create, update, and manage a Lambda function specific to the application.',
+    request_type_id: 1
   },
   {
-    header: 'Create/Manage KMS-Encrypted S3 Bucket',
-    subtext:
-      'Allows creating and managing an S3 bucket encrypted with AWS Key Management Service (KMS).'
+    id: 4,
+    name: 'Create/Manage KMS-Encrypted S3 Bucket',
+    description:
+      'Allows creating and managing an S3 bucket encrypted with AWS Key Management Service (KMS).',
+    request_type_id: 1
   },
   {
-    header: 'Manage SQS and SNS',
-    subtext:
-      'Enables creating, sending, receiving, and managing messages in SQS queues and SNS topics.'
+    id: 5,
+    name: 'Manage SQS and SNS',
+    description:
+      'Enables creating, sending, receiving, and managing messages in SQS queues and SNS topics.',
+    request_type_id: 1
   },
   {
-    header: 'Access to Cyberdyne Data (S3/Glue)',
-    subtext:
-      'Provides access to Cyberdyne Data, including S3 buckets and AWS Glue data catalog.'
+    id: 6,
+    name: 'Access to Cyberdyne Data (S3/Glue)',
+    description:
+      'Provides access to Cyberdyne Data, including S3 buckets and AWS Glue data catalog.',
+    request_type_id: 1
   },
   {
-    header: 'Manage DynamoDB Tables',
-    subtext:
-      'Allows creating, updating, and deleting DynamoDB tables for the application.'
+    id: 7,
+    name: 'Manage DynamoDB Tables',
+    description:
+      'Allows creating, updating, and deleting DynamoDB tables for the application.',
+    request_type_id: 1
   },
   {
-    header: 'Manage CloudFormation Stacks',
-    subtext:
-      'Enables creating, updating, and deleting CloudFormation stacks for deploying application resources.'
+    id: 8,
+    name: 'Manage CloudFormation Stacks',
+    // eslint-disable-next-line max-len
+    description:
+      'Enables creating, updating, and deleting CloudFormation stacks for deploying application resources.',
+    request_type_id: 1
   },
   {
-    header: 'Manage Redshift Clusters',
-    subtext:
-      'Ability to create, modify, and delete Amazon Redshift clusters for data warehousing.'
+    id: 9,
+    name: 'Manage Redshift Clusters',
+    description:
+      'Ability to create, modify, and delete Amazon Redshift clusters for data warehousing.',
+    request_type_id: 1
   },
   {
-    header: 'Manage EMR Clusters',
-    subtext:
-      'Enables starting, stopping, and terminating Amazon EMR clusters for big data processing.'
+    id: 10,
+    name: 'Manage EMR Clusters',
+    description:
+      'Enables starting, stopping, and terminating Amazon EMR clusters for big data processing.',
+    request_type_id: 1
   }
 ];
 
@@ -79,15 +100,31 @@ const SelectSuggestedChangeTypes = () => {
     [selfServiceRequest]
   );
 
+  const [suggestedChangeTypes, setSuggestedChangeTypes] = useState<
+    ChangeType[]
+  >([]);
+
   const { data: changeTypes, isLoading } = useQuery({
     queryFn: getChangeRequestType,
-    queryKey: ['getChangeRequestType', selectedRequestType?.id],
+    queryKey: [
+      'getChangeRequestType',
+      selectedRequestType?.id,
+      'iambic_templates_specified',
+      'true'
+    ],
     onError: (error: AxiosError) => {
       // const errorRes = error?.response;
       // const errorMsg = extractErrorMessage(errorRes?.data);
       // setErrorMessage(errorMsg || 'An error occurred fetching resource');
     }
   });
+
+  useEffect(() => {
+    if (changeTypes) {
+      console.log('HERE', changeTypes);
+      setSuggestedChangeTypes(changeTypes?.data.concat(SUGGESTED_CHANGES));
+    }
+  }, [changeTypes]);
 
   return (
     <Segment isLoading={isLoading}>
@@ -113,16 +150,16 @@ const SelectSuggestedChangeTypes = () => {
         </div>
         <LineBreak />
         <div className={styles.cardContainer}>
-          {SUGGESTED_CHANGES.map(changeType => (
+          {suggestedChangeTypes.map(changeType => (
             <Card
               variant="outlined"
               color="secondary"
               className={`${styles.card}`}
-              key={changeType.header}
+              key={changeType.id}
               clickable
-              header={changeType.header}
+              header={changeType.name}
             >
-              <p>{changeType.subtext}</p>
+              <p>{changeType.description}</p>
             </Card>
           ))}
         </div>
