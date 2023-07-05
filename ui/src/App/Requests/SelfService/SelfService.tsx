@@ -52,6 +52,7 @@ const SelfService = () => {
   };
 
   const setSelectedIdentity = (identity: Identity) => {
+    console.log(identity);
     setSelfServiceRequest(prev => {
       const newRequest = { ...prev, identity };
       return newRequest;
