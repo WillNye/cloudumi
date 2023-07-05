@@ -259,7 +259,8 @@ const SelectChangeType = () => {
     <Segment isLoading={isLoading}>
       <div className={styles.container}>
         <h3>Select Change Type</h3>
-        <LineBreak />
+        <LineBreak size="small" />
+        <p className={styles.subText}>Please select a change type</p>
         <Tabs
           activeTabId={activeTab}
           onChange={e => {
@@ -291,8 +292,7 @@ const SelectChangeType = () => {
               label: 'Custom',
               id: 'custom',
               content: (
-                <div>
-                  <p className={styles.subText}>Please select a change type</p>
+                <div className={styles.content}>
                   <LineBreak size="large" />
                   <div className={styles.content}>
                     <Block disableLabelPadding label="Change Type" />

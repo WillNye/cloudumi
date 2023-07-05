@@ -118,13 +118,14 @@ const SelectIdentity = () => {
   return (
     <Segment isLoading={isLoading}>
       <div className={styles.container}>
-        <h3>Select a Cloud Identity</h3>
+        <h3>Select Cloud Identity</h3>
+        <LineBreak size="small" />
+        <p className={styles.subText}>Please select a Cloud Identity</p>
         <Tabs
           activeTabId={activeTab}
           onChange={e => {
             setActiveTab(e.detail.activeTabId);
           }}
-          className={styles.tabLabel}
           tabs={[
             {
               label: 'Suggested Identities',
@@ -156,7 +157,8 @@ const SelectIdentity = () => {
               label: 'Custom',
               id: 'custom',
               content: (
-                <div>
+                <div className={styles.content}>
+                  <LineBreak size="large" />
                   {identityTypes?.data && (
                     <>
                       <Select

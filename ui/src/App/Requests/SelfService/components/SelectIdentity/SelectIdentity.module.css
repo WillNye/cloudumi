@@ -20,10 +20,8 @@
   }
 
   .content {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center; /* centers the children vertically */
+    max-width: 720px;
+    margin: auto;
   }
 
   .tabLabel {
