@@ -15,6 +15,7 @@ from common.pg_core.filters import (
 )
 from common.pg_core.models import Base, SoftDeleteMixin
 from common.pg_core.utils import bulk_add
+from common.request_types.models import change_type_group_association
 from common.tenants.models import Tenant  # noqa: F401
 
 
@@ -40,6 +41,12 @@ class Group(SoftDeleteMixin, Base):
         back_populates="groups",
         lazy="joined",
         foreign_keys=[GroupMembership.user_id, GroupMembership.group_id],
+    )
+    associated_change_types = relationship(
+        "ChangeType",
+        secondary=change_type_group_association,
+        back_populates="included_groups",
+        uselist=True,
     )
 
     def dict(self):

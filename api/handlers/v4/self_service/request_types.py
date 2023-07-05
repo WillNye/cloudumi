@@ -53,6 +53,11 @@ class SelfServiceChangeTypeHandler(BaseHandler):
 
         List or retrieve the supported change type(s) for a request type.
         """
+        # Get query params
+
+        iambic_templates_specified = self.get_argument(
+            "iambic_templates_specified", None
+        )
         tenant_id = self.ctx.db_tenant.id
         self.set_header("Content-Type", "application/json")
 
@@ -73,7 +78,11 @@ class SelfServiceChangeTypeHandler(BaseHandler):
             ]
 
         else:
-            change_types = await list_tenant_change_types(tenant_id, request_type_id)
+            change_types = await list_tenant_change_types(
+                tenant_id,
+                request_type_id,
+                iambic_templates_specified=iambic_templates_specified,
+            )
             data = [change_type.dict() for change_type in change_types]
 
         self.write(

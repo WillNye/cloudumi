@@ -34,6 +34,7 @@ from common.models import (
 )
 from common.request_types.utils import list_tenant_request_types
 from qa import TENANT_SUMMARY
+from qa.request_types import api_list_change_types
 from qa.utils import generic_api_create_or_update_request, generic_api_get_request
 
 
@@ -425,6 +426,25 @@ async def api_end_to_end_access_request(user_request: bool):
     )
 
 
+async def get_or_create_self_service_request_curated():
+    tenant = TENANT_SUMMARY.tenant
+    # 1. User selects AWS Provider
+    # 2. FE Calls BE to get list of request types
+    request_types = await list_tenant_request_types(
+        tenant.id, "aws", summary_only=False
+    )
+    # 3. User selects "Add Permissions to Identity"
+    request_type = [
+        r for r in request_types if r.name == "Add permissions to identity"
+    ][0]
+    # 4. FE Calls BE to get list of "curated" change types that already have an identity (a.k.a iambic template) specified
+    change_types = await api_list_change_types(
+        request_type.id, iambic_templates_specified=True
+    )
+    # 5. User selects curated request type, which already has an iambic template specified,
+    print(change_types)
+
+
 if __name__ == "__main__":
     asyncio.run(TENANT_SUMMARY.setup())
-    asyncio.run(get_or_create_self_service_request())
+    asyncio.run(get_or_create_self_service_request_curated())

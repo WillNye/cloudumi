@@ -35,6 +35,7 @@ from common.pg_core.filters import (
     determine_page_from_offset,
 )
 from common.pg_core.models import Base, SoftDeleteMixin
+from common.request_types.models import change_type_user_association
 from common.templates import (
     generic_email_template,
     new_user_with_password_email_template,
@@ -94,6 +95,13 @@ class User(SoftDeleteMixin, Base):
         back_populates="users",
         lazy="joined",
         foreign_keys=[GroupMembership.user_id, GroupMembership.group_id],
+    )
+
+    associated_change_types = relationship(
+        "ChangeType",
+        secondary=change_type_user_association,
+        back_populates="included_users",
+        uselist=True,
     )
 
     __table_args__ = (

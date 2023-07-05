@@ -85,6 +85,7 @@ async def list_tenant_change_types(
     exclude_deleted: Optional[bool] = True,
     change_type_ids: Optional[list[str]] = None,
     summary_only: Optional[bool] = True,
+    iambic_templates_specified: Optional[bool] = None,
 ) -> list[ChangeType]:
     async with ASYNC_PG_SESSION() as session:
         stmt = select(ChangeType).filter(ChangeType.tenant_id == tenant_id)
@@ -95,6 +96,9 @@ async def list_tenant_change_types(
             stmt = stmt.filter(ChangeType.deleted == False)
         if change_type_ids:
             stmt = stmt.filter(ChangeType.id.in_(change_type_ids))
+
+        if iambic_templates_specified:
+            stmt = stmt.filter(ChangeType.included_iambic_templates.any())
 
         if not summary_only:
             stmt = (

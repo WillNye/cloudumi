@@ -111,7 +111,8 @@ const SelfService = () => {
         [styles.fullWidth]: [
           SELF_SERVICE_STEPS.COMPLETION_FORM,
           SELF_SERVICE_STEPS.SELECT_IDENTITY,
-          SELF_SERVICE_STEPS.CHANGE_TYPE
+          SELF_SERVICE_STEPS.CHANGE_TYPE,
+          SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES
         ].includes(currentStep)
       }),
     [currentStep]
@@ -130,13 +131,16 @@ const SelfService = () => {
       case SELF_SERVICE_STEPS.SELECT_IDENTITY:
         setSelectedIdentityType('');
         setSelectedIdentity(null);
-        setCurrentStep(SELF_SERVICE_STEPS.SELECT_PROVIDER);
+        setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
         break;
       case SELF_SERVICE_STEPS.REQUEST_TYPE:
         setSelectedRequestType(null);
-        setCurrentStep(SELF_SERVICE_STEPS.SELECT_IDENTITY);
+        setCurrentStep(SELF_SERVICE_STEPS.SELECT_PROVIDER);
         break;
       case SELF_SERVICE_STEPS.CHANGE_TYPE:
+        setCurrentStep(SELF_SERVICE_STEPS.REQUEST_TYPE);
+        break;
+      case SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES:
         setCurrentStep(SELF_SERVICE_STEPS.REQUEST_TYPE);
         break;
       case SELF_SERVICE_STEPS.COMPLETION_FORM:

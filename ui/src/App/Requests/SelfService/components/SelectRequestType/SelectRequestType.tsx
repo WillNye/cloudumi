@@ -49,7 +49,7 @@ const SelectRequestType = () => {
                 icon={getRequestTypeIcon(requestType.name)}
                 description={requestType.description}
                 onClick={() => {
-                  setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
+                  setCurrentStep(SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES);
                   setSelectedRequestType(requestType);
                 }}
               />

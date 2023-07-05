@@ -4,6 +4,7 @@ from datetime import datetime
 from sqlalchemy import JSON, Boolean, Column, ForeignKey, Index, Integer, String, update
 from sqlalchemy.dialects.postgresql import ARRAY, ENUM, UUID
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.schema import Table
 
 from common.config import config
 from common.config.globals import ASYNC_PG_SESSION
@@ -47,6 +48,39 @@ Replace:
     An example of this is the description of a role.
     If the description has changed it must be replaced.
 """
+
+
+change_type_group_association = Table(
+    "change_type_group_association",
+    Base.metadata,
+    Column("change_type_id", UUID(as_uuid=True), ForeignKey("change_type.id")),
+    Column("group_id", UUID(as_uuid=True), ForeignKey("groups.id")),
+)
+
+change_type_user_association = Table(
+    "change_type_user_association",
+    Base.metadata,
+    Column("change_type_id", UUID(as_uuid=True), ForeignKey("change_type.id")),
+    Column("user_id", UUID(as_uuid=True), ForeignKey("users.id")),
+)
+
+change_type_iambic_template_association = Table(
+    "change_type_iambic_template_association",
+    Base.metadata,
+    Column("change_type_id", UUID(as_uuid=True), ForeignKey("change_type.id")),
+    Column("iambic_template_id", UUID(as_uuid=True), ForeignKey("iambic_template.id")),
+)
+
+change_type_iambic_template_provider_definition_association = Table(
+    "change_type_iambic_template_provider_definition_association",
+    Base.metadata,
+    Column("change_type_id", UUID(as_uuid=True), ForeignKey("change_type.id")),
+    Column(
+        "iambic_template_provider_definition_id",
+        UUID(as_uuid=True),
+        ForeignKey("iambic_template_provider_definition.id"),
+    ),
+)
 
 
 class TypeAheadFieldHelper(Base):
@@ -153,6 +187,26 @@ class ChangeType(SoftDeleteMixin, Base):
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
 
+    included_groups = relationship(
+        "Group",
+        secondary=change_type_group_association,
+        back_populates="associated_change_types",
+    )
+    included_users = relationship(
+        "User",
+        secondary=change_type_user_association,
+        back_populates="associated_change_types",
+    )
+    included_iambic_templates = relationship(
+        "IambicTemplate",
+        secondary=change_type_iambic_template_association,
+        back_populates="associated_change_types",
+    )
+    included_iambic_template_provider_definition = relationship(
+        "IambicTemplateProviderDefinition",
+        secondary=change_type_iambic_template_provider_definition_association,
+        back_populates="associated_change_types",
+    )
     tenant = relationship("Tenant")
 
     request_type = relationship("RequestType", back_populates="change_types")

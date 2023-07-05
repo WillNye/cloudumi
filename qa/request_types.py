@@ -495,7 +495,9 @@ async def api_list_providers():
     generic_api_get_request(base_url, provider="aws")
 
 
-async def api_list_change_types(request_type_id: Optional[str] = None):
+async def api_list_change_types(
+    request_type_id: Optional[str] = None, iambic_templates_specified: bool = None
+):
     if not request_type_id:
         tenant = TENANT_SUMMARY.tenant
         all_request_types = await list_tenant_request_types(tenant.id)
@@ -505,7 +507,9 @@ async def api_list_change_types(request_type_id: Optional[str] = None):
     base_url = "v4/self-service/request-types"
     change_type_url = f"{base_url}/{request_type_id}/change-types/"
 
-    generic_api_get_request(change_type_url)
+    generic_api_get_request(
+        change_type_url, iambic_templates_specified=iambic_templates_specified
+    )
 
 
 async def api_get_change_type(
