@@ -54,7 +54,7 @@ assert DEV_IAMBIC_TEMPLATES_INSTALLATION_ID
 
 
 GITHUB_APP_NOQ_DEV_WEBHOOK_SNS_ARN = (
-    "arn:aws:sns:us-west-2:759357822767:github-app-noq-webhook"
+    "arn:aws:sns:us-west-2:350876197038:github-app-noq-webhook"
 )
 
 
