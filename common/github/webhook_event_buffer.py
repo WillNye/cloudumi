@@ -214,15 +214,6 @@ async def handle_github_webhook_event_queue(
         for message in iterate_event_messages(queue_region, queue_name, messages):
             num_events += 1
             try:
-                message_id = message.get("message_id")
-                receipt_handle = message.get("receipt_handle")
-                processed_messages.append(
-                    {
-                        "Id": message_id,
-                        "ReceiptHandle": receipt_handle,
-                    }
-                )
-
                 # BEGIN Actual work done, the
                 webhook_request = message["body"]
                 await webhook_request_handler(webhook_request)
@@ -233,6 +224,15 @@ async def handle_github_webhook_event_queue(
                 # How it works is typically after 4 (or N) attempt to consume
                 # it will automatically move to the associated DLQ
                 log.error({**log_data, "error": e}, exc_info=True)
+            finally:
+                message_id = message.get("message_id")
+                receipt_handle = message.get("receipt_handle")
+                processed_messages.append(
+                    {
+                        "Id": message_id,
+                        "ReceiptHandle": receipt_handle,
+                    }
+                )
         if processed_messages:
             await aio_wrapper(
                 sqs_client.delete_message_batch,
