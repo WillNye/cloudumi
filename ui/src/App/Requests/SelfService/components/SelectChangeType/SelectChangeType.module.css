@@ -52,4 +52,40 @@
   .relative {
     width: 100%;
   }
+
+  .cardContainer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; /* centers the cards horizontally */
+  }
+
+  .selectedCard {
+    background-color: var(--color-highlight);
+  }
+
+  .card {
+    width: 220px;
+    margin: var(--spacing-sm);
+  }
+
+  .cardContent {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: var(--spacing-sm);
+
+    img {
+      height: 32px;
+      width: 32px;
+    }
+    p {
+      font-size: var(--font-size-sm);
+    }
+  }
+
+  /* Update the class name as per actual class name in the component */
+  .tabLabel {
+    font-weight: normal;
+  }
 }

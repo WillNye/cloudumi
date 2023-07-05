@@ -1,4 +1,4 @@
-import { useState, useContext, useCallback } from 'react';
+import { useEffect, useState, useContext, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Segment } from 'shared/layout/Segment';
 import { Card } from 'shared/layout/Card';
@@ -68,6 +68,15 @@ const SelectIdentity = () => {
     defaultValue: '',
     defaultValues: []
   });
+
+  const [activeTab, setActiveTab] = useState(
+    TEST_IDENTITIES.length > 0 ? 'suggested' : 'custom'
+  );
+
+  useEffect(() => {
+    setActiveTab(TEST_IDENTITIES.length > 0 ? 'suggested' : 'custom');
+  }, [TEST_IDENTITIES]);
+
   const [typeaheadEndpoint, setTypeaheadEndpoint] = useState('');
   const { selfServiceRequest } = useContext(SelfServiceContext).store;
   const {
@@ -85,7 +94,9 @@ const SelectIdentity = () => {
     if (selectedCard === identity.resource_id) {
       setSelectedIdentity(null);
       setSelectedCard(null);
+      setSelectedIdentityType(null);
     } else {
+      setSelectedIdentityType(identity.template_type);
       setSelectedIdentity(identity);
       setSelectedCard(identity.resource_id);
     }
@@ -99,6 +110,7 @@ const SelectIdentity = () => {
   }, []);
 
   const handleTypeaheadSelect = identity => {
+    console.log(identity);
     setSelectedIdentity(identity);
   };
 
@@ -107,6 +119,10 @@ const SelectIdentity = () => {
       <div className={styles.container}>
         <h3>Select a Cloud Identity</h3>
         <Tabs
+          activeTabId={activeTab}
+          onChange={e => {
+            setActiveTab(e.detail.activeTabId);
+          }}
           className={styles.tabLabel}
           tabs={[
             {
