@@ -9,9 +9,11 @@ export const parseSAMLFormData = settings => {
         groups: settings.attributes.groups,
         email: settings.attributes.email
       },
-      idp_metadata_url: settings.idp_metadata_url ?? null,
+      idp_metadata_url: settings.use_metadata_url
+        ? settings.idp_metadata_url
+        : null,
       // if idp_metadata_url is not set, use idp object
-      ...(!settings.idp_metadata_url
+      ...(!settings.use_metadata_url
         ? {
             idp: {
               entityId: settings.idp.entityId,
@@ -34,14 +36,14 @@ export const parseSAMLFormData = settings => {
           entityId: settings.sp.entityId
         }),
         // if assertionConsumerService is not set, then set it to null
-        ...(settings.sp.assertionConsumerService
+        ...(settings?.sp?.assertionConsumerService?.url
           ? {
               assertionConsumerService: {
                 binding: settings.sp.assertionConsumerService.binding,
                 url: settings.sp.assertionConsumerService.url
               }
             }
-          : { sp: null })
+          : null)
       }
     }
   };

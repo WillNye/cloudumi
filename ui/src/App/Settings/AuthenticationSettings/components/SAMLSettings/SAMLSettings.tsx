@@ -2,7 +2,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { Input } from 'shared/form/Input';
 import { Block } from 'shared/layout/Block';
 import { LineBreak } from 'shared/elements/LineBreak';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Select, SelectOption } from 'shared/form/Select';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { BINDINGS, DEFAULT_SAML_SETTINGS, samlSchema } from './constants';
@@ -18,12 +18,14 @@ import { parseSAMLFormData } from './utils';
 import { Segment } from 'shared/layout/Segment';
 import { toast } from 'react-toastify';
 import merge from 'lodash/merge';
+import Toggle from '@noqdev/cloudscape/toggle';
 
 const SAMLSettings = ({ isFetching }) => {
   const [formValues, setFormValues] = useState({
     ...AUTH_DEFAULT_VALUES,
     ...DEFAULT_SAML_SETTINGS
   });
+  // const [useMetadataUrl, setUseMetadataUrl] = useState(true);
 
   const queryClient = useQueryClient();
 
@@ -39,6 +41,8 @@ const SAMLSettings = ({ isFetching }) => {
     values: formValues,
     resolver: yupResolver(samlSchema)
   });
+
+  const useMetadataUrl = watch('use_metadata_url');
 
   const { data: samlSettings, isLoading: isLoadingQuery } = useQuery({
     queryKey: ['samlSettings'],
@@ -64,10 +68,14 @@ const SAMLSettings = ({ isFetching }) => {
 
   useEffect(() => {
     if (samlSettings?.get_user_by_saml_settings) {
+      const use_metadata_url =
+        samlSettings?.get_user_by_saml_settings?.idp_metadata_url ?? false;
+
       const data = merge(
         { ...DEFAULT_SAML_SETTINGS },
         {
-          ...samlSettings.get_user_by_saml_settings
+          ...samlSettings.get_user_by_saml_settings,
+          use_metadata_url
         }
       );
 
@@ -86,6 +94,13 @@ const SAMLSettings = ({ isFetching }) => {
     () => isSubmitting || isLoadingQuery || isFetching,
     [isSubmitting, isLoadingQuery, isFetching]
   );
+
+  const handleToggleChange = useCallback(checked => {
+    setValue('use_metadata_url', checked);
+    if (!checked) {
+      setValue('idp_metadata_url', '');
+    }
+  }, []);
 
   return (
     <Segment isLoading={isLoading}>
@@ -113,25 +128,43 @@ const SAMLSettings = ({ isFetching }) => {
           />
         </Block>
         <LineBreak />
-
-        <Block disableLabelPadding label="idp_metadata_url" required>
-          <Input
-            {...register('idp_metadata_url')}
-            error={errors?.idp_metadata_url?.message}
-          />
-        </Block>
+        <Toggle
+          checked={useMetadataUrl}
+          {...register('use_metadata_url')}
+          onChange={({ detail }) => {
+            handleToggleChange(detail.checked);
+          }}
+          name={'use_metadata_url'}
+        >
+          {' '}
+          Use Identity Provider Metadata URL{' '}
+        </Toggle>
         <LineBreak />
-        {!watch('idp_metadata_url') && (
+
+        {useMetadataUrl && (
+          <>
+            <Block disableLabelPadding label="IDP Metadata URL" required>
+              <Input
+                {...register('idp_metadata_url')}
+                error={errors?.idp_metadata_url?.message}
+              />
+            </Block>
+            <LineBreak />
+          </>
+        )}
+
+        {!useMetadataUrl && (
           <>
             <Block disableLabelPadding label="IDP Entity ID" required>
               <Input
                 {...register('idp.entityId')}
+                name={'idp.entityId'}
                 error={errors?.idp?.entityId?.message}
               />
             </Block>
             <LineBreak />
 
-            <Block
+            {/* <Block
               label="Single Sign On Service Binding"
               disableLabelPadding
               required
@@ -159,7 +192,7 @@ const SAMLSettings = ({ isFetching }) => {
                 )}
               />
             </Block>
-            <LineBreak />
+            <LineBreak /> */}
 
             <Block
               disableLabelPadding
@@ -168,11 +201,12 @@ const SAMLSettings = ({ isFetching }) => {
             >
               <Input
                 {...register('idp.singleSignOnService.url')}
-                error={errors?.idp?.singleSignOnService.url?.message}
+                error={errors?.idp?.singleSignOnService?.url?.message}
               />
             </Block>
             <LineBreak />
-            <Block
+
+            {/* <Block
               label="Single Logout Service Binding"
               disableLabelPadding
               required
@@ -200,7 +234,7 @@ const SAMLSettings = ({ isFetching }) => {
                 )}
               />
             </Block>
-            <LineBreak />
+            <LineBreak /> */}
 
             <Block
               disableLabelPadding
@@ -209,7 +243,7 @@ const SAMLSettings = ({ isFetching }) => {
             >
               <Input
                 {...register('idp.singleLogoutService.url')}
-                error={errors?.idp?.singleLogoutService.url?.message}
+                error={errors?.idp?.singleLogoutService?.url?.message}
               />
             </Block>
             <LineBreak />
@@ -221,26 +255,26 @@ const SAMLSettings = ({ isFetching }) => {
               />
             </Block>
             <LineBreak />
+
+            <Block disableLabelPadding label="SP Entity ID">
+              <Input
+                {...register('sp.entityId')}
+                error={errors?.sp?.entityId && errors?.sp?.entityId?.message}
+              />
+            </Block>
+            <LineBreak />
+
+            {/* <Block disableLabelPadding label="Assertion Consumer Service URL">
+              <Input
+                {...register('sp.assertionConsumerService.url')}
+                error={errors?.sp?.assertionConsumerService?.url?.message}
+              />
+            </Block>
+            <LineBreak /> */}
           </>
         )}
 
-        <Block disableLabelPadding label="SP Entity ID">
-          <Input
-            {...register('sp.entityId')}
-            error={errors?.sp?.entityId && errors?.sp?.entityId?.message}
-          />
-        </Block>
-        <LineBreak />
-
-        <Block disableLabelPadding label="Assertion Consumer Service URL">
-          <Input
-            {...register('sp.assertionConsumerService.url')}
-            error={errors?.idp?.singleLogoutService?.url?.message}
-          />
-        </Block>
-        <LineBreak />
-
-        <Block label="Assertion Consumer Service Binding" disableLabelPadding>
+        {/* <Block label="Assertion Consumer Service Binding" disableLabelPadding>
           <Controller
             name="sp.assertionConsumerService.binding"
             control={control}
@@ -264,7 +298,8 @@ const SAMLSettings = ({ isFetching }) => {
             )}
           />
         </Block>
-        <LineBreak />
+        <LineBreak /> */}
+
         <Button type="submit" disabled={isSubmitting} fullWidth>
           Save
         </Button>

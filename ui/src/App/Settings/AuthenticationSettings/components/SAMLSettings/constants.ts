@@ -17,22 +17,23 @@ export const DEFAULT_SAML_SETTINGS = {
     groups: 'groups',
     email: 'email'
   },
+  use_metadata_url: true,
   idp_metadata_url: '',
   sp: {
     entityId: '',
     assertionConsumerService: {
-      binding: '',
+      binding: BINDINGS[0],
       url: ''
     }
   },
   idp: {
     entityId: '',
     singleSignOnService: {
-      binding: '',
+      binding: BINDINGS[0],
       url: ''
     },
     singleLogoutService: {
-      binding: '',
+      binding: BINDINGS[0],
       url: ''
     },
     x509cert: ''
@@ -40,7 +41,12 @@ export const DEFAULT_SAML_SETTINGS = {
 };
 
 export const samlSchema = Yup.object().shape({
-  idp_metadata_url: Yup.string().url().default('').label('IDP Metadata URL'),
+  use_metadata_url: Yup.boolean().default(true),
+  idp_metadata_url: Yup.string()
+    .url()
+    .default('')
+    .label('IDP Metadata URL')
+    .when('use_metadata_url', { is: true, then: sch => sch.required() }),
   jwt: Yup.object().shape({
     expiration_hours: Yup.number().default(1).label('Expiration Hours'),
     email_key: Yup.string().default('email').label('Email Key'),
@@ -51,8 +57,8 @@ export const samlSchema = Yup.object().shape({
     groups: Yup.string().default('groups').label('Attribute Groups'),
     email: Yup.string().default('email').label('Attribute Email')
   }),
-  idp: Yup.object().when('idp_metadata_url', {
-    is: (idp_metadata_url: string) => !idp_metadata_url,
+  idp: Yup.object().when('use_metadata_url', {
+    is: false,
     then: schema =>
       schema
         .shape({
