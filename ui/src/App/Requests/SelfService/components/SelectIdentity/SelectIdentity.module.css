@@ -66,4 +66,8 @@
   .tabLabel {
     font-weight: normal;
   }
+
+  .selectInput {
+    width: 100% !important;
+  }
 }

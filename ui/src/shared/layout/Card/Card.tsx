@@ -10,6 +10,7 @@ export interface CardProps extends React.DOMAttributes<any> {
   style?: React.CSSProperties;
   header?: string | JSX.Element | JSX.Element[];
   variant?: 'outlined';
+  clickable?: boolean;
   color?: 'default' | 'primary' | 'secondary' | 'danger' | 'warning';
 }
 
@@ -23,6 +24,7 @@ export const Card: FC<CardProps & { ref?: Ref<HTMLDivElement> }> = forwardRef(
       headerClassName,
       contentClassName,
       variant,
+      clickable = false,
       color = 'default',
       ...rest
     }: CardProps,
@@ -39,7 +41,8 @@ export const Card: FC<CardProps & { ref?: Ref<HTMLDivElement> }> = forwardRef(
           [css.danger]: color === 'danger',
           [css.secondary]: color === 'secondary',
           [css.primary]: color === 'primary',
-          [css.warning]: color === 'warning'
+          [css.warning]: color === 'warning',
+          [css.clickable]: clickable
         })}
       >
         {header && (

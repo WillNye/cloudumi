@@ -8,6 +8,7 @@ import SelfServiceContext from '../../SelfServiceContext';
 import styles from './SelectIdentity.module.css';
 import { getRequestTemplateTypes } from 'core/API/iambicRequest';
 import { TypeaheadBlock } from 'shared/form/TypeaheadBlock';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 const SUGGESTED_IDENTITIES = 10;
 
@@ -133,15 +134,16 @@ const SelectIdentity = () => {
                   {TEST_IDENTITIES?.map(identity => (
                     <Card
                       variant="outlined"
-                      color="secondary"
-                      className={`${styles.card} ${
+                      color={
                         selectedCard === identity.resource_id
-                          ? styles.selectedCard
-                          : ''
-                      }`}
+                          ? 'primary'
+                          : 'secondary'
+                      }
+                      className={styles.card}
                       contentClassName={styles.cardContent}
                       key={identity.id}
                       onClick={() => handleCardClick(identity)}
+                      clickable
                     >
                       <h4>{identity.resource_id}</h4>
                       <p>{identity.resource_type}</p>
@@ -154,22 +156,25 @@ const SelectIdentity = () => {
               label: 'Custom',
               id: 'custom',
               content: (
-                <div className={styles.content}>
+                <div>
                   {identityTypes?.data && (
-                    <Select
-                      value={selfServiceRequest.identityType || ''}
-                      onChange={handleIdentityTypeSelect}
-                      placeholder="Select identity type"
-                    >
-                      {identityTypes?.data.map(identityType => (
-                        <SelectOption
-                          key={identityType.id}
-                          value={identityType.id}
-                        >
-                          {identityType.name}
-                        </SelectOption>
-                      ))}
-                    </Select>
+                    <>
+                      <Select
+                        value={selfServiceRequest.identityType || ''}
+                        onChange={handleIdentityTypeSelect}
+                        placeholder="Select identity type"
+                      >
+                        {identityTypes?.data.map(identityType => (
+                          <SelectOption
+                            key={identityType.id}
+                            value={identityType.id}
+                          >
+                            {identityType.name}
+                          </SelectOption>
+                        ))}
+                      </Select>
+                      <LineBreak />
+                    </>
                   )}
                   {selfServiceRequest.identityType && (
                     <TypeaheadBlock

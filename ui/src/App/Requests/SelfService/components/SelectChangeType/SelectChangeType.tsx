@@ -278,6 +278,7 @@ const SelectChangeType = () => {
                       className={`${styles.card}`}
                       contentClassName={styles.cardContent}
                       key={changeType.header}
+                      clickable
                     >
                       <h4>{changeType.header}</h4>
                       <p>{changeType.subtext}</p>
