@@ -52,7 +52,6 @@ const SelfService = () => {
   };
 
   const setSelectedIdentity = (identity: Identity) => {
-    console.log(identity);
     setSelfServiceRequest(prev => {
       const newRequest = { ...prev, identity };
       return newRequest;
@@ -96,7 +95,8 @@ const SelfService = () => {
   const canClickNext = useMemo(
     () =>
       currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE ||
-      currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY,
+      currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY ||
+      currentStep === SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES,
     [currentStep]
   );
 
@@ -122,7 +122,9 @@ const SelfService = () => {
     if (currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE) {
       setCurrentStep(SELF_SERVICE_STEPS.COMPLETION_FORM);
     } else if (currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY) {
-      setCurrentStep(SELF_SERVICE_STEPS.REQUEST_TYPE);
+      setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
+    } else if (currentStep === SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES) {
+      setCurrentStep(SELF_SERVICE_STEPS.SELECT_IDENTITY);
     }
   }, [currentStep]);
 
@@ -202,6 +204,21 @@ const SelfService = () => {
                   Back
                 </Button>
               )}
+              {canClickNext &&
+                currentStep === SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES && (
+                  <Button
+                    size="small"
+                    disabled={
+                      !(
+                        selfServiceRequest.requestedChanges.length &&
+                        selfServiceRequest.justification
+                      )
+                    }
+                    onClick={handleNext}
+                  >
+                    Next
+                  </Button>
+                )}
               {canClickNext && currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE && (
                 <Button
                   size="small"

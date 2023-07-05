@@ -21,11 +21,7 @@ const SelectRequestType = () => {
 
   const { data: requestTypes, isLoading } = useQuery({
     queryFn: getRequestType,
-    queryKey: [
-      'getRequestType',
-      selfServiceRequest.provider,
-      selfServiceRequest.identityType
-    ],
+    queryKey: ['getRequestType', selfServiceRequest.provider],
     onError: (error: AxiosError) => {
       // const errorRes = error?.response;
       // const errorMsg = extractErrorMessage(errorRes?.data);

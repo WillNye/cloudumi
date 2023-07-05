@@ -1,0 +1,92 @@
+.container {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: var(--spacing-md);
+  height: 100%;
+
+  .subText {
+    color: var(--gray-200);
+    font-size: var(--font-size-sm);
+  }
+
+  .text {
+    color: var(--gray-200);
+    font-size: var(--font-size-md);
+    padding-top: var(--spacing-sm);
+    padding-bottom: var(--spacing-md);
+  }
+
+  .section {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+  }
+
+  .content {
+    max-width: 720px;
+    margin: auto;
+  }
+
+  .radioGroup {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .radioInput {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-sm) var(--spacing-lg);
+  }
+
+  .absolute {
+    width: 100%;
+  }
+
+  .relative {
+    width: 100%;
+  }
+
+  .cardContainer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; /* centers the cards horizontally */
+  }
+
+  .selectedCard {
+    background-color: var(--color-highlight);
+  }
+
+  .card {
+    width: 220px;
+    margin: var(--spacing-sm);
+  }
+
+  .cardContent {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: var(--spacing-sm);
+
+    img {
+      height: 32px;
+      width: 32px;
+    }
+    p {
+      font-size: var(--font-size-sm);
+    }
+  }
+
+  /* Update the class name as per actual class name in the component */
+  .tabLabel {
+    font-weight: normal;
+  }
+}
