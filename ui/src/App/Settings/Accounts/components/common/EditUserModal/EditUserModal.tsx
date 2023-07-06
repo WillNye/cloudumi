@@ -23,6 +23,7 @@ import { Divider } from 'shared/elements/Divider';
 import { useMutation } from '@tanstack/react-query';
 import styles from './EditUserModal.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
+import classNames from 'classnames';
 
 type UpdateUserParams = {
   data: { id: string; email?: string; username?: string };
@@ -32,10 +33,11 @@ type UpdateUserParams = {
 type CreateUserGroupsParams = {
   users: string[];
   groups: string[];
+  check_deleted?: boolean;
 };
 
 type EditUserModalProps = {
-  canEdit: boolean;
+  canEdit?: boolean;
   user: User;
 };
 
@@ -44,6 +46,7 @@ const updatingUserSchema = Yup.object().shape({
   username: Yup.string().required('Required')
 });
 
+// eslint-disable-next-line complexity
 const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
   const [showDialog, setShowDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -61,7 +64,8 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
   });
 
   const { mutateAsync: createUserGroupsMutation } = useMutation({
-    mutationFn: (data: CreateUserGroupsParams) => createGroupMemberships(data)
+    mutationFn: (data: CreateUserGroupsParams) =>
+      createGroupMemberships({ ...data, check_deleted: true })
   });
 
   const { mutateAsync: searchMutation } = useMutation({
@@ -92,6 +96,8 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
       username: user.username
     }
   });
+
+  const NOT_MANUAL = user.managed_by != 'MANUAL';
 
   const resultRenderer = result => <p>{result.name}</p>;
   const onSelectResult = group => {
@@ -198,7 +204,11 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
     setIsUpdatingGroups(false);
   }, [user.email, userGroups, reseActions, createUserGroupsMutation]);
 
-  if (!canEdit) {
+  const handleDeleteChip = index => {
+    setUserGroups([...new Set([...userGroups.filter((ug, i) => i != index)])]);
+  };
+
+  if (!(canEdit ?? true)) {
     return <Fragment />;
   }
 
@@ -240,7 +250,9 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
               placeholder="username"
               autoCapitalize="none"
               autoCorrect="off"
-              {...register('username')}
+              {...register('username', {
+                disabled: user?.managed_by != 'MANUAL'
+              })}
             />
             {errors?.username && touchedFields.username && (
               <p>{errors.username.message}</p>
@@ -252,7 +264,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
               placeholder="email"
               autoCapitalize="none"
               autoCorrect="off"
-              {...register('email')}
+              {...register('email', { disabled: user?.managed_by != 'MANUAL' })}
             />
             {errors?.email && touchedFields.email && (
               <p>{errors.email.message}</p>
@@ -261,7 +273,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
             <Button
               size="small"
               type="submit"
-              disabled={isSubmitting || !isValid || isLoading}
+              disabled={isSubmitting || !isValid || isLoading || NOT_MANUAL}
               fullWidth
             >
               {isSubmitting ? 'Updating User...' : 'Update User'}
@@ -269,16 +281,20 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
           </form>
           <LineBreak />
           <div className={styles.userGroups}>
-            <Block disableLabelPadding label="Add Groups" required></Block>
-            <Search
-              fullWidth
-              resultRenderer={resultRenderer}
-              results={searchResults}
-              onChange={handleSearch}
-              value={searchValue}
-              onResultSelect={onSelectResult}
-              isLoading={isSearching}
-            />
+            {!NOT_MANUAL && (
+              <>
+                <Block disableLabelPadding label="Add Groups" required></Block>
+                <Search
+                  fullWidth
+                  resultRenderer={resultRenderer}
+                  results={searchResults}
+                  onChange={handleSearch}
+                  value={searchValue}
+                  onResultSelect={onSelectResult}
+                  isLoading={isSearching}
+                />
+              </>
+            )}
             <div className={styles.groups}>
               <h5>User Groups</h5>
               <Divider />
@@ -287,6 +303,16 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
                   {userGroups.map((group, index) => (
                     <Chip className={styles.group} key={index}>
                       {group}
+                      {!NOT_MANUAL && (
+                        <>
+                          {' '}
+                          <Icon
+                            name="close"
+                            size="small"
+                            onClick={() => handleDeleteChip(index)}
+                          />
+                        </>
+                      )}
                     </Chip>
                   ))}
                 </div>
@@ -295,7 +321,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
               )}
             </div>
             <Button
-              disabled={isUpdatingGroups}
+              disabled={isUpdatingGroups || NOT_MANUAL}
               size="small"
               fullWidth
               onClick={updateGroupMemberships}
@@ -304,7 +330,11 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
             </Button>
           </div>
           <LineBreak />
-          <div className={styles.actions}>
+          <div
+            className={classNames(styles.actions, {
+              [styles.hidden]: NOT_MANUAL
+            })}
+          >
             <Button
               color="secondary"
               variant="outline"

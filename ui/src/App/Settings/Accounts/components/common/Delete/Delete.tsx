@@ -12,7 +12,7 @@ import { useMutation } from '@tanstack/react-query';
 import { LineBreak } from 'shared/elements/LineBreak';
 
 interface DeleteProps {
-  canEdit: boolean;
+  canEdit?: boolean;
   dataType: DELETE_DATA_TYPE;
   dataId: string;
   title: string;
@@ -76,7 +76,7 @@ const Delete: FC<DeleteProps> = ({
     deleteUserMutation
   ]);
 
-  if (!canEdit) {
+  if (!(canEdit ?? true)) {
     return <Fragment />;
   }
 

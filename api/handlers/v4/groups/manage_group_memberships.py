@@ -13,9 +13,63 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
     async def post(self):
         # Get the username and password from the request body
         data = tornado.escape.json_decode(self.request.body)
+        check_deleted = data.get("check_deleted", False)
         group_names = data.get("groups")
         user_names = data.get("users")
         messages = []
+
+        if check_deleted:
+            # if check_deleted is true, delete any memberships
+            # that exist for the user and group and are not in the list of groups to add
+            for user_name in user_names:
+                user = await User.get_by_username(self.ctx.db_tenant, user_name)
+                if not user:
+                    continue
+                memberships = await GroupMembership.get_by_user(user)
+                for membership in memberships:
+                    group = await Group.get_by_id(
+                        self.ctx.db_tenant, membership.group_id
+                    )
+                    if not group:
+                        continue
+                    # if group is not in the list, delete the membership
+                    if group.name not in group_names:
+                        deleted = await membership.delete()
+                        if not deleted:
+                            messages.append(
+                                {
+                                    "message": "Unable to remove Membership.",
+                                    "user_name": user_name,
+                                    "group_name": group.name,
+                                }
+                            )
+            for group_name in group_names:
+                group = await Group.get_by_name(self.ctx.db_tenant, group_name)
+                if not group:
+                    messages.append(
+                        {
+                            "message": "Invalid group",
+                            "group_name": group_name,
+                        }
+                    )
+                    continue
+                memberships = await GroupMembership.get_by_group(group)
+                for membership in memberships:
+                    user = await User.get_by_id(self.ctx.db_tenant, membership.user_id)
+                    if not user:
+                        continue
+                    # if user is not in the list delete the membership
+                    if user.username not in group_names:
+                        deleted = await membership.delete()
+                        if not deleted:
+                            messages.append(
+                                {
+                                    "message": "Unable to remove Membership.",
+                                    "user_name": user.username,
+                                    "group_name": group.name,
+                                }
+                            )
+
         for group_name in group_names:
             group = await Group.get_by_name(self.ctx.db_tenant, group_name)
             if not group:

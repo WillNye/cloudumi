@@ -33,12 +33,24 @@ class GroupMembership(SoftDeleteMixin, Base):
                 return membership.scalars().first()
 
     @classmethod
-    async def get_by_user(cls, user):
+    async def get_by_user(cls, user) -> list["GroupMembership"]:
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 stmt = select(GroupMembership).where(
                     and_(
                         GroupMembership.user_id == user.id,
+                    )
+                )
+                membership = await session.execute(stmt)
+                return membership.scalars().all()
+
+    @classmethod
+    async def get_by_group(cls, group) -> list["GroupMembership"]:
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = select(GroupMembership).where(
+                    and_(
+                        GroupMembership.group_id == group.id,
                     )
                 )
                 membership = await session.execute(stmt)
