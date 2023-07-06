@@ -6,12 +6,23 @@ import time
 import traceback
 from secrets import token_urlsafe
 
+import boto3
 from asgiref.sync import async_to_sync
 
+from common.config import config
 from common.config.config import dict_merge
+from common.config.globals import GITHUB_APP_ID
+from common.github.models import GitHubInstall
+from common.github.webhook_event_buffer import (
+    allow_sns_to_write_to_sqs,
+    get_developer_queue_arn,
+    get_developer_queue_name,
+)
+from common.iambic.tasks import run_all_iambic_tasks_for_tenant
 from common.lib.aws.aws_secret_manager import get_aws_secret
 from common.lib.yaml import yaml
 from common.scripts.data_migrations import run_data_migrations
+from common.tenants.models import Tenant
 
 os.environ.setdefault(
     "CONFIG_LOCATION", "configs/development_account/saas_development.yaml"
@@ -27,6 +38,22 @@ from common.lib.dynamo import RestrictedDynamoHandler  # noqa: F401, E402
 # We fetch these secrets and merge them into Tenant configuration
 tenant_secrets_arn = "arn:aws:secretsmanager:us-west-2:759357822767:secret:dev/tenant_secrets_configuration-HcMJCi"
 tenant_secrets = yaml.load(get_aws_secret(tenant_secrets_arn))
+
+
+GITHUB_APP_ID_FOR_DEFAULT_LOCAL_DEV = config.get(
+    "_global_.integrations.github.local_dev.app_id"
+)
+assert GITHUB_APP_ID_FOR_DEFAULT_LOCAL_DEV
+DEV_IAMBIC_TEMPLATES_INSTALLATION_ID = config.get(
+    "_global_.integrations.github.local_dev.installation_id"
+)
+assert DEV_IAMBIC_TEMPLATES_INSTALLATION_ID
+
+
+GITHUB_APP_NOQ_DEV_WEBHOOK_SNS_ARN = (
+    "arn:aws:sns:us-west-2:350876197038:github-app-noq-webhook"
+)
+
 
 loop = asyncio.get_event_loop()
 
@@ -636,5 +663,56 @@ if __name__ == "__main__":
 
     if p.exitcode != 0:
         sys.exit(1)
+
+    # ideompotent bootstrap per developer queue name
+    region = config.get("_global_.integrations.aws.region", "us-west-2")
+    account_id = config.get("_global_.integrations.aws.account_id")
+    cluster_id = config.get("_global_.deployment.cluster_id")
+    sqs_client = boto3.client("sqs", region_name=region)
+    developer_queue_name = get_developer_queue_name()
+    queue_arn = get_developer_queue_arn()
+    try:
+        _ = sqs_client.get_queue_url(
+            QueueName=developer_queue_name,
+        )
+    except sqs_client.exceptions.QueueDoesNotExist:
+        _ = sqs_client.create_queue(
+            QueueName=developer_queue_name,
+        )
+    policy_json = allow_sns_to_write_to_sqs(
+        GITHUB_APP_NOQ_DEV_WEBHOOK_SNS_ARN, queue_arn
+    )
+
+    response = sqs_client.get_queue_url(
+        QueueName=developer_queue_name,
+    )
+    response = sqs_client.set_queue_attributes(
+        QueueUrl=response["QueueUrl"], Attributes={"Policy": policy_json}
+    )
+    assert response
+    # use a different block to ensure subscription to sns topic
+    # SNS side seems to make sure it's idemopotent
+    sns_client = boto3.client("sns", region_name=region)
+    response = sns_client.subscribe(
+        TopicArn=GITHUB_APP_NOQ_DEV_WEBHOOK_SNS_ARN,
+        Protocol="sqs",
+        Endpoint=queue_arn,
+        ReturnSubscriptionArn=True,
+    )
+    assert response
+
+    # bootstrap github app tenant association
+    # If local dev overrides the GitHub ID,
+    # they need to install their specific GitHub
+    # to noqdev organization.
+    if GITHUB_APP_ID == GITHUB_APP_ID_FOR_DEFAULT_LOCAL_DEV:
+        local_tenants = ["localhost", "cloudumisamldev_com", "cloudumidev_com"]
+        for local_tenant in local_tenants:
+            db_tenant: Tenant = async_to_sync(Tenant.get_by_attr)("name", local_tenant)
+            async_to_sync(GitHubInstall.create)(
+                tenant=db_tenant, installation_id=DEV_IAMBIC_TEMPLATES_INSTALLATION_ID
+            )
+            asyncio.run(run_all_iambic_tasks_for_tenant(local_tenant))
+
     # Force a re-cache of cloud resources with updated configuration
     import common.scripts.initialize_redis  # noqa: F401,E402

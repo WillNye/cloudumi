@@ -41,7 +41,7 @@ Each target has a name that uniquely identifies a build target. The path disambi
 - Use the most advanced and doubtlessly the most superior IDE available to you: VSCODE. We have created deployment profiles, which are contained in the git repo. You may access them here by clicking the icon on the left pane with the play button and the bug on it and then the drop down towards the top of your IDE.
 - All dependencies are stored in `requirements.lock` in the root of the mono repo
 - These dependencies are used by bazel in establishing an hermetic build system - all requirements are cached in a central repository.
-- We use `pip-compile --allow-unsafe --strip-extras --output-file requirements.lock $( find . -type f \( -name "requirements.in" -o -name "requirements-test.in" \))` to generate the set of dependencies by parsing all `requirements.in` and `requirements-test.in` files contained in all the sub-projects of the mono repo.
+- We use `pip-compile --resolver=backtracking --allow-unsafe --strip-extras --output-file requirements.lock $( find . -type f \( -name "requirements.in" -o -name "requirements-test.in" \))` to generate the set of dependencies by parsing all `requirements.in` and `requirements-test.in` files contained in all the sub-projects of the mono repo.
 - Because `pip-compile` optimistically caches all depdendencies, re-running the command will not update all python dependencies, but just look for newly added or freshly removed dependencies
 - To upgrade all dependencies, remove the `requirements.lock` file and re-run the `pip-compile --allow-unsafe --strip-extras --output-file requirements.lock $( find . -type f \( -name "requirements.in" -o -name "requirements-test.in" \))` command
 

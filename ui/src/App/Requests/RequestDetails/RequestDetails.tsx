@@ -63,7 +63,9 @@ const RequestChangeDetails = () => {
   const handleReject = async () => {
     setIsSubmitting(true);
     try {
-      await axios.post(`/api/v4/self-service/requests/${requestId}/reject`);
+      await axios.patch(`/api/v4/self-service/requests/${requestId}`, {
+        status: 'rejected'
+      });
       refetchData();
     } catch (error) {
       console.error(error);
