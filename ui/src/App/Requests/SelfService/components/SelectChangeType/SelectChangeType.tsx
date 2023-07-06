@@ -32,9 +32,7 @@ import { EXPIRATION_TYPE, SELF_SERVICE_STEPS } from '../../constants';
 const SelectChangeType = () => {
   const [selectedChangeType, setSelectedChangeType] =
     useState<ChangeType | null>(null);
-  const {
-    actions: { setCurrentStep }
-  } = useContext(SelfServiceContext);
+
   const {
     store: {
       selfServiceRequest,

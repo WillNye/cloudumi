@@ -16,9 +16,11 @@ export interface ISelfServiceContext {
     setDateValue: Dispatch<string>;
     setTimeValue: Dispatch<string>;
     addChange: (change: ChangeTypeDetails) => void;
+    resetChanges: Dispatch<void>;
     removeChange: (index: number) => void;
     setSelfServiceRequest: Dispatch<IRequest>;
     setExpirationDate: Dispatch<string | null>;
+    handleNext: Dispatch<void>;
   };
   store: {
     currentStep: SELF_SERVICE_STEPS;

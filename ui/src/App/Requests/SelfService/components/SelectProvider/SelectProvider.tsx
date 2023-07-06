@@ -14,7 +14,7 @@ import { providerDetails } from './constants';
 
 const SelectProvider = () => {
   const {
-    actions: { setCurrentStep, setSelectedProvider }
+    actions: { setCurrentStep, setSelectedProvider, handleNext }
   } = useContext(SelfServiceContext);
 
   const { data: responseData, isLoading } = useQuery({
@@ -54,7 +54,7 @@ const SelectProvider = () => {
               description={provider.description}
               onClick={() => {
                 setSelectedProvider(provider.provider);
-                setCurrentStep(SELF_SERVICE_STEPS.REQUEST_TYPE);
+                handleNext();
               }}
             />
           ))}

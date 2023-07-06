@@ -16,7 +16,7 @@ const SelectRequestType = () => {
   const { selfServiceRequest } = useContext(SelfServiceContext).store;
 
   const {
-    actions: { setCurrentStep, setSelectedRequestType }
+    actions: { setCurrentStep, setSelectedRequestType, handleNext }
   } = useContext(SelfServiceContext);
 
   const { data: requestTypes, isLoading } = useQuery({
@@ -45,8 +45,8 @@ const SelectRequestType = () => {
                 icon={getRequestTypeIcon(requestType.name)}
                 description={requestType.description}
                 onClick={() => {
-                  setCurrentStep(SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES);
                   setSelectedRequestType(requestType);
+                  handleNext();
                 }}
               />
             ))

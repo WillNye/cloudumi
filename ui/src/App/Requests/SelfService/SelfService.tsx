@@ -14,7 +14,11 @@ import { Divider } from 'shared/elements/Divider';
 import { DateTime } from 'luxon';
 import classNames from 'classnames';
 
+// eslint-disable-next-line complexity
 const SelfService = () => {
+  const [stepsStack, setStepsStack] = useState([
+    SELF_SERVICE_STEPS.SELECT_PROVIDER
+  ]);
   const [currentStep, setCurrentStep] = useState(
     SELF_SERVICE_STEPS.SELECT_PROVIDER
   );
@@ -73,6 +77,13 @@ const SelfService = () => {
     });
   };
 
+  const resetChanges = () => {
+    setSelfServiceRequest(prev => {
+      const newRequest = { ...prev, requestedChanges: [] };
+      return newRequest;
+    });
+  };
+
   const setExpirationDate = (date: string | null) => {
     setSelfServiceRequest(prev => ({ ...prev, expirationDate: date }));
   };
@@ -96,7 +107,8 @@ const SelfService = () => {
     () =>
       currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE ||
       currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY ||
-      currentStep === SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES,
+      currentStep === SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES ||
+      currentStep === SELF_SERVICE_STEPS.SELECT_SUGGESTED_IDENTITY,
     [currentStep]
   );
 
@@ -119,44 +131,62 @@ const SelfService = () => {
   );
 
   const handleNext = useCallback(() => {
-    if (currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE) {
-      setCurrentStep(SELF_SERVICE_STEPS.COMPLETION_FORM);
+    let nextStep = SELF_SERVICE_STEPS.SELECT_PROVIDER;
+    if (currentStep === SELF_SERVICE_STEPS.SELECT_PROVIDER) {
+      nextStep = SELF_SERVICE_STEPS.REQUEST_TYPE;
+    } else if (currentStep === SELF_SERVICE_STEPS.REQUEST_TYPE) {
+      nextStep = SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES;
+    } else if (currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE) {
+      nextStep = SELF_SERVICE_STEPS.COMPLETION_FORM;
     } else if (currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY) {
-      setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
+      nextStep = SELF_SERVICE_STEPS.CHANGE_TYPE;
     } else if (currentStep === SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES) {
-      setCurrentStep(SELF_SERVICE_STEPS.SELECT_IDENTITY);
+      nextStep = SELF_SERVICE_STEPS.SELECT_IDENTITY;
+    } else if (currentStep === SELF_SERVICE_STEPS.SELECT_SUGGESTED_IDENTITY) {
+      nextStep = SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES;
     }
+    setStepsStack(stack => [...stack, nextStep]);
+    setCurrentStep(nextStep);
   }, [currentStep]);
 
   const handleBack = useCallback(() => {
-    switch (currentStep) {
-      case SELF_SERVICE_STEPS.SELECT_IDENTITY:
-        setSelectedIdentityType('');
-        setSelectedIdentity(null);
-        setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
-        break;
-      case SELF_SERVICE_STEPS.REQUEST_TYPE:
-        setSelectedRequestType(null);
-        setCurrentStep(SELF_SERVICE_STEPS.SELECT_PROVIDER);
-        break;
-      case SELF_SERVICE_STEPS.CHANGE_TYPE:
-        setCurrentStep(SELF_SERVICE_STEPS.REQUEST_TYPE);
-        break;
-      case SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES:
-        setCurrentStep(SELF_SERVICE_STEPS.REQUEST_TYPE);
-        break;
-      case SELF_SERVICE_STEPS.COMPLETION_FORM:
-        // setSelectedChangeType(null);
-        setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
-        break;
-      // case SELF_SERVICE_STEPS.COMPLETION_FORM:
-      //   setSelectedChangeType(null);
-      //   setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
-      //   break;
-      default:
-        break;
-    }
-  }, [currentStep]);
+    let newStack = [...stepsStack];
+    newStack.pop();
+    let lastStep = newStack[newStack.length - 1];
+    setStepsStack(newStack);
+    setCurrentStep(lastStep);
+
+    // switch (currentStep) {
+    //   case SELF_SERVICE_STEPS.SELECT_IDENTITY:
+    //     setSelectedIdentityType('');
+    //     setSelectedIdentity(null);
+    //     setCurrentStep(SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES);
+    //     break;
+    //   case SELF_SERVICE_STEPS.REQUEST_TYPE:
+    //     setSelectedRequestType(null);
+    //     setCurrentStep(SELF_SERVICE_STEPS.SELECT_PROVIDER);
+    //     break;
+    //   case SELF_SERVICE_STEPS.CHANGE_TYPE:
+    //     setCurrentStep(SELF_SERVICE_STEPS.REQUEST_TYPE);
+    //     break;
+    //   case SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES:
+    //     setCurrentStep(SELF_SERVICE_STEPS.REQUEST_TYPE);
+    //     break;
+    //   case SELF_SERVICE_STEPS.SELECT_SUGGESTED_IDENTITY:
+    //     setCurrentStep(SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES);
+    //     break;
+    //   case SELF_SERVICE_STEPS.COMPLETION_FORM:
+    //     // setSelectedChangeType(null);
+    //     setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
+    //     break;
+    //   // case SELF_SERVICE_STEPS.COMPLETION_FORM:
+    //   //   setSelectedChangeType(null);
+    //   //   setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
+    //   //   break;
+    //   default:
+    //     break;
+    // }
+  }, [stepsStack]);
 
   return (
     <SelfServiceContext.Provider
@@ -180,12 +210,14 @@ const SelfService = () => {
           setSelfServiceRequest,
           addChange,
           removeChange,
+          resetChanges,
           setExpirationType,
           setRelativeValue,
           setRelativeUnit,
           setDateValue,
           setTimeValue,
-          setExpirationDate
+          setExpirationDate,
+          handleNext
         }
       }}
     >
@@ -208,12 +240,18 @@ const SelfService = () => {
                 currentStep === SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES && (
                   <Button
                     size="small"
-                    disabled={
-                      !(
-                        selfServiceRequest.requestedChanges.length &&
-                        selfServiceRequest.justification
-                      )
-                    }
+                    disabled={!selfServiceRequest.requestedChanges.length}
+                    onClick={handleNext}
+                  >
+                    Next
+                  </Button>
+                )}
+              {canClickNext &&
+                currentStep ===
+                  SELF_SERVICE_STEPS.SELECT_SUGGESTED_IDENTITY && (
+                  <Button
+                    size="small"
+                    disabled={!selfServiceRequest.identity}
                     onClick={handleNext}
                   >
                     Next

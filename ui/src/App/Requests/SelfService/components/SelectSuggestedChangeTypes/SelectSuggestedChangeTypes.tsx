@@ -27,13 +27,13 @@ let SUGGESTED_CHANGES = [
     description: 'Lambda Permissions with EventBridge',
     request_type_id: 1
   },
-  {
-    id: 3,
-    name: 'App-Specific Lambda',
-    description:
-      'Create, update, and manage a Lambda function specific to the application.',
-    request_type_id: 1
-  },
+  // {
+  //   id: 3,
+  //   name: 'App-Specific Lambda',
+  //   description:
+  //     'Create, update, and manage a Lambda function specific to the application.',
+  //   request_type_id: 1
+  // },
   {
     id: 4,
     name: 'Create/Manage KMS-Encrypted S3 Bucket',
@@ -54,46 +54,46 @@ let SUGGESTED_CHANGES = [
     description:
       'Provides access to Cyberdyne Data, including S3 buckets and AWS Glue data catalog.',
     request_type_id: 1
-  },
-  {
-    id: 7,
-    name: 'Manage DynamoDB Tables',
-    description:
-      'Allows creating, updating, and deleting DynamoDB tables for the application.',
-    request_type_id: 1
-  },
-  {
-    id: 8,
-    name: 'Manage CloudFormation Stacks',
-    // eslint-disable-next-line max-len
-    description:
-      'Enables creating, updating, and deleting CloudFormation stacks for deploying application resources.',
-    request_type_id: 1
-  },
-  {
-    id: 9,
-    name: 'Manage Redshift Clusters',
-    description:
-      'Ability to create, modify, and delete Amazon Redshift clusters for data warehousing.',
-    request_type_id: 1
-  },
-  {
-    id: 10,
-    name: 'Manage EMR Clusters',
-    description:
-      'Enables starting, stopping, and terminating Amazon EMR clusters for big data processing.',
-    request_type_id: 1
   }
+  // {
+  //   id: 7,
+  //   name: 'Manage DynamoDB Tables',
+  //   description:
+  //     'Allows creating, updating, and deleting DynamoDB tables for the application.',
+  //   request_type_id: 1
+  // },
+  // {
+  //   id: 8,
+  //   name: 'Manage CloudFormation Stacks',
+  //   // eslint-disable-next-line max-len
+  //   description:
+  //     'Enables creating, updating, and deleting CloudFormation stacks for deploying application resources.',
+  //   request_type_id: 1
+  // },
+  // {
+  //   id: 9,
+  //   name: 'Manage Redshift Clusters',
+  //   description:
+  //     'Ability to create, modify, and delete Amazon Redshift clusters for data warehousing.',
+  //   request_type_id: 1
+  // },
+  // {
+  //   id: 10,
+  //   name: 'Manage EMR Clusters',
+  //   description:
+  //     'Enables starting, stopping, and terminating Amazon EMR clusters for big data processing.',
+  //   request_type_id: 1
+  // }
 ];
 
 const SelectSuggestedChangeTypes = () => {
   const [, setSelectedChangeType] = useState<ChangeType | null>(null);
   const {
-    actions: { setCurrentStep }
-  } = useContext(SelfServiceContext);
-  const {
+    actions: { setCurrentStep, addChange, resetChanges },
     store: { selfServiceRequest }
   } = useContext(SelfServiceContext);
+
+  const [selectedCard, setSelectedCard] = useState(null);
 
   const selectedRequestType = useMemo(
     () => selfServiceRequest.requestType,
@@ -119,6 +119,20 @@ const SelectSuggestedChangeTypes = () => {
     }
   });
 
+  const handleCardClick = changeType => {
+    if (selectedCard?.id === changeType?.id) {
+      setSelectedChangeType(null);
+      setSelectedCard(null);
+      resetChanges();
+    } else {
+      setSelectedChangeType;
+      setSelectedCard(changeType);
+      // TODO: We have a changeType that could be incomplete
+      // We need to call addChange but may need to ask the user for
+      // more info
+    }
+  };
+
   useEffect(() => {
     if (changeTypes) {
       console.log('HERE', changeTypes);
@@ -141,7 +155,7 @@ const SelectSuggestedChangeTypes = () => {
             href="#"
             onClick={e => {
               e.preventDefault();
-              setCurrentStep(SELF_SERVICE_STEPS.SELECT_IDENTITY);
+              setCurrentStep(SELF_SERVICE_STEPS.SELECT_SUGGESTED_IDENTITY);
             }}
           >
             click here
@@ -153,9 +167,12 @@ const SelectSuggestedChangeTypes = () => {
           {suggestedChangeTypes.map(changeType => (
             <Card
               variant="outlined"
-              color="secondary"
+              color={
+                selectedCard?.id === changeType?.id ? 'primary' : 'secondary'
+              }
               className={`${styles.card}`}
               key={changeType.id}
+              onClick={() => handleCardClick(changeType)}
               clickable
               header={changeType.name}
             >
