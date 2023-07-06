@@ -23,6 +23,11 @@ variable "registration_queue_arn" {
   type        = string
 }
 
+variable "github_app_noq_webhook_queue_arn" {
+  description = "The github_app_noq_webhook_queue_arn queue ARN for the GitHub App Noq workflow"
+  type        = string
+}
+
 variable "tenant_configuration_bucket_name" {
   description = "The tenant configuration bucket"
   type        = string

@@ -1,4 +1,5 @@
 from collections import defaultdict
+from distutils.util import strtobool
 import os
 import pathlib
 import time
@@ -8,6 +9,8 @@ import yaml
 from botocore.exceptions import ClientError
 
 current_path = pathlib.Path(__file__).parent.resolve()
+
+skip_preflight = strtobool(os.environ.get("SKIP_PREFLIGHT", "false"))
 
 service_task_definition_map = [
     {
@@ -35,7 +38,7 @@ service_task_definition_map = [
 ]
 
 preflight_task_definition_map = [
-{% if stage != "prod" %}
+{% if stage != "prod" and not skip_preflight %}
     {
         "task": "preflight_load_tests",
         "task_definition": f"{current_path}/task_definition_preflight_load_tests.yaml",

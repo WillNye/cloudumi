@@ -5,7 +5,7 @@ import { requestsColumns } from './constants';
 import { Button } from 'shared/elements/Button';
 import { Divider } from 'shared/elements/Divider';
 import { PropertyFilter, PropertyFilterProps } from '@noqdev/cloudscape';
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './RequestsList.module.css';
 import { Icon } from 'shared/elements/Icon';
 import { Menu } from 'shared/layers/Menu';
@@ -28,13 +28,13 @@ const RequestsList = () => {
   const [query, setQuery] = useState({
     pagination: {
       currentPageIndex: 1,
-      pageSize: 30
+      pageSize: 10
     },
     sorting: {
       sortingColumn: {
         id: 'id',
-        sortingField: 'account_name',
-        header: 'Account Name',
+        sortingField: 'repo_name',
+        header: 'Repo Name',
         minWidth: 180
       },
       sortingDescending: false
@@ -42,13 +42,24 @@ const RequestsList = () => {
     filtering: filter
   });
 
+  useEffect(() => {
+    setQuery(existingQuery => ({
+      ...existingQuery,
+      filtering: filter,
+      pagination: {
+        ...existingQuery.pagination,
+        currentPageIndex: 1
+      }
+    }));
+  }, [filter]);
+
   const { data: requests, isLoading } = useQuery({
     queryFn: getAllRequests,
-    queryKey: ['getAllRequests']
+    queryKey: ['getAllRequests', query]
   });
 
   const tableRows = useMemo(() => {
-    return (requests?.data || []).map(item => {
+    return (requests?.data?.data || []).map(item => {
       return {
         repo_name: <Link to={`/requests/${item.id}`}>{item.repo_name}</Link>,
         pull_request_id: (
@@ -68,6 +79,16 @@ const RequestsList = () => {
       };
     });
   }, [requests]);
+
+  const handleOnPageChange = useCallback((newPageIndex: number) => {
+    setQuery(query => ({
+      ...query,
+      pagination: {
+        ...query.pagination,
+        currentPageIndex: newPageIndex
+      }
+    }));
+  }, []);
 
   return (
     <Segment>
@@ -167,6 +188,13 @@ const RequestsList = () => {
           enableColumnVisibility
           spacing="expanded"
           isLoading={isLoading}
+          totalCount={
+            requests?.data?.filtered_count || query.pagination.pageSize
+          }
+          pageSize={query.pagination.pageSize}
+          pageIndex={query.pagination.currentPageIndex}
+          handleOnPageChange={handleOnPageChange}
+          showPagination
         />
       </div>
     </Segment>
