@@ -176,6 +176,38 @@ class RequestType(SoftDeleteMixin, Base):
             await session.commit()
 
 
+class ExpressChangeType(SoftDeleteMixin, Base):
+    included_groups = relationship(
+        "Group",
+        secondary=change_type_group_association,
+        back_populates="associated_change_types",
+    )
+    included_users = relationship(
+        "User",
+        secondary=change_type_user_association,
+        back_populates="associated_change_types",
+        uselist=False,
+    )
+    included_iambic_template_provider_definitions = relationship(
+        "IambicTemplateProviderDefinition",
+        secondary=change_type_iambic_template_provider_definition_association,
+        back_populates="associated_change_types",
+        uselist=False,
+    )
+    associated_change_type = relationship(
+        "ChangeType",
+        back_populates="associated_change_types",
+        uselist=False,
+    )
+
+    change_field_values = None  # TBD!!
+    # salesrole/production_acct
+    # TODO: Fill this out
+    # associated_change_type
+    # field_values # For the form values, like "sales bucket". Any missing field values
+    # have to be filled in by the user. eg: GET/LIST access to the sales bucket
+
+
 class ChangeType(SoftDeleteMixin, Base):
     __tablename__ = "change_type"
 
@@ -186,27 +218,6 @@ class ChangeType(SoftDeleteMixin, Base):
     tenant_id = Column(Integer, ForeignKey("tenant.id"), nullable=False)
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
-
-    included_groups = relationship(
-        "Group",
-        secondary=change_type_group_association,
-        back_populates="associated_change_types",
-    )
-    included_users = relationship(
-        "User",
-        secondary=change_type_user_association,
-        back_populates="associated_change_types",
-    )
-    included_iambic_templates = relationship(
-        "IambicTemplate",
-        secondary=change_type_iambic_template_association,
-        back_populates="associated_change_types",
-    )
-    included_iambic_template_provider_definition = relationship(
-        "IambicTemplateProviderDefinition",
-        secondary=change_type_iambic_template_provider_definition_association,
-        back_populates="associated_change_types",
-    )
     tenant = relationship("Tenant")
 
     request_type = relationship("RequestType", back_populates="change_types")
@@ -222,6 +233,22 @@ class ChangeType(SoftDeleteMixin, Base):
         back_populates="change_type",
         uselist=False,
         cascade="all, delete-orphan",
+    )
+
+    included_groups = relationship(
+        "Group",
+        secondary=change_type_group_association,
+        back_populates="associated_change_types",
+    )
+    included_users = relationship(
+        "User",
+        secondary=change_type_user_association,
+        back_populates="associated_change_types",
+    )
+    included_iambic_template_provider_definition = relationship(
+        "IambicTemplateProviderDefinition",
+        secondary=change_type_iambic_template_provider_definition_association,
+        back_populates="associated_change_types",
     )
 
     __table_args__ = (
