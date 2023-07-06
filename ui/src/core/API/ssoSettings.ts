@@ -36,6 +36,22 @@ export const updateSAMLSettings = async (
   return axios.post(SAML_URL, data);
 };
 
+export const downloadSamlCert = async (): Promise<any> => {
+  return axios
+    .get(`${SAML_URL}/download`, { responseType: 'blob' })
+    .then(response => {
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const contentDisposition = response.headers['content-disposition'];
+      const match = contentDisposition.match(/filename=(.+)/);
+      const filename = match ? match[1] : 'archivo';
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+    });
+};
+
 export const updateOIDCSettings = async (
   data: any
 ): Promise<AxiosResponse<any>> => {

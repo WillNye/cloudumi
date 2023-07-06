@@ -8,6 +8,7 @@ import { DEFAULT_SAML_SETTINGS, samlSchema } from './constants';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   deleteOidcSettings,
+  downloadSamlCert,
   fetchSamlSettings,
   updateSAMLSettings
 } from 'core/API/ssoSettings';
@@ -18,8 +19,9 @@ import { Segment } from 'shared/layout/Segment';
 import { toast } from 'react-toastify';
 import merge from 'lodash/merge';
 import Toggle from '@noqdev/cloudscape/toggle';
+import { invalidateSsoQueries } from '../utils';
 
-const SAMLSettings = ({ isFetching }) => {
+const SAMLSettings = ({ isFetching, current }) => {
   const [formValues, setFormValues] = useState({
     ...AUTH_DEFAULT_VALUES,
     ...DEFAULT_SAML_SETTINGS
@@ -47,6 +49,13 @@ const SAMLSettings = ({ isFetching }) => {
     select: data => data.data
   });
 
+  const downloadMutation = useMutation({
+    mutationFn: async () => {
+      await downloadSamlCert();
+    },
+    mutationKey: ['samlDownloadMetadata']
+  });
+
   const { isLoading: isSubmitting, mutateAsync: saveMutation } = useMutation({
     mutationFn: async (data: any) => {
       await updateSAMLSettings(data);
@@ -54,8 +63,7 @@ const SAMLSettings = ({ isFetching }) => {
     },
     mutationKey: ['samlSSOSettings'],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`samlSettings`] });
-      queryClient.invalidateQueries({ queryKey: [`oidcSettings`] });
+      invalidateSsoQueries(queryClient);
       toast.success('Successfully update SAML settings');
     },
     onError: () => {
@@ -297,10 +305,23 @@ const SAMLSettings = ({ isFetching }) => {
         </Block>
         <LineBreak /> */}
 
-        <Button type="submit" disabled={isSubmitting} fullWidth>
-          Save
+        <Button type="submit" disabled={isSubmitting}>
+          {current ? 'Update' : 'Save'}
         </Button>
-        <LineBreak />
+
+        {current && (
+          <>
+            <Button
+              style={{ marginLeft: '10px' }}
+              type="button"
+              disabled={isSubmitting}
+              onClick={async () => await downloadMutation.mutateAsync()}
+            >
+              Download Cert
+            </Button>
+            <LineBreak />
+          </>
+        )}
       </form>
     </Segment>
   );

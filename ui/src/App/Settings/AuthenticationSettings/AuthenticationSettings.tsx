@@ -11,6 +11,7 @@ import {
   fetchAuthSettings
 } from 'core/API/ssoSettings';
 import { toast } from 'react-toastify';
+import { invalidateSsoQueries } from './components/utils';
 
 const AuthenticationSettings = () => {
   const [currentTab, setCurrentTab] = useState<AUTH_SETTINGS_TABS>(
@@ -32,8 +33,7 @@ const AuthenticationSettings = () => {
       },
       mutationKey: ['removeAuthSettings'],
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [`samlSettings`] });
-        queryClient.invalidateQueries({ queryKey: [`oidcSettings`] });
+        invalidateSsoQueries(queryClient);
         toast.success('Successfully removed SAML/OIDC Settings');
       },
       onError: () => {
@@ -48,15 +48,25 @@ const AuthenticationSettings = () => {
 
   const content = useMemo(() => {
     if (currentTab === AUTH_SETTINGS_TABS.OIDC) {
-      return <OIDCSettings isFetching={isLoading} />;
+      return (
+        <OIDCSettings
+          isFetching={isLoading}
+          current={authSettings?.get_user_by_oidc}
+        />
+      );
     }
 
     if (currentTab === AUTH_SETTINGS_TABS.SAML) {
-      return <SAMLSettings isFetching={isLoading} />;
+      return (
+        <SAMLSettings
+          isFetching={isLoading}
+          current={authSettings?.get_user_by_saml}
+        />
+      );
     }
 
     return <Fragment />;
-  }, [currentTab, isLoading]);
+  }, [currentTab, isLoading, authSettings]);
 
   useEffect(() => {
     if (authSettings?.get_user_by_saml) {

@@ -20,8 +20,9 @@ import { AUTH_DEFAULT_VALUES } from '../../constants';
 import { DEFAULT_OIDC_SETTINGS, oidcSchema } from './constants';
 import { parseOIDCFormData } from './utils';
 import { Tooltip } from 'shared/elements/Tooltip';
+import { invalidateSsoQueries } from '../utils';
 
-const OIDCSettings = ({ isFetching }) => {
+const OIDCSettings = ({ isFetching, current }) => {
   const [formValues, setFormValues] = useState({
     ...AUTH_DEFAULT_VALUES,
     ...DEFAULT_OIDC_SETTINGS
@@ -55,8 +56,7 @@ const OIDCSettings = ({ isFetching }) => {
       await deleteSamlSettings();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`samlSettings`] });
-      queryClient.invalidateQueries({ queryKey: [`oidcSettings`] });
+      invalidateSsoQueries(queryClient);
       toast.success('Successfully update OID settings');
     },
     onError: () => {
@@ -219,7 +219,7 @@ const OIDCSettings = ({ isFetching }) => {
         </Block>
         <LineBreak />
         <Button type="submit" disabled={isSubmitting} fullWidth>
-          Save
+          {current ? 'Update' : 'Save'}
         </Button>
         <LineBreak />
       </form>
