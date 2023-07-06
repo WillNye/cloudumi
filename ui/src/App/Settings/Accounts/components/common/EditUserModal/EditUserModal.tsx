@@ -37,7 +37,7 @@ type CreateUserGroupsParams = {
 };
 
 type EditUserModalProps = {
-  canEdit: boolean;
+  canEdit?: boolean;
   user: User;
 };
 
@@ -208,7 +208,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
     setUserGroups([...new Set([...userGroups.filter((ug, i) => i != index)])]);
   };
 
-  if (!canEdit) {
+  if (!(canEdit ?? true)) {
     return <Fragment />;
   }
 
@@ -331,12 +331,9 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
           </div>
           <LineBreak />
           <div
-            className={classNames(
-              {
-                [styles.hidden]: NOT_MANUAL
-              },
-              styles.actions
-            )}
+            className={classNames(styles.actions, {
+              [styles.hidden]: NOT_MANUAL
+            })}
           >
             <Button
               color="secondary"

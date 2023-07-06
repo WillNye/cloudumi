@@ -60,14 +60,13 @@ const UsersManagement = () => {
         email: <div>{item.email}</div>,
         delete: (
           <Delete
-            canEdit
             dataType={DELETE_DATA_TYPE.USER}
             dataId={item.email}
             title="Delete User"
             refreshData={callGetAllUsers}
           />
         ),
-        edit: <UserModal canEdit user={item} />,
+        edit: <UserModal user={item} />,
         groups: item.groups.length
       };
     });

@@ -1,4 +1,4 @@
-import { FC, Fragment, useCallback, useState } from 'react';
+import { FC, Fragment, useCallback, useMemo, useState } from 'react';
 import { Icon } from 'shared/elements/Icon';
 import { Dialog } from 'shared/layers/Dialog';
 import { Input } from 'shared/form/Input';
@@ -24,7 +24,7 @@ import { useMutation } from '@tanstack/react-query';
 import { LineBreak } from 'shared/elements/LineBreak';
 
 type EditGroupsModalProps = {
-  canEdit: boolean;
+  canEdit?: boolean;
   group: Group;
 };
 
@@ -175,9 +175,12 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
     setGroupUsers([...new Set([...groupUsers.filter((ug, i) => i != index)])]);
   };
 
-  const NOT_MANUAL = group.managed_by != 'MANUAL';
+  const isDisabled = useMemo(
+    () => group.managed_by != 'MANUAL',
+    [group.managed_by]
+  );
 
-  if (!canEdit) {
+  if (!(canEdit ?? true)) {
     return <Fragment />;
   }
 
@@ -219,7 +222,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
               placeholder="name"
               autoCapitalize="none"
               autoCorrect="off"
-              {...register('name', { disabled: NOT_MANUAL })}
+              {...register('name', { disabled: isDisabled })}
             />
             {errors?.name && touchedFields.name && <p>{errors.name.message}</p>}
             <LineBreak />
@@ -230,7 +233,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
               autoCapitalize="none"
               autoCorrect="off"
               {...register('description', {
-                disabled: NOT_MANUAL
+                disabled: isDisabled
               })}
             />
             {errors?.description && touchedFields.description && (
@@ -239,7 +242,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
             <LineBreak />
             <Button
               type="submit"
-              disabled={isSubmitting || !isValid || NOT_MANUAL}
+              disabled={isSubmitting || !isValid || isDisabled}
               fullWidth
             >
               {isSubmitting ? 'Updating Group...' : 'Update Group'}
@@ -247,7 +250,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
           </form>
 
           <div className={styles.groupUsers}>
-            {!NOT_MANUAL && (
+            {!isDisabled && (
               <>
                 <Block disableLabelPadding label="Add Users"></Block>
                 <Search
@@ -269,7 +272,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
                   {groupUsers.map((user, index) => (
                     <Chip className={styles.user} key={index}>
                       {user}
-                      {!NOT_MANUAL && (
+                      {!isDisabled && (
                         <>
                           {' '}
                           <Icon
@@ -287,7 +290,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
               )}
             </div>
             <Button
-              disabled={isUpdatingGroups || NOT_MANUAL}
+              disabled={isUpdatingGroups || isDisabled}
               size="small"
               fullWidth
               onClick={updateGroupMemberships}
