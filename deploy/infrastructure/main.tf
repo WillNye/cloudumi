@@ -165,6 +165,7 @@ module "tenant_container_service" {
   noq_core                           = var.noq_core
   region                             = var.region
   registration_queue_arn             = module.tenant_messaging.sqs_registration_queue_arn
+  github_app_noq_webhook_queue_arn   = module.tenant_messaging.sqs_github_app_noq_webhook_queue_arn
   stage                              = var.stage
   subnet_ids                         = module.tenant_networking.vpc_subnet_private_id
   tags                               = var.tags
