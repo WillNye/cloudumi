@@ -18,12 +18,12 @@ import { extractErrorMessage } from 'core/API/utils';
 import { User } from '../../../types';
 import { UPDATE_USER_ACTIONS } from '../../../constants';
 import { Search } from 'shared/form/Search';
-import { Chip } from 'reablocks';
 import { Divider } from 'shared/elements/Divider';
 import { useMutation } from '@tanstack/react-query';
 import styles from './EditUserModal.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
 import classNames from 'classnames';
+import { Chip } from 'shared/elements/Chip';
 
 type UpdateUserParams = {
   data: { id: string; email?: string; username?: string };

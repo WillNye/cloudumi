@@ -222,6 +222,11 @@ tf-prod-unlock:
 deploy-staging:
 	@./deploy/infrastructure/live/shared/staging-1/push_all_the_things.sh
 
+.PHONY: deploy-staging-skip-preflight
+deploy-staging-skip-preflight:
+	@export SKIP_PREFLIGHT=true && \
+	./deploy/infrastructure/live/shared/staging-1/push_all_the_things.sh
+
 .PHONY: deploy-prod
 deploy-prod:
 	@./deploy/infrastructure/live/shared/prod-1/push_all_the_things.sh

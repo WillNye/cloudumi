@@ -47,9 +47,10 @@ export const getRequestChangeDetails = async ({ queryKey }) => {
   return response.data;
 };
 
-export const getAllRequests = async () => {
-  const url = `${V4_API_URL}/self-service/requests/`;
-  const response = await axios.get(url);
+export const getAllRequests = async ({ queryKey }) => {
+  const [_, query] = queryKey;
+  const url = `${V4_API_URL}/self-service/requests/datatable`;
+  const response = await axios.post(url, query);
   return response.data;
 };
 

@@ -33,10 +33,12 @@ export const userTableColumns = [
     accessorKey: 'groups'
   },
   {
+    header: '',
     accessorKey: 'edit',
     width: '50px'
   },
   {
+    header: '',
     accessorKey: 'delete',
     width: '50px'
   }
@@ -61,10 +63,12 @@ export const groupsTableColumns = [
     accessorKey: 'users'
   },
   {
+    header: '',
     accessorKey: 'edit',
     width: '50px'
   },
   {
+    header: '',
     accessorKey: 'delete',
     width: '50px'
   }

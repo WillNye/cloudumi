@@ -75,7 +75,7 @@ const UsersManagement = () => {
   return (
     <div className={css.container}>
       <div className={css.header}>
-        <div>Team Members ({allUsersData?.data?.length})</div>
+        <div>Team Members ({allUsersData?.filtered_count})</div>
         <div>
           <InviteUserModal refreshData={callGetAllUsers} />
         </div>

@@ -5,6 +5,7 @@
 # AWS_PROFILE=development/development_admin aws s3 cp saas_development.yaml s3://noq-tenant-configuration.node.dev1.259868150464.us-west-2/tenant_configurations/saas_development.yaml
 extends:
   - secrets.yaml
+  - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:759357822767:secret:dev/github-app-noq-dev-HwkrMi
   # - AWS_SECRETS_MANAGER:arn:aws:secretsmanager:us-west-2:759357822767:secret:dev/noq-Gjvjay
 
 _global_:
@@ -72,6 +73,13 @@ _global_:
       registration_queue_arn: arn:aws:sqs:us-west-2:759357822767:local-dev-registration-queue
       registration_central_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_central_role.yaml"
       registration_spoke_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml"
+    github:
+      local_dev:
+        app_id: 350775
+        installation_id: 38860442
+    # do not set locally and let populate-services.py to bootstrap it
+    #   webhook_event_buffer:
+    #     queue_arn: arn:aws:sqs:us-west-2:759357822767:local-dev-shared-github-app-webhook
   logging:
     file: ./cloudumi_tornado.log
   # sentry:

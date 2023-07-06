@@ -4,7 +4,6 @@ import {
   useReactTable,
   getCoreRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   ColumnDef,
   flexRender
 } from '@tanstack/react-table';
@@ -18,7 +17,7 @@ import { Icon } from '../Icon';
 import { Menu } from 'shared/layers/Menu';
 
 interface TableProps<D> {
-  spacing?: 'expanded' | 'compact';
+  spacing?: 'expanded' | 'compact' | 'normal';
   columns: ColumnDef<D, any>[];
   data: D[];
   border?: 'basic' | 'celled' | 'row';
@@ -38,7 +37,7 @@ interface TableProps<D> {
 export const Table = <T, D>({
   columns,
   data,
-  spacing,
+  spacing = 'normal',
   striped = false,
   border,
   enableRowSelection = false,
@@ -112,7 +111,6 @@ export const Table = <T, D>({
     onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     onColumnVisibilityChange: onChange,
     debugTable: true,
     debugHeaders: true,

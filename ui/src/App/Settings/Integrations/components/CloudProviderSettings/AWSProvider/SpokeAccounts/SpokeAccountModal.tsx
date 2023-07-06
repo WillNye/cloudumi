@@ -6,7 +6,6 @@ import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Button } from 'shared/elements/Button';
-import { Chip } from 'reablocks';
 import { Icon } from 'shared/elements/Icon';
 import { Input } from 'shared/form/Input';
 import { Block } from 'shared/layout/Block';
@@ -16,6 +15,7 @@ import { Checkbox } from 'shared/form/Checkbox';
 import { Notification, NotificationType } from 'shared/elements/Notification';
 import styles from '../AWSProvider.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
+import { Chip } from 'shared/elements/Chip';
 
 const SpokeAccountUsers = ({ category, setValue, labels }) => (
   <div>

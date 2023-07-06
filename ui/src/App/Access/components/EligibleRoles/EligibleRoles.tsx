@@ -1,6 +1,5 @@
 import { PropertyFilter, PropertyFilterProps } from '@noqdev/cloudscape';
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import RoleCredentialSummary from '../common/RoleCredentialSummary';
 
 import MoreActions from '../common/MoreActions';
@@ -55,6 +54,16 @@ const EligibleRoles = () => {
       }
     }));
   }, [filter]);
+
+  const handleOnPageChange = useCallback((newPageIndex: number) => {
+    setQuery(query => ({
+      ...query,
+      pagination: {
+        ...query.pagination,
+        currentPageIndex: newPageIndex
+      }
+    }));
+  }, []);
 
   const tableRows = useMemo(() => {
     return (eligibleRolesData?.data || []).map(item => {
@@ -166,6 +175,13 @@ const EligibleRoles = () => {
             columns={eligibleRolesColumns}
             border="row"
             isLoading={isLoading}
+            totalCount={
+              eligibleRolesData?.filteredCount || query.pagination.pageSize
+            }
+            pageSize={query.pagination.pageSize}
+            pageIndex={query.pagination.currentPageIndex}
+            handleOnPageChange={handleOnPageChange}
+            showPagination
           />
         </div>
       </div>
