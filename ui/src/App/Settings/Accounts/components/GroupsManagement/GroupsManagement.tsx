@@ -78,7 +78,7 @@ const GroupsManagement = () => {
   return (
     <div className={css.container}>
       <div className={css.header}>
-        <div>Groups ({allGroupsData?.data?.length})</div>
+        <div>Groups ({allGroupsData?.filtered_count})</div>
         <AddGroupModal refreshData={callGetAllGroups} />
       </div>
       <div className={css.table}>
