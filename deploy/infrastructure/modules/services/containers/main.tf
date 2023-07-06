@@ -23,8 +23,7 @@ resource "aws_kms_alias" "cloudwatch" {
 }
 
 resource "aws_ecs_cluster" "noq_ecs_cluster" {
-  name               = var.cluster_id
-  capacity_providers = var.capacity_providers
+  name = var.cluster_id
   configuration {
     execute_command_configuration {
       kms_key_id = aws_kms_key.noq_ecs_kms_key.arn
@@ -46,6 +45,18 @@ resource "aws_ecs_cluster" "noq_ecs_cluster" {
     var.tags,
     {}
   )
+}
+
+resource "aws_ecs_cluster_capacity_providers" "noq_ecs_cluster" {
+  cluster_name = aws_ecs_cluster.noq_ecs_cluster.name
+
+  capacity_providers = var.capacity_providers
+
+  default_capacity_provider_strategy {
+    base              = 1
+    weight            = 100
+    capacity_provider = "FARGATE"
+  }
 }
 
 resource "aws_ecr_repository" "noq_ecr_repository-api" {

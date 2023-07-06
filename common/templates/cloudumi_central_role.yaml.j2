@@ -39,10 +39,11 @@ Resources:
                   - "sts:AssumeRole"
                   - "sts:TagSession"
                 Resource:
-                  Fn::If:
-                    - ReadOnlyModeEnabled
-                    - !Sub "arn:aws:iam::*:role/${SpokeRoleNameParameter}"
-                    - "*"
+                  - "*"
+                  # Fn::If:
+                  #   - ReadOnlyModeEnabled
+                  #   - !Sub "arn:aws:iam::*:role/${SpokeRoleNameParameter}"
+                  #   - "*"
   SpokeRole:
     Type: "AWS::IAM::Role"
     DependsOn:
