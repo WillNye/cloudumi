@@ -43,6 +43,8 @@ DOCKER_VOLUMES_TO_BACKUP := deploy_cloudumi-pg deploy_cloudumi-redis deploy_clou
 DOCKER_VOLUMES_BACKUP_DIR := ./docker_volumes_backup
 
 AWS_PROFILE_DEV = development/development_admin
+AWS_PROFILE_GLOBAL_DEV = development_2/development_2_admin
+AWS_REGION_DEV = us-west-2
 AWS_PROFILE_PROD = production/prod_admin
 AWS_PROFILE_GLOBAL_PROD = global_tenant_data_prod/global_tenant_data_prod_admin
 AWS_REGION_PROD = us-west-2
@@ -219,6 +221,27 @@ tf-prod-unlock:
 	export AWS_PROFILE=$(AWS_PROFILE_PROD) AWS_REGION=$(AWS_REGION_PROD); \
 	terraform workspace select shared-staging-1; \
 	terraform force-unlock $(UUID)
+
+# This is for our global Tenant DDB table
+tf-global-dev-plan:
+	@cd deploy/global_infrastructure && \
+	export AWS_PROFILE=$(AWS_PROFILE_GLOBAL_DEV) AWS_REGION=$(AWS_REGION_DEV); \
+	terraform workspace select shared-dev-global; \
+	terraform plan --var-file=live/shared/dev-global/noq.dev-dev.tfvars
+
+# This is for our global Tenant DDB table
+tf-global-dev-apply:
+	@cd deploy/global_infrastructure && \
+	export AWS_PROFILE=$(AWS_PROFILE_GLOBAL_DEV) AWS_REGION=$(AWS_REGION_DEV); \
+	terraform workspace select shared-dev-global; \
+	terraform apply --var-file=live/shared/dev-global/noq.dev-dev.tfvars
+
+# This is for our global Tenant DDB table
+tf-global-staging-plan:
+	@cd deploy/global_infrastructure && \
+	export AWS_PROFILE=$(AWS_PROFILE_GLOBAL_STAGING) AWS_REGION=$(AWS_REGION_STAGING); \
+	terraform workspace select shared-staging-global; \
+	terraform plan --var-file=live/shared/staging-global/noq.dev-staging.tfvars
 
 # This is for our global Tenant DDB table
 tf-global-staging-apply:
