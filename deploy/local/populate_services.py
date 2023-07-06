@@ -18,6 +18,7 @@ from common.github.webhook_event_buffer import (
     get_developer_queue_arn,
     get_developer_queue_name,
 )
+from common.iambic.tasks import run_all_iambic_tasks_for_tenant
 from common.lib.aws.aws_secret_manager import get_aws_secret
 from common.lib.yaml import yaml
 from common.scripts.data_migrations import run_data_migrations
@@ -711,6 +712,7 @@ if __name__ == "__main__":
             async_to_sync(GitHubInstall.create)(
                 tenant=db_tenant, installation_id=DEV_IAMBIC_TEMPLATES_INSTALLATION_ID
             )
+            asyncio.run(run_all_iambic_tasks_for_tenant(local_tenant))
 
     # Force a re-cache of cloud resources with updated configuration
     import common.scripts.initialize_redis  # noqa: F401,E402
