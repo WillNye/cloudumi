@@ -25,7 +25,7 @@ const EligibleRoles = () => {
   const [query, setQuery] = useState({
     pagination: {
       currentPageIndex: 1,
-      pageSize: 30
+      pageSize: 15
     },
     sorting: {
       sortingColumn: {
