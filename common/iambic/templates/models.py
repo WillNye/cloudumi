@@ -82,6 +82,15 @@ class IambicTemplate(Base):
         ),
     )
 
+    def dict(self):
+        response = {
+            "id": str(self.id),
+            "template_type": str(self.template_type),
+            "provider": str(self.provider),
+            "resource_type": str(self.resource_type),
+        }
+        return response
+
 
 class IambicTemplateContent(Base):
     # DO NOT put this in the IambicTemplate table, the content is unbound in size
@@ -138,6 +147,14 @@ class IambicTemplateProviderDefinition(Base):
             unique=True,
         ),
     )
+
+    def dict(self):
+        response = {
+            "id": str(self.id),
+            "iambic_template_id": str(self.iambic_template_id),
+            "resource_id": str(self.resource_id),
+        }
+        return response
 
 
 # At some point we should probably create an IambicTemplateProviderDefinitionContent table

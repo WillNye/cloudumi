@@ -112,6 +112,10 @@ async def list_tenant_change_types(
                     TypeAheadFieldHelper,
                     TypeAheadFieldHelper.id == ChangeField.typeahead_field_helper_id,
                 )
+                .outerjoin(ChangeType.included_iambic_templates)
+                .outerjoin(ChangeType.included_iambic_template_provider_definition)
+                .outerjoin(ChangeType.included_groups)
+                .outerjoin(ChangeType.included_users)
             )
 
             items = await session.execute(
@@ -121,6 +125,10 @@ async def list_tenant_change_types(
                         joinedload(ChangeField.typeahead)
                     ),
                     contains_eager(ChangeType.change_template),
+                    joinedload(ChangeType.included_iambic_templates),
+                    joinedload(ChangeType.included_iambic_template_provider_definition),
+                    joinedload(ChangeType.included_groups),
+                    joinedload(ChangeType.included_users),
                 )
             )
 

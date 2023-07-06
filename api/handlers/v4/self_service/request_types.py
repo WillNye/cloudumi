@@ -82,6 +82,7 @@ class SelfServiceChangeTypeHandler(BaseHandler):
                 tenant_id,
                 request_type_id,
                 iambic_templates_specified=iambic_templates_specified,
+                summary_only=False,
             )
             data = [change_type.dict() for change_type in change_types]
 

@@ -236,6 +236,13 @@ class ChangeType(SoftDeleteMixin, Base):
             "name": self.name,
             "description": self.description,
             "request_type_id": str(self.request_type_id),
+            "included_iambic_templates": [
+                x.dict() for x in self.included_iambic_templates
+            ],
+            "included_iambic_template_provider_definition": [
+                x.dict() for x in self.included_iambic_template_provider_definition
+            ],
+            "included_users": [x.dict() for x in self.included_users],
         }
         return response
 
