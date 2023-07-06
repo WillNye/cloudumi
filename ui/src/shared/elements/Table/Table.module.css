@@ -63,6 +63,16 @@
     }
   }
 
+  &.normal {
+    td {
+      padding: var(--spacing-md);
+    }
+
+    th {
+      padding: var(--spacing-md);
+    }
+  }
+
   &.expanded {
     td {
       padding: var(--spacing-lg);
