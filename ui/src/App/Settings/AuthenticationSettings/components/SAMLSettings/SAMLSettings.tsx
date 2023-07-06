@@ -1,11 +1,10 @@
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { Input } from 'shared/form/Input';
 import { Block } from 'shared/layout/Block';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Select, SelectOption } from 'shared/form/Select';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { BINDINGS, DEFAULT_SAML_SETTINGS, samlSchema } from './constants';
+import { DEFAULT_SAML_SETTINGS, samlSchema } from './constants';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   deleteOidcSettings,
@@ -25,13 +24,11 @@ const SAMLSettings = ({ isFetching }) => {
     ...AUTH_DEFAULT_VALUES,
     ...DEFAULT_SAML_SETTINGS
   });
-  // const [useMetadataUrl, setUseMetadataUrl] = useState(true);
 
   const queryClient = useQueryClient();
 
   const {
     register,
-    control,
     handleSubmit,
     watch,
     setValue,
