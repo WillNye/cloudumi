@@ -221,6 +221,7 @@ resource "aws_iam_role" "ecs_task_role" {
         {
           "Action" : [
             "access-analyzer:ValidatePolicy",
+            "aws-marketplace:*",
             "ssmmessages:CreateControlChannel",
             "ssmmessages:CreateDataChannel",
             "ssmmessages:OpenControlChannel",

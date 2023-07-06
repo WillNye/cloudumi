@@ -49,7 +49,6 @@ resource "aws_iam_role" "ecs_task_role" {
         {
           "Action" : [
             "access-analyzer:*",
-            "aws-marketplace:*",
             "cloudtrail:*",
             "cloudwatch:*",
             "config:SelectResourceConfig",
