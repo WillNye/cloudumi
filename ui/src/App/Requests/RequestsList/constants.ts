@@ -25,3 +25,9 @@ export const requestsColumns = [
   },
   { id: 'status', header: 'Status', accessorKey: 'status', sortable: true }
 ];
+
+export const SUPPORTED_REQUESTS_FILTERS = [
+  'created_by',
+  'repo_name',
+  'pull_request_id'
+];

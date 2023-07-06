@@ -16,17 +16,10 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.drop_constraint(
-        "github_installs_installation_id_key", "github_installs", type_="unique"
-    )
     op.execute("""ALTER TYPE "RequestStatusEnum" ADD VALUE 'Pending in Git';""")
 
 
 def downgrade() -> None:
-    op.create_unique_constraint(
-        "github_installs_installation_id_key", "github_installs", ["installation_id"]
-    )
-
     # Reverting RequestStatusEnum
     op.execute("""ALTER TYPE "RequestStatusEnum" RENAME TO "RequestStatusEnumOld";""")
     op.execute(

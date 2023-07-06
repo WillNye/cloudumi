@@ -188,6 +188,11 @@ output "aws_marketplace_product_code" {
   value       = var.aws_marketplace_product_code
 }
 
+output "sqs_github_app_noq_webhook_queue_arn" {
+  description = "The SQS to see GitHub App Noq Webhook Events"
+  value       = module.tenant_messaging.sqs_github_app_noq_webhook_queue_arn
+}
+
 output "stage" {
   description = "The configured stage (for automation)"
   value       = var.stage

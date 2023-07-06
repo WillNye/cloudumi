@@ -4,7 +4,7 @@ resource "aws_dynamodb_table" "tenant_details" {
     type = "S"
   }
   attribute {
-    name = "cluster"
+    name = "noq_cluster"
     type = "S"
   }
   name           = "tenant_details"
@@ -13,10 +13,10 @@ resource "aws_dynamodb_table" "tenant_details" {
   write_capacity = 1
   global_secondary_index {
     name            = "cluster-sharding-index"
-    hash_key        = "cluster"
+    hash_key        = "noq_cluster"
     range_key       = "name"
     projection_type = "ALL"
-    read_capacity   = 5
+    read_capacity   = 1
     write_capacity  = 1
   }
   stream_enabled   = true
@@ -30,7 +30,7 @@ resource "aws_dynamodb_table" "tenant_details" {
   # }
 
   lifecycle {
-    ignore_changes = [write_capacity, read_capacity]
+    ignore_changes = [write_capacity, read_capacity, global_secondary_index]
   }
 
   tags = merge(

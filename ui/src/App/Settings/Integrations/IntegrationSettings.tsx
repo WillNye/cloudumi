@@ -7,7 +7,7 @@ import awsIcon from 'assets/integrations/awsIcon.svg';
 // import azureIcon from 'assets/integrations/azureIcon.svg';
 import githubIcon from 'assets/integrations/githubIcon.svg';
 import SectionHeader from 'shared/elements/SectionHeader/SectionHeader';
-import SlackIntegrationModal from './components/SlackIntegrationsModal';
+// import SlackIntegrationModal from './components/SlackIntegrationsModal';
 import GithubIntegrationModal from './components/GithubIntegrationsModal';
 import {
   getSlackInstallationStatus,
@@ -107,13 +107,13 @@ const IntegrationSettings = () => {
           />
         </div>
       </div>
-      <SlackIntegrationModal
+      {/* <SlackIntegrationModal
         showDialog={showSlackModal}
         setShowDialog={setShowSlackModal}
         isSlackConnected={isSlackConnected}
         checkStatus={getIntegrationStatus}
         isGettingIntegrations={isLoading}
-      />
+      /> */}
       <GithubIntegrationModal
         showDialog={showGithubModal}
         setShowDialog={setShowGithubModal}

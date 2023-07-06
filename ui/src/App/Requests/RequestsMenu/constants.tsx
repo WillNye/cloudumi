@@ -3,48 +3,30 @@ export enum REQUESTS_SECTIONS {
   RECENT_REQUESTS = 'recent-requests'
 }
 
-export const recentRequestsColumns = [
-  {
-    header: 'User',
-    accessorKey: 'user',
-    sortable: true
-  },
-  {
-    header: 'Request ID',
-    accessorKey: 'requestId',
-    sortable: true
-  },
-  {
-    header: 'ARN',
-    accessorKey: 'arn',
-    sortable: false
-  },
-  {
-    header: 'Created At',
-    accessorKey: 'createdAt',
-    sortable: false
-  }
-];
-
 export const myRequestsColumns = [
   {
-    header: 'User',
-    accessorKey: 'user',
+    id: 'repo_name',
+    header: 'Repo Name',
+    accessorKey: 'repo_name',
     sortable: true
   },
   {
-    header: 'Request ID',
-    accessorKey: 'requestId',
+    id: 'pull_request_id',
+    header: 'Pull Request ID',
+    accessorKey: 'pull_request_id',
     sortable: true
   },
   {
-    header: 'ARN',
-    accessorKey: 'arn',
-    sortable: false
-  },
-  {
+    id: 'created_at',
     header: 'Created At',
-    accessorKey: 'createdAt',
-    sortable: false
-  }
+    accessorKey: 'created_at',
+    sortable: true
+  },
+  {
+    id: 'created_by',
+    header: 'Created By',
+    accessorKey: 'created_by',
+    sortable: true
+  },
+  { id: 'status', header: 'Status', accessorKey: 'status', sortable: true }
 ];

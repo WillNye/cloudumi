@@ -178,3 +178,52 @@ resource "aws_sns_topic_subscription" "registration_response_queue_subscription_
   protocol  = "sqs"
   endpoint  = aws_sqs_queue.registration_response_queue.arn
 }
+
+resource "aws_sqs_queue" "github_app_noq_webhook" {
+  name                      = "${var.cluster_id}-github-app-noq-webhook"
+  message_retention_seconds = 86400
+  receive_wait_time_seconds = 10
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.github_app_noq_webhook_deadletter.arn
+    maxReceiveCount     = 4
+  })
+
+}
+
+resource "aws_sns_topic_subscription" "github_app_noq_webhook" {
+  topic_arn = "arn:aws:sns:${var.region}:${var.global_tenant_data_account_id}:github-app-noq-webhook"
+  protocol  = "sqs"
+  endpoint  = aws_sqs_queue.github_app_noq_webhook.arn
+}
+
+resource "aws_sqs_queue_policy" "github_app_noq_webhook_queue_policy" {
+  queue_url = aws_sqs_queue.github_app_noq_webhook.url
+
+  policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Id": "${var.cluster_id}-github_app_noq_webhook-policy",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "sqs:SendMessage",
+      "Resource": "${aws_sqs_queue.github_app_noq_webhook.arn}",
+      "Condition": {
+        "ArnEquals": {
+          "aws:SourceArn": "arn:aws:sns:${var.region}:${var.global_tenant_data_account_id}:github-app-noq-webhook"
+        }
+      }
+    }
+  ]
+}
+POLICY
+}
+
+resource "aws_sqs_queue" "github_app_noq_webhook_deadletter" {
+  name = "${var.cluster_id}-github-app-webhook-dlq"
+  redrive_allow_policy = jsonencode({
+    redrivePermission = "byQueue",
+    sourceQueueArns   = ["arn:aws:sqs:${var.region}:${var.account_id}:${var.cluster_id}-github-app-noq-webhook"]
+  })
+}
