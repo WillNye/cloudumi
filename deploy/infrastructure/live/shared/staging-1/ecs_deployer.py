@@ -7,8 +7,11 @@ from collections import defaultdict
 import boto3
 import yaml
 from botocore.exceptions import ClientError
+from distutils.util import strtobool
 
 current_path = pathlib.Path(__file__).parent.resolve()
+
+skip_preflight = strtobool(os.environ.get("SKIP_PREFLIGHT", "false"))
 
 service_task_definition_map = [
     {

@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.74"
+      version = "~> 5.5"
     }
   }
 
@@ -34,4 +34,11 @@ module "tenant_dynamodb_service" {
   source                       = "./modules/services/dynamo"
   dynamo_table_replica_regions = var.dynamo_table_replica_regions
   tags                         = var.tags
+}
+
+module "github_app_integration" {
+  source                    = "./modules/services/github-app-integration"
+  tags                      = var.tags
+  github_app_noq_secret_arn = var.github_app_noq_secret_arn
+  profile                   = var.profile
 }

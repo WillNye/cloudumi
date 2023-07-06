@@ -192,6 +192,19 @@ resource "aws_iam_role" "ecs_task_role" {
           "Resource" : [
             "${var.registration_queue_arn}",
           ]
+        },
+        {
+          "Sid" : "GitHubAppIntegration",
+          "Action" : [
+            "sqs:ReceiveMessage",
+            "sqs:DeleteMessage",
+            "sqs:GetQueueUrl",
+            "sqs:GetQueueAttributes",
+          ],
+          "Effect" : "Allow",
+          "Resource" : [
+            "${var.github_app_noq_webhook_queue_arn}",
+          ]
         }
       ],
       "Version" : "2012-10-17"
