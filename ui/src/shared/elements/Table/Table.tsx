@@ -4,7 +4,6 @@ import {
   useReactTable,
   getCoreRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   ColumnDef,
   flexRender
 } from '@tanstack/react-table';
@@ -112,7 +111,6 @@ export const Table = <T, D>({
     onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     onColumnVisibilityChange: onChange,
     debugTable: true,
     debugHeaders: true,
