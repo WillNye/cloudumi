@@ -15,6 +15,7 @@ interface DiffEditorProps {
   original: string;
   modified: string;
   language?: string;
+  readOnly?: boolean;
   onChange?: (value: string) => void;
 }
 
@@ -35,6 +36,7 @@ export const DiffEditor: FC<DiffEditorProps> = ({
   original,
   modified,
   language = 'yaml',
+  readOnly = false,
   onChange
 }) => {
   const [renderSideBySide, setRenderSideBySide] = useState(false);
@@ -42,7 +44,8 @@ export const DiffEditor: FC<DiffEditorProps> = ({
 
   const options = {
     ...DEFAULT_EDITOR_OPTIONS,
-    renderSideBySide
+    renderSideBySide,
+    readOnly
   };
 
   useEffect(() => {
