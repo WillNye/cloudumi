@@ -1,4 +1,4 @@
-import { FC, Fragment, useCallback, useMemo, useState } from 'react';
+import { FC, Fragment, useCallback, useMemo, useRef, useState } from 'react';
 import { Icon } from 'shared/elements/Icon';
 import { Dialog } from 'shared/layers/Dialog';
 import { Input } from 'shared/form/Input';
@@ -22,6 +22,7 @@ import { Divider } from 'shared/elements/Divider';
 import { useMutation } from '@tanstack/react-query';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { Chip } from 'shared/elements/Chip';
+import debounce from 'lodash/debounce';
 
 type EditGroupsModalProps = {
   canEdit?: boolean;
@@ -128,6 +129,8 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
     [group.id, reseActions, updateGroupMutation]
   );
 
+  let reqDelay = useRef<any>();
+
   const handleSearch = useCallback(
     async e => {
       const value = e.target.value;
@@ -137,15 +140,18 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
         return;
       }
 
-      setIsSearching(true);
-      try {
-        const res = await searchMutation(value);
-        setSearchResults(res.data.data);
-      } catch (error) {
-        // TODO: Properly handle error
-        console.error(error);
-      }
-      setIsSearching(false);
+      clearTimeout(reqDelay.current);
+      reqDelay.current = setTimeout(async () => {
+        setIsSearching(true);
+        try {
+          const res = await searchMutation(value);
+          setSearchResults(res.data.data);
+        } catch (error) {
+          // TODO: Properly handle error
+          console.error(error);
+        }
+        setIsSearching(false);
+      }, 500);
     },
     [searchMutation]
   );

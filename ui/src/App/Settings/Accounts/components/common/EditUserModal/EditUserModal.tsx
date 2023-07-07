@@ -1,4 +1,4 @@
-import { FC, Fragment, useCallback, useState } from 'react';
+import { FC, Fragment, useCallback, useMemo, useRef, useState } from 'react';
 import { Button } from 'shared/elements/Button';
 import { Icon } from 'shared/elements/Icon';
 import { Input } from 'shared/form/Input';
@@ -97,7 +97,10 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
     }
   });
 
-  const NOT_MANUAL = user.managed_by != 'MANUAL';
+  const isDisabled = useMemo(
+    () => user.managed_by != 'MANUAL',
+    [user.managed_by]
+  );
 
   const resultRenderer = result => <p>{result.name}</p>;
   const onSelectResult = group => {
@@ -161,6 +164,8 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
     [user.id, reseActions, updateUserMutation]
   );
 
+  let reqDelay = useRef<any>();
+
   const handleSearch = useCallback(
     async e => {
       const value = e.target.value;
@@ -170,15 +175,18 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
         setSearchResults([]);
         return;
       }
-      setIsSearching(true);
-      try {
-        const res = await searchMutation(value);
-        setSearchResults(res.data.data);
-      } catch (error) {
-        // TODO: Properly handle error
-        console.error(error);
-      }
-      setIsSearching(false);
+      clearTimeout(reqDelay.current);
+      reqDelay.current = setTimeout(async () => {
+        setIsSearching(true);
+        try {
+          const res = await searchMutation(value);
+          setSearchResults(res.data.data);
+        } catch (error) {
+          // TODO: Properly handle error
+          console.error(error);
+        }
+        setIsSearching(false);
+      }, 500);
     },
     [searchMutation]
   );
@@ -290,7 +298,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
             <Button
               size="small"
               type="submit"
-              disabled={isSubmitting || !isValid || isLoading || NOT_MANUAL}
+              disabled={isSubmitting || !isValid || isLoading || isDisabled}
               fullWidth
             >
               {isSubmitting ? 'Updating User...' : 'Update User'}
@@ -298,7 +306,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
           </form>
           <LineBreak />
           <div className={styles.userGroups}>
-            {!NOT_MANUAL && (
+            {!isDisabled && (
               <>
                 <Block disableLabelPadding label="Add Groups" required></Block>
                 <Search
@@ -320,7 +328,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
                   {userGroups.map((group, index) => (
                     <Chip className={styles.group} key={index}>
                       {group}
-                      {!NOT_MANUAL && (
+                      {!isDisabled && (
                         <>
                           {' '}
                           <Icon
@@ -338,7 +346,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
               )}
             </div>
             <Button
-              disabled={isUpdatingGroups || NOT_MANUAL}
+              disabled={isUpdatingGroups || isDisabled}
               size="small"
               fullWidth
               onClick={updateGroupMemberships}
@@ -349,7 +357,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
           <LineBreak />
           <div
             className={classNames(styles.actions, {
-              [styles.hidden]: NOT_MANUAL
+              [styles.hidden]: isDisabled
             })}
           >
             <Button
