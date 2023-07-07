@@ -38,6 +38,7 @@ from api.handlers.v4.oidc_settings.manage_oidc_settings import (
 )
 from api.handlers.v4.resources.datatable import ResourcesDataTableHandler
 from api.handlers.v4.saml_settings.manage_saml_settings import (
+    DownloadSAMLCertificateHandler,
     ManageSAMLSettingsCrudHandler,
 )
 from api.handlers.v4.scim.groups import ScimV2GroupHandler, ScimV2GroupsHandler
@@ -418,6 +419,10 @@ def make_app(jwt_validator=None):
         (
             r"/api/v4/auth/sso/saml/?",
             ManageSAMLSettingsCrudHandler,
+        ),
+        (
+            r"/api/v4/auth/sso/saml/download",
+            DownloadSAMLCertificateHandler,
         ),
         (
             r"/api/v3/auth/sso/?",

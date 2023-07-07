@@ -22,19 +22,10 @@ from common.lib.storage import TenantFileStorageHandler
 log = config.get_logger(__name__)
 
 
-async def init_saml_auth(request, tenant):
-    tenant_storage = TenantFileStorageHandler(tenant)
-    tenant_config = TenantConfig(tenant)
-    idp_metadata_url = config.get_tenant_specific_key(
-        "get_user_by_saml_settings.idp_metadata_url", tenant
-    )
-    idp_metadata = {}
-    if idp_metadata_url:
-        idp_metadata = OneLogin_Saml2_IdPMetadataParser.parse_remote(idp_metadata_url)
-
-    # NOTE: if it is dev environment, please check the port number at assertionConsumerService.url
-    saml_config = dict_merge(tenant_config.saml_config, idp_metadata)
-
+async def generate_saml_certificates(
+    tenant_storage: TenantFileStorageHandler,
+    tenant_config: TenantConfig,
+):
     # If we don't have a cert or key, generate them.
     # Then, upload them to the service provider
     if not (
@@ -88,6 +79,22 @@ async def init_saml_auth(request, tenant):
         await tenant_storage.write_file(
             tenant_config.saml_cert_path, "wb", encoded_cert
         )
+
+
+async def init_saml_auth(request, tenant):
+    tenant_storage = TenantFileStorageHandler(tenant)
+    tenant_config = TenantConfig(tenant)
+    idp_metadata_url = config.get_tenant_specific_key(
+        "get_user_by_saml_settings.idp_metadata_url", tenant
+    )
+    idp_metadata = {}
+    if idp_metadata_url:
+        idp_metadata = OneLogin_Saml2_IdPMetadataParser.parse_remote(idp_metadata_url)
+
+    # NOTE: if it is dev environment, please check the port number at assertionConsumerService.url
+    saml_config = dict_merge(tenant_config.saml_config, idp_metadata)
+
+    await generate_saml_certificates(tenant_storage, tenant_config)
 
     auth = await aio_wrapper(
         OneLogin_Saml2_Auth,

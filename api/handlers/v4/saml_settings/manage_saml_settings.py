@@ -2,9 +2,12 @@ import tornado.escape
 import tornado.web
 
 from common.config import config
+from common.config.tenant_config import TenantConfig
 from common.handlers.base import BaseAdminHandler
 from common.lib.asyncio import aio_wrapper
 from common.lib.dynamo import RestrictedDynamoHandler
+from common.lib.saml import generate_saml_certificates
+from common.lib.storage import TenantFileStorageHandler
 from common.lib.yaml import yaml
 from common.models import (
     AuthSettings,
@@ -15,6 +18,20 @@ from common.models import (
 )
 
 log = config.get_logger()
+
+
+class DownloadSAMLCertificateHandler(BaseAdminHandler):
+    async def get(self):
+        tenant = self.ctx.tenant
+        tenant_storage = TenantFileStorageHandler(tenant)
+        tenant_config = TenantConfig(tenant)
+
+        await generate_saml_certificates(tenant_storage, tenant_config)
+        file = await tenant_storage.read_file(tenant_config.saml_cert_path, "rb")
+        self.set_header("Content-Type", "application/octet-stream")
+        self.set_header("Content-Disposition", "attachment; filename=cert.crt")
+        self.write(file)
+        self.finish()
 
 
 class ManageSAMLSettingsCrudHandler(BaseAdminHandler):
