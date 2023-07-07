@@ -43,6 +43,7 @@ from common.lib.redis import RedisHandler
 from common.lib.request_context.models import RequestContext
 from common.lib.saml import authenticate_user_by_saml
 from common.lib.tenant.models import TenantDetails
+from common.lib.tenant.utils import is_tenant_active
 from common.lib.tracing import ConsoleMeTracer
 from common.lib.web import handle_generic_error_response
 from common.lib.workos import WorkOS
@@ -704,6 +705,19 @@ class BaseHandler(TornadoRequestHandler):
                 raise tornado.web.Finish(
                     f"Tenant {tenant} is not active. Please contact your administrator."
                 )
+
+        if not await is_tenant_active(tenant):
+
+            self.set_status(406)
+            self.write(
+                {
+                    "type": "redirect",
+                    "redirect_url": "https://noq.dev",  # TODO: Make this URL configurable?
+                    "reason": "inactive_tenant",
+                    "message": "Tenant is inactive",
+                }
+            )
+            raise tornado.web.Finish()
 
         self.contractor = False  # TODO: Add functionality later for contractor detection via regex or something else
 
