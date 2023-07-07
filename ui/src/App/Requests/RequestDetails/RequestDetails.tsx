@@ -165,6 +165,9 @@ const RequestChangeDetails = () => {
             file={file}
             handleModifyChange={handleModifyChange}
             key={index}
+            readOnly={['Approved', 'Rejected', 'Expired'].includes(
+              requestData?.data?.status
+            )}
           />
         ))}
         <LineBreak size="large" />
