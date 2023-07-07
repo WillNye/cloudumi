@@ -14,7 +14,7 @@ import common.lib.noq_json as json
 from common.config import config
 from common.config import globals as config_globals
 from common.config import models
-from common.exceptions.exceptions import DataNotRetrievable, MissingConfigurationValue
+from common.exceptions.exceptions import DataNotRetrievable
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.messaging import iterate_event_messages
@@ -801,10 +801,10 @@ async def handle_aws_marketplace_metering():
             # Check if any usage record failed
             if response.get("UnprocessedRecords"):
                 for record in response["UnprocessedRecords"]:
-                    log.error(f"Failed to report usage metrics", record=record)
+                    log.error("Failed to report usage metrics", record=record)
 
         except Exception as e:
-            log.exception(f"Failed to report usage metrics", batch=batch)
+            log.exception("Failed to report usage metrics", batch=batch, error=str(e))
 
 
 # TODO: I don't think this is needed?

@@ -110,7 +110,6 @@ class Tenant(SoftDeleteMixin, Base):
 
     @classmethod
     async def get_all_with_user_count(cls):
-        from common.groups.models import Group
         from common.users.models import User
 
         async with ASYNC_PG_SESSION() as session:

@@ -24,9 +24,9 @@ const formToJSON = (elements) =>
   );
 
 const getUrlParameter = (name) => {
-  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]"); // eslint-disable-line no-useless-escape
   const regex = new RegExp(`[\\?&]${name}=([^&#]*)`);
-  const results = regex.exec(location.search);
+  const results = regex.exec(location.search); // eslint-disable-line no-restricted-globals
   return results === null
     ? ""
     : decodeURIComponent(results[1].replace(/\+/g, " "));
@@ -54,7 +54,7 @@ const handleFormSubmit = (event) => {
     xhr.send(JSON.stringify(data));
 
     xhr.onreadystatechange = () => {
-      if (xhr.readyState == XMLHttpRequest.DONE) {
+      if (xhr.readyState === XMLHttpRequest.DONE) {
         showAlert("primary", xhr.responseText);
         console.log(JSON.stringify(xhr.responseText));
       }
