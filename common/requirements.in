@@ -13,6 +13,7 @@ pydantic
 python3-saml
 pynamodax
 slack_bolt
+tldextract
 workos
 types-ujson
 types-pytz

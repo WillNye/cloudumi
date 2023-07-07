@@ -7,7 +7,6 @@ from urllib.parse import urlparse
 import boto3
 import furl
 import sentry_sdk
-import tldextract
 import tornado.escape
 import tornado.web
 from email_validator import validate_email
@@ -16,6 +15,7 @@ from tornado.httputil import parse_qs_bytes
 from api.handlers.v3.tenant_registration.models import NewTenantRegistration
 from common.config import config
 from common.config.globals import ASYNC_PG_ENGINE
+from common.dns.utils import email_to_prioritized_subdomains
 from common.group_memberships.models import GroupMembership
 from common.groups.models import Group
 from common.handlers.base import TornadoRequestHandler
@@ -32,25 +32,6 @@ from common.tenants.models import Tenant
 from common.users.models import User
 
 log = config.get_logger(__name__)
-
-
-# TODO: Move this to a common location
-def email_to_prioritized_subdomains(email):
-    """Convert an email address to a list of potential subdomains."""
-    extracted = tldextract.extract(email)
-
-    subdomains = []
-    if extracted.subdomain:
-        subdomains = extracted.subdomain.split(".")
-
-    domains = [extracted.domain] + [f"{d}-{extracted.domain}" for d in subdomains[::-1]]
-
-    # Include the suffix in the last item
-    if extracted.suffix:
-        suffix = extracted.suffix.replace(".", "-")
-        domains.append(f"{domains[-1]}-{suffix}")
-
-    return domains
 
 
 async def create_tenant(
