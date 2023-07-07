@@ -154,12 +154,29 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
     reseActions();
     setIsUpdatingGroups(true);
     try {
-      await createGroupUsersMutation({
+      const res = await createGroupUsersMutation({
         users: groupUsers,
         groups: [group.name]
       });
-      // TODO: update user groups
-      setSuccessMessage('Successfully updated groups users');
+
+      // Process the messages received in the response
+      const successMessages = [];
+      const errorMessages = [];
+      res.data.data.message.forEach(message => {
+        if (message.type === 'success') {
+          successMessages.push(message.message);
+        } else if (message.type === 'error') {
+          errorMessages.push(message.message);
+        }
+      });
+
+      // Set the success and error messages
+      if (successMessages.length > 0) {
+        setSuccessMessage(successMessages.join(' '));
+      }
+      if (errorMessages.length > 0) {
+        setErrorMessage(errorMessages.join(' '));
+      }
     } catch (error) {
       const err = error as AxiosError;
       const errorRes = err?.response;

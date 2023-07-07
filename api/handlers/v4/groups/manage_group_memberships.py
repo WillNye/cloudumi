@@ -3,7 +3,7 @@ from typing import Optional
 import tornado.escape
 import tornado.gen
 import tornado.web
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 from common.group_memberships.models import GroupMembership
 from common.groups.models import Group
@@ -17,6 +17,10 @@ class MembershipData(BaseModel):
     users: list[str] = Field(...)
     check_deleted: Optional[bool] = False
 
+    @validator("groups", "users", pre=True, each_item=True)
+    def escape_injection(cls, v):
+        return tornado.escape.xhtml_escape(v)
+
 
 class ManageGroupMembershipsHandler(BaseAdminHandler):
     async def post(self):
@@ -27,7 +31,7 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
                 WebResponse(
                     success="failed",
                     status_code=400,
-                    data={"message": [{"message": f"Invalid input data: {e}"}]},
+                    errors=[{"message": f"Invalid input data: {e}"}],
                 ).dict(exclude_unset=True, exclude_none=True)
             )
             return
@@ -61,6 +65,7 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
                 if not group.managed_by == "MANUAL":
                     messages.append(
                         {
+                            "type": "error",
                             "message": "Group is managed by an external system. Cannot add users to group.",
                             "group_name": group.name,
                         }
@@ -71,11 +76,22 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
                     if not deleted:
                         messages.append(
                             {
+                                "type": "error",
                                 "message": "Unable to remove Membership.",
                                 "user_name": user_name,
                                 "group_name": group.name,
                             }
                         )
+                        continue
+                    messages.append(
+                        {
+                            "type": "success",
+                            "message": "Membership removed successfully.",
+                            "user_name": user_name,
+                            "group_name": group.name,
+                        }
+                    )
+
         return messages
 
     async def add_memberships(self, data):
@@ -85,6 +101,7 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
             if not group:
                 messages.append(
                     {
+                        "type": "error",
                         "message": "Invalid group",
                         "group_name": group_name,
                     }
@@ -93,6 +110,7 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
             if not group.managed_by == "MANUAL":
                 messages.append(
                     {
+                        "type": "error",
                         "message": "Group is managed by an external system. Cannot add users to group.",
                         "group_name": group_name,
                     }
@@ -103,6 +121,7 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
                 if not user:
                     messages.append(
                         {
+                            "type": "error",
                             "message": "Invalid user",
                             "user_name": user_name,
                         }
@@ -112,6 +131,7 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
                 if not membership:
                     messages.append(
                         {
+                            "type": "error",
                             "message": "Unable to add user to group. Membership already exists",
                             "user_name": user_name,
                             "group_name": group_name,
@@ -120,6 +140,7 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
                     continue
                 messages.append(
                     {
+                        "type": "success",
                         "message": "User added to group",
                         "user_name": user_name,
                         "group_name": group_name,
