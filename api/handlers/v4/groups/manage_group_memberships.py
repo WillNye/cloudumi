@@ -82,9 +82,10 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
 
         # TODO: make it in parallel
         # Create group memberships for each combination of valid user and group
-        for user, group in product(users, groups):
-            exists = await GroupMembership.exists_by_group_and_user(user, group)
-            if exists:
+        users_groups = list(product(users, groups))
+        data = await GroupMembership.exists_by_users_and_groups(users_groups)
+        for membership, (user, group) in zip(data, users_groups):
+            if membership:
                 messages.append(
                     {
                         "type": "error",
@@ -119,8 +120,9 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
 
         # TODO: make it in parallel
         # Remove group memberships for each combination of valid user and group
-        for user, group in product(users, groups):
-            membership = await GroupMembership.get_by_user_and_group(user, group)
+        users_groups = list(product(users, groups))
+        data = await GroupMembership.exists_by_users_and_groups(users_groups)
+        for membership, (user, group) in zip(data, users_groups):
             if not membership:
                 messages.append(
                     {
