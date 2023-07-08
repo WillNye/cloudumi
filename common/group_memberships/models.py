@@ -57,6 +57,36 @@ class GroupMembership(SoftDeleteMixin, Base):
                 return membership.scalars().all()
 
     @classmethod
+    async def exists_by_group_and_user(cls, user, group) -> bool:
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = (
+                    select(GroupMembership)
+                    .where(
+                        and_(
+                            GroupMembership.group_id == group.id,
+                            GroupMembership.user_id == user.id,
+                        )
+                    )
+                    .exists()
+                )
+                result = await session.scalars(select(True).filter(stmt))
+                return result.unique().first() or False
+
+    @classmethod
+    async def get_by_user_and_group(cls, user, group) -> "GroupMembership":
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = select(GroupMembership).where(
+                    and_(
+                        GroupMembership.group_id == group.id,
+                        GroupMembership.user_id == user.id,
+                    )
+                )
+                result = await session.scalars(stmt)
+                return result.unique().first()
+
+    @classmethod
     async def create(cls, user, group):
         if await GroupMembership.get(user, group):
             # Group membership already exists. No big deal.

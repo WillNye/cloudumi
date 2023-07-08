@@ -311,6 +311,20 @@ class User(SoftDeleteMixin, Base):
                 return user.scalars().first()
 
     @classmethod
+    async def get_by_usernames(cls, tenant, usernames: list[str]) -> list["User"]:
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = select(User).where(
+                    and_(
+                        User.tenant == tenant,
+                        User.username.in_(usernames),
+                        User.deleted == False,  # noqa
+                    )
+                )
+                result = await session.scalars(stmt)
+                return result.unique().all()
+
+    @classmethod
     async def get_by_email(cls, tenant, email, get_groups=False):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():

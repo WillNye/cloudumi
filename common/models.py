@@ -687,7 +687,7 @@ class RegistrationAttemptModel(BaseModel):
     password: str
 
 
-class Status2(Enum):
+class Status2(str, Enum):
     success = "success"
     error = "error"
     redirect = "redirect"
@@ -702,7 +702,7 @@ class WebResponse(BaseModel):
     redirect_url: Optional[str] = None
     status_code: Optional[int] = None
     message: Optional[str] = None
-    errors: Optional[List[str]] = None
+    errors: Optional[List[Union[str, Dict[str, Any]]]] = None
     count: Optional[int] = None
     total: Optional[int] = None
     page: Optional[int] = None
