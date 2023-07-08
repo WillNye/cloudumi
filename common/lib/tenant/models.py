@@ -1,6 +1,9 @@
 from datetime import datetime
 from enum import Enum
+from typing import List
 
+from asyncache import cached
+from cachetools import TTLCache
 from pynamodax.attributes import BooleanAttribute, NumberAttribute, UnicodeAttribute
 from pynamodax.indexes import AllProjection, GlobalSecondaryIndex
 
@@ -169,6 +172,23 @@ class TenantDetails(GlobalNoqModel):
         }
 
         await self.save()
+
+    @classmethod
+    @cached(cache=TTLCache(maxsize=128, ttl=300))
+    async def get_cached_all_active_tenant_names_for_cluster(cls) -> List[str]:
+        return await cls.get_all_active_tenant_names_for_cluster()
+
+    @classmethod
+    async def get_all_active_tenant_names_for_cluster(cls) -> List[str]:
+        results = []
+        for r in await cls.cluster_sharding_index.query(
+            await cls._get_cluster(), attributes_to_get=["name", "is_active"]
+        ):
+            details: TenantDetails = r
+            if details.is_active:
+                results.append(details.name)
+        results.extend(list(config.get("site_configs", {}).keys()))
+        return list(set(results))
 
     @classmethod
     async def tenant_exists(cls, tenant_name: str) -> bool:

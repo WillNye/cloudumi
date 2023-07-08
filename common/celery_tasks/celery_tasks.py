@@ -106,7 +106,7 @@ from common.lib.redis import RedisHandler
 from common.lib.self_service.typeahead import cache_self_service_typeahead
 from common.lib.sentry import before_send_event
 from common.lib.templated_resources import cache_resource_templates
-from common.lib.tenant import get_all_tenants
+from common.lib.tenant.models import TenantDetails
 from common.lib.tenant_integrations.aws import handle_tenant_integration_queue
 from common.lib.terraform import cache_terraform_resources
 from common.lib.timeout import Timeout
@@ -563,7 +563,9 @@ def _add_role_to_redis(redis_key: str, role_entry: dict, tenant: str) -> None:
 @app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_cloudtrail_errors_by_arn_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -611,7 +613,9 @@ def cache_cloudtrail_errors_by_arn(tenant=None) -> dict[str, Any]:
 @app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_policies_table_details_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -1168,7 +1172,9 @@ def cache_access_advisor_across_accounts_for_all_tenants() -> dict[str, Any]:
     :return: Number of tenants that had tasks triggered.
     """
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -1189,7 +1195,9 @@ def cache_access_advisor_across_accounts_for_all_tenants() -> dict[str, Any]:
 @app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_iam_resources_across_accounts_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -1389,7 +1397,9 @@ def cache_managed_policies_for_account(
 @app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_managed_policies_across_accounts_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -1425,7 +1435,9 @@ def cache_managed_policies_across_accounts(tenant=None) -> bool:
 @app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_s3_buckets_across_accounts_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -1521,7 +1533,9 @@ def cache_s3_buckets_across_accounts(
 @app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_sqs_queues_across_accounts_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -1611,7 +1625,9 @@ def cache_sqs_queues_across_accounts(
 @app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_sns_topics_across_accounts_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -2110,7 +2126,9 @@ def cache_resources_from_aws_config_for_account(
 @app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_resources_from_aws_config_across_accounts_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -2230,7 +2248,9 @@ def cache_resources_from_aws_config_across_accounts(
 @app.task(soft_time_limit=300, **default_celery_task_kwargs)
 def cache_cloud_account_mapping_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -2264,7 +2284,9 @@ def cache_cloud_account_mapping(tenant=None) -> dict[str, Any]:
 @app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_credential_authorization_mapping_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -2312,7 +2334,9 @@ def cache_credential_authorization_mapping(tenant=None) -> dict[str, Any]:
 @app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_scps_across_organizations_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -2343,7 +2367,9 @@ def cache_scps_across_organizations(tenant=None) -> dict[str, Any]:
 @app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_organization_structure_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -2412,7 +2438,9 @@ def cache_organization_structure(tenant=None) -> dict[str, Any]:
 @app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_resource_templates_task_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -2459,7 +2487,9 @@ def cache_terraform_resources_task(tenant=None) -> dict[str, Any]:
 @app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_terraform_resources_task_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -2474,7 +2504,9 @@ def cache_terraform_resources_task_for_all_tenants() -> dict[str, Any]:
 @app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_self_service_typeahead_task_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -2507,7 +2539,9 @@ def trigger_credential_mapping_refresh_from_role_changes_for_all_tenants() -> di
     str, Any
 ]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -2562,7 +2596,9 @@ def trigger_credential_mapping_refresh_from_role_changes(tenant=None):
 @app.task(soft_time_limit=3600, **default_celery_task_kwargs)
 def cache_cloudtrail_denies_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -2631,7 +2667,9 @@ def refresh_iam_role(role_arn, tenant=None):
 @app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def cache_notifications_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -2693,7 +2731,9 @@ def cache_identity_users_for_tenant_t(tenant: str = None) -> dict[str, Any]:
 @app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def cache_identities_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -2726,7 +2766,9 @@ def cache_identity_requests_for_tenant_t(tenant: str = None) -> dict[str, Any]:
 @app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def cache_identity_requests_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -2812,7 +2854,9 @@ def remove_expired_requests_for_tenant(tenant: str = None):
 @app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def remove_expired_requests_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -2835,7 +2879,9 @@ def update_providers_and_provider_definitions_for_tenant(tenant: str = None):
 @app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def update_providers_and_provider_definitions_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     log_data = {
         "function": function,
         "message": "Spawning tasks",
@@ -2856,7 +2902,9 @@ def workos_cache_users_from_directory() -> dict[str, Any]:
         "message": "Syncing WorkOS Users",
     }
     log.debug(log_data)
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     for tenant in tenants:
         workos = WorkOS(tenant)
         async_to_sync(workos.cache_users_from_directory)()
@@ -2885,7 +2933,9 @@ def sync_iambic_templates_all_tenants() -> dict[str, Any]:
         "message": "Syncing Iambic Templates",
     }
     log.debug(log_data)
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     for tenant in tenants:
         sync_iambic_templates_for_tenant.delay(tenant)
     return log_data
@@ -2912,7 +2962,9 @@ def upsert_tenant_request_types_for_all_tenants() -> dict[str, Any]:
         "message": "Updating Request Type Templates",
     }
     log.debug(log_data)
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     for tenant in tenants:
         upsert_tenant_request_types_for_tenant.delay(tenant)
     return log_data
@@ -2968,7 +3020,9 @@ def cache_iambic_data_for_all_tenants() -> dict[str, Any]:
         "message": "Caching Iambic data for all tenants.",
     }
     log.debug(log_data)
-    tenants = get_all_tenants()
+    tenants = asyncio.run(
+        TenantDetails.get_cached_all_active_tenant_names_for_cluster()
+    )
     for tenant in tenants:
         cache_iambic_data_for_tenant.delay(tenant)
 
@@ -3212,7 +3266,7 @@ app.conf.timezone = "UTC"
 # from multiprocessing import current_process  # noqa: E402
 
 # if current_process().name == "MainProcess":
-#     tenants = get_all_tenants()
+#     tenants = asyncio.run(TenantDetails.get_cached_all_active_tenant_names_for_cluster())
 #     import asyncio
 
 #     for tenant in tenants:
