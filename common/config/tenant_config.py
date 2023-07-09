@@ -25,6 +25,7 @@ class TenantConfigBase:
         self.tenant: str = tenant
         db_tenant: Tenant = Tenant.get_by_name_sync(tenant)
         self.tenant_id: int = int(db_tenant.id)
+        self.tenant_base_path = None
         del db_tenant
 
     def get_tenant_or_global_config_var(self, config_str, default=None) -> Any:
@@ -52,6 +53,8 @@ class TenantConfigBase:
 
     @property
     def tenant_storage_base_path(self):
+        if self.tenant_base_path:
+            return self.tenant_base_path
         global_path = os.path.expanduser(
             config.get(
                 "_global_.tenant_storage.base_path", "/data/tenant_data/"
@@ -61,9 +64,11 @@ class TenantConfigBase:
         if self.tenant in global_path:
             raise Exception("Tenant ID must not be in the base path")
 
-        tenant_base_path = os.path.join(global_path, f"{self.tenant}_{self.tenant_id}")
-        os.makedirs(tenant_base_path, exist_ok=True)
-        return tenant_base_path
+        self.tenant_base_path = os.path.join(
+            global_path, f"{self.tenant}_{self.tenant_id}"
+        )
+        os.makedirs(self.tenant_base_path, exist_ok=True)
+        return self.tenant_base_path
 
     @property
     def tenant_url(self):
