@@ -24,7 +24,7 @@ log = config.get_logger(__name__)
 
 async def init_saml_auth(request, tenant):
     tenant_storage = TenantFileStorageHandler(tenant)
-    tenant_config = TenantConfig(tenant)
+    tenant_config = TenantConfig.get_instance(tenant)
     idp_metadata_url = config.get_tenant_specific_key(
         "get_user_by_saml_settings.idp_metadata_url", tenant
     )
@@ -111,7 +111,7 @@ def get_saml_login_endpoint(saml_login_endpoint, tenant):
 
 
 async def prepare_tornado_request_for_saml(request, tenant):
-    tenant_config = TenantConfig(tenant)
+    tenant_config = TenantConfig.get_instance(tenant)
     dataDict = {}
 
     for key in request.arguments:
