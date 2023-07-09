@@ -187,9 +187,8 @@ async def create_request(
         f"| **Created by** | {created_by} |\n"
         f"| **Justification**  | {justification} |\n"
     )
-
     branch_name = await request_pr.create_request(
-        comment, changes, request_notes=request_notes
+        comment, changes, request_notes=request_notes, reuse_branch_repo=True
     )
 
     request = Request(

@@ -129,7 +129,6 @@ class IambicRepo:
             if "origin" in remote.name:
                 with remote.config_writer as cw:
                     cw.set("url", await self.get_repo_uri())
-                remote.fetch()
 
     async def clone_or_pull_git_repo(self):
         if os.path.exists(self.default_file_path):
@@ -155,10 +154,18 @@ class IambicRepo:
             self.repo = repo
             await self.set_repo_auth()
 
-    async def set_request_branch(self):
+    async def set_request_branch(self, reuse_branch_repo: bool = False):
         """THIS IS A DESTRUCTIVE OPERATION.
         deletes whatever is in request_file_path and sets a new worktree for the request branch in the path
         """
+        if not isinstance(self.request_file_path, str):
+            raise ValueError(
+                f"request_file_path must be a string, got {self.request_file_path}"
+            )
+        if reuse_branch_repo:
+            if os.path.exists(self.request_file_path):
+                self.repo = Repo(self.request_file_path)
+                return
         if os.path.exists(self.request_file_path):
             await aioshutil.rmtree(self.request_file_path)
 
@@ -181,21 +188,26 @@ class IambicRepo:
             await run_command(
                 "git",
                 "clone",
+                "--branch",
+                self.default_branch_name,
+                "--single-branch",
                 "--no-checkout",
+                "--depth=1",
+                "--no-tags",
+                "--single-branch",
                 await self.get_repo_uri(),
                 self.request_file_path,
             )
             await run_command(
                 "git", "sparse-checkout", "init", "--cone", cwd=self.request_file_path
             )
-            for file_path in self.file_paths_being_changed:
-                await run_command(
-                    "git",
-                    "sparse-checkout",
-                    "set",
-                    file_path,
-                    cwd=self.request_file_path,
-                )
+            await run_command(
+                "git",
+                "sparse-checkout",
+                "set",
+                *self.file_paths_being_changed,
+                cwd=self.request_file_path,
+            )
             await run_command("git", "checkout", cwd=self.request_file_path)
             await run_command(
                 "git",
@@ -249,7 +261,7 @@ class IambicRepo:
             # So, we want to pull the latest changes before we create the worktree
             log.debug({"message": "Adding tree to repo", **log_data})
             await self.clone_or_pull_git_repo()  # Ensure we have the latest changes on main
-            await self.set_request_branch()  # Create the worktree and set self.repo
+            await self.set_request_branch()  # Create the worktree or sparse-checkout and set self.repo
 
     async def _commit_and_push_changes(
         self,
@@ -363,10 +375,11 @@ class IambicRepo:
         requested_by: str,
         files: list[IambicTemplateChange],
         request_notes: Optional[str] = None,
+        reuse_branch_repo: bool = False,
     ) -> str:
         self.request_id = request_id
         self.requested_by = requested_by
-        await self.set_request_branch()
+        await self.set_request_branch(reuse_branch_repo=reuse_branch_repo)
         return await self._commit_and_push_changes(
             files, self.requested_by, request_notes
         )
