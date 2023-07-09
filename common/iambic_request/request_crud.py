@@ -168,8 +168,14 @@ async def create_request(
     slack_channel_id: Optional[str] = None,
     slack_message_id: Optional[str] = None,
 ):
+    file_paths_being_changed = [change.file_path for change in changes]
     request_id = str(uuid.uuid4())
-    request_pr = await get_iambic_pr_instance(tenant, request_id, created_by)
+    request_pr = await get_iambic_pr_instance(
+        tenant,
+        request_id,
+        created_by,
+        file_paths_being_changed=file_paths_being_changed,
+    )
 
     request_link = (
         f"{config.get_tenant_specific_key('url', tenant.name)}/requests/{request_id}"
