@@ -172,6 +172,26 @@ ecs-set-ssh-password-prod:
 	CONTAINER_NAME=$$(aws ecs describe-tasks --tasks $$TASK_ID --cluster noq-dev-shared-prod-1 --profile prod/prod_admin --region us-west-2 --query 'tasks[0].containers[0].name' --output text) && \
 	aws ecs execute-command --cluster noq-dev-shared-prod-1 --task $$TASK_ID --container $$CONTAINER_NAME --command "/bin/sh -c '/etc/init.d/ssh start; echo root:TEMP_PASS | chpasswd'" --profile prod/prod_admin --region us-west-2 --interactive
 
+.PHONY: ecs-tunnel-prod-ssh
+ecs-tunnel-prod-ssh: ecs-set-ssh-password-prod
+	@echo "SSH to the prod host with the following command:"
+	@echo "ssh root@127.0.0.1 -p 2222"
+	@echo "Password: TEMP_PASS"
+	export AWS_PROFILE=prod/prod_admin
+	@TASK_ID=$$(aws ecs list-tasks --cluster noq-dev-shared-prod-1 --service api --profile prod/prod_admin --region us-west-2 --query 'taskArns[0]' --output text | awk -F/ '{print $$NF}') && \
+	AWS_PROFILE=prod/prod_admin ecs-tunnel -L 2222:22 -c noq-dev-shared-prod-1 -t $$TASK_ID --region us-west-2
+
+.PHONY: ecs-tunnel-copy-changed-files-to-staging
+ecs-tunnel-copy-changed-files-to-staging:
+	@echo "Run \`make ecs-tunnel-staging-ssh\` and then copy files to the staging host with the following command."
+	@echo "git diff origin/main --name-only --diff-filter=AM | SSHPASS=TEMP_PASS xargs -I '{}' sh -c 'echo \"Copying file: {}\"; sshpass -e scp -o PreferredAuthentications=password -o "StrictHostKeyChecking=no" -P 2222 \"{}\" root@127.0.0.1:/app/\"{}\"'"
+
+.PHONY: ecs-tunnel-copy-changed-files-to-prod
+ecs-tunnel-copy-changed-files-to-prod:
+	@echo "Run \`make ecs-tunnel-prod-ssh\` and then copy files to the prod API host with the following command."
+	@echo "git diff origin/main --name-only --diff-filter=AM | SSHPASS=TEMP_PASS xargs -I '{}' sh -c 'echo \"Copying file: {}\"; sshpass -e scp -o PreferredAuthentications=password -o "StrictHostKeyChecking=no" -P 2222 \"{}\" root@127.0.0.1:/app/\"{}\"'"
+
+
 tf-staging-refresh:
 	@cd deploy/infrastructure && \
 	export AWS_PROFILE=$(AWS_PROFILE_STAGING) AWS_REGION=$(AWS_REGION_STAGING); \

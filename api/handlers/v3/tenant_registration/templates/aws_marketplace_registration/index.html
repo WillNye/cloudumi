@@ -89,6 +89,7 @@
         action="/aws_marketplace/form_submission"
         method="POST"
       >
+        {% module xsrf_form_html() %}
         <img
           class="mb-4"
           src="https://noq-docs-public.s3.us-west-2.amazonaws.com/images/NoqLogo.png"

@@ -100,6 +100,8 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
             "/api/v3/slack/events",
             "/api/v3/github/callback/",
             "/api/v3/github/events/",
+            "/aws_marketplace",
+            "/aws_marketplace/form_submission",
         ]
         tenant = self.get_tenant_name()
         # Ensure request is for a valid tenant

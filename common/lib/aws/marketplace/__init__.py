@@ -766,7 +766,7 @@ async def handle_aws_marketplace_metering():
     tenant_active_user_counts: dict[str, int] = await Tenant.get_all_with_user_count()
     all_aws_marketplace_tenants = [x for x in await AWSMarketplaceTenantDetails.scan()]
 
-    marketplace_metering = boto3.client("meteringmarketplace", region_name="us-east-1")
+    marketplace_metering = boto3.client("meteringmarketplace")
     # if config.get("_global_.development"):
     #     prod = boto3.session.Session(
     #         profile_name="prod/prod_admin", region_name="us-east-1"

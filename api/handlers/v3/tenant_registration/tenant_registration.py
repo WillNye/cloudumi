@@ -22,11 +22,11 @@ from common.handlers.base import TornadoRequestHandler
 from common.lib.cognito.identity import (
     ADMIN_GROUP_NAME,
     generate_dev_domain,
-    generate_password,
     get_external_id,
 )
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.free_email_domains import is_email_free
+from common.lib.password import generate_random_password
 from common.lib.tenant.models import AWSMarketplaceTenantDetails, TenantDetails
 from common.tenants.models import Tenant
 from common.users.models import User
@@ -145,7 +145,7 @@ async def create_tenant(
             organization_id=dev_domain,
         )
         email_domain = tenant.email.split("@")[1]
-        password = generate_password()
+        password = generate_random_password()
         user = await User.create(
             tenant_db,
             tenant.email,
@@ -273,9 +273,7 @@ class TenantRegistrationAwsMarketplaceFormSubmissionHandler(TornadoRequestHandle
                 }
             )
             return
-        marketplace_client = boto3.client(
-            "meteringmarketplace", region_name="us-west-2"
-        )
+        marketplace_client = boto3.client("meteringmarketplace")
         # TODO: For development purposes, you can use the following code to test the registration token
         # Note: It will affect live production.
         # if config.get("_global_.development"):
@@ -370,11 +368,12 @@ class TenantRegistrationAwsMarketplaceFormSubmissionHandler(TornadoRequestHandle
 
 
 class TenantRegistrationAwsMarketplaceHandler(TornadoRequestHandler):
+    def check_xsrf_cookie(self):
+        pass
+
     async def handle_aws_marketplace_request(self, registration_token):
         # TODO: Configurable Region
-        marketplace_client = boto3.client(
-            "meteringmarketplace", region_name="us-west-2"
-        )
+        marketplace_client = boto3.client("meteringmarketplace")
         # TODO: For development purposes, you can use the following code to test the registration token
         # Note: It will affect live production.
         # if config.get("_global_.development"):
@@ -383,6 +382,10 @@ class TenantRegistrationAwsMarketplaceHandler(TornadoRequestHandler):
         #     )
         #     marketplace_client = prod.client("meteringmarketplace")
         # For testing in Postman, ensure that the registration token is URL encoded
+        log.debug(
+            "AWS Marketplace Registration Request Received",
+            registration_token=registration_token,
+        )
         customer_data = marketplace_client.resolve_customer(
             RegistrationToken=registration_token
         )
@@ -422,9 +425,7 @@ class TenantRegistrationAwsMarketplaceHandler(TornadoRequestHandler):
     async def post(self):
         body = self.request.body
         data = parse_qs_bytes(body)
-        registration_token = tornado.escape.url_unescape(
-            data.get("x-amzn-marketplace-token", [""])[0].decode()
-        )
+        registration_token = data.get("x-amzn-marketplace-token", [""])[0].decode()
 
         if not registration_token:
             self.set_status(400)
@@ -556,7 +557,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
                 organization_id=dev_domain,
             )
             email_domain = tenant.email.split("@")[1]
-            password = generate_password()
+            password = generate_random_password()
             user = await User.create(
                 tenant_db,
                 tenant.email,
