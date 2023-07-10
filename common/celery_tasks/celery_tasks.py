@@ -9,6 +9,7 @@ command: celery -A common.celery_tasks.celery_tasks worker --loglevel=info -l DE
 """
 from __future__ import absolute_import
 
+import asyncio
 import json  # We use a separate SetEncoder here so we cannot use ujson
 import ssl
 import sys
@@ -3283,11 +3284,11 @@ app.conf.timezone = "UTC"
 # TODO: Determine how to map IdP groups to Slack channels
 
 # handle_aws_marketplace_subscription_queue()
-import asyncio
+# import asyncio
 
-from common.lib.aws.marketplace import retrieve_and_update_marketplace_entitlements
+# from common.lib.aws.marketplace import retrieve_and_update_marketplace_entitlements
 
-asyncio.run(retrieve_and_update_marketplace_entitlements())
+# asyncio.run(retrieve_and_update_marketplace_entitlements())
 
 # TODO: Set up Celery Task to run aws_marketplace_metering every 30 minutes
 # asyncio.run(handle_aws_marketplace_metering())
