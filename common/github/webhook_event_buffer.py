@@ -211,7 +211,7 @@ async def handle_github_webhook_event_queue(
             break
         processed_messages = []
 
-        for message in iterate_event_messages(queue_region, queue_name, messages):
+        for message in iterate_event_messages(queue_arn, messages):
             num_events += 1
             try:
                 # BEGIN Actual work done, the
