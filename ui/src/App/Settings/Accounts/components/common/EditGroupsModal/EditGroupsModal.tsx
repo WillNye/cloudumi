@@ -10,6 +10,7 @@ import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
   createGroupMemberships,
+  deleteGroupMemberships,
   getAllUsers,
   updateGroup
 } from 'core/API/settings';
@@ -22,7 +23,6 @@ import { Divider } from 'shared/elements/Divider';
 import { useMutation } from '@tanstack/react-query';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { Chip } from 'shared/elements/Chip';
-import debounce from 'lodash/debounce';
 
 type EditGroupsModalProps = {
   canEdit?: boolean;
@@ -52,6 +52,10 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [groupUsers, setGroupUsers] = useState(group.users);
+  const [groupEdition, setGroupEdition] = useState({
+    add: [],
+    remove: []
+  });
   const [isSearching, setIsSearching] = useState(false);
   const [isUpdatingGroups, setIsUpdatingGroups] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
@@ -63,7 +67,12 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
 
   const { mutateAsync: createGroupUsersMutation } = useMutation({
     mutationFn: (data: CreateGroupUserParams) =>
-      createGroupMemberships({ ...data, check_deleted: true })
+      createGroupMemberships({ ...data })
+  });
+
+  const { mutateAsync: deleteGroupUsersMutation } = useMutation({
+    mutationFn: (data: CreateGroupUserParams) =>
+      deleteGroupMemberships({ ...data })
   });
 
   const { mutateAsync: searchMutation } = useMutation({
@@ -98,17 +107,45 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
   const resultRenderer = result => <p>{result.email}</p>;
   const onSelectResult = user => {
     setSearchValue(user.email);
-    setGroupUsers(users => [...new Set([...users, user.email])]);
+    setGroupUsers([...new Set([...groupUsers, user.email])]);
+
+    if (groupEdition.remove.includes(user.email)) {
+      setGroupEdition({
+        ...groupEdition,
+        remove: groupEdition.remove.filter(u => u != user.email)
+      });
+    } else {
+      setGroupEdition({
+        ...groupEdition,
+        add: [...new Set([...groupEdition.add, user.email])]
+      });
+    }
   };
 
-  const reseActions = useCallback(() => {
+  const handleDeleteChip = (user, index) => {
+    setGroupUsers([...new Set([...groupUsers.filter((ug, i) => i != index)])]);
+
+    if (groupEdition.add.includes(user)) {
+      setGroupEdition({
+        ...groupEdition,
+        add: groupEdition.add.filter(u => u == user)
+      });
+    } else {
+      setGroupEdition({
+        ...groupEdition,
+        remove: [...new Set([...groupEdition.remove, user])]
+      });
+    }
+  };
+
+  const resetActions = useCallback(() => {
     setErrorMessage(null);
     setSuccessMessage(null);
   }, []);
 
   const onSubmit = useCallback(
     async ({ name, description }) => {
-      reseActions();
+      resetActions();
       try {
         await updateGroupMutation({
           id: group.id,
@@ -126,7 +163,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
         );
       }
     },
-    [group.id, reseActions, updateGroupMutation]
+    [group.id, resetActions, updateGroupMutation]
   );
 
   let reqDelay = useRef<any>();
@@ -157,24 +194,40 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
   );
 
   const updateGroupMemberships = useCallback(async () => {
-    reseActions();
+    resetActions();
     setIsUpdatingGroups(true);
     try {
-      const res = await createGroupUsersMutation({
-        users: groupUsers,
-        groups: [group.name]
-      });
+      const responses = await Promise.all([
+        groupEdition.add.length
+          ? createGroupUsersMutation({
+              users: groupEdition.add, //groupEdition.add,
+              groups: [group.name]
+            })
+          : null,
+        groupEdition.remove.length
+          ? deleteGroupUsersMutation({
+              users: groupEdition.remove,
+              groups: [group.name]
+            })
+          : null
+      ]);
 
       // Process the messages received in the response
       const successMessages = [];
       const errorMessages = [];
-      res.data.data.message.forEach(message => {
-        if (message.type === 'success') {
-          successMessages.push(message.message);
-        } else if (message.type === 'error') {
-          errorMessages.push(message.message);
+      for (const res of responses) {
+        if (!res) {
+          continue;
         }
-      });
+
+        res.data.data.message.forEach(message => {
+          if (message.type === 'success') {
+            successMessages.push(message.message);
+          } else if (message.type === 'error') {
+            errorMessages.push(message.message);
+          }
+        });
+      }
 
       // Set the success and error messages
       if (successMessages.length > 0) {
@@ -182,6 +235,9 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
       }
       if (errorMessages.length > 0) {
         setErrorMessage(errorMessages.join(' '));
+      } else {
+        // Reset the group edition
+        setGroupEdition({ add: [], remove: [] });
       }
     } catch (error) {
       const err = error as AxiosError;
@@ -192,11 +248,14 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
       );
     }
     setIsUpdatingGroups(false);
-  }, [group.name, groupUsers, reseActions, createGroupUsersMutation]);
-
-  const handleDeleteChip = index => {
-    setGroupUsers([...new Set([...groupUsers.filter((ug, i) => i != index)])]);
-  };
+  }, [
+    resetActions,
+    createGroupUsersMutation,
+    groupEdition.add,
+    groupEdition.remove,
+    group.name,
+    deleteGroupUsersMutation
+  ]);
 
   const isDisabled = useMemo(
     () => group.managed_by != 'MANUAL',
@@ -301,7 +360,7 @@ const EditGroupsModal: FC<EditGroupsModalProps> = ({ canEdit, group }) => {
                           <Icon
                             name="close"
                             size="small"
-                            onClick={() => handleDeleteChip(index)}
+                            onClick={() => handleDeleteChip(user, index)}
                           />
                         </>
                       )}

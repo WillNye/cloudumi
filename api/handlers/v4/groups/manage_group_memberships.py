@@ -207,7 +207,7 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
 
 def validate_manual(item: Group | User, messages, name: str):
     """Validate that the item is not managed by an external system"""
-    if item.managed_by is not "MANUAL":  # noqa: F632
+    if str(item.managed_by) != "MANUAL":  # noqa: F632
         messages.append(
             {
                 "type": "error",

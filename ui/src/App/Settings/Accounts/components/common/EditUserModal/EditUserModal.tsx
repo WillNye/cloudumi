@@ -10,6 +10,7 @@ import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
   createGroupMemberships,
+  deleteGroupMemberships,
   getAllGroups,
   updateUser
 } from 'core/API/settings';
@@ -53,6 +54,10 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [userGroups, setUserGroups] = useState(user.groups);
+  const [groupEdition, setGroupEdition] = useState({
+    add: [],
+    remove: []
+  });
   const [isSearching, setIsSearching] = useState(false);
   const [isUpdatingGroups, setIsUpdatingGroups] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
@@ -65,7 +70,12 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
 
   const { mutateAsync: createUserGroupsMutation } = useMutation({
     mutationFn: (data: CreateUserGroupsParams) =>
-      createGroupMemberships({ ...data, check_deleted: true })
+      createGroupMemberships({ ...data })
+  });
+
+  const { mutateAsync: deleteGroupUsersMutation } = useMutation({
+    mutationFn: (data: CreateUserGroupsParams) =>
+      deleteGroupMemberships({ ...data })
   });
 
   const { mutateAsync: searchMutation } = useMutation({
@@ -97,25 +107,50 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
     }
   });
 
-  const isDisabled = useMemo(
-    () => user.managed_by != 'MANUAL',
-    [user.managed_by]
-  );
-
   const resultRenderer = result => <p>{result.name}</p>;
   const onSelectResult = group => {
     setSearchValue(group.name);
-    setUserGroups(groups => [...new Set([...groups, group.name])]);
+    setUserGroups([...new Set([...userGroups, group.name])]);
+
+    if (groupEdition.remove.includes(group.name)) {
+      setGroupEdition({
+        ...groupEdition,
+        remove: groupEdition.remove.filter(u => u != group.name)
+      });
+    } else {
+      setGroupEdition({
+        ...groupEdition,
+        add: [...new Set([...groupEdition.add, group.name])]
+      });
+    }
   };
 
-  const reseActions = useCallback(() => {
+  const handleDeleteChip = (group, index) => {
+    setUserGroups([...new Set([...userGroups.filter((ug, i) => i != index)])]);
+
+    setUserGroups([...new Set([...userGroups.filter((ug, i) => i != index)])]);
+
+    if (groupEdition.add.includes(group)) {
+      setGroupEdition({
+        ...groupEdition,
+        add: groupEdition.add.filter(u => u == group)
+      });
+    } else {
+      setGroupEdition({
+        ...groupEdition,
+        remove: [...new Set([...groupEdition.remove, group])]
+      });
+    }
+  };
+
+  const resetActions = useCallback(() => {
     setErrorMessage(null);
     setSuccessMessage(null);
   }, []);
 
   const resetUserCredentials = useCallback(
     async (action: UPDATE_USER_ACTIONS) => {
-      reseActions();
+      resetActions();
       setIsLoading(true);
       try {
         await updateUserMutation({
@@ -135,12 +170,12 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
       }
       setIsLoading(false);
     },
-    [user.id, reseActions, updateUserMutation]
+    [user.id, resetActions, updateUserMutation]
   );
 
   const onSubmit = useCallback(
     async ({ email, username }) => {
-      reseActions();
+      resetActions();
       try {
         await updateUserMutation({
           data: {
@@ -161,7 +196,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
         );
       }
     },
-    [user.id, reseActions, updateUserMutation]
+    [user.id, resetActions, updateUserMutation]
   );
 
   let reqDelay = useRef<any>();
@@ -192,31 +227,50 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
   );
 
   const updateGroupMemberships = useCallback(async () => {
-    reseActions();
+    resetActions();
     setIsUpdatingGroups(true);
     try {
-      const res = await createUserGroupsMutation({
-        users: [user.email],
-        groups: userGroups
-      });
+      const responses = await Promise.all([
+        groupEdition.add.length
+          ? createUserGroupsMutation({
+              users: [user.email], //groupEdition.add,
+              groups: groupEdition.add
+            })
+          : null,
+        groupEdition.remove.length
+          ? deleteGroupUsersMutation({
+              users: [user.email],
+              groups: groupEdition.remove
+            })
+          : null
+      ]);
 
-      const messages = res.data.data.message;
-      const successMessages = messages.filter(
-        message => message.type === 'success'
-      );
-      const errorMessages = messages.filter(
-        message => message.type === 'error'
-      );
+      const successMessages = [];
+      const errorMessages = [];
+
+      for (const res of responses) {
+        if (!res) {
+          continue;
+        }
+
+        res.data.data.message.forEach(message => {
+          if (message.type === 'success') {
+            successMessages.push(message.message);
+          } else if (message.type === 'error') {
+            errorMessages.push(message.message);
+          }
+        });
+      }
 
       // Concatenate all the messages separated by a newline
-      const successMsg = successMessages.map(msg => msg.message).join('\n');
-      const errorMsg = errorMessages.map(msg => msg.message).join('\n');
-
-      if (successMsg) {
-        setSuccessMessage(successMsg);
+      if (successMessages.length > 0) {
+        setSuccessMessage(successMessages.join('\n'));
       }
-      if (errorMsg) {
-        setErrorMessage(errorMsg);
+      if (errorMessages.length > 0) {
+        setErrorMessage(errorMessages.join('\n'));
+      } else {
+        // Reset the group edition
+        setGroupEdition({ add: [], remove: [] });
       }
     } catch (error) {
       const err = error as AxiosError;
@@ -227,11 +281,19 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
       );
     }
     setIsUpdatingGroups(false);
-  }, [user.email, userGroups, reseActions, createUserGroupsMutation]);
+  }, [
+    resetActions,
+    groupEdition.add,
+    groupEdition.remove,
+    createUserGroupsMutation,
+    user.email,
+    deleteGroupUsersMutation
+  ]);
 
-  const handleDeleteChip = index => {
-    setUserGroups([...new Set([...userGroups.filter((ug, i) => i != index)])]);
-  };
+  const isDisabled = useMemo(
+    () => user.managed_by != 'MANUAL',
+    [user.managed_by]
+  );
 
   if (!(canEdit ?? true)) {
     return <Fragment />;
@@ -334,7 +396,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
                           <Icon
                             name="close"
                             size="small"
-                            onClick={() => handleDeleteChip(index)}
+                            onClick={() => handleDeleteChip(group, index)}
                           />
                         </>
                       )}
