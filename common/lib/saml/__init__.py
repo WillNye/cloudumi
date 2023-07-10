@@ -1,5 +1,6 @@
 import datetime
 import sys
+from typing import TYPE_CHECKING
 
 import tornado.httputil
 from cryptography import x509
@@ -15,10 +16,13 @@ from common.config import config
 from common.config.config import dict_merge
 from common.config.tenant_config import TenantConfig, TenantConfigBase
 from common.exceptions.exceptions import WebAuthNError
-from common.handlers.base import TornadoRequestHandler
 from common.lib.asyncio import aio_wrapper
 from common.lib.generic import should_force_redirect
 from common.lib.storage import TenantFileStorageHandler
+
+if TYPE_CHECKING:
+    from common.handlers.base import TornadoRequestHandler
+
 
 log = config.get_logger(__name__)
 
@@ -82,7 +86,7 @@ async def generate_saml_certificates(
         )
 
 
-async def init_saml_auth(request: TornadoRequestHandler, tenant: str):
+async def init_saml_auth(request: "TornadoRequestHandler", tenant: str):
     tenant_storage = TenantFileStorageHandler(tenant)
     tenant_config = TenantConfig.get_instance(tenant)
     idp_metadata_url = config.get_tenant_specific_key(
@@ -146,7 +150,7 @@ async def prepare_tornado_request_for_saml(request, tenant):
 
 
 async def authenticate_user_by_saml(
-    request: TornadoRequestHandler, return_200=False, force_redirect=None
+    request: "TornadoRequestHandler", return_200=False, force_redirect=None
 ):
     log_data = {"function": f"{__name__}.{sys._getframe().f_code.co_name}"}
     # TODO: Start here

@@ -24,7 +24,7 @@ class DownloadSAMLCertificateHandler(BaseAdminHandler):
     async def get(self):
         tenant = self.ctx.tenant
         tenant_storage = TenantFileStorageHandler(tenant)
-        tenant_config = TenantConfig(tenant)
+        tenant_config = TenantConfig.get_instance(tenant)
 
         await generate_saml_certificates(tenant_storage, tenant_config)
         file = await tenant_storage.read_file(tenant_config.saml_cert_path, "rb")
