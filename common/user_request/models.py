@@ -1,7 +1,8 @@
 import sys
 import time
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import FileSystemLoader, select_autoescape
+from jinja2.sandbox import ImmutableSandboxedEnvironment
 from pynamodax.attributes import NumberAttribute, UnicodeAttribute
 from pynamodax.indexes import AllProjection, GlobalSecondaryIndex
 
@@ -147,7 +148,7 @@ class IAMRequest(NoqModel):
             self.tenant, principal_arn, region_required=True
         )
 
-        template_env = Environment(
+        template_env = ImmutableSandboxedEnvironment(
             loader=FileSystemLoader("common/templates"),
             extensions=["jinja2.ext.loopcontrols"],
             autoescape=select_autoescape(),

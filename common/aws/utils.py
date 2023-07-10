@@ -11,7 +11,8 @@ from iambic.plugins.v0_1_0.aws.iam.user.models import AWS_IAM_USER_TEMPLATE_TYPE
 from iambic.plugins.v0_1_0.aws.identity_center.permission_set.models import (
     AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
 )
-from jinja2 import BaseLoader, Environment
+from jinja2 import BaseLoader
+from jinja2.sandbox import ImmutableSandboxedEnvironment
 from policy_sentry.util.arns import get_account_from_arn, parse_arn
 
 from common.config import config
@@ -556,5 +557,5 @@ async def get_resource_arn(
         raise ValueError(f"Unknown template type: {iambic_template.template_type}")
 
     role_arn = f"arn:aws:iam::{iambic_provider_def.account_id}:{resource_name}{iambic_template.properties.path}{iambic_template.properties.role_name}"
-    rtemplate = Environment(loader=BaseLoader()).from_string(role_arn)
+    rtemplate = ImmutableSandboxedEnvironment(loader=BaseLoader()).from_string(role_arn)
     return rtemplate.render(var=variables)
