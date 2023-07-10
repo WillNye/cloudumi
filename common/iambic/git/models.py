@@ -15,7 +15,7 @@ from common.config import config
 from common.config.tenant_config import TenantConfig
 from common.github.models import GitHubInstall
 from common.iambic.git.utils import get_repo_access_token, list_tenant_repo_details
-from common.lib.asyncio import aio_wrapper
+from common.lib.asyncio import aio_wrapper, run_command
 from common.lib.storage import TenantFileStorageHandler
 from common.models import IambicRepoDetails, IambicTemplateChange
 from common.tenants.models import Tenant  # noqa: F401
@@ -23,27 +23,6 @@ from common.tenants.models import Tenant  # noqa: F401
 log = config.get_logger(__name__)
 
 CURRENTLY_SUPPORTED_GIT_PROVIDERS = {"github"}
-
-
-async def run_command(*args, cwd=None):
-    process = await asyncio.create_subprocess_exec(
-        *args, cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-    )
-
-    stdout, stderr = await process.communicate()
-
-    if process.returncode != 0:
-        log.error(
-            "Error running command asynchronosly",
-            command=args,
-            return_code=process.returncode,
-            stderr=stderr.decode(),
-        )
-        raise Exception(
-            f"Command failed with exit code {process.returncode}: {stderr.decode()}"
-        )
-
-    return stdout.decode()
 
 
 class IambicRepo:
