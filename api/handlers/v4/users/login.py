@@ -13,7 +13,7 @@ class LoginHandler(TornadoRequestHandler):
     async def post(self):
         # TODO: If user email is not verified, fail login
         tenant = self.get_tenant_name()
-        tenant_config = TenantConfig(tenant)
+        tenant_config = TenantConfig.get_instance(tenant)
         tenant_url = self.get_tenant_url()
         # Get the username and password from the request body
         request = UserLoginRequest(**tornado.escape.json_decode(self.request.body))
@@ -177,7 +177,7 @@ class MfaHandler(BaseHandler):
                 ).dict(exclude_unset=True, exclude_none=True)
             )
             raise tornado.web.Finish()
-        tenant_config = TenantConfig(self.ctx.tenant)
+        tenant_config = TenantConfig.get_instance(self.ctx.tenant)
         encoded_cookie = await generate_jwt_token(
             self.user,
             self.groups,

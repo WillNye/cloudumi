@@ -1,7 +1,8 @@
 import os
 import re
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import FileSystemLoader, select_autoescape
+from jinja2.sandbox import ImmutableSandboxedEnvironment
 
 from common.config import config, models
 from common.lib.asyncio import aio_wrapper
@@ -124,7 +125,7 @@ async def get_cf_tf_body(
     params = await validate_params(tenant, account_type, read_only_mode)
     stack_name = get_stack_name(account_type)
     template_url = get_template_url(account_type)
-    env = Environment(
+    env = ImmutableSandboxedEnvironment(
         loader=FileSystemLoader(TEMPLATE_DIR),
         extensions=["jinja2.ext.loopcontrols"],
         autoescape=select_autoescape(),
