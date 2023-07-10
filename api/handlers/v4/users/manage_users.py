@@ -260,7 +260,7 @@ class PasswordResetSelfServiceHandler(BaseHandler):
         current_password = data.get("current_password")
         new_password = data.get("new_password")
         tenant = self.get_tenant_name()
-        tenant_config = TenantConfig(tenant)
+        tenant_config = TenantConfig.get_instance(tenant)
         db_user = await User.get_by_username(self.ctx.db_tenant, self.user)
         if not db_user:
             db_user = await User.get_by_email(self.ctx.db_tenant, self.user)
@@ -686,7 +686,7 @@ class UserMFASelfServiceHandler(BaseHandler):
                 raise tornado.web.Finish()
             else:
                 user = await User.get_by_email(self.ctx.db_tenant, self.user)
-                tenant_config = TenantConfig(self.ctx.tenant)
+                tenant_config = TenantConfig.get_instance(self.ctx.tenant)
                 encoded_cookie = await generate_jwt_token(
                     self.user,
                     self.groups,

@@ -27,6 +27,6 @@
     margin: var(--spacing-lg) 0;
   }
   .user {
-    margin: 0 var(--spacing-sm);
+    margin: var(--spacing-sm);
   }
 }

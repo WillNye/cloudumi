@@ -17,3 +17,5 @@ tags = {
 # Can be extended by adding regions to the list below
 dynamo_table_replica_regions = ["us-west-2"]
 s3_access_log_bucket         = "noq-global-staging-s3-access-logs"
+
+github_app_noq_secret_arn = "arn:aws:secretsmanager:us-west-2:615395543222:secret:global-staging/github-app-noq-bjogHH"

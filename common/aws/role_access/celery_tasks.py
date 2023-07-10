@@ -7,7 +7,8 @@ from iambic.plugins.v0_1_0.aws.iam.role.models import (
     AWS_IAM_ROLE_TEMPLATE_TYPE,
     AwsIamRoleTemplate,
 )
-from jinja2 import BaseLoader, Environment
+from jinja2 import BaseLoader
+from jinja2.sandbox import ImmutableSandboxedEnvironment
 
 from common.aws.accounts.models import AWSAccount
 from common.aws.role_access.models import AWSRoleAccess, RoleAccessTypes
@@ -39,7 +40,7 @@ def get_role_arn(aws_account: AWSAccount, role_template: AwsIamRoleTemplate) -> 
         k: sanitize_string(v, valid_characters_re) for k, v in variables.items()
     }
     role_arn = f"arn:aws:iam::{aws_account.account_id}:role{role_template.properties.path}{role_template.properties.role_name}"
-    rtemplate = Environment(loader=BaseLoader()).from_string(role_arn)
+    rtemplate = ImmutableSandboxedEnvironment(loader=BaseLoader()).from_string(role_arn)
     role_arn = rtemplate.render(var=variables)
     return role_arn
 

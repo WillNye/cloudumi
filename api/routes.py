@@ -7,7 +7,6 @@ from api.handlers.v3.automatic_policy_request_handler.aws import (
 )
 from api.handlers.v3.github.handler import (
     GitHubCallbackHandler,
-    GitHubEventsHandler,
     GitHubOAuthHandler,
     GithubRepoHandler,
     GithubStatusHandler,
@@ -463,7 +462,6 @@ def make_app(jwt_validator=None):
             r"/api/v3/github/install/?",
             GitHubOAuthHandler,
         ),
-        (r"/api/v3/github/events/?", GitHubEventsHandler),
         (r"/api/v3/github/callback/?", GitHubCallbackHandler),
         (r"/api/v3/github/repos/?", GithubRepoHandler),
         (

@@ -13,8 +13,9 @@ from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
 
 from common.config import config
 from common.config.config import dict_merge
-from common.config.tenant_config import TenantConfig
+from common.config.tenant_config import TenantConfig, TenantConfigBase
 from common.exceptions.exceptions import WebAuthNError
+from common.handlers.base import TornadoRequestHandler
 from common.lib.asyncio import aio_wrapper
 from common.lib.generic import should_force_redirect
 from common.lib.storage import TenantFileStorageHandler
@@ -24,7 +25,7 @@ log = config.get_logger(__name__)
 
 async def generate_saml_certificates(
     tenant_storage: TenantFileStorageHandler,
-    tenant_config: TenantConfig,
+    tenant_config: TenantConfigBase,
 ):
     # If we don't have a cert or key, generate them.
     # Then, upload them to the service provider
@@ -81,9 +82,9 @@ async def generate_saml_certificates(
         )
 
 
-async def init_saml_auth(request, tenant):
+async def init_saml_auth(request: TornadoRequestHandler, tenant: str):
     tenant_storage = TenantFileStorageHandler(tenant)
-    tenant_config = TenantConfig(tenant)
+    tenant_config = TenantConfig.get_instance(tenant)
     idp_metadata_url = config.get_tenant_specific_key(
         "get_user_by_saml_settings.idp_metadata_url", tenant
     )
@@ -120,7 +121,7 @@ def get_saml_login_endpoint(saml_login_endpoint, tenant):
 
 
 async def prepare_tornado_request_for_saml(request, tenant):
-    tenant_config = TenantConfig(tenant)
+    tenant_config = TenantConfig.get_instance(tenant)
     dataDict = {}
 
     for key in request.arguments:
@@ -144,7 +145,9 @@ async def prepare_tornado_request_for_saml(request, tenant):
     return result
 
 
-async def authenticate_user_by_saml(request, return_200=False, force_redirect=None):
+async def authenticate_user_by_saml(
+    request: TornadoRequestHandler, return_200=False, force_redirect=None
+):
     log_data = {"function": f"{__name__}.{sys._getframe().f_code.co_name}"}
     # TODO: Start here
     tenant = request.get_tenant_name()

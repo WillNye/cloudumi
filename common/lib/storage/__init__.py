@@ -7,12 +7,15 @@ import aiofiles.os
 from aiopath import AsyncPath
 
 from common.config.tenant_config import TenantConfig
+from common.tenants.models import Tenant
 
 
 class TenantFileStorageHandler:
-    def __init__(self, tenant: str):
+    def __init__(self, tenant: str | Tenant):
         self.tenant: str = tenant
-        self.tenant_config = TenantConfig(self.tenant)
+        self.tenant_config = TenantConfig.get_instance(
+            tenant if isinstance(tenant, str) else tenant.name
+        )
 
     async def get_tenant_file_path(self, file_path: Union[str, Path]) -> str:
         file_path = str(file_path)

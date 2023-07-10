@@ -3,7 +3,8 @@ import os
 
 import boto3
 import click
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import FileSystemLoader, select_autoescape
+from jinja2.sandbox import ImmutableSandboxedEnvironment
 
 
 async def generate_cf_templates(upload: bool = True, suffix: str = ""):
@@ -20,7 +21,7 @@ async def generate_cf_templates(upload: bool = True, suffix: str = ""):
     destination_dir = os.path.dirname(__file__).replace("common/scripts", "deploy")
 
     suffix = suffix if not suffix or suffix.startswith("_") else f"_{suffix}"
-    env = Environment(
+    env = ImmutableSandboxedEnvironment(
         loader=FileSystemLoader(TEMPLATE_DIR),
         extensions=["jinja2.ext.loopcontrols"],
         autoescape=select_autoescape(),

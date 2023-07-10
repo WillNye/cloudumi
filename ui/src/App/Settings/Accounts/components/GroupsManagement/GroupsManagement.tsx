@@ -78,7 +78,7 @@ const GroupsManagement = () => {
   return (
     <div className={css.container}>
       <div className={css.header}>
-        <div>Groups ({allGroupsData?.data?.length})</div>
+        <div>Groups ({allGroupsData?.filtered_count})</div>
         <AddGroupModal refreshData={callGetAllGroups} />
       </div>
       <div className={css.table}>
@@ -87,7 +87,9 @@ const GroupsManagement = () => {
           columns={groupsTableColumns}
           border="row"
           isLoading={isLoading}
-          totalCount={allGroupsData?.filteredCount || query.pagination.pageSize}
+          totalCount={
+            allGroupsData?.filtered_count || query.pagination.pageSize
+          }
           pageSize={query.pagination.pageSize}
           pageIndex={query.pagination.currentPageIndex}
           handleOnPageChange={handleOnPageChange}

@@ -196,6 +196,15 @@ class AWSHelper:
         return str(random.randrange(100000000000, 999999999999))
 
 
+mock_get_by_name_sync_fn = MagicMock(return_value=tenant)
+
+
+@pytest.fixture(autouse=True, scope="session")
+def mock_get_by_name_sync():
+    with patch("common.tenants.models.Tenant.get_by_name_sync", new_callable=MagicMock):
+        yield mock_get_by_name_sync_fn
+
+
 @pytest.fixture(autouse=False, scope="session")
 def redis_prereqs(redis):
     from common.lib.redis import RedisHandler

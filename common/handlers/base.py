@@ -429,7 +429,7 @@ class BaseHandler(TornadoRequestHandler):
         # TODO: When it fails, all the process got truncated. e.g. when saml setting is enabled but idp_metadata_url is not correct.
 
         tenant = self.get_tenant_name()
-        tenant_config = TenantConfig(tenant)
+        tenant_config = TenantConfig.get_instance(tenant)
         self.eula_signed = None
         self.mfa_setup_required = None
         self.password_reset_required = None
@@ -1326,7 +1326,7 @@ class ScimAuthHandler(TornadoRequestHandler):
         await super(ScimAuthHandler, self).prepare()
         self.request_uuid: str = str(uuid.uuid4())
         tenant: str = self.get_tenant_name()
-        tenant_config: TenantConfig = TenantConfig(tenant)
+        tenant_config: TenantConfig = TenantConfig.get_instance(tenant)
         if not tenant_config.scim_bearer_token:
             raise tornado.web.HTTPError(403, "Bearer token not configured.")
 

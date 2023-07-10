@@ -4,7 +4,7 @@ from sqlalchemy import ARRAY, Column, DateTime, Integer, String, and_
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import select
 
-from common.config.globals import ASYNC_PG_SESSION
+from common.config.globals import ASYNC_PG_SESSION, PG_SESSION
 from common.pg_core.models import Base, SoftDeleteMixin
 
 
@@ -82,6 +82,26 @@ class Tenant(SoftDeleteMixin, Base):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 return await _query(session)
+
+    @classmethod
+    @cached(cache=TTLCache(maxsize=1024, ttl=30))
+    def get_by_name_sync(cls, tenant_name, session=None):
+        def _query(session):
+            stmt = select(Tenant).where(
+                and_(
+                    Tenant.name == tenant_name,
+                    Tenant.deleted == False,  # noqa
+                )
+            )
+            tenant = session.execute(stmt)
+            return tenant.scalars().first()
+
+        if session:
+            return _query(session)
+
+        with PG_SESSION() as session:
+            with session.begin():
+                return _query(session)
 
     @classmethod
     async def get_all(cls, session=None):

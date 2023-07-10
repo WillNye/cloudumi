@@ -20,7 +20,7 @@ from common.lib.jwt import generate_jwt_token
 class WorkOS:
     def __init__(self, tenant: str):
         self.tenant = tenant
-        self.tenant_config = TenantConfig(tenant)
+        self.tenant_config = TenantConfig.get_instance(tenant)
         self.api_key = self.tenant_config.workos_api_key
         self.client_id = self.tenant_config.workos_client_id
         workos.api_key = self.api_key
