@@ -1,6 +1,7 @@
 from iambic.core.utils import sanitize_string
 from iambic.plugins.v0_1_0.aws.models import AWSAccount
-from jinja2 import BaseLoader, Environment
+from jinja2 import BaseLoader
+from jinja2.sandbox import ImmutableSandboxedEnvironment
 from sqlalchemy import or_, select
 from sqlalchemy.orm import contains_eager
 
@@ -90,5 +91,7 @@ def get_template_str_value_for_aws_account(
     variables = {
         k: sanitize_string(v, valid_characters_re) for k, v in variables.items()
     }
-    rtemplate = Environment(loader=BaseLoader()).from_string(template_str_attr)
+    rtemplate = ImmutableSandboxedEnvironment(loader=BaseLoader()).from_string(
+        template_str_attr
+    )
     return rtemplate.render(var=variables)

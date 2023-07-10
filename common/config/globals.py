@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio.engine import create_async_engine
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm.session import sessionmaker
@@ -23,7 +24,14 @@ TENANT_STORAGE_BASE_PATH = Path(
     config.get("_global_.tenant_storage.base_path", "/data/tenant_data/")
 ).expanduser()
 
-ASYNC_PG_CONN_STR = f"postgresql+psycopg_async://{config.get('_global_.secrets.postgresql.username')}:{config.get('_global_.secrets.postgresql.password')}@{config.get('_global_.noq_db.endpoint')}:{config.get('_global_.noq_db.port')}/{config.get('_global_.noq_db.database')}"
+PG_CONN_STR_PATH = f"{config.get('_global_.secrets.postgresql.username')}:{config.get('_global_.secrets.postgresql.password')}@{config.get('_global_.noq_db.endpoint')}:{config.get('_global_.noq_db.port')}/{config.get('_global_.noq_db.database')}"
+PG_CONN_STR = f"postgresql://{PG_CONN_STR_PATH}"
+PG_ENGINE = create_engine(PG_CONN_STR)
+PG_SESSION = sessionmaker(
+    PG_ENGINE,
+    expire_on_commit=False,
+)
+ASYNC_PG_CONN_STR = f"postgresql+psycopg_async://{PG_CONN_STR_PATH}"
 ASYNC_PG_ENGINE = create_async_engine(ASYNC_PG_CONN_STR)
 ASYNC_PG_SESSION = sessionmaker(
     ASYNC_PG_ENGINE,

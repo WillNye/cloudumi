@@ -33,8 +33,8 @@ from iambic.plugins.v0_1_0.aws.models import Tag
 from iambic.plugins.v0_1_0.google_workspace.group.models import GroupMember
 from iambic.plugins.v0_1_0.okta.group.models import UserSimple
 from iambic.plugins.v0_1_0.okta.models import Assignment
-from jinja2.environment import Environment
 from jinja2.loaders import BaseLoader
+from jinja2.sandbox import ImmutableSandboxedEnvironment
 
 from common.aws.accounts.models import AWSAccount
 from common.config import models
@@ -255,6 +255,7 @@ class IambicGit:
                     git_uri,
                     repo_path,
                     config="core.symlinks=false",
+                    depth=1,
                 )
                 default_branch = await self.get_default_branch(repo)
                 self.repos[repo_name] = {
@@ -277,7 +278,7 @@ class IambicGit:
                 default_branch_name = default_branch.split("/")[-1]
                 repo.git.checkout(default_branch_name)
                 repo.git.reset("--hard", default_branch)
-                repo.git.pull()
+                repo.git.pull(depth=1)
 
                 self.repos[repo_name] = {
                     "repo": repo,
@@ -288,7 +289,7 @@ class IambicGit:
         return
 
     async def gather_templates_for_tenant(self):
-        tenant_config = TenantConfig(self.tenant)
+        tenant_config = TenantConfig.get_instance(self.tenant)
         await self.set_git_repositories()
         for repository in self.git_repositories:
             repo_name = repository.repo_name
@@ -369,7 +370,7 @@ class IambicGit:
                                     f"Unsupported template type: {template.template_type}"
                                 )
                             if arn:
-                                rtemplate = Environment(
+                                rtemplate = ImmutableSandboxedEnvironment(
                                     loader=BaseLoader()
                                 ).from_string(arn)
                                 arn = rtemplate.render(var=variables)
