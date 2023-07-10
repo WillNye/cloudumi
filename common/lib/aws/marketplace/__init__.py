@@ -642,14 +642,15 @@ async def handle_aws_marketplace_queue(
     queue_name = queue_arn.split(":")[-1]
     queue_region = queue_arn.split(":")[3]
 
-    # TODO: REMOVE Test code (which uses the prod profile for dev purposes)
-    prod = boto3.session.Session(
-        profile_name="prod/prod_admin", region_name=queue_region
-    )
+    sqs_client = boto3.client("sqs", region_name=queue_region)
 
-    sqs_client = prod.client("sqs")
-
-    # sqs_client = boto3.client("sqs", region_name=queue_region)
+    # TODO: For development purposes, you can use the following code to test the registration token
+    # Note: It will affect live production.
+    # if config.get("_global_.development"):
+    #     prod = boto3.session.Session(
+    #         profile_name="prod/prod_admin", region_name=queue_region
+    #     )
+    #     sqs_client = prod.client("sqs")
 
     queue_url_res = await aio_wrapper(sqs_client.get_queue_url, QueueName=queue_name)
     queue_url = queue_url_res.get("QueueUrl")
@@ -764,12 +765,13 @@ async def handle_aws_marketplace_queue(
 async def handle_aws_marketplace_metering():
     tenant_active_user_counts: dict[str, int] = await Tenant.get_all_with_user_count()
     all_aws_marketplace_tenants = [x for x in await AWSMarketplaceTenantDetails.scan()]
-    # TODO: REMOVE Test code (which uses the prod profile for dev purposes)
-    prod = boto3.session.Session(
-        profile_name="prod/prod_admin", region_name="us-east-1"
-    )
 
-    marketplace_metering = prod.client("meteringmarketplace")
+    marketplace_metering = boto3.client("meteringmarketplace", region_name="us-east-1")
+    # if config.get("_global_.development"):
+    #     prod = boto3.session.Session(
+    #         profile_name="prod/prod_admin", region_name="us-east-1"
+    #     )
+    #     marketplace_metering = prod.client("meteringmarketplace")
 
     usage_records = []
     for tenant in all_aws_marketplace_tenants:
@@ -814,11 +816,16 @@ async def retrieve_and_update_marketplace_entitlements():
         log.debug("AWS Marketplace Integration not configured")
         return True
 
-    # TODO: REMOVE Test code (which uses the prod profile for dev purposes)
-    prod = boto3.session.Session(
-        profile_name="prod/prod_admin", region_name="us-east-1"
+    marketplace_entitlement = boto3.client(
+        "marketplace-entitlement", region_name="us-east-1"
     )
-    marketplace_entitlement = prod.client("marketplace-entitlement")
+
+    # if config.get("_global_.development"):
+    #     prod = boto3.session.Session(
+    #         profile_name="prod/prod_admin", region_name="us-east-1"
+    #     )
+    #     marketplace_entitlement = prod.client("marketplace-entitlement")
+
     next_token = None
 
     while True:

@@ -276,15 +276,18 @@ class TenantRegistrationAwsMarketplaceFormSubmissionHandler(TornadoRequestHandle
         marketplace_client = boto3.client(
             "meteringmarketplace", region_name="us-west-2"
         )
-        # TODO: REMOVE Test code (which uses the prod profile for dev purposes)
-        prod = boto3.session.Session(
-            profile_name="prod/prod_admin", region_name="us-west-2"
-        )
-        marketplace_client = prod.client("meteringmarketplace")
-        # Example Response: {'CustomerIdentifier': 'hmCyPXguf9s', 'ProductCode': 'ci3g7nysfa7luy3vlhw4g7zwa', 'CustomerAWSAccountId': '940552945933'}
+        # TODO: For development purposes, you can use the following code to test the registration token
+        # Note: It will affect live production.
+        # if config.get("_global_.development"):
+        #     prod = boto3.session.Session(
+        #         profile_name="prod/prod_admin", region_name="us-west-2"
+        #     )
+        #     marketplace_client = prod.client("meteringmarketplace")
+
         customer_data = marketplace_client.resolve_customer(
             RegistrationToken=registration_token
         )
+        # Example Response: {'CustomerIdentifier': '12345', 'ProductCode': '12345', 'CustomerAWSAccountId': '12345'}
         log_data["customer_data"] = customer_data
         customer_id = customer_data.get("CustomerIdentifier")
         if not customer_id:
@@ -372,16 +375,18 @@ class TenantRegistrationAwsMarketplaceHandler(TornadoRequestHandler):
         marketplace_client = boto3.client(
             "meteringmarketplace", region_name="us-west-2"
         )
-        # TODO: REMOVE Test code (which uses the prod profile for dev purposes)
-        prod = boto3.session.Session(
-            profile_name="prod/prod_admin", region_name="us-west-2"
-        )
-        marketplace_client = prod.client("meteringmarketplace")
-        # For testing in PostMan, ensure that the registration token is URL encoded
-        # Example Response: {'CustomerIdentifier': 'hmCyPXguf9s', 'ProductCode': 'ci3g7nysfa7luy3vlhw4g7zwa', 'CustomerAWSAccountId': '940552945933'}
+        # TODO: For development purposes, you can use the following code to test the registration token
+        # Note: It will affect live production.
+        # if config.get("_global_.development"):
+        #     prod = boto3.session.Session(
+        #         profile_name="prod/prod_admin", region_name="us-west-2"
+        #     )
+        #     marketplace_client = prod.client("meteringmarketplace")
+        # For testing in Postman, ensure that the registration token is URL encoded
         customer_data = marketplace_client.resolve_customer(
             RegistrationToken=registration_token
         )
+        # Example Response: {'CustomerIdentifier': '123456', 'ProductCode': '123456', 'CustomerAWSAccountId': '123456'}
         product_code = customer_data.get("ProductCode")
         customer_id = customer_data.get("CustomerIdentifier")
         customer_account_id = customer_data.get("CustomerAWSAccountId", "")
