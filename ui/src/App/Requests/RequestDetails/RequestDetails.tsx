@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import axios from 'core/Axios/Axios';
 import { Button } from 'shared/elements/Button';
@@ -14,7 +14,7 @@ import { Block } from 'shared/layout/Block';
 import { useQuery } from '@tanstack/react-query';
 import { getIambicRequest } from 'core/API/iambicRequest';
 import { Loader } from 'shared/elements/Loader';
-import { Chip } from 'shared/elements/Chip';
+import { Chip, ChipType } from 'shared/elements/Chip';
 import ChangeViewer from './components/ChangeViewer';
 
 const RequestChangeDetails = () => {
@@ -141,6 +141,29 @@ const RequestChangeDetails = () => {
     }
   ];
 
+  const getRequestStatus = useCallback(status => {
+    switch (status) {
+      case 'Approved':
+      case 'Running':
+        return 'success' as ChipType;
+      case 'Pending':
+      case 'Pending in Git':
+        return 'warning' as ChipType;
+      case 'Rejected':
+      case 'Failed':
+        return 'danger' as ChipType;
+      case 'Expired':
+        return 'warning' as ChipType;
+      default:
+        return 'dark' as ChipType;
+    }
+  }, []);
+
+  const chipClass = useMemo(
+    (): ChipType => getRequestStatus(requestData?.data?.status),
+    [getRequestStatus, requestData?.data?.status]
+  );
+
   if (isLoading) {
     return <Loader />;
   }
@@ -155,7 +178,7 @@ const RequestChangeDetails = () => {
         <h3>Request Review</h3>
         <div className={styles.subTitle}>
           <p className={styles.text}>{requestData?.data?.title}</p>
-          <Chip type="warning">{requestData?.data?.status}</Chip>
+          <Chip type={chipClass}>{requestData?.data?.status}</Chip>
         </div>
         <Table data={mainTableData} columns={mainTableColumns} border="row" />
         <LineBreak size="large" />

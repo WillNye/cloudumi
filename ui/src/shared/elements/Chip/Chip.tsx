@@ -2,20 +2,22 @@ import classNames from 'classnames';
 import styles from './Chip.module.css';
 import { ReactNode } from 'react';
 
-type ChipProps = {
+export type ChipProps = {
   children?: ReactNode;
-  type?:
-    | 'default'
-    | 'primary'
-    | 'secondary'
-    | 'success'
-    | 'danger'
-    | 'warning'
-    | 'info'
-    | 'light'
-    | 'dark';
+  type?: ChipType;
   className?: string;
 };
+
+export type ChipType =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'success'
+  | 'danger'
+  | 'warning'
+  | 'info'
+  | 'light'
+  | 'dark';
 
 export const Chip = ({
   children,
