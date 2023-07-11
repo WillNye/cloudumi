@@ -9,9 +9,14 @@ import { RequestFile } from '../../types';
 type ChangeViewerProps = {
   file: RequestFile;
   handleModifyChange: (file: RequestFile) => void;
+  readOnly?: boolean;
 };
 
-const ChangeViewer = ({ file, handleModifyChange }: ChangeViewerProps) => {
+const ChangeViewer = ({
+  file,
+  handleModifyChange,
+  readOnly = false
+}: ChangeViewerProps) => {
   const [modifiedTemplate, setModifiedTemplate] = useState(file.template_body);
 
   const hasChanged = useMemo(
@@ -28,19 +33,24 @@ const ChangeViewer = ({ file, handleModifyChange }: ChangeViewerProps) => {
         original={file.previous_body || ''}
         modified={modifiedTemplate}
         onChange={(value: string) => setModifiedTemplate(value)}
+        readOnly={readOnly}
       />
       <LineBreak size="large" />
-      <Button
-        disabled={!hasChanged}
-        onClick={() =>
-          handleModifyChange({ ...file, template_body: modifiedTemplate })
-        }
-        fullWidth
-        size="small"
-      >
-        Modify
-      </Button>
-      <LineBreak />
+      {!readOnly && (
+        <>
+          <Button
+            disabled={!hasChanged}
+            onClick={() =>
+              handleModifyChange({ ...file, template_body: modifiedTemplate })
+            }
+            fullWidth
+            size="small"
+          >
+            Modify
+          </Button>
+          <LineBreak />
+        </>
+      )}
     </div>
   );
 };

@@ -166,6 +166,11 @@ ecs-tunnel-staging-ssh: ecs-set-ssh-password-staging
 	@TASK_ID=$$(aws ecs list-tasks --cluster staging-noq-dev-shared-staging-1 --service api --profile staging/staging_admin --region us-west-2 --query 'taskArns[0]' --output text | awk -F/ '{print $$NF}') && \
 	AWS_PROFILE=staging/staging_admin ecs-tunnel -L 2222:22 -c staging-noq-dev-shared-staging-1 -t $$TASK_ID --region us-west-2
 
+.PHONY: ecs-tunnel-copy-changed-files-to-staging
+ecs-tunnel-copy-changed-files-to-staging:
+	@echo "Run \`make ecs-tunnel-staging-ssh\` and then copy files to the staging host with the following command."
+	@echo "git diff origin/main --name-only --diff-filter=AM | SSHPASS=TEMP_PASS xargs -I '{}' sh -c 'echo \"Copying file: {}\"; sshpass -e scp -o PreferredAuthentications=password -P 2222 \"{}\" root@127.0.0.1:/app/\"{}\"'"
+
 .PHONY: ecs-set-ssh-password-prod
 ecs-set-ssh-password-prod:
 	@TASK_ID=$$(aws ecs list-tasks --cluster noq-dev-shared-prod-1 --service api --profile prod/prod_admin --region us-west-2 --query 'taskArns[0]' --output text | awk -F/ '{print $$NF}') && \
