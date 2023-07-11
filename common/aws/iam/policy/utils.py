@@ -85,18 +85,17 @@ async def get_aws_managed_policy_arns() -> list[str]:
     return sorted(list(set(policy["Arn"] for policy in managed_policies)))
 
 
-async def list_customer_managed_policy_arn_typeahead(
+async def list_customer_managed_policy_definitions(
     tenant: Tenant,
     resource_id: str = None,
     provider_definitions_ids: list[str] = None,
     page: int = None,
     page_size: int = None,
-) -> list[str]:
+) -> list[IambicTemplateProviderDefinition]:
     template_type = AWS_MANAGED_POLICY_TEMPLATE_TYPE
     async with ASYNC_PG_SESSION() as session:
         stmt = (
-            select(IambicTemplateProviderDefinition.secondary_resource_id)
-            .select_from(IambicTemplateProviderDefinition)
+            select(IambicTemplateProviderDefinition)
             .join(
                 IambicTemplate,
                 IambicTemplate.id

@@ -14,7 +14,7 @@ from common.aws.role_access.models import AWSRoleAccess, RoleAccessTypes
 from common.config import config
 from common.groups.models import Group
 from common.iambic.interface import IambicConfigInterface
-from common.iambic.templates.utils import get_template_str_value_for_aws_account
+from common.iambic.templates.utils import get_template_str_value_for_provider_definition
 from common.iambic_request.models import IambicRepo
 from common.identity.models import AwsIdentityRole
 from common.pg_core.utils import bulk_delete
@@ -185,8 +185,10 @@ async def sync_role_access(
                                 if not user_rule:
                                     continue
 
-                                user_rule = get_template_str_value_for_aws_account(
-                                    user_rule, effective_aws_account
+                                user_rule = (
+                                    get_template_str_value_for_provider_definition(
+                                        user_rule, effective_aws_account
+                                    )
                                 )
                                 if user := users.get(user_rule):
                                     access_rule_users.append(user)
@@ -221,8 +223,10 @@ async def sync_role_access(
                                 if not group_rule:
                                     continue
 
-                                group_rule = get_template_str_value_for_aws_account(
-                                    group_rule, effective_aws_account
+                                group_rule = (
+                                    get_template_str_value_for_provider_definition(
+                                        group_rule, effective_aws_account
+                                    )
                                 )
                                 if group := groups.get(group_rule):
                                     access_rule_groups.append(group)

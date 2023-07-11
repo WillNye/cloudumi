@@ -1,3 +1,5 @@
+from typing import Optional, Union
+
 from iambic.core.utils import sanitize_string
 from iambic.plugins.v0_1_0.aws.models import AWSAccount
 from jinja2 import BaseLoader, Environment
@@ -5,6 +7,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import contains_eager
 
 from common.config.globals import ASYNC_PG_SESSION
+from common.iambic.config.models import TenantProviderDefinition
 from common.iambic.templates.models import (
     IambicTemplate,
     IambicTemplateContent,
@@ -33,10 +36,13 @@ async def get_template_by_id(tenant_id: int, template_id: str) -> IambicTemplate
 
 async def list_tenant_templates(
     tenant_id: int,
-    template_type: str = None,
-    resource_id: str = None,
-    page_size: int = None,
-    page: int = 1,
+    template_ids: Optional[list[str]] = None,
+    template_type: Optional[str] = None,
+    resource_id: Optional[str] = None,
+    provider_definition_ids: Optional[list[str]] = None,
+    summary_only: Optional[bool] = True,
+    page_size: Optional[int] = None,
+    page: Optional[int] = 1,
 ) -> list[IambicTemplate]:
     if resource_id:
         assert (
@@ -45,16 +51,22 @@ async def list_tenant_templates(
 
     async with ASYNC_PG_SESSION() as session:
         stmt = select(IambicTemplate).filter(IambicTemplate.tenant_id == tenant_id)
+        if template_ids:
+            stmt = stmt.filter(IambicTemplate.id.in_(template_ids))
         if template_type:
             stmt = stmt.filter(
                 IambicTemplate.template_type == template_type
             )  # noqa: E712
-        if resource_id:
+
+        if resource_id or provider_definition_ids:
             stmt = stmt.join(
                 IambicTemplateProviderDefinition,
                 IambicTemplateProviderDefinition.iambic_template_id
                 == IambicTemplate.id,
-            ).filter(
+            )
+
+        if resource_id:
+            stmt = stmt.filter(
                 or_(
                     IambicTemplate.resource_id.ilike(f"%{resource_id}%"),
                     IambicTemplateProviderDefinition.resource_id.ilike(
@@ -62,6 +74,19 @@ async def list_tenant_templates(
                     ),
                 )
             )  # noqa: E712
+
+        if provider_definition_ids:
+            stmt = stmt.filter(
+                IambicTemplateProviderDefinition.tenant_provider_definition_id.in_(
+                    provider_definition_ids
+                )
+            )
+
+        if not summary_only:
+            stmt = stmt.join(
+                IambicTemplateContent,
+                IambicTemplateContent.iambic_template_id == IambicTemplate.id,
+            ).options(contains_eager(IambicTemplate.content))
 
         if template_type:
             stmt = stmt.order_by(IambicTemplate.resource_id)
@@ -75,18 +100,20 @@ async def list_tenant_templates(
 
         items = await session.execute(stmt)
 
-    if resource_id:
+    if resource_id or provider_definition_ids or not summary_only:
         return items.scalars().unique().all()
     return items.scalars().all()
 
 
-def get_template_str_value_for_aws_account(
-    template_str_attr, aws_account: AWSAccount
+def get_template_str_value_for_provider_definition(
+    template_str_attr, provider_definition: Union[TenantProviderDefinition, AWSAccount]
 ) -> str:
-    variables = {var.key: var.value for var in aws_account.variables}
-    variables["account_id"] = aws_account.account_id
-    variables["account_name"] = aws_account.account_name
     valid_characters_re = r"[\w_+=,.@-]"
+    variables = {var.key: var.value for var in provider_definition.variables}
+    if isinstance(provider_definition, AWSAccount):
+        variables["account_id"] = provider_definition.account_id
+        variables["account_name"] = provider_definition.account_name
+
     variables = {
         k: sanitize_string(v, valid_characters_re) for k, v in variables.items()
     }
