@@ -79,7 +79,7 @@ async def get_referenced_templates_map(
 
     if template_ids:
         templates = await list_tenant_templates(
-            tenant_id, template_ids=template_ids, summary_only=False
+            tenant_id, template_ids=template_ids, exclude_template_content=False
         )
         for template in templates:
             provider_ref = TRUSTED_PROVIDER_RESOLVER_MAP[template.provider]
