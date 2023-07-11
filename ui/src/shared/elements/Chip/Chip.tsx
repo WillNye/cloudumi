@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import styles from './Chip.module.css';
 import { ReactNode } from 'react';
 
-export type ChipProps = {
+type ChipProps = {
   children?: ReactNode;
   type?: ChipType;
   className?: string;
