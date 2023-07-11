@@ -144,8 +144,9 @@ const RequestChangeDetails = () => {
   const getRequestStatus = useCallback(status => {
     switch (status) {
       case 'Approved':
-      case 'Running':
         return 'success' as ChipType;
+      case 'Running':
+        return 'warning' as ChipType;
       case 'Pending':
       case 'Pending in Git':
         return 'warning' as ChipType;
