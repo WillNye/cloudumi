@@ -1,6 +1,6 @@
 import asyncio
 from collections import defaultdict
-from typing import Type, get_origin
+from typing import Optional, Type, get_origin
 
 from deepdiff import DeepDiff
 from iambic.core.models import BaseModel as IambicBaseModel
@@ -407,7 +407,11 @@ async def get_allowed_approvers(
 
 
 async def get_iambic_pr_instance(
-    tenant: Tenant, request_id: str, requested_by: str, pull_request_id: int = None
+    tenant: Tenant,
+    request_id: str,
+    requested_by: str,
+    pull_request_id: int = None,
+    file_paths_being_changed: Optional[list[str]] = None,
 ):
     iambic_repo_details: IambicRepoDetails = await get_iambic_repo(tenant.name)
     try:
@@ -416,6 +420,7 @@ async def get_iambic_pr_instance(
             iambic_repo_details.repo_name,
             request_id,
             requested_by,
+            file_paths_being_changed=file_paths_being_changed,
             use_request_branch=True,
         )
     except AttributeError:

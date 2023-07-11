@@ -14,7 +14,7 @@ log = config.get_logger(__name__)
 
 
 class RolesHandlerV4(BaseHandler):
-    """Handler for /api/v4/aws/roles
+    """Handler for /api/v4/roles
 
     Api endpoint to list and filter roles
     """
@@ -39,6 +39,12 @@ class RolesHandlerV4(BaseHandler):
             if account_name and isinstance(account_name, list):
                 account_name = account_name[0]
             if not account_name:
+                log.warning(
+                    "Could not find account name for Role",
+                    role_arn=arn,
+                    account_id=account_id,
+                    eligible_accounts=friendly_names,
+                )
                 continue
             formatted_account_name = config.get_tenant_specific_key(
                 "role_select_page.formatted_account_name",

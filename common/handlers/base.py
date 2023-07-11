@@ -942,6 +942,12 @@ class BaseHandler(TornadoRequestHandler):
         eligible_roles = await get_user_eligible_roles(
             self.ctx.db_tenant, self.ctx.db_user, self.groups
         )
+        await log.awarning(
+            "Retrieved eligible roles for user",
+            user=self.ctx.db_user.email,
+            groups=self.groups,
+            eligible_roles=eligible_roles,
+        )
         self.eligible_roles = list(set(eligible_roles + self.eligible_roles))
 
     async def clear_jwt_cookie(self):
