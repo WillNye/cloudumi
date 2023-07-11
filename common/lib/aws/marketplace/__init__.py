@@ -763,7 +763,7 @@ async def handle_aws_marketplace_queue(
 
 
 async def meter_aws_customer(aws_customer_identifier: str):
-    aws_marketplace_tenant = AWSMarketplaceTenantDetails.get_by_customer_identifier(
+    aws_marketplace_tenant = await AWSMarketplaceTenantDetails.get(
         aws_customer_identifier
     )
     tenant_name = aws_marketplace_tenant.tenant

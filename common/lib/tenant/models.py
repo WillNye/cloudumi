@@ -88,11 +88,6 @@ class AWSMarketplaceTenantDetails(GlobalNoqModel):
             return False
 
     @classmethod
-    async def get_by_customer_identifier(cls, customer_identifier: str):
-        results = await cls.query(customer_identifier, limit=1)
-        return results.next()
-
-    @classmethod
     async def create(
         cls,
         customer_identifier: str,
