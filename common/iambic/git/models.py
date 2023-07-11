@@ -178,7 +178,12 @@ class IambicRepo:
                 self.request_file_path,
             )
             await run_command(
-                "git", "sparse-checkout", "init", "--cone", cwd=self.request_file_path
+                "git",
+                "sparse-checkout",
+                "init",
+                "--cone",
+                "--sparse-index",
+                cwd=self.request_file_path,
             )
             await run_command(
                 "git",
