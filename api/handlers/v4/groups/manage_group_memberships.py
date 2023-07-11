@@ -82,6 +82,8 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
 
         # TODO: make it in parallel
         # Create group memberships for each combination of valid user and group
+        if not (users and groups):
+            return messages
         users_groups = list(product(users, groups))
         data = await GroupMembership.exists_by_users_and_groups(users_groups)
         for membership, (user, group) in zip(data, users_groups):
@@ -196,7 +198,7 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
                     messages.append(
                         {
                             "type": "error",
-                            "message": "Invalid user {user_name}",
+                            "message": f"Invalid user: {username}",
                             "username": username,
                         }
                     )
@@ -211,7 +213,7 @@ def validate_manual(item: Group | User, messages, name: str):
         messages.append(
             {
                 "type": "error",
-                "message": "{name} is managed by an external system. Cannot add users to group.",
+                "message": f"{name} is managed by an external system. Cannot add users to group.",
                 "attr": name,
             }
         )
