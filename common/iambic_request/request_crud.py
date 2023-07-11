@@ -41,6 +41,21 @@ async def list_requests(tenant_id: int, **filter_kwargs) -> list[Request]:
     return items.scalars().all()
 
 
+def compare_date_time(obj):
+    if created_at := getattr(obj, "created_at", None):
+        return created_at
+    elif type(obj) == dict and "created_at" in obj and type(obj["created_at"]) == str:
+        return datetime.datetime.fromisoformat(obj["created_at"])
+    elif (
+        type(obj) == dict
+        and "created_at" in obj
+        and type(obj["created_at"]) == datetime.datetime
+    ):
+        return obj["created_at"]
+    else:
+        raise ValueError("created_at not supported by {obj}")
+
+
 async def get_request_response(
     request: Request, request_pr, include_comments: bool = True
 ) -> dict:
@@ -51,7 +66,11 @@ async def get_request_response(
     pr_details["rejected_by"] = request.rejected_by
     pr_details["allowed_approvers"] = request.allowed_approvers
     if include_comments:
-        pr_details["comments"] = [comment.dict() for comment in request.comments]
+        comments = [comment.dict() for comment in request.comments]
+        if pr_details["comments"]:
+            comments.extend(pr_details["comments"])
+        comments.sort(key=compare_date_time)
+        pr_details["comments"] = comments
     else:
         pr_details["comments"] = []
 

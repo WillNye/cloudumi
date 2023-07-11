@@ -43,6 +43,7 @@ class GitComment(PydanticBaseModel):
     id: str
     user: str
     body: str
+    created_at: datetime
     in_reply_to_id: str = None
 
 
@@ -358,6 +359,7 @@ class GitHubPullRequest(BasePullRequest):
                         user=comment.user.login,
                         body=comment.body,
                         in_reply_to_id=getattr(comment, "in_reply_to", None),
+                        created_at=comment.created_at,
                     )
                 )
 

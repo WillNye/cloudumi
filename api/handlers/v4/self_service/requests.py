@@ -332,14 +332,9 @@ class IambicRequestCommentHandler(BaseHandler):
             )
             return
         await create_request_comment(
-            db_tenant.id, request_id, user, request_data.get("body")
+            db_tenant.id, request_id, user, request_data.get("comment")
         )
         self.set_status(204)
-        return self.write(
-            WebResponse(
-                status_code=204,
-            ).json(exclude_unset=True, exclude_none=True)
-        )
 
     async def patch(self, request_id: str, comment_id: str):
         """
