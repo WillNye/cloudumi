@@ -17,7 +17,8 @@ from cachetools import TTLCache
 from deepdiff import DeepDiff
 from iambic.plugins.v0_1_0.aws.iam.policy.models import AWS_MANAGED_POLICY_TEMPLATE_TYPE
 from iambic.plugins.v0_1_0.aws.utils import paginated_search
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import FileSystemLoader, select_autoescape
+from jinja2.sandbox import ImmutableSandboxedEnvironment
 from joblib import Parallel, delayed
 from parliament import analyze_policy_string, enhance_finding
 from sqlalchemy import select
@@ -1134,7 +1135,7 @@ async def generate_permission_removal_commands(
         for policy in identity["policy"].get("AttachedManagedPolicies", [])
     ]
     new_policy_name = f"{identity_name}-policy"
-    env = Environment(
+    env = ImmutableSandboxedEnvironment(
         loader=FileSystemLoader("common/templates"),
         extensions=["jinja2.ext.loopcontrols"],
         autoescape=select_autoescape(),

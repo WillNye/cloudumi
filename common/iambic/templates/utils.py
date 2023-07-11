@@ -2,7 +2,8 @@ from typing import Optional, Union
 
 from iambic.core.utils import sanitize_string
 from iambic.plugins.v0_1_0.aws.models import AWSAccount
-from jinja2 import BaseLoader, Environment
+from jinja2 import BaseLoader
+from jinja2.sandbox import ImmutableSandboxedEnvironment
 from sqlalchemy import or_, select
 from sqlalchemy.orm import contains_eager
 
@@ -110,12 +111,15 @@ def get_template_str_value_for_provider_definition(
 ) -> str:
     valid_characters_re = r"[\w_+=,.@-]"
     variables = {var.key: var.value for var in provider_definition.variables}
-    if isinstance(provider_definition, AWSAccount):
-        variables["account_id"] = provider_definition.account_id
-        variables["account_name"] = provider_definition.account_name
+    if not isinstance(provider_definition, TenantProviderDefinition):
+        for extra_attr in {"account_id", "account_name", "owner"}:
+            if attr_val := getattr(provider_definition, extra_attr, None):
+                variables[extra_attr] = attr_val
 
     variables = {
         k: sanitize_string(v, valid_characters_re) for k, v in variables.items()
     }
-    rtemplate = Environment(loader=BaseLoader()).from_string(template_str_attr)
+    rtemplate = ImmutableSandboxedEnvironment(loader=BaseLoader()).from_string(
+        template_str_attr
+    )
     return rtemplate.render(var=variables)

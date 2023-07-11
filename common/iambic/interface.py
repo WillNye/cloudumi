@@ -11,8 +11,8 @@ from iambic.core.git import retrieve_git_changes as iambic_retrieve_git_changes
 from iambic.core.parser import load_templates as iambic_load_templates
 from iambic.core.utils import evaluate_on_provider as iambic_evaluate_on_provider
 from iambic.core.utils import gather_templates as iambic_gather_templates
-from jinja2.environment import Environment
 from jinja2.loaders import BaseLoader
+from jinja2.sandbox import ImmutableSandboxedEnvironment
 
 from common.config import config
 from common.config.tenant_config import TenantConfig
@@ -140,7 +140,7 @@ class IambicConfigInterface:
             return
 
         tenant_name = self.iambic_repo.tenant.name
-        tenant_config = TenantConfig(self.iambic_repo.tenant.name)
+        tenant_config = TenantConfig.get_instance(self.iambic_repo.tenant.name)
         tenant_templates = []
         template_dicts = []
         aws_account_dicts = []
@@ -214,9 +214,9 @@ class IambicConfigInterface:
                                 f"Unsupported template type: {template.template_type}"
                             )
                         if arn:
-                            rtemplate = Environment(loader=BaseLoader()).from_string(
-                                arn
-                            )
+                            rtemplate = ImmutableSandboxedEnvironment(
+                                loader=BaseLoader()
+                            ).from_string(arn)
                             arn = rtemplate.render(var=variables)
                             arns.append(arn)
                 pass

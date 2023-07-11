@@ -19,6 +19,14 @@ resource "aws_wafv2_web_acl" "web-acl" {
       managed_rule_group_statement {
         name        = "AWSManagedRulesCommonRuleSet"
         vendor_name = "AWS"
+
+        rule_action_override {
+          action_to_use {
+            count {}
+          }
+          # EN-2232 SaaS uses very large BODY size
+          name = "SizeRestrictions_BODY"
+        }
       }
     }
 

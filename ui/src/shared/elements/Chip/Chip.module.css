@@ -1,6 +1,6 @@
 .badge {
   display: inline-block;
-  padding: 0.25em 0.4em;
+  padding: var(--spacing-sm) var(--spacing-md);
   font-size: 0.75em;
   font-weight: 700;
   line-height: 1;
@@ -10,7 +10,7 @@
   border-radius: 0.25rem;
   border: 1px solid #292c30;
   background-color: #292c30;
-  margin: 0 2px;
+  margin: 0 var(--spacing-sm);
 
   &.primary {
     color: #fff;
@@ -58,5 +58,11 @@
     color: #fff;
     background-color: #343a40;
     border-color: #343a40;
+  }
+
+  &.default {
+    color: var(--white);
+    background-color: var(--gray-600);
+    border-color: var(--gray-300);
   }
 }

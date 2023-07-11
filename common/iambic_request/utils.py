@@ -11,7 +11,8 @@ from iambic.plugins.v0_1_0.aws.iam.policy.models import AwsIamManagedPolicyTempl
 from iambic.plugins.v0_1_0.aws.identity_center.permission_set.models import (
     AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
 )
-from jinja2 import BaseLoader, Environment
+from jinja2 import BaseLoader
+from jinja2.sandbox import ImmutableSandboxedEnvironment
 from regex import regex
 from sqlalchemy import func as sql_func
 from sqlalchemy import select
@@ -114,7 +115,7 @@ def update_iambic_template_with_change(
         if bool(get_origin(template_attr)):
             # Handle Union types by determining the preferred typing
             supported_types = template_attr.__args__
-            preferred_typing = supported_types[0]
+            preferred_typing = None
             for supported_type in supported_types:
                 if type(supported_type) == list:
                     supported_type = supported_type.__args__[0]
@@ -124,6 +125,8 @@ def update_iambic_template_with_change(
                     if issubclass(supported_type, IambicBaseModel):
                         preferred_typing = supported_type
                         break
+                    elif preferred_typing is None:
+                        preferred_typing = supported_type
                 except TypeError:
                     continue
 
@@ -362,7 +365,7 @@ async def render_change_type_template(
             field, field_value, provider_definition, iambic_template_ref_map
         )
 
-    rtemplate = Environment(loader=BaseLoader()).from_string(
+    rtemplate = ImmutableSandboxedEnvironment(loader=BaseLoader()).from_string(
         change_type.change_template.template
     )
     return EnrichedChangeType(
@@ -534,7 +537,6 @@ async def generate_updated_iambic_template(
 
     # Render and merge the change type templates for the request
     provider_definition_map = {str(pd.id): pd for pd in provider_definitions}
-    print(list(provider_definition_map.keys()))
     tasks = []
     for change_type in request_data.changes:
         for pd_id in change_type.provider_definition_ids:

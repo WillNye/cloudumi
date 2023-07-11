@@ -632,6 +632,15 @@ async def api_end_to_end_access_request(user_request: bool):
     )
 
 
+async def run_all_template_generators():
+    _ = await generate_s3_permission_template_for_role()
+    _ = await generate_s3_permission_template_for_managed_policy()
+    _ = await generate_permission_set_customer_policy_attachment_template()
+    _ = await generate_permission_set_aws_managed_policy_attachment_template()
+    _ = await generate_role_policy_attachment_template()
+    _ = await generate_request_role_access_request_role_template()
+
+
 if __name__ == "__main__":
     asyncio.run(TENANT_SUMMARY.setup())
     asyncio.run(get_or_create_self_service_request())

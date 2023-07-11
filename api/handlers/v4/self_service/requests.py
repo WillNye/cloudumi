@@ -416,7 +416,7 @@ class IambicRequestDataTableHandler(BaseHandler):
         tenant = self.ctx.db_tenant
         try:
             query_response: PaginatedQueryResponse = await filter_data_with_sqlalchemy(
-                data.get("filter", {}), tenant, Request
+                data, tenant, Request
             )
         except Exception as exc:
             errors = [str(exc)]

@@ -160,7 +160,7 @@ async def validate_auth_token(user, ip, token, request_object):
 
 
 def is_tenant_admin(user: str, user_groups: List[str], tenant: str):
-    tenant_config = TenantConfig(tenant)
+    tenant_config = TenantConfig.get_instance(tenant)
     for application_admin in tenant_config.application_admins:
         if user == application_admin or application_admin in user_groups:
             return True
@@ -315,7 +315,7 @@ async def get_extended_request_allowed_approvers(
 
 
 async def get_account_delegated_admins(account_id, tenant):
-    tenant_config = TenantConfig(tenant)
+    tenant_config = TenantConfig.get_instance(tenant)
     spoke_role_adapter = (
         ModelAdapter(SpokeAccount)
         .load_config("spoke_accounts", tenant)

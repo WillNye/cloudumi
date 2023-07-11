@@ -3,6 +3,11 @@ variable "account_id" {
   type        = string
 }
 
+variable "github_app_noq_secret_arn" {
+  description = "github_app_noq_secret_arn"
+  type        = string
+}
+
 variable "domain_name" {
   type        = string
   description = "The specific domain name to be registered as the CNAME to the load balancer"
@@ -17,8 +22,8 @@ variable "profile" {
   description = "The AWS PROFILE, as configured in the file ~/.aws/credentials to be used for deployment"
   type        = string
   validation {
-    condition     = contains(["noq_global_staging", "noq_global_prod"], var.profile)
-    error_message = "Allowed AWS_PROFILEs are \"noq_global_staging\" and \"noq_global_prod\"."
+    condition     = contains(["development_2/development_2_admin", "noq_global_staging", "noq_global_prod"], var.profile)
+    error_message = "Allowed AWS_PROFILEs are \"development_2/development_2_admin\", \"noq_global_staging\" and \"noq_global_prod\"."
   }
 }
 
@@ -37,7 +42,7 @@ variable "stage" {
   default = "staging"
 
   validation {
-    condition     = contains(["staging", "test", "prod"], var.stage)
+    condition     = contains(["dev", "staging", "test", "prod"], var.stage)
     error_message = "Allowed values for input_parameter are \"staging\", \"test\", or \"prod\"."
   }
 }

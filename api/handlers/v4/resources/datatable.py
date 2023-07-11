@@ -40,7 +40,7 @@ class ResourcesDataTableHandler(BaseHandler):
         POST /api/v4/resources/datatable/
         """
         tenant = self.ctx.tenant
-        tenant_config = TenantConfig(tenant)
+        tenant_config = TenantConfig.get_instance(tenant)
         body = tornado.escape.json_decode(self.request.body or "{}")
 
         redis_key = tenant_config.iambic_templates_redis_key

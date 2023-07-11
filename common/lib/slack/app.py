@@ -257,7 +257,7 @@ class TenantSlackApp:
             app_id (str): App ID.
         """
         self.tenant = tenant
-        self.tenant_config = TenantConfig(self.tenant)
+        self.tenant_config = TenantConfig.get_instance(self.tenant)
         self.enterprise_id = enterprise_id
         self.team_id = team_id
         self.app_id = app_id

@@ -8,8 +8,6 @@ from typing import Optional, Type, Union
 import pytz
 from git import Repo
 from iambic.core.models import BaseTemplate as IambicBaseTemplate
-from iambic.core.utils import sanitize_string
-from jinja2 import BaseLoader, Environment
 from sqlalchemy import and_, cast, delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import contains_eager
@@ -33,30 +31,12 @@ from common.iambic.templates.models import (
     IambicTemplateContent,
     IambicTemplateProviderDefinition,
 )
+from common.iambic.templates.utils import get_template_str_value_for_provider_definition
 from common.lib.asyncio import NoqSemaphore
 from common.pg_core.utils import bulk_add, bulk_delete
 from common.tenants.models import Tenant
 
 log = saas_config.get_logger(__name__)
-
-
-def get_template_provider_resource_id(
-    iambic_provider_def, template: Type[IambicBaseTemplate]
-) -> str:
-    valid_characters_re = r"[\w_+=,.@-]"
-    variables = {var.key: var.value for var in iambic_provider_def.variables}
-    if not isinstance(iambic_provider_def, TenantProviderDefinition):
-        variables["account_id"] = iambic_provider_def.account_id
-        variables["account_name"] = iambic_provider_def.account_name
-    if hasattr(template, "owner") and (owner := getattr(template, "owner", None)):
-        variables["owner"] = owner
-    variables = {
-        k: sanitize_string(v, valid_characters_re) for k, v in variables.items()
-    }
-
-    rtemplate = Environment(loader=BaseLoader()).from_string(template.resource_id)
-
-    return str(rtemplate.render(var=variables))
 
 
 async def create_tenant_templates_and_definitions(
@@ -186,20 +166,29 @@ async def create_tenant_templates_and_definitions(
                     )
                     # Get the tenant provider definition instance using the provider definition name
                     tpd = provider_definition_map[provider].get(pd_name)
+                    if not tpd:
+                        log.error(
+                            "Could not find provider definition for template provider definition.",
+                            provider_def=provider_def,
+                            pd_name=pd_name,
+                            tpd=tpd,
+                            provider_defs=provider_defs,
+                        )
+                        continue
+
                     secondary_resource_id = None
                     if provider == "aws":
                         secondary_resource_id = await get_resource_arn(
                             tpd, raw_iambic_template
                         )
-
                     iambic_template_provider_definitions.append(
                         IambicTemplateProviderDefinition(
                             tenant=tenant,
                             iambic_template=iambic_template,
                             tenant_provider_definition=tpd,
                             secondary_resource_id=secondary_resource_id,
-                            resource_id=get_template_provider_resource_id(
-                                provider_def, raw_iambic_template
+                            resource_id=get_template_str_value_for_provider_definition(
+                                raw_iambic_template.resource_id, provider_def
                             ),
                         )
                     )
@@ -210,7 +199,7 @@ async def create_tenant_templates_and_definitions(
     except IntegrityError:
         if is_full_create:
             # Rollback everything and try again if the tenant is new
-            await rollback_full_create(tenant)
+            await rollback_full_create(tenant_id)
         else:
             # Desync has occurred and needs to be remediated
             # This is a fallback where we delete the templates that shouldn't exist and try again
@@ -317,6 +306,8 @@ async def update_tenant_template(
         return raw_iambic_template.file_path, []
 
     file_path = str(raw_iambic_template.file_path).replace(repo_dir, "")
+    if file_path.startswith("/"):
+        file_path = file_path[1:]
     if iambic_template.file_path != file_path:
         iambic_template.file_path = file_path
         await iambic_template.write()
@@ -395,8 +386,8 @@ async def update_tenant_template(
                             iambic_template_id=iambic_template.id,
                             tenant_provider_definition_id=tpd.id,
                             secondary_resource_id=secondary_resource_id,
-                            resource_id=get_template_provider_resource_id(
-                                provider_def, raw_iambic_template
+                            resource_id=get_template_str_value_for_provider_definition(
+                                raw_iambic_template.resource_id, provider_def
                             ),
                         )
                     )
@@ -576,7 +567,7 @@ async def full_create_tenant_templates_and_definitions(
         tenant (Tenant): The Tenant object for which templates and definitions are to be created.
         provider_definition_map (dict[dict[str, TenantProviderDefinition]]): A map of provider definitions.
     """
-    iambic_repos = await IambicRepo.get_all_tenant_repos(tenant.name)
+    iambic_repos = await IambicRepo.get_all_tenant_repos(str(tenant.name))
 
     # Iterate the tenants iambic repos
     for iambic_repo in iambic_repos:
@@ -588,7 +579,7 @@ async def full_create_tenant_templates_and_definitions(
         )
 
 
-async def rollback_full_create(tenant: Tenant):
+async def rollback_full_create(tenant_id: int):
     """Deletes all template data for a tenant in the event of a failure on create.
 
     Args:
@@ -596,19 +587,20 @@ async def rollback_full_create(tenant: Tenant):
     """
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
+            # TODO : Fix
             stmt = delete(IambicTemplateContent).where(
-                IambicTemplateContent.tenant_id == tenant.id
+                IambicTemplateContent.tenant_id == tenant_id
             )
             await session.execute(stmt)
             await session.flush()
 
             stmt = delete(IambicTemplateProviderDefinition).where(
-                IambicTemplateProviderDefinition.tenant_id == tenant.id
+                IambicTemplateProviderDefinition.tenant_id == tenant_id
             )
             await session.execute(stmt)
             await session.flush()
 
-            stmt = delete(IambicTemplate).where(IambicTemplate.tenant_id == tenant.id)
+            stmt = delete(IambicTemplate).where(IambicTemplate.tenant_id == tenant_id)
             await session.execute(stmt)
             await session.flush()
 
@@ -632,7 +624,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
         tenant.supported_template_types = []
         tenant.iambic_templates_last_parsed = None
         await tenant.write()
-        await rollback_full_create(tenant)
+        await rollback_full_create(tenant.id)
         return
     elif len(iambic_repos) > 1:
         log.warning(
@@ -658,14 +650,21 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
     tenant.iambic_templates_last_parsed = datetime.utcnow()
     await tenant.write()
     tenant_name = tenant.name
+    tenant_id = tenant.id
     provider_definition_map = defaultdict(dict)
 
     # Populate the provider definition map where
     # k1 is the provider name, k2 is the provider definition str repr and the value is the provider definition
-    raw_existing_definitions = await list_tenant_provider_definitions(tenant.id)
+    raw_existing_definitions = await list_tenant_provider_definitions(tenant_id)
     if not raw_existing_definitions:
         await update_tenant_providers_and_definitions(tenant_name)
-
+        raw_existing_definitions = await list_tenant_provider_definitions(tenant_id)
+    if not raw_existing_definitions:
+        log.error(
+            "No provider definitions found for tenant",
+            tenant=tenant_name,
+        )
+        return
     for existing_definition in raw_existing_definitions:
         provider_definition_map[existing_definition.provider][
             existing_definition.name
@@ -680,7 +679,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
         except Exception as err:
             tenant.iambic_templates_last_parsed = None
             await tenant.write()
-            await rollback_full_create(tenant)
+            await rollback_full_create(tenant.id)
             log.error(
                 {
                     "function": f"{__name__}.{sys._getframe().f_code.co_name}",

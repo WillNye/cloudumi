@@ -2,7 +2,6 @@ aiocache
 aiofiles
 aiopath
 asyncache
-celery-singleton
 cryptography
 httpx
 locust
@@ -13,6 +12,8 @@ noq-dax-client
 pydantic
 python3-saml
 pynamodax
+psycopg2
+psycopg2-binary
 slack_bolt
 workos
 types-ujson
