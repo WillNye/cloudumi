@@ -10,7 +10,7 @@ from common.lib.cache import (
     store_json_results_in_redis_and_s3,
 )
 from common.lib.plugins import get_plugin_by_name
-from common.models import CloudAccountModelArray, SpokeAccount
+from common.models import CloudAccountModelArray, HubAccount, SpokeAccount
 
 log = config.get_logger(__name__)
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -114,4 +114,5 @@ async def get_account_id_to_name_mapping(
     tenant, status="active", environment=None, force_sync=False
 ):
     accounts = ModelAdapter(SpokeAccount).load_config("spoke_accounts", tenant).models
+    accounts.append(ModelAdapter(HubAccount).load_config("hub_account", tenant).model)
     return {account.account_id: account.account_name for account in accounts}
