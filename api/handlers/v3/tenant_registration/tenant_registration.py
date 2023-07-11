@@ -145,7 +145,7 @@ async def create_tenant(
             organization_id=dev_domain,
         )
         email_domain = tenant.email.split("@")[1]
-        password = generate_random_password()
+        password = await generate_random_password()
         user = await User.create(
             tenant_db,
             tenant.email,
@@ -557,7 +557,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
                 organization_id=dev_domain,
             )
             email_domain = tenant.email.split("@")[1]
-            password = generate_random_password()
+            password = await generate_random_password()
             user = await User.create(
                 tenant_db,
                 tenant.email,
