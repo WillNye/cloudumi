@@ -100,6 +100,8 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
             "/api/v3/slack/events",
             "/api/v3/github/callback/",
             "/api/v3/github/events/",
+        ]
+        landing_page_domains_unprotected_routes = [
             "/aws_marketplace",
             "/aws_marketplace/form_submission",
         ]
@@ -116,6 +118,14 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
 
         # Ignore unprotected routes, like /healthcheck
         if self.request.path in unprotected_routes:
+            return
+
+        # ok to ignore landing pages unprotected routes if
+        # this is on landing page domains
+        if (
+            self.request.host in config.get("_global_.landing_page_domains", [])
+            and self.request.path in landing_page_domains_unprotected_routes
+        ):
             return
 
         # Complain loudly that we don't have a configuration for the tenant. Instruct
