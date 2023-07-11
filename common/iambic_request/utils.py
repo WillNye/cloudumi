@@ -6,7 +6,8 @@ from deepdiff import DeepDiff
 from iambic.core.models import BaseModel as IambicBaseModel
 from iambic.core.models import BaseTemplate
 from iambic.core.template_generation import templatize_resource
-from jinja2 import BaseLoader, Environment
+from jinja2 import BaseLoader
+from jinja2.sandbox import ImmutableSandboxedEnvironment
 from regex import regex
 from sqlalchemy import func as sql_func
 from sqlalchemy import select
@@ -243,7 +244,7 @@ async def render_change_type_template(
             raise AssertionError(f"Invalid field provided: {field_key}")
         template_attrs[field.field_key] = await get_field_value(field, field_value)
 
-    rtemplate = Environment(loader=BaseLoader()).from_string(
+    rtemplate = ImmutableSandboxedEnvironment(loader=BaseLoader()).from_string(
         change_type.change_template.template
     )
     return EnrichedChangeType(

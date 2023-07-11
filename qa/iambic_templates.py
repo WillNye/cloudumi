@@ -47,7 +47,7 @@ async def teardown_refs():
     """
     TENANT_SUMMARY.tenant.iambic_templates_last_parsed = None
     await TENANT_SUMMARY.tenant.write()
-    await rollback_full_create(TENANT_SUMMARY.tenant)
+    await rollback_full_create(TENANT_SUMMARY.tenant.id)
 
 
 async def desync_on_full_create():

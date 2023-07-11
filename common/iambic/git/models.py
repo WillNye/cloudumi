@@ -12,7 +12,7 @@ from git import Actor, Repo
 from git.exc import GitCommandError
 
 from common.config import config
-from common.config.globals import TENANT_STORAGE_BASE_PATH
+from common.config.tenant_config import TenantConfig
 from common.github.models import GitHubInstall
 from common.iambic.git.utils import get_repo_access_token, list_tenant_repo_details
 from common.lib.asyncio import aio_wrapper
@@ -55,9 +55,8 @@ class IambicRepo:
         self.db_tenant = None
         self._default_branch_name = None
         self._storage_handler = TenantFileStorageHandler(self.tenant)
-        self._tenant_storage_base_path = os.path.expanduser(
-            os.path.join(TENANT_STORAGE_BASE_PATH, f"{tenant.name}_{tenant.id}")
-        )
+        self.tenant_config = TenantConfig.get_instance(str(self.tenant.name))
+        self._tenant_storage_base_path = self.tenant_config.tenant_storage_base_path
         tenant_repo_base_path: str = os.path.join(
             self._tenant_storage_base_path, "iambic_template_repos"
         )
@@ -122,12 +121,13 @@ class IambicRepo:
                 if "already exists and is not an empty directory" not in err.stderr:
                     raise
             self.repo.git.reset("--hard", default_branch)
-            self.repo.git.pull()
+            self.repo.git.pull(depth=1)
         else:
             repo = Repo.clone_from(
                 await self.get_repo_uri(),
                 self.default_file_path,
                 config="core.symlinks=false",
+                depth=1,
             )
             self.repo = repo
             await self.set_repo_auth()
