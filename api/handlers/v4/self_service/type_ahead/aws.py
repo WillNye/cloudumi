@@ -6,7 +6,7 @@ from api.handlers.utils import get_paginated_typeahead_response
 from common import Tenant
 from common.aws.iam.policy.utils import (
     get_aws_managed_policy_arns,
-    list_customer_managed_policy_arn_typeahead,
+    list_customer_managed_policy_definitions,
 )
 from common.aws.iam.role.models import IAMRole
 from common.config import config
@@ -91,9 +91,10 @@ async def handle_aws_resource_type_ahead_request(
     groups: list[str],
     tenant: Tenant,
     service: str,
-    resource_id: str,
     page: int,
     page_size: int,
+    template_id: str = None,
+    resource_id: str = None,
     provider_definitions_ids: list[str] = None,
     aws_managed_only: bool = False,
 ) -> list[str]:
@@ -116,15 +117,18 @@ async def handle_aws_resource_type_ahead_request(
     )
 
     if service == "managed_policy":
-        if aws_managed_only:
-            policy_arns = await get_aws_managed_policy_arns()
-            if resource_id:
-                policy_arns = [arn for arn in policy_arns if resource_id in arn.lower()]
-        else:
-            policy_arns = await list_customer_managed_policy_arn_typeahead(
+        policy_arns = await get_aws_managed_policy_arns()
+        if resource_id:
+            policy_arns = [arn for arn in policy_arns if resource_id in arn.lower()]
+
+        if not aws_managed_only:
+            mp_defs = await list_customer_managed_policy_definitions(
                 tenant, resource_id, provider_definitions_ids
             )
-            policy_arns.extend(await get_aws_managed_policy_arns())
+            # Prioritize customer managed policies
+            policy_arns = [
+                mp_def.secondary_resource_id for mp_def in mp_defs
+            ] + policy_arns
 
         return policy_arns[(page - 1) * page_size : page * page_size]
 
