@@ -120,6 +120,10 @@ async def webhook_request_handler(request):
     if github_event_type == "meta" and github_action == "deleted":
         await tenant_github_install.delete()
         return
+    elif github_event_type == "pull_request" and github_action == "synchronized":
+        # FIXME hm, what's to do if someone push a change to the request branch
+        # is calling sync_iambic_templates_for_tenant sufficient.
+        pass
     elif (github_event_type == "pull_request" and github_action == "closed") or (
         github_event_type == "pull_request_review"
         and github_action == "submitted"
