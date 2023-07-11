@@ -12,6 +12,9 @@ from iambic.plugins.v0_1_0.aws.iam.role.models import (
     AWS_IAM_ROLE_TEMPLATE_TYPE,
     AwsIamRoleTemplate,
 )
+from iambic.plugins.v0_1_0.aws.identity_center.permission_set.models import (
+    AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
+)
 from sqlalchemy import func as sql_func
 from sqlalchemy import select
 
@@ -24,7 +27,8 @@ from common import (
     TenantProviderDefinition,
 )
 from common.config.globals import ASYNC_PG_SESSION
-from common.iambic.templates.utils import get_template_by_id
+from common.iambic.config.utils import list_tenant_provider_definitions
+from common.iambic.templates.utils import get_template_by_id, list_tenant_templates
 from common.iambic_request.request_crud import get_request, list_requests
 from common.iambic_request.utils import generate_updated_iambic_template
 from common.models import (
@@ -32,7 +36,10 @@ from common.models import (
     SelfServiceRequestChangeTypeField,
     SelfServiceRequestData,
 )
-from common.request_types.utils import list_tenant_request_types
+from common.request_types.utils import (
+    list_tenant_change_types,
+    list_tenant_request_types,
+)
 from qa import TENANT_SUMMARY
 from qa.utils import generic_api_create_or_update_request, generic_api_get_request
 
@@ -121,7 +128,7 @@ async def get_s3_permission_template_for_role_request_data() -> SelfServiceReque
                 fields=[
                     SelfServiceRequestChangeTypeField(
                         field_key="policy_name",
-                        field_value=f"test-policy-{policy_number}",
+                        field_value=f"qa-run-policy-{policy_number}",
                     ),
                     SelfServiceRequestChangeTypeField(
                         field_key="s3_buckets",
@@ -142,11 +149,14 @@ async def get_s3_permission_template_for_role_request_data() -> SelfServiceReque
 
 async def generate_s3_permission_template_for_role():
     tenant = TENANT_SUMMARY.tenant
-    self_service_request = await get_s3_permission_template_for_role_request_data(
-        tenant
-    )
+    self_service_request = await get_s3_permission_template_for_role_request_data()
     iambic_template = await generate_updated_iambic_template(
         tenant.id, self_service_request
+    )
+    print(
+        json.dumps(
+            iambic_template.dict(exclude_unset=False, exclude_defaults=True), indent=2
+        )
     )
     return iambic_template
 
@@ -182,7 +192,7 @@ async def generate_s3_permission_template_for_managed_policy():
                 provider_definition_ids=[str(tpd.id)],
                 fields=[
                     SelfServiceRequestChangeTypeField(
-                        field_key="s3_bucket",
+                        field_key="s3_buckets",
                         field_value=[
                             f"arn:aws:s3:::{account_name}-bucket-{elem}"
                             for elem in range(1, 4)
@@ -207,6 +217,75 @@ async def generate_s3_permission_template_for_managed_policy():
     return iambic_template
 
 
+async def generate_permission_set_customer_policy_attachment_template():
+    # Get the proper change type
+    change_types = await list_tenant_change_types(
+        TENANT_SUMMARY.tenant.id, summary_only=False
+    )
+    change_type = [
+        ct
+        for ct in change_types
+        if ct.request_type.name == "Attach a managed policy to AWS PermissionSet"
+    ][0]
+
+    # Get the relevant AWS Account
+    aws_orgs = await list_tenant_provider_definitions(
+        TENANT_SUMMARY.tenant.id, provider="aws", sub_type="organizations"
+    )
+    aws_org = aws_orgs[0]
+    account_id = aws_org.definition["org_account_id"]
+    aws_account = await list_tenant_provider_definitions(
+        TENANT_SUMMARY.tenant.id, provider="aws", name=account_id
+    )
+    aws_account = aws_account[0]
+
+    # Get the target AWS PermissionSet
+    permission_sets = await list_tenant_templates(
+        TENANT_SUMMARY.tenant.id,
+        template_type=AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
+    )
+    permission_set = random.choice(permission_sets)
+
+    # Get the referenced AWS Customer Managed Policy
+    aws_customer_managed_policies = await list_tenant_templates(
+        TENANT_SUMMARY.tenant.id,
+        template_type=AWS_MANAGED_POLICY_TEMPLATE_TYPE,
+        provider_definition_ids=[aws_account.id],
+    )
+    customer_managed_policy = random.choice(aws_customer_managed_policies)
+
+    self_service_request = SelfServiceRequestData(
+        id=uuid.uuid4(),
+        iambic_template_id=str(permission_set.id),
+        justification="Testing",
+        expires_at="In 1 days",
+        changes=[],
+    )
+
+    self_service_request.changes.append(
+        SelfServiceRequestChangeType(
+            change_type_id=str(change_type.id),
+            provider_definition_ids=[],
+            fields=[
+                SelfServiceRequestChangeTypeField(
+                    field_key="policy",
+                    field_value=str(customer_managed_policy.id),
+                ),
+            ],
+        )
+    )
+
+    iambic_template = await generate_updated_iambic_template(
+        TENANT_SUMMARY.tenant.id, self_service_request
+    )
+    print(
+        json.dumps(
+            iambic_template.dict(exclude_unset=False, exclude_defaults=True), indent=2
+        )
+    )
+    return iambic_template
+
+
 async def generate_request_role_access_request_data(user_request: bool = True):
     tenant = TENANT_SUMMARY.tenant
     (
@@ -218,9 +297,7 @@ async def generate_request_role_access_request_data(user_request: bool = True):
     request_types = await list_tenant_request_types(
         tenant.id, "aws", summary_only=False
     )
-    request_type = [
-        r for r in request_types if r.name == "Request access to AWS IAM Role"
-    ][0]
+    request_type = [r for r in request_types if r.name == "Request access to AWS"][0]
     change_type_name = (
         "Noq User access request" if user_request else "Noq Group access request"
     )
@@ -253,6 +330,20 @@ async def generate_request_role_access_request_data(user_request: bool = True):
         )
 
     return self_service_request
+
+
+async def generate_request_role_access_request_role_template():
+    tenant = TENANT_SUMMARY.tenant
+    self_service_request = await generate_request_role_access_request_data()
+    iambic_template = await generate_updated_iambic_template(
+        tenant.id, self_service_request
+    )
+    print(
+        json.dumps(
+            iambic_template.dict(exclude_unset=False, exclude_defaults=True), indent=2
+        )
+    )
+    return iambic_template
 
 
 async def api_service_service_request_validate(
