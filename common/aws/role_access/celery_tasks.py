@@ -1,4 +1,3 @@
-import asyncio
 import sys
 from collections import defaultdict
 
@@ -336,11 +335,3 @@ async def sync_all_iambic_data_for_tenant(tenant_name: str):
                 "tenant": tenant_name,
             }
         )
-
-
-async def sync_all_iambic_data():
-    tenants = await Tenant.get_all()
-    await asyncio.gather(
-        *[sync_all_iambic_data_for_tenant(t.name) for t in tenants],
-        return_exceptions=True,
-    )
