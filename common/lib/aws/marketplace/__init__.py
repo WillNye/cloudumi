@@ -800,6 +800,16 @@ async def handle_aws_marketplace_metering():
                 UsageRecords=batch,
             )
 
+            # for each processed record, check the status
+            if response.get("Results"):
+                for result in response["Results"]:
+                    result_status = result["Status"]
+                    if result_status in ["CustomerNotSubscribed", "DuplicateRecord"]:
+                        log.error(
+                            f"Failed to report usage metrics due to {result_status}",
+                            record=result["UsageRecord"],
+                        )
+
             # Check if any usage record failed
             if response.get("UnprocessedRecords"):
                 for record in response["UnprocessedRecords"]:
