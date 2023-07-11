@@ -99,7 +99,7 @@ class ManageUsersHandler(BaseAdminHandler):
             self.set_status(403)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=403,
                     data={"message": "Invalid e-mail address"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -111,7 +111,7 @@ class ManageUsersHandler(BaseAdminHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success=Status2.error,
+                    status=Status2.error,
                     status_code=403,
                     data={"message": "Username or email already taken"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -165,7 +165,7 @@ class ManageUsersHandler(BaseAdminHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=400,
                     data={"message": "Invalid user"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -221,7 +221,7 @@ class ManageUsersHandler(BaseAdminHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=400,
                     data={"message": "Invalid user"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -233,7 +233,7 @@ class ManageUsersHandler(BaseAdminHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=400,
                     data={"message": "Unable to delete user"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -280,7 +280,7 @@ class PasswordResetSelfServiceHandler(BaseHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=400,
                     data={"message": "Current password is required"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -291,7 +291,7 @@ class PasswordResetSelfServiceHandler(BaseHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=403,
                     data={"message": "Invalid password"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -370,7 +370,7 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=400,
                     data={"message": "Invalid token"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -383,7 +383,7 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=400,
                     data={"message": "Invalid token"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -395,7 +395,7 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=400,
                     data={"message": "Invalid token"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -407,7 +407,7 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=400,
                     data={"message": "Invalid token"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -419,7 +419,7 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=400,
                     data={"message": "Invalid token"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -429,7 +429,7 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=400,
                     data={
                         "message": "Unable to reset password for externally managed users like Okta"
@@ -443,7 +443,7 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=400,
                     data={"message": "Invalid token"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -455,7 +455,7 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=400,
                     data={"message": "Invalid token"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -610,7 +610,7 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
                 raise tornado.web.Finish()
             self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     data={"message": "Password reset successfully"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -627,7 +627,7 @@ class UserMFASelfServiceHandler(BaseHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=400,
                     data={"message": "Invalid request"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -638,7 +638,7 @@ class UserMFASelfServiceHandler(BaseHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=400,
                     data={"message": "Invalid user"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -651,7 +651,7 @@ class UserMFASelfServiceHandler(BaseHandler):
             mfa_secret = user.mfa_secret_temp
             self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     data={
                         "message": "Please install and verify your MFA",

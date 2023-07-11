@@ -138,43 +138,45 @@ module "tenant_ses_service" {
 module "tenant_ecs_task_role" {
   source = "./modules/services/ecs_task_role"
 
-  cloudumi_files_bucket            = module.tenant_s3_service.cloudumi_bucket_name
-  cluster_id                       = local.cluster_id
-  modify_ecs_task_role             = var.modify_ecs_task_role
-  registration_queue_arn           = module.tenant_messaging.sqs_registration_queue_arn
-  github_app_noq_webhook_queue_arn = module.tenant_messaging.sqs_github_app_noq_webhook_queue_arn
-  tenant_configuration_bucket_name = module.tenant_s3_service.tenant_configuration_bucket_name
-  aws_secrets_manager_arn          = module.tenant_container_service.aws_secrets_manager_arn
-  noq_core                         = var.noq_core
-  bucket_encryption_key            = module.tenant_container_service.kms_key_id
+  cloudumi_files_bucket                  = module.tenant_s3_service.cloudumi_bucket_name
+  cluster_id                             = local.cluster_id
+  modify_ecs_task_role                   = var.modify_ecs_task_role
+  registration_queue_arn                 = module.tenant_messaging.sqs_registration_queue_arn
+  github_app_noq_webhook_queue_arn       = module.tenant_messaging.sqs_github_app_noq_webhook_queue_arn
+  aws_marketplace_subscription_queue_arn = module.tenant_messaging_us-east-1.aws_marketplace_subscription_queue_arn
+  tenant_configuration_bucket_name       = module.tenant_s3_service.tenant_configuration_bucket_name
+  aws_secrets_manager_arn                = module.tenant_container_service.aws_secrets_manager_arn
+  noq_core                               = var.noq_core
+  bucket_encryption_key                  = module.tenant_container_service.kms_key_id
 }
 
 module "tenant_container_service" {
   source = "./modules/services/containers"
 
-  allowed_inbound_cidr_blocks        = var.allowed_inbound_cidr_blocks
-  attributes                         = var.attributes
-  capacity_providers                 = var.capacity_providers
-  cloudumi_files_bucket              = module.tenant_s3_service.cloudumi_bucket_name
-  cloudumi_temp_files_bucket         = module.tenant_s3_service.cloudumi_temp_files_bucket_name
-  cluster_id                         = local.cluster_id
-  container_insights                 = var.container_insights
-  lb_port                            = var.lb_port
-  load_balancer_sgs                  = [module.tenant_networking.load_balancer_security_group]
-  namespace                          = var.namespace
-  noq_core                           = var.noq_core
-  region                             = var.region
-  registration_queue_arn             = module.tenant_messaging.sqs_registration_queue_arn
-  github_app_noq_webhook_queue_arn   = module.tenant_messaging.sqs_github_app_noq_webhook_queue_arn
-  stage                              = var.stage
-  subnet_ids                         = module.tenant_networking.vpc_subnet_private_id
-  tags                               = var.tags
-  tenant_configuration_bucket_name   = module.tenant_s3_service.tenant_configuration_bucket_name
-  timeout                            = var.timeout
-  vpc_cidr_range                     = module.tenant_networking.vpc_cidr_range
-  vpc_id                             = module.tenant_networking.vpc_id
-  aws_secrets_manager_cluster_string = var.aws_secrets_manager_cluster_string
-  bucket_encryption_key              = module.tenant_container_service.kms_key_id
+  allowed_inbound_cidr_blocks            = var.allowed_inbound_cidr_blocks
+  attributes                             = var.attributes
+  capacity_providers                     = var.capacity_providers
+  cloudumi_files_bucket                  = module.tenant_s3_service.cloudumi_bucket_name
+  cloudumi_temp_files_bucket             = module.tenant_s3_service.cloudumi_temp_files_bucket_name
+  cluster_id                             = local.cluster_id
+  container_insights                     = var.container_insights
+  lb_port                                = var.lb_port
+  load_balancer_sgs                      = [module.tenant_networking.load_balancer_security_group]
+  namespace                              = var.namespace
+  noq_core                               = var.noq_core
+  region                                 = var.region
+  registration_queue_arn                 = module.tenant_messaging.sqs_registration_queue_arn
+  github_app_noq_webhook_queue_arn       = module.tenant_messaging.sqs_github_app_noq_webhook_queue_arn
+  aws_marketplace_subscription_queue_arn = module.tenant_messaging_us-east-1.aws_marketplace_subscription_queue_arn
+  stage                                  = var.stage
+  subnet_ids                             = module.tenant_networking.vpc_subnet_private_id
+  tags                                   = var.tags
+  tenant_configuration_bucket_name       = module.tenant_s3_service.tenant_configuration_bucket_name
+  timeout                                = var.timeout
+  vpc_cidr_range                         = module.tenant_networking.vpc_cidr_range
+  vpc_id                                 = module.tenant_networking.vpc_id
+  aws_secrets_manager_cluster_string     = var.aws_secrets_manager_cluster_string
+  bucket_encryption_key                  = module.tenant_container_service.kms_key_id
 }
 
 module "tenant_storage" {

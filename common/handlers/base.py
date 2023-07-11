@@ -43,7 +43,6 @@ from common.lib.redis import RedisHandler
 from common.lib.request_context.models import RequestContext
 from common.lib.saml import authenticate_user_by_saml
 from common.lib.tenant.models import TenantDetails
-from common.lib.tenant.utils import is_tenant_active
 from common.lib.tracing import ConsoleMeTracer
 from common.lib.web import handle_generic_error_response
 from common.lib.workos import WorkOS
@@ -698,28 +697,30 @@ class BaseHandler(TornadoRequestHandler):
                 raise tornado.web.Finish(
                     f"Tenant {tenant} not found. Please contact your administrator."
                 )
+            # We take advantage of the eula request that we're already performing to also check
+            # tenant status. If the tenant is not active, we'll return a 401. This is so we're not
+            # querying the database for every single user/request, and we don't have to have
+            # complex caching logic in place. This also means that tenants will be "expired"
+            # after all JWTs have expired (By default, every 6 hours)
             if not tenant_details.is_active:
-                self.write(
-                    f"Tenant {tenant} is not active. Please contact your administrator. "
+                tenant_not_active_message = (
+                    "Your tenant is not active. Please contact your administrator or the Noq team. "
                     "If you are an administrator, please confirm your subscription status in "
-                    "Amazon MarketPlace."
+                    "Amazon Marketplace."
                 )
-                raise tornado.web.Finish(
-                    f"Tenant {tenant} is not active. Please contact your administrator."
+                self.set_status(401)
+                self.write(
+                    WebResponse(
+                        status="error",
+                        status_code=401,
+                        data={"message": tenant_not_active_message},
+                    ).dict(exclude_unset=True, exclude_none=True)
                 )
-
-        if not await is_tenant_active(tenant):
-
-            self.set_status(406)
-            self.write(
-                {
-                    "type": "redirect",
-                    "redirect_url": "https://noq.dev",  # TODO: Make this URL configurable?
-                    "reason": "inactive_tenant",
-                    "message": "Tenant is inactive",
-                }
-            )
-            raise tornado.web.Finish()
+                log.error(
+                    tenant_not_active_message,
+                    tenant=tenant,
+                )
+                raise tornado.web.Finish()
 
         self.contractor = False  # TODO: Add functionality later for contractor detection via regex or something else
 

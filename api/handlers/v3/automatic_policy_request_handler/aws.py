@@ -94,7 +94,7 @@ class AutomaticPolicyRequestHandler(BaseAdminHandler):
 
             return self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     data=policy_request,
                 ).json()

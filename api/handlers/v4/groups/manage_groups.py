@@ -74,7 +74,7 @@ class ManageGroupsHandler(BaseAdminHandler):
             self.set_status(403)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=403,
                     data={"message": "Invalid email address"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -86,7 +86,7 @@ class ManageGroupsHandler(BaseAdminHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=400,
                     data={"message": "Group name already taken"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -129,7 +129,7 @@ class ManageGroupsHandler(BaseAdminHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=400,
                     data={"message": "Group does not exist"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -157,7 +157,7 @@ class ManageGroupsHandler(BaseAdminHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=400,
                     data={"message": "Group does not exist"},
                 ).dict(exclude_unset=True, exclude_none=True)

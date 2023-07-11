@@ -71,6 +71,11 @@ variable "github_app_noq_webhook_queue_arn" {
   type        = string
 }
 
+variable "aws_marketplace_subscription_queue_arn" {
+  description = "The aws_marketplace_subscription_queue_arn queue ARN for the AWS Marketplace subscription workflow"
+  type        = string
+}
+
 variable "stage" {
   type    = string
   default = "staging"

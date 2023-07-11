@@ -181,16 +181,18 @@ ecs-tunnel-prod-ssh: ecs-set-ssh-password-prod
 	@TASK_ID=$$(aws ecs list-tasks --cluster noq-dev-shared-prod-1 --service api --profile prod/prod_admin --region us-west-2 --query 'taskArns[0]' --output text | awk -F/ '{print $$NF}') && \
 	AWS_PROFILE=prod/prod_admin ecs-tunnel -L 2222:22 -c noq-dev-shared-prod-1 -t $$TASK_ID --region us-west-2
 
-.PHONY: ecs-tunnel-copy-changed-files-to-staging
-ecs-tunnel-copy-changed-files-to-staging:
-	@echo "Run \`make ecs-tunnel-staging-ssh\` and then copy files to the staging host with the following command."
-	@echo "git diff origin/main --name-only --diff-filter=AM | SSHPASS=TEMP_PASS xargs -I '{}' sh -c 'echo \"Copying file: {}\"; sshpass -e scp -o PreferredAuthentications=password -o "StrictHostKeyChecking=no" -P 2222 \"{}\" root@127.0.0.1:/app/\"{}\"'"
-
-.PHONY: ecs-tunnel-copy-changed-files-to-prod
-ecs-tunnel-copy-changed-files-to-prod:
-	@echo "Run \`make ecs-tunnel-prod-ssh\` and then copy files to the prod API host with the following command."
-	@echo "git diff origin/main --name-only --diff-filter=AM | SSHPASS=TEMP_PASS xargs -I '{}' sh -c 'echo \"Copying file: {}\"; sshpass -e scp -o PreferredAuthentications=password -o "StrictHostKeyChecking=no" -P 2222 \"{}\" root@127.0.0.1:/app/\"{}\"'"
-
+# Note: You'll need to manually run `make ecs-tunnel-prod-ssh` or `make ecs-tunnel-staging-ssh` before running this command.
+.PHONY: ecs-tunnel-copy-changed-files-to-api-server
+ecs-tunnel-copy-changed-files-to-api-server:
+	@echo "Creating a gzipped tarball of changed files..."
+	git diff origin/main --name-only --diff-filter=AM | tar czf changed_files.tar.gz -T -
+	@echo "Transferring the tarball to the prod API host..."
+	sshpass -p TEMP_PASS scp -o PreferredAuthentications=password -o "StrictHostKeyChecking=no" -P 2222 changed_files.tar.gz root@127.0.0.1:/app/
+	@echo "Decompressing the tarball on the prod API host and cleaning up..."
+	sshpass -p TEMP_PASS ssh -p 2222 root@127.0.0.1 'tar xzf /app/changed_files.tar.gz -C /app && rm /app/changed_files.tar.gz'
+	@echo "Cleaning up local tarball..."
+	rm changed_files.tar.gz
+	@echo "Done."
 
 tf-staging-refresh:
 	@cd deploy/infrastructure && \

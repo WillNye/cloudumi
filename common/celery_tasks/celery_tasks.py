@@ -3239,7 +3239,7 @@ schedule = {
     "handle_aws_marketplace_subscription_queue": {
         "task": "common.celery_tasks.celery_tasks.handle_aws_marketplace_subscription_queue",
         "options": {"expires": 180},
-        "schedule": get_schedule(30),
+        "schedule": schedule_minute,
     },
 }
 

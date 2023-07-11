@@ -205,13 +205,13 @@ class AsyncSlackHandler(BaseAdminHandler):
         if tenant_install_rel:
             self.write(
                 WebResponse(
-                    success="success", status_code=200, data={"installed": True}
+                    status="success", status_code=200, data={"installed": True}
                 ).dict(exclude_unset=True, exclude_none=True)
             )
         else:
             self.write(
                 WebResponse(
-                    success="success", status_code=200, data={"installed": False}
+                    status="success", status_code=200, data={"installed": False}
                 ).dict(exclude_unset=True, exclude_none=True)
             )
 

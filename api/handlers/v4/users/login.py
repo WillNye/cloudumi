@@ -31,7 +31,7 @@ class LoginHandler(TornadoRequestHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=403,
                     data={"message": "Please login using your identity provider"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -41,19 +41,19 @@ class LoginHandler(TornadoRequestHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
-                    status_code=403,
+                    status="error",
+                    status_code=400,
                     data={"message": "Invalid username or password"},
                 ).dict(exclude_unset=True, exclude_none=True)
             )
             raise tornado.web.Finish()
 
         if not db_user.email_verified:
-            self.set_status(401)
+            self.set_status(403)
             await db_user.send_verification_email(tenant, tenant_url)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=403,
                     data={
                         "message": (
@@ -86,7 +86,7 @@ class LoginHandler(TornadoRequestHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=403,
                     data={"message": "MFA Token invalid"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -149,7 +149,7 @@ class MfaHandler(BaseHandler):
             self.set_status(401)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=403,
                     data={"message": "Invalid MFA Token. Please try again."},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -160,7 +160,7 @@ class MfaHandler(BaseHandler):
             self.set_status(401)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=403,
                     data={"message": "MFA Token required"},
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -171,7 +171,7 @@ class MfaHandler(BaseHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=403,
                     data={"message": "Invalid MFA Token. Please try again."},
                 ).dict(exclude_unset=True, exclude_none=True)
