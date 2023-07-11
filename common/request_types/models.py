@@ -98,9 +98,6 @@ class RequestType(SoftDeleteMixin, Base):
     # For example, if SSO isn't set up.
     # Permission sets are supported for the request type but not for the tenant until SSO is configured.
     template_types = Column(ARRAY(String), nullable=False)
-    template_attribute = Column(String, nullable=False)
-    apply_attr_behavior = Column(ApplyAttrBehavior, nullable=False)
-    provider_definition_field = Column(ProviderDefinitionField, nullable=True)
 
     tenant = relationship("Tenant")
     change_types = relationship(
@@ -171,6 +168,9 @@ class ChangeType(SoftDeleteMixin, Base):
     tenant_id = Column(Integer, ForeignKey("tenant.id"), nullable=False)
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
+    template_attribute = Column(String, nullable=True)
+    apply_attr_behavior = Column(ApplyAttrBehavior, nullable=True)
+    provider_definition_field = Column(ProviderDefinitionField, nullable=True)
 
     tenant = relationship("Tenant")
 
@@ -201,6 +201,7 @@ class ChangeType(SoftDeleteMixin, Base):
             "name": self.name,
             "description": self.description,
             "request_type_id": str(self.request_type_id),
+            "provider_definition_field": self.provider_definition_field,
         }
         return response
 

@@ -163,10 +163,7 @@ async def upsert_tenant_request_types(tenant_name: str):
 
             for attr in [
                 "description",
-                "template_attribute",
                 "template_types",
-                "apply_attr_behavior",
-                "provider_definition_field",
             ]:
                 if getattr(request_type, attr) != getattr(default_request_type, attr):
                     setattr(request_type, attr, getattr(default_request_type, attr))
@@ -191,11 +188,17 @@ async def upsert_tenant_request_types(tenant_name: str):
                 write_obj = True
                 continue
 
-            if change_type.description != default_change_type.description:
-                change_type.updated_at = updated_at
-                change_type.updated_by = "Noq"
-                change_type.description = default_change_type.description
-                write_obj = True
+            for attr in [
+                "description",
+                "template_attribute",
+                "apply_attr_behavior",
+                "provider_definition_field",
+            ]:
+                if getattr(change_type, attr) != getattr(default_change_type, attr):
+                    setattr(change_type, attr, getattr(default_change_type, attr))
+                    change_type.updated_at = updated_at
+                    change_type.updated_by = "Noq"
+                    write_obj = True
 
             if (
                 change_type.change_template.template

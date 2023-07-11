@@ -26,8 +26,6 @@ def _get_default_google_workspace_request_access_request_types(
         template_types=[
             GOOGLE_GROUP_TEMPLATE_TYPE,
         ],
-        template_attribute="properties.members",
-        apply_attr_behavior="Append",
         created_by="Noq",
     )
 
@@ -52,6 +50,9 @@ def _get_default_google_workspace_request_access_request_types(
             "email":"{{form.email}}"
         }"""
             ),
+            template_attribute="properties.members",
+            apply_attr_behavior="Append",
+            provider_definition_field="Allow One",
             created_by="Noq",
         )
     ]
