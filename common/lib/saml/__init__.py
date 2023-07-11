@@ -1,6 +1,7 @@
 import datetime
 import sys
-from typing import TYPE_CHECKING
+import urllib.error
+from typing import TYPE_CHECKING, Any
 
 import tornado.httputil
 from cryptography import x509
@@ -86,7 +87,7 @@ async def generate_saml_certificates(
         )
 
 
-async def init_saml_auth(request: "TornadoRequestHandler", tenant: str):
+async def init_saml_auth(request: dict[str, Any], tenant: str):
     tenant_storage = TenantFileStorageHandler(tenant)
     tenant_config = TenantConfig.get_instance(tenant)
     idp_metadata_url = config.get_tenant_specific_key(
@@ -94,7 +95,20 @@ async def init_saml_auth(request: "TornadoRequestHandler", tenant: str):
     )
     idp_metadata = {}
     if idp_metadata_url:
-        idp_metadata = OneLogin_Saml2_IdPMetadataParser.parse_remote(idp_metadata_url)
+        try:
+            idp_metadata = OneLogin_Saml2_IdPMetadataParser.parse_remote(
+                idp_metadata_url
+            )
+        except urllib.error.HTTPError as e:
+            if e.code == 403:
+                error_message = "SAML metadata URL returned a 403 error. Please check your settings."
+                log.exception(
+                    error_message,
+                    tenant=tenant,
+                    idp_metadata_url=idp_metadata_url,
+                )
+                raise tornado.Web.Finish(error_message)
+            raise
 
     # NOTE: if it is dev environment, please check the port number at assertionConsumerService.url
     saml_config = dict_merge(tenant_config.saml_config, idp_metadata)

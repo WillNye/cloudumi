@@ -108,7 +108,5 @@ class SamlHandler(BaseHandler):
                         managed_by="SSO",
                     )
                     return self.redirect(
-                        auth.redirect_to(
-                            self.request.arguments["RelayState"][0].decode("utf-8")
-                        )
+                        self.request.arguments["RelayState"][0].decode("utf-8")
                     )

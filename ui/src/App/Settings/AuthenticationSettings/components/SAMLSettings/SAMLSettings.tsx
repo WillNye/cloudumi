@@ -118,7 +118,7 @@ const SAMLSettings = ({ isFetching, current }) => {
         </Block>
         <LineBreak />
 
-        <Block disableLabelPadding label="Attributes email" required>
+        <Block disableLabelPadding label="Email attribute name" required>
           <Input
             {...register('attributes.email')}
             error={errors?.attributes?.email?.message}
@@ -126,7 +126,7 @@ const SAMLSettings = ({ isFetching, current }) => {
         </Block>
         <LineBreak />
 
-        <Block disableLabelPadding label="Attributes groups" required>
+        <Block disableLabelPadding label="Groups attribute name" required>
           <Input
             {...register('attributes.groups')}
             error={errors?.attributes?.groups?.message}
@@ -241,11 +241,7 @@ const SAMLSettings = ({ isFetching, current }) => {
             </Block>
             <LineBreak /> */}
 
-            <Block
-              disableLabelPadding
-              label="Single Logout Service URL"
-              required
-            >
+            <Block disableLabelPadding label="Single Logout Service URL">
               <Input
                 {...register('idp.singleLogoutService.url')}
                 error={errors?.idp?.singleLogoutService?.url?.message}
