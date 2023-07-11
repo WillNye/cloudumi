@@ -25,11 +25,11 @@ async def handle_aws_resource_template_ref_request(
     page_size: int,
     template_id: str = None,
     resource_id: str = None,
-    provider_definitions_ids: list[str] = None,
+    provider_definition_ids: list[str] = None,
 ) -> list[dict[str, str]]:
     if service == "managed_policy":
         mp_defs = await list_customer_managed_policy_definitions(
-            tenant, resource_id, provider_definitions_ids
+            tenant, resource_id, provider_definition_ids
         )
         results = [
             {

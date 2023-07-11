@@ -484,7 +484,7 @@ def _get_default_aws_attach_managed_policy_request_types(
                 ChangeField(
                     change_element=0,
                     field_key="policy_arn",
-                    field_type="TypeAheadTemplateRef",
+                    field_type="TypeAhead",
                     field_text="Managed Policy",
                     description="The managed policy that will be attached/added to the permission set.",
                     allow_none=False,
@@ -526,7 +526,7 @@ def _get_default_aws_attach_managed_policy_request_types(
                 ChangeField(
                     change_element=0,
                     field_key="policy_arn",
-                    field_type="TypeAheadTemplateRef",
+                    field_type="TypeAhead",
                     field_text="Managed Policy",
                     description="The managed policy that will be attached/added.",
                     allow_none=False,

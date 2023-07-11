@@ -88,7 +88,7 @@ async def get_aws_managed_policy_arns() -> list[str]:
 async def list_customer_managed_policy_definitions(
     tenant: Tenant,
     resource_id: str = None,
-    provider_definitions_ids: list[str] = None,
+    provider_definition_ids: list[str] = None,
     page: int = None,
     page_size: int = None,
 ) -> list[IambicTemplateProviderDefinition]:
@@ -108,21 +108,21 @@ async def list_customer_managed_policy_definitions(
             .order_by(IambicTemplateProviderDefinition.secondary_resource_id)
         )
 
-        if resource_id and provider_definitions_ids:
+        if resource_id and provider_definition_ids:
             stmt = stmt.filter(
                 IambicTemplateProviderDefinition.secondary_resource_id.ilike(
                     f"%{resource_id}%"
                 )
             )
-        elif resource_id and not provider_definitions_ids:
+        elif resource_id and not provider_definition_ids:
             stmt = stmt.filter(
                 IambicTemplateProviderDefinition.resource_id.ilike(f"%{resource_id}%")
             )
 
-        if provider_definitions_ids:
+        if provider_definition_ids:
             stmt = stmt.filter(
                 IambicTemplateProviderDefinition.tenant_provider_definition_id.in_(
-                    provider_definitions_ids
+                    provider_definition_ids
                 )
             )
 

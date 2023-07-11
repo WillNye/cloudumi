@@ -95,7 +95,7 @@ async def handle_aws_resource_type_ahead_request(
     page_size: int,
     template_id: str = None,
     resource_id: str = None,
-    provider_definitions_ids: list[str] = None,
+    provider_definition_ids: list[str] = None,
     aws_managed_only: bool = False,
 ) -> list[str]:
     if service != "managed_policy" and aws_managed_only:
@@ -123,7 +123,7 @@ async def handle_aws_resource_type_ahead_request(
 
         if not aws_managed_only:
             mp_defs = await list_customer_managed_policy_definitions(
-                tenant, resource_id, provider_definitions_ids
+                tenant, resource_id, provider_definition_ids
             )
             # Prioritize customer managed policies
             policy_arns = [

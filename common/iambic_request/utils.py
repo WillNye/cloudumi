@@ -503,10 +503,6 @@ async def generate_updated_iambic_template(
 
     # TODO support resolving for create types
 
-    provider_definition_ids = set()
-    for change_type in request_data.changes:
-        provider_definition_ids.update(set(change_type.provider_definition_ids))
-
     db_change_types = await list_tenant_change_types(
         tenant_id,
         change_type_ids=[ct.change_type_id for ct in request_data.changes],
@@ -519,6 +515,9 @@ async def generate_updated_iambic_template(
     request_data = await maybe_extend_change_type_provider_definitions(
         tenant_id, request_data, template_obj, provider_ref
     )
+    provider_definition_ids = set()
+    for change_type in request_data.changes:
+        provider_definition_ids.update(set(change_type.provider_definition_ids))
 
     # Retrieve the given provider definitions
     async with ASYNC_PG_SESSION() as session:
@@ -535,6 +534,7 @@ async def generate_updated_iambic_template(
 
     # Render and merge the change type templates for the request
     provider_definition_map = {str(pd.id): pd for pd in provider_definitions}
+    print(list(provider_definition_map.keys()))
     tasks = []
     for change_type in request_data.changes:
         for pd_id in change_type.provider_definition_ids:
