@@ -35,11 +35,12 @@ class IambicTemplateHandler(BaseHandler):
                 exclude_template_provider_def=False,
                 **query_params.dict(exclude_none=True),
             ):
-                for template_provider_def in item.provider_definition_refs:
+                resource_ids = set(tpd.resource_id for tpd in item.provider_definition_refs)
+                for resource_id in resource_ids:
                     data.append(
                         {
                             "id": item.id,
-                            "resource_id": template_provider_def.resource_id,
+                            "resource_id": resource_id,
                             "resource_type": item.resource_type,
                             "template_type": item.template_type,
                             "provider": item.provider,
