@@ -10,7 +10,7 @@ from common.lib.cache import (
     store_json_results_in_redis_and_s3,
 )
 from common.lib.plugins import get_plugin_by_name
-from common.models import CloudAccountModelArray, HubAccount, SpokeAccount
+from common.models import CloudAccountModelArray, SpokeAccount
 
 log = config.get_logger(__name__)
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
