@@ -43,6 +43,7 @@ from common.lib.redis import RedisHandler
 from common.lib.request_context.models import RequestContext
 from common.lib.saml import authenticate_user_by_saml
 from common.lib.tenant.models import TenantDetails
+from common.lib.tenant.utils import is_tenant_active
 from common.lib.tracing import ConsoleMeTracer
 from common.lib.web import handle_generic_error_response
 from common.lib.workos import WorkOS
@@ -432,6 +433,7 @@ class BaseHandler(TornadoRequestHandler):
         tenant = self.get_tenant_name()
         tenant_config = TenantConfig.get_instance(tenant)
         self.eula_signed = None
+        self.tenant_active = None
         self.mfa_setup_required = None
         self.password_reset_required = None
         self.mfa_verification_required = None
@@ -499,6 +501,7 @@ class BaseHandler(TornadoRequestHandler):
                 self.eligible_roles = res.get("additional_roles", [])
                 self.auth_cookie_expiration = res.get("exp")
                 self.eula_signed = res.get("eula_signed", False)
+                self.tenant_active = res.get("tenant_active", False)
                 self.mfa_setup_required = res.get("mfa_setup_required", None)
                 self.mfa_verification_required = res.get(
                     "mfa_verification_required", None
@@ -692,7 +695,7 @@ class BaseHandler(TornadoRequestHandler):
                 self.write(
                     f"Tenant {tenant} was not found. Please contact your administrator. "
                     "If you are an administrator, please confirm your subscription status in "
-                    "Amazon MarketPlace."
+                    "Amazon Marketplace."
                 )
                 raise tornado.web.Finish(
                     f"Tenant {tenant} not found. Please contact your administrator."
@@ -702,7 +705,10 @@ class BaseHandler(TornadoRequestHandler):
             # querying the database for every single user/request, and we don't have to have
             # complex caching logic in place. This also means that tenants will be "expired"
             # after all JWTs have expired (By default, every 6 hours)
-            if not tenant_details.is_active:
+        if not self.tenant_active:
+            self.tenant_active = await is_tenant_active(tenant)
+
+            if not self.tenant_active:
                 tenant_not_active_message = (
                     "Your tenant is not active. Please contact your administrator or the Noq team. "
                     "If you are an administrator, please confirm your subscription status in "
@@ -756,6 +762,7 @@ class BaseHandler(TornadoRequestHandler):
         if (
             not self.eligible_accounts
             and self.eula_signed
+            and self.tenant_active
             and not self.mfa_setup_required
         ):
             try:
@@ -816,6 +823,18 @@ class BaseHandler(TornadoRequestHandler):
         if self.__class__.__name__ == "UserProfileHandler":
             # Let the user profile endpoint through
             pass
+        elif not self.tenant_active:
+            # Tenant is inactive in Global tenant_details DynamoDB Table.
+            # Possibly unsubscribed in AWS Marketplace.
+            self.set_status(403)
+            self.write(
+                WebResponse(
+                    status_code=403,
+                    reason="Tenant is not active",
+                    data={"message": "TENANT_INACTIVE"},
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            raise tornado.web.Finish()
         elif (
             self.password_reset_required
             or self.__class__.__name__ == "PasswordResetSelfServiceHandler"
@@ -1004,6 +1023,7 @@ class BaseHandler(TornadoRequestHandler):
             roles,
             exp=expiration,
             eula_signed=self.eula_signed,
+            tenant_active=self.tenant_active,
             mfa_setup_required=self.mfa_setup_required,
         )
         self.set_cookie(

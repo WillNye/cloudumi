@@ -95,6 +95,7 @@ class LoginHandler(TornadoRequestHandler):
         groups = [group.name for group in db_user.groups]
         tenant_details = await TenantDetails.get(tenant)
         eula_signed = bool(tenant_details.eula_info)
+        tenant_active = bool(tenant_details.is_active)
         mfa_setup_required = not db_user.mfa_enabled
 
         encoded_cookie = await generate_jwt_token(
@@ -104,6 +105,7 @@ class LoginHandler(TornadoRequestHandler):
             mfa_setup_required=mfa_setup_required,
             mfa_verification_required=mfa_verification_required,
             eula_signed=eula_signed,
+            tenant_active=tenant_active,
             password_reset_required=db_user.password_reset_required,
         )
 
@@ -185,6 +187,7 @@ class MfaHandler(BaseHandler):
             mfa_setup_required=not db_user.mfa_enabled,
             mfa_verification_required=False,  # Mfa was verified
             eula_signed=self.eula_signed,
+            tenant_active=self.tenant_active,
             password_reset_required=db_user.password_reset_required,
         )
 
