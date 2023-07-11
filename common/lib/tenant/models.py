@@ -88,6 +88,11 @@ class AWSMarketplaceTenantDetails(GlobalNoqModel):
             return False
 
     @classmethod
+    async def get_by_customer_identifier(cls, customer_identifier: str):
+        results = await cls.query(customer_identifier, limit=1)
+        return results.next()
+
+    @classmethod
     async def create(
         cls,
         customer_identifier: str,
@@ -108,6 +113,10 @@ class AWSMarketplaceTenantDetails(GlobalNoqModel):
 
     @classmethod
     async def update_subscription(cls, message: dict) -> bool:
+        from common.celery_tasks.celery_tasks import (
+            handle_aws_marketplace_collect_last_bill,
+        )
+
         try:
             customer_identifier = message["customer-identifier"]
             tenant = await cls.get(customer_identifier)
@@ -123,6 +132,8 @@ class AWSMarketplaceTenantDetails(GlobalNoqModel):
             elif action == "unsubscribe-pending":
                 tenant.subscription_expired = True
                 tenant.subscription_action = "unsubscribe-pending"
+                # needs to collect within the hour to get paid
+                handle_aws_marketplace_collect_last_bill.delay(customer_identifier)
             elif action == "unsubscribe-success":
                 tenant.subscription_expired = True
                 tenant.subscription_action = "unsubscribe-success"

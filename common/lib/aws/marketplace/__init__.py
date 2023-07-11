@@ -762,9 +762,37 @@ async def handle_aws_marketplace_queue(
     return {"message": "Successfully processed all messages", "num_events": num_events}
 
 
+async def meter_aws_customer(aws_customer_identifier: str):
+    aws_marketplace_tenant = AWSMarketplaceTenantDetails.get_by_customer_identifier(
+        aws_customer_identifier
+    )
+    tenant_name = aws_marketplace_tenant.tenant
+    tenant_active_user_counts: dict[str, int] = await Tenant.get_user_count_from_tenant(
+        tenant_name
+    )
+    user_count = tenant_active_user_counts[tenant_name]
+    usage_records = []
+    usage_records.append(
+        {
+            "Timestamp": datetime.utcnow(),
+            "CustomerIdentifier": aws_customer_identifier,
+            "Dimension": "Users",
+            "Quantity": user_count,
+        },
+    )
+    marketplace_metering = boto3.client("meteringmarketplace")
+    _micro_batch_metering_record(marketplace_metering, usage_records)
+
+
 async def handle_aws_marketplace_metering():
+    collection_require_statuses = ["subscribe-success", "unsubscribe-pending"]
     tenant_active_user_counts: dict[str, int] = await Tenant.get_all_with_user_count()
-    all_aws_marketplace_tenants = [x for x in await AWSMarketplaceTenantDetails.scan()]
+    # future optimization point to collect billable tenants without O(n)
+    aws_marketplace_billable_tenants = [
+        x
+        for x in await AWSMarketplaceTenantDetails.scan()
+        if x.subscription_action in collection_require_statuses
+    ]
 
     marketplace_metering = boto3.client("meteringmarketplace")
     # if config.get("_global_.development"):
@@ -774,7 +802,7 @@ async def handle_aws_marketplace_metering():
     #     marketplace_metering = prod.client("meteringmarketplace")
 
     usage_records = []
-    for tenant in all_aws_marketplace_tenants:
+    for tenant in aws_marketplace_billable_tenants:
         tenant_name = tenant.tenant
         if not tenant_name:
             continue
@@ -794,29 +822,33 @@ async def handle_aws_marketplace_metering():
     ]
 
     for batch in usage_record_batches:
-        try:
-            response = marketplace_metering.batch_meter_usage(
-                ProductCode=config_globals.AWS_MARTKETPLACE_PRODUCT_CODE,
-                UsageRecords=batch,
-            )
+        _micro_batch_metering_record(marketplace_metering, batch)
 
-            # for each processed record, check the status
-            if response.get("Results"):
-                for result in response["Results"]:
-                    result_status = result["Status"]
-                    if result_status in ["CustomerNotSubscribed", "DuplicateRecord"]:
-                        log.error(
-                            f"Failed to report usage metrics due to {result_status}",
-                            record=result["UsageRecord"],
-                        )
 
-            # Check if any usage record failed
-            if response.get("UnprocessedRecords"):
-                for record in response["UnprocessedRecords"]:
-                    log.error("Failed to report usage metrics", record=record)
+def _micro_batch_metering_record(marketplace_metering_client, batch):
+    try:
+        response = marketplace_metering_client.batch_meter_usage(
+            ProductCode=config_globals.AWS_MARTKETPLACE_PRODUCT_CODE,
+            UsageRecords=batch,
+        )
 
-        except Exception as e:
-            log.exception("Failed to report usage metrics", batch=batch, error=str(e))
+        # for each processed record, check the status
+        if response.get("Results"):
+            for result in response["Results"]:
+                result_status = result["Status"]
+                if result_status in ["CustomerNotSubscribed", "DuplicateRecord"]:
+                    log.error(
+                        f"Failed to report usage metrics due to {result_status}",
+                        record=result["UsageRecord"],
+                    )
+
+        # Check if any usage record failed
+        if response.get("UnprocessedRecords"):
+            for record in response["UnprocessedRecords"]:
+                log.error("Failed to report usage metrics", record=record)
+
+    except Exception as e:
+        log.exception("Failed to report usage metrics", batch=batch, error=str(e))
 
 
 # TODO: I don't think this is needed?
