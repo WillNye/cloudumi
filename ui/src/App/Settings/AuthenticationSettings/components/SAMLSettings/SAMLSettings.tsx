@@ -110,14 +110,6 @@ const SAMLSettings = ({ isFetching, current }) => {
   return (
     <Segment isLoading={isLoading}>
       <form onSubmit={handleSave}>
-        <Block disableLabelPadding label="Attributes User" required>
-          <Input
-            {...register('attributes.user')}
-            error={errors?.attributes?.user?.message}
-          />
-        </Block>
-        <LineBreak />
-
         <Block disableLabelPadding label="Email attribute name" required>
           <Input
             {...register('attributes.email')}

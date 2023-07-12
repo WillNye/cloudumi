@@ -13,7 +13,7 @@ export const DEFAULT_SAML_SETTINGS = {
     group_key: 'groups'
   },
   attributes: {
-    user: 'user',
+    user: 'email',
     groups: 'groups',
     email: 'email'
   },
@@ -83,10 +83,7 @@ export const samlSchema = Yup.object().shape({
                 .default(BINDINGS[0])
                 .required()
                 .label('IDP Single Logout Service Binding'),
-              url: Yup.string()
-                .url()
-                .required()
-                .label('IDP Single Logout Service URL')
+              url: Yup.string().url().label('IDP Single Logout Service URL')
             })
             .notRequired(),
           x509cert: Yup.string().required().label('X509Cert')
