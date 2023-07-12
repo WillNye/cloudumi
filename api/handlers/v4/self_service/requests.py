@@ -147,6 +147,11 @@ class IambicRequestHandler(BaseHandler):
                 request_method="WEB",
             )
         except (AssertionError, TypeError, ValidationError) as err:
+            log.exception(
+                "Error creating request",
+                error=str(err),
+                tenant=db_tenant.name,
+            )
             self.write(
                 WebResponse(
                     errors=[str(err)],
