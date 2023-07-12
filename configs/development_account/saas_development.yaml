@@ -75,6 +75,7 @@ _global_:
       registration_spoke_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml"
       aws_marketplace_subscription_queue_arn: arn:aws:sqs:us-east-1:940552945933:noq-dev-shared-prod-1-aws_marketplace_subscription_queue
       aws_marketplace_product_code: ci3g7nysfa7luy3vlhw4g7zwa
+      aws_marketplace_region: us-east-1
     github:
       local_dev:
         app_id: 350775

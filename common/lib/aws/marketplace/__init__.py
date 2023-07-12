@@ -780,7 +780,9 @@ async def meter_aws_customer(aws_customer_identifier: str):
             "Quantity": user_count,
         },
     )
-    marketplace_metering = boto3.client("meteringmarketplace")
+    marketplace_metering = boto3.client(
+        "meteringmarketplace", region_name=config_globals.AWS_MARTKETPLACE_REGION
+    )
     _micro_batch_metering_record(marketplace_metering, usage_records)
 
 
@@ -794,7 +796,9 @@ async def handle_aws_marketplace_metering():
         if x.subscription_action in collection_require_statuses
     ]
 
-    marketplace_metering = boto3.client("meteringmarketplace")
+    marketplace_metering = boto3.client(
+        "meteringmarketplace", region_name=config_globals.AWS_MARTKETPLACE_REGION
+    )
     # if config.get("_global_.development"):
     #     prod = boto3.session.Session(
     #         profile_name="prod/prod_admin", region_name="us-east-1"

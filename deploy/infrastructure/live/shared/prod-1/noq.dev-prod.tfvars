@@ -72,3 +72,4 @@ log_expiry = 365
 
 aws_marketplace_subscription_sns_topic_arn = "arn:aws:sns:us-east-1:287250355862:aws-mp-subscription-notification-ci3g7nysfa7luy3vlhw4g7zwa"
 aws_marketplace_product_code               = "ci3g7nysfa7luy3vlhw4g7zwa"
+aws_marketplace_region                     = "us-east-1"

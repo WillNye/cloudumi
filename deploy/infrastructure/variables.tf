@@ -274,3 +274,9 @@ variable "aws_marketplace_product_code" {
   type        = string
   default     = ""
 }
+
+variable "aws_marketplace_region" {
+  description = "The AWS Marketplace region for this product"
+  type        = string
+  default     = ""
+}
