@@ -149,7 +149,7 @@ class IambicRequestHandler(BaseHandler):
             return
         except Exception as err:
             await log.aexception(
-                str(err),
+                "Unhandled exception while creating user self service request",
                 error=str(err),
                 tenant_name=db_tenant.name,
             )
