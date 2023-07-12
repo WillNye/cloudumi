@@ -217,11 +217,8 @@ class BasePullRequest(PydanticBaseModel):
         if not self.pr_obj:
             await self.load_pr()
 
-        if self.mergeable and self.merge_on_approval:
+        if self.mergeable:
             await self._merge_request(approved_by)
-        elif self.mergeable and not self.merge_on_approval:
-            # TODO: Return something to let user know they need to merge the PR manually
-            pass
 
     async def remove_branch(self, pull_default: bool):
         await self.iambic_repo.delete_branch()

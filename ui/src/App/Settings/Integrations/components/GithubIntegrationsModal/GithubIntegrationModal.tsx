@@ -7,6 +7,9 @@ import { extractErrorMessage } from 'core/API/utils';
 import { Segment } from 'shared/layout/Segment';
 import { toast } from 'react-toastify';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { Block } from 'shared/layout/Block';
+import { Checkbox } from 'shared/form/Checkbox';
+import { ChangeEvent } from 'react';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { Select, SelectOption } from 'shared/form/Select';
 import axios from 'core/Axios/Axios';
@@ -29,6 +32,7 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [repos, setRepos] = useState([]);
   const [selectedRepo, setSelectedRepo] = useState(null);
+  const [mergeOnApproval, setMergeOnApproval] = useState(false);
 
   useEffect(() => {
     axios
@@ -36,6 +40,7 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
       .then(response => {
         setRepos(response.data.data.repos);
         setSelectedRepo(response.data.data.configured_repo || null);
+        setMergeOnApproval(response.data.data.merge_on_approval || false);
       })
       .catch(error => {
         console.error(error);
@@ -44,7 +49,18 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
 
   const handleRepoChange = repo => {
     setSelectedRepo(repo);
-    axios.post('/api/v3/github/repos/', { repo_name: repo });
+    axios.post('/api/v3/github/repos/', {
+      repo_name: repo,
+      merge_on_approval: mergeOnApproval
+    });
+  };
+
+  const handleAutoApplyChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setMergeOnApproval(e.target.checked);
+    axios.post('/api/v3/github/repos/', {
+      repo_name: selectedRepo,
+      merge_on_approval: e.target.checked
+    });
   };
 
   const { mutateAsync: deleteMutation } = useMutation({
@@ -153,6 +169,16 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
                 ))}
               </Select>
             </label>
+            <LineBreak size="large" />
+            <div>
+              <Checkbox
+                {...{
+                  checked: mergeOnApproval,
+                  onChange: handleAutoApplyChange
+                }}
+              />
+              <Block>Auto apply after PR approval</Block>
+            </div>
             <LineBreak size="large" />
           </>
         )}
