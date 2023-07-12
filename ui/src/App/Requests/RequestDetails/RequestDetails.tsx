@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import axios from 'core/Axios/Axios';
 import { Button } from 'shared/elements/Button';
@@ -21,6 +21,7 @@ const RequestChangeDetails = () => {
   const { requestId } = useParams<{ requestId: string }>();
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [readOnly, setReadOnly] = useState(false);
 
   const {
     refetch: refetchData,
@@ -30,6 +31,12 @@ const RequestChangeDetails = () => {
     queryFn: getIambicRequest,
     queryKey: ['getIambicRequest', requestId]
   });
+
+  useEffect(() => {
+    setReadOnly(
+      ['Applied', 'Rejected', 'Expired'].includes(requestData?.data?.status)
+    );
+  }, [requestData]);
 
   const handleComment = useCallback(async () => {
     setIsSubmitting(true);
@@ -189,6 +196,7 @@ const RequestChangeDetails = () => {
             file={file}
             handleModifyChange={handleModifyChange}
             key={index}
+            readOnly={readOnly}
           />
         ))}
         <LineBreak size="large" />
@@ -207,13 +215,30 @@ const RequestChangeDetails = () => {
         </Button>
         <LineBreak size="large" />
         <div className={styles.actions}>
-          <Button onClick={handleReject} color="error" fullWidth size="small">
+          <Button
+            onClick={handleReject}
+            color="error"
+            disabled={readOnly}
+            fullWidth
+            size="small"
+          >
             Reject
           </Button>
-          <Button onClick={handleApprove} fullWidth size="small">
+          <Button
+            onClick={handleApprove}
+            disabled={readOnly}
+            fullWidth
+            size="small"
+          >
             Approve
           </Button>
-          <Button onClick={handleApply} color="success" fullWidth size="small">
+          <Button
+            onClick={handleApply}
+            color="success"
+            disabled={readOnly}
+            fullWidth
+            size="small"
+          >
             Apply
           </Button>
         </div>

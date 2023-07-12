@@ -118,10 +118,8 @@ export const Table = <T, D>({
   });
 
   const shouldShowPagination = useMemo(() => {
-    return Boolean(
-      showPagination && !isLoading && table.getRowModel().rows?.length
-    );
-  }, [showPagination, isLoading, table]);
+    return Boolean(showPagination && !isLoading);
+  }, [showPagination, isLoading]);
 
   return (
     <>

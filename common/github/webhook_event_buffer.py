@@ -23,6 +23,7 @@ def get_developer_queue_name() -> str:
     session_name = arn.split("/")[-1]
     assert session_name.endswith("@noq.dev")
     developer_name = session_name.split("@noq.dev")[0]
+    developer_name = developer_name.replace(".", "__dot__")
     return f"local-dev-{developer_name}-github-app-webhook"
 
 

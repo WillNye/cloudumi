@@ -152,13 +152,18 @@ class BasePullRequest(PydanticBaseModel):
         description: str,
         template_changes: list[IambicTemplateChange],
         request_notes: Optional[str] = None,
+        reuse_branch_repo: bool = False,
     ):
         await self._set_repo(use_request_branch=False)
 
         self.title = f"Request on behalf of {self.requested_by}"
         self.description = description
         branch_name = await self.iambic_repo.create_branch(
-            self.request_id, self.requested_by, template_changes, request_notes
+            self.request_id,
+            self.requested_by,
+            template_changes,
+            request_notes,
+            reuse_branch_repo=reuse_branch_repo,
         )
         await self._create_request()
         return branch_name
