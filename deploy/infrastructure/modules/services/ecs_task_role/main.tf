@@ -204,6 +204,7 @@ resource "aws_iam_role" "ecs_task_role" {
           "Effect" : "Allow",
           "Resource" : [
             "${var.github_app_noq_webhook_queue_arn}",
+            "${var.aws_marketplace_subscription_queue_arn}"
           ]
         }
       ],

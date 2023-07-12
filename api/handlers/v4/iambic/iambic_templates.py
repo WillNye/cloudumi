@@ -32,7 +32,7 @@ class IambicTemplateHandler(BaseHandler):
             self.set_header("Content-Type", "application/json")
             self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     **get_paginated_typeahead_response(
                         [
@@ -57,7 +57,7 @@ class IambicTemplateHandler(BaseHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="failure",
+                    status="failure",
                     status_code=400,
                     errors=[str(e)],
                 ).json(exclude_unset=True, exclude_none=True)
@@ -123,7 +123,7 @@ class IambicTemplateTypeHandler(BaseHandler):
                 ]
             self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     data=sorted(response_data, key=lambda d: d["name"]),
                 ).json(exclude_unset=True, exclude_none=True)
@@ -132,7 +132,7 @@ class IambicTemplateTypeHandler(BaseHandler):
             self.set_status(400)
             self.write(
                 WebResponse(
-                    success="failure",
+                    status="failure",
                     status_code=400,
                     errors=[str(e)],
                 ).json(exclude_unset=True, exclude_none=True)

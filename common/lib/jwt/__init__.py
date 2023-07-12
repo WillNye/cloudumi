@@ -35,14 +35,22 @@ async def generate_jwt_token(
     iat=datetime.utcnow(),
     exp=None,
     eula_signed=None,
+    tenant_active=None,
     mfa_setup_required=None,
     mfa_verification_required=None,
     password_reset_required=False,
     sso_user=True,
 ):
+    tenant_details = None
+
     if eula_signed is None:
         tenant_details = await TenantDetails.get(tenant)
         eula_signed = bool(tenant_details.eula_info)
+
+    if tenant_active is None:
+        if not tenant_details:
+            tenant_details = await TenantDetails.get(tenant)
+        tenant_active = bool(tenant_details.is_active)
 
     groups_pending_eula = []
     roles_pending_eula = []
@@ -53,6 +61,10 @@ async def generate_jwt_token(
         if roles:
             roles_pending_eula = [role for role in roles]
             roles = []
+
+    if not tenant_active:
+        groups = []
+        roles = []
 
     if not exp:
         exp = datetime.utcnow() + timedelta(
@@ -75,6 +87,7 @@ async def generate_jwt_token(
         or [],
         "tenant": tenant,
         "eula_signed": eula_signed,
+        "tenant_active": tenant_active,
         "groups_pending_eula": groups_pending_eula,
         "additional_roles_pending_eula": roles_pending_eula,
         "mfa_setup_required": mfa_setup_required,
@@ -133,6 +146,7 @@ async def validate_and_return_jwt_token(auth_cookie, tenant):
             "iat": decoded_jwt.get("iat"),
             "exp": exp,
             "eula_signed": decoded_jwt.get("eula_signed", False),
+            "tenant_active": decoded_jwt.get("tenant_active", False),
             "groups_pending_eula": decoded_jwt.get("groups_pending_eula", []),
             "additional_roles_pending_eula": decoded_jwt.get(
                 "additional_roles_pending_eula", []

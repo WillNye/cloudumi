@@ -34,6 +34,7 @@ test_args := --cov-report term-missing
 GIT_BRANCH_SAFE := $(shell git rev-parse --abbrev-ref HEAD | tr '/' '-')
 BASE_DIR := $(shell pwd)
 AWS_PROFILE_STAGING = staging/staging_admin
+AWS_PROFILE_GLOBAL_STAGING = global_tenant_data_staging/global_tenant_data_staging_admin
 AWS_REGION_STAGING = us-west-2
 STAGING_VAR_FILES = --var-file=live/shared/staging-1/noq.dev-staging.tfvars --var-file=live/shared/staging-1/secret.tfvars
 DEVELOPMENT_DOCKER_VOLUME_S3_BUCKET = consoleme-dev-configuration-bucket/docker_volumes_backup
@@ -42,7 +43,10 @@ DOCKER_VOLUMES_TO_BACKUP := deploy_cloudumi-pg deploy_cloudumi-redis deploy_clou
 DOCKER_VOLUMES_BACKUP_DIR := ./docker_volumes_backup
 
 AWS_PROFILE_DEV = development/development_admin
+AWS_PROFILE_GLOBAL_DEV = development_2/development_2_admin
+AWS_REGION_DEV = us-west-2
 AWS_PROFILE_PROD = production/prod_admin
+AWS_PROFILE_GLOBAL_PROD = global_tenant_data_prod/global_tenant_data_prod_admin
 AWS_REGION_PROD = us-west-2
 PROD_VAR_FILES = --var-file=live/shared/prod-1/noq.dev-prod.tfvars --var-file=live/shared/prod-1/secret.tfvars
 
@@ -162,16 +166,33 @@ ecs-tunnel-staging-ssh: ecs-set-ssh-password-staging
 	@TASK_ID=$$(aws ecs list-tasks --cluster staging-noq-dev-shared-staging-1 --service api --profile staging/staging_admin --region us-west-2 --query 'taskArns[0]' --output text | awk -F/ '{print $$NF}') && \
 	AWS_PROFILE=staging/staging_admin ecs-tunnel -L 2222:22 -c staging-noq-dev-shared-staging-1 -t $$TASK_ID --region us-west-2
 
-.PHONY: ecs-tunnel-copy-changed-files-to-staging
-ecs-tunnel-copy-changed-files-to-staging:
-	@echo "Run \`make ecs-tunnel-staging-ssh\` and then copy files to the staging host with the following command."
-	@echo "git diff origin/main --name-only --diff-filter=AM | SSHPASS=TEMP_PASS xargs -I '{}' sh -c 'echo \"Copying file: {}\"; sshpass -e scp -o PreferredAuthentications=password -P 2222 \"{}\" root@127.0.0.1:/app/\"{}\"'"
-
 .PHONY: ecs-set-ssh-password-prod
 ecs-set-ssh-password-prod:
 	@TASK_ID=$$(aws ecs list-tasks --cluster noq-dev-shared-prod-1 --service api --profile prod/prod_admin --region us-west-2 --query 'taskArns[0]' --output text | awk -F/ '{print $$NF}') && \
 	CONTAINER_NAME=$$(aws ecs describe-tasks --tasks $$TASK_ID --cluster noq-dev-shared-prod-1 --profile prod/prod_admin --region us-west-2 --query 'tasks[0].containers[0].name' --output text) && \
 	aws ecs execute-command --cluster noq-dev-shared-prod-1 --task $$TASK_ID --container $$CONTAINER_NAME --command "/bin/sh -c '/etc/init.d/ssh start; echo root:TEMP_PASS | chpasswd'" --profile prod/prod_admin --region us-west-2 --interactive
+
+.PHONY: ecs-tunnel-prod-ssh
+ecs-tunnel-prod-ssh: ecs-set-ssh-password-prod
+	@echo "SSH to the prod host with the following command:"
+	@echo "ssh root@127.0.0.1 -p 2222"
+	@echo "Password: TEMP_PASS"
+	export AWS_PROFILE=prod/prod_admin
+	@TASK_ID=$$(aws ecs list-tasks --cluster noq-dev-shared-prod-1 --service api --profile prod/prod_admin --region us-west-2 --query 'taskArns[0]' --output text | awk -F/ '{print $$NF}') && \
+	AWS_PROFILE=prod/prod_admin ecs-tunnel -L 2222:22 -c noq-dev-shared-prod-1 -t $$TASK_ID --region us-west-2
+
+# Note: You'll need to manually run `make ecs-tunnel-prod-ssh` or `make ecs-tunnel-staging-ssh` before running this command.
+.PHONY: ecs-tunnel-copy-changed-files-to-api-server
+ecs-tunnel-copy-changed-files-to-api-server:
+	@echo "Creating a gzipped tarball of changed files..."
+	git diff origin/main --name-only --diff-filter=AM | tar czf changed_files.tar.gz -T -
+	@echo "Transferring the tarball to the prod API host..."
+	sshpass -p TEMP_PASS scp -o PreferredAuthentications=password -o "StrictHostKeyChecking=no" -P 2222 changed_files.tar.gz root@127.0.0.1:/app/
+	@echo "Decompressing the tarball on the prod API host and cleaning up..."
+	sshpass -p TEMP_PASS ssh -p 2222 root@127.0.0.1 'tar xzf /app/changed_files.tar.gz -C /app && rm /app/changed_files.tar.gz'
+	@echo "Cleaning up local tarball..."
+	rm changed_files.tar.gz
+	@echo "Done."
 
 tf-staging-refresh:
 	@cd deploy/infrastructure && \
@@ -222,6 +243,41 @@ tf-prod-unlock:
 	export AWS_PROFILE=$(AWS_PROFILE_PROD) AWS_REGION=$(AWS_REGION_PROD); \
 	terraform workspace select shared-staging-1; \
 	terraform force-unlock $(UUID)
+
+# This is for our global Tenant DDB table
+tf-global-dev-plan:
+	@cd deploy/global_infrastructure && \
+	export AWS_PROFILE=$(AWS_PROFILE_GLOBAL_DEV) AWS_REGION=$(AWS_REGION_DEV); \
+	terraform workspace select shared-dev-global; \
+	terraform plan --var-file=live/shared/dev-global/noq.dev-dev.tfvars
+
+# This is for our global Tenant DDB table
+tf-global-dev-apply:
+	@cd deploy/global_infrastructure && \
+	export AWS_PROFILE=$(AWS_PROFILE_GLOBAL_DEV) AWS_REGION=$(AWS_REGION_DEV); \
+	terraform workspace select shared-dev-global; \
+	terraform apply --var-file=live/shared/dev-global/noq.dev-dev.tfvars
+
+# This is for our global Tenant DDB table
+tf-global-staging-plan:
+	@cd deploy/global_infrastructure && \
+	export AWS_PROFILE=$(AWS_PROFILE_GLOBAL_STAGING) AWS_REGION=$(AWS_REGION_STAGING); \
+	terraform workspace select shared-staging-global; \
+	terraform plan --var-file=live/shared/staging-global/noq.dev-staging.tfvars
+
+# This is for our global Tenant DDB table
+tf-global-staging-apply:
+	@cd deploy/global_infrastructure && \
+	export AWS_PROFILE=$(AWS_PROFILE_GLOBAL_STAGING) AWS_REGION=$(AWS_REGION_STAGING); \
+	terraform workspace select shared-staging-global; \
+	terraform apply --var-file=live/shared/staging-global/noq.dev-staging.tfvars
+
+# This is for our global Tenant DDB table
+tf-global-prod-apply:
+	@cd deploy/global_infrastructure && \
+	export AWS_PROFILE=$(AWS_PROFILE_GLOBAL_PROD) AWS_REGION=$(AWS_REGION_PROD); \
+	terraform workspace select shared-prod-global; \
+	terraform apply --var-file=live/shared/prod-global/noq.dev-prod.tfvars
 
 .PHONY: deploy-staging
 deploy-staging:

@@ -8,17 +8,13 @@ variable "cluster_id" {
   description = "The cluster ID for CloudUmi."
 }
 
-variable "global_tenant_data_account_id" {
-  description = "Account ID of the AWS Tenant Data Account"
-  type        = string
-}
-
-variable "region" {
-  description = "deployed aws region"
-  type        = string
-}
-
 variable "tags" {
   description = "The tag to assign to resources"
   type        = map(any)
+}
+
+variable "aws_marketplace_subscription_sns_topic_arn" {
+  description = "The ARN of the Amazon-managed SNS topic for AWS Marketplace Subscriptions"
+  type        = string
+  default     = ""
 }

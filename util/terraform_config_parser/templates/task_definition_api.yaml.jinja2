@@ -40,7 +40,7 @@ containerDefinitions:
     readonlyRootFilesystem: false
     privileged: false
     name: {{ ecs_cluster_name }}-api
-    {% if stage == "staging" %}
+    {% if stage in ["staging", "prod"] %}
     command:
       - bash
       - -c

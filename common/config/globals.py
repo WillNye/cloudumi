@@ -42,6 +42,7 @@ DEVELOPMENT_MODE = config.get("_global_.development", False)
 
 AUTH_COOKIE_NAME: str = config.get("_global_.auth.cookie.name", "noq_auth")
 
+ENVIRONMENT = config.get("_global_.environment")
 IAMBIC_REPOS_BASE_KEY = "iambic_repos"
 GITHUB_APP_URL = config.get("_global_.secrets.github_app.app_url")
 assert GITHUB_APP_URL
@@ -81,3 +82,15 @@ assert SENDGRID_FROM_ADDRESS
 
 REDIS_PASSWORD = config.get("_global_.secrets.redis.password")
 assert REDIS_PASSWORD
+
+AWS_MARKETPLACE_SUBSCRIPTION_QUEUE = config.get(
+    "_global_.integrations.aws.aws_marketplace_subscription_queue_arn"
+)
+AWS_MARTKETPLACE_PRODUCT_CODE = config.get(
+    "_global_.integrations.aws.aws_marketplace_product_code"
+)
+AWS_MARTKETPLACE_REGION = config.get("_global_.integrations.aws.aws_marketplace_region")
+if ENVIRONMENT == "prod":
+    assert AWS_MARKETPLACE_SUBSCRIPTION_QUEUE
+    assert AWS_MARTKETPLACE_PRODUCT_CODE
+    assert AWS_MARTKETPLACE_REGION

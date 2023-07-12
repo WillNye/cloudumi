@@ -107,5 +107,10 @@ RUN rm -rf /root/.cache/
 
 RUN $CONFIG_LOCATION || alembic upgrade head
 
+# This is just to print out the installed packages so we can quickly compare version differences if
+# something breaks.
+
+RUN dpkg --list
+
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
 CMD ["python3.11", "api/__main__.py"]

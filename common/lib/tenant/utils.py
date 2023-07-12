@@ -1,4 +1,6 @@
+from asyncache import cached
 from botocore.exceptions import ClientError
+from cachetools import TTLCache
 
 from common.config import config
 from common.lib.assume_role import boto3_cached_conn
@@ -63,3 +65,10 @@ async def get_current_eula_version(tenant: str = None) -> str:
 
     except ClientError as err:
         log.error({"message": "Unable to get current EULA version", "error": str(err)})
+
+
+@cached(cache=TTLCache(maxsize=4096, ttl=30))
+async def is_tenant_active(tenant: str):
+    # This must be fast because it's used in authorization flow
+    tenant_details = await TenantDetails.get(tenant)
+    return tenant_details.is_active

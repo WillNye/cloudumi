@@ -76,7 +76,7 @@ class IambicRequestValidationHandler(BaseHandler):
         else:
             return self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     data=data.dict(exclude_none=True),
                 ).json(exclude_unset=True, exclude_none=True)
@@ -116,7 +116,7 @@ class IambicRequestHandler(BaseHandler):
             filters = json.loads(filters_url_param) if filters_url_param else {}
             self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     data=[
                         item.dict()
@@ -180,7 +180,7 @@ class IambicRequestHandler(BaseHandler):
         else:
             return self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     data=response.get("friendly_request"),
                 ).json(exclude_unset=True, exclude_none=True)
@@ -215,7 +215,7 @@ class IambicRequestHandler(BaseHandler):
             )
             return self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     data=response["friendly_request"],
                 ).json(exclude_unset=True, exclude_none=True)
@@ -317,7 +317,7 @@ class IambicRequestHandler(BaseHandler):
         else:
             return self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     data=response,
                 ).json(exclude_unset=True, exclude_none=True)

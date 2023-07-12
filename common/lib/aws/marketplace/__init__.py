@@ -1,22 +1,28 @@
 import sys
 import time
+from datetime import datetime
 from typing import Any, Dict, Optional
 
 import boto3
 import sentry_sdk
 from botocore.exceptions import ClientError
+from distutils.util import strtobool
 from tenacity import AsyncRetrying, RetryError, stop_after_attempt, wait_fixed
 from tornado.httpclient import AsyncHTTPClient, HTTPClientError, HTTPRequest
 
 import common.lib.noq_json as json
-from common.config import config, models
-from common.exceptions.exceptions import DataNotRetrievable, MissingConfigurationValue
+from common.config import config
+from common.config import globals as config_globals
+from common.config import models
+from common.exceptions.exceptions import DataNotRetrievable
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.messaging import iterate_event_messages
+from common.lib.tenant.models import AWSMarketplaceTenantDetails, TenantDetails
 from common.models import HubAccount, SpokeAccount
+from common.tenants.models import Tenant
 
-log = config.get_logger(__name__)
+log = config.get_logger()
 
 
 async def return_cf_response(
@@ -622,13 +628,10 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
     return {"success": True}
 
 
-async def handle_tenant_integration_queue(
-    celery_app,
+async def handle_aws_marketplace_queue(
+    queue_arn,
     max_num_messages_to_process: Optional[int] = None,
 ) -> Dict[str, Any]:
-    log_data = {
-        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-    }
 
     if not max_num_messages_to_process:
         max_num_messages_to_process = config.get(
@@ -636,22 +639,18 @@ async def handle_tenant_integration_queue(
             100,
         )
 
-    account_id = config.get("_global_.integrations.aws.account_id")
-    cluster_id = config.get("_global_.deployment.cluster_id")
-    region = config.get("_global_.integrations.aws.region")
-    queue_arn = config.get(
-        "_global_.integrations.aws.registration_queue_arn",
-        f"arn:aws:sqs:{region}:{account_id}:{cluster_id}-registration-queue",
-    )
-    if not queue_arn:
-        raise MissingConfigurationValue(
-            "Unable to find required configuration value: "
-            "`_global_.integrations.aws.registration_queue_arn`"
-        )
     queue_name = queue_arn.split(":")[-1]
     queue_region = queue_arn.split(":")[3]
 
     sqs_client = boto3.client("sqs", region_name=queue_region)
+
+    # TODO: For development purposes, you can use the following code to test the registration token
+    # Note: It will affect live production.
+    # if config.get("_global_.development"):
+    #     prod = boto3.session.Session(
+    #         profile_name="prod/prod_admin", region_name=queue_region
+    #     )
+    #     sqs_client = prod.client("sqs")
 
     queue_url_res = await aio_wrapper(sqs_client.get_queue_url, QueueName=queue_name)
     queue_url = queue_url_res.get("QueueUrl")
@@ -679,222 +678,77 @@ async def handle_tenant_integration_queue(
                         "ReceiptHandle": receipt_handle,
                     }
                 )
-
-                action_type = message["body"]["ResourceProperties"]["ActionType"]
-                if action_type not in [
-                    "AWSSpokeAcctRegistration",
-                    "AWSCentralAcctRegistration",
-                ]:
-                    log_data["message"] = f"ActionType {action_type} not supported"
-                    log.debug(log_data)
-                    continue
-
-                body = message.get("body", {})
-                request_type = body.get("RequestType")
-                response_url = body.get("ResponseURL")
-                resource_properties = body.get("ResourceProperties", {})
-                tenant = resource_properties.get("Host")
-                external_id = resource_properties.get("ExternalId")
-                physical_resource_id = external_id
-                stack_id = body.get("StackId")
-                request_id = body.get("RequestId")
-                logical_resource_id = body.get("LogicalResourceId")
-
-                if not (
-                    body
-                    or physical_resource_id
-                    or response_url
-                    or tenant
-                    or external_id
-                    or resource_properties
-                    or stack_id
-                    or request_id
-                    or logical_resource_id
-                ):
-                    # We don't have a CFN Physical Resource ID, so we can't respond to the request
-                    # but we can make some noise in our logs
-                    error_mesage = "SQS message doesn't have expected parameters"
-                    sentry_sdk.capture_message(error_mesage, "error")
-                    log.error(
-                        {
-                            **log_data,
-                            "error": error_mesage,
-                            "cf_message": body,
-                            "physical_resource_id": physical_resource_id,
-                            "response_url": response_url,
-                            "tenant": tenant,
-                            "external_id": external_id,
-                            "resource_properties": resource_properties,
-                            "stack_id": stack_id,
-                            "request_id": request_id,
-                        }
+                customer_id = message["body"].get("customer-identifier")
+                try:
+                    customer_awsmp_data = await AWSMarketplaceTenantDetails.get(
+                        customer_id
                     )
-                    # There's no way to respond without some parameters
-                    if (
-                        response_url
-                        and physical_resource_id
-                        and stack_id
-                        and request_id
-                        and logical_resource_id
-                        and tenant
-                    ):
-                        await return_cf_response(
-                            "SUCCESS",
-                            "OK",
-                            response_url,
-                            physical_resource_id,
-                            stack_id,
-                            request_id,
-                            logical_resource_id,
-                            tenant,
-                        )
-                    continue
+                except AWSMarketplaceTenantDetails.DoesNotExist:
+                    customer_awsmp_data = None
+                if not customer_awsmp_data:
+                    customer_awsmp_data = await AWSMarketplaceTenantDetails.create(
+                        customer_id,
+                    )
+                # If tenant has been created, we will update subscription status. If not, it means they
+                # haven't filled out the registration form yet. When they do, a tenant is created
+                # and automagically given a valid subscription
+                tenant_details = None
+                if customer_awsmp_data.tenant:
+                    tenant_details = await TenantDetails.get(customer_awsmp_data.tenant)
+                action = message["body"]["action"]
+                if action == "subscribe-success":
+                    customer_awsmp_data.successfully_subscribed = True
+                    customer_awsmp_data.subscription_action = "subscribe-success"
+                    if tenant_details:
+                        tenant_details.is_active = True
+                elif action == "subscribe-fail":
+                    customer_awsmp_data.successfully_subscribed = False
+                    customer_awsmp_data.subscription_action = "subscribe-fail"
+                    if tenant_details:
+                        tenant_details.is_active = False
+                elif action == "unsubscribe-pending":
+                    customer_awsmp_data.subscription_expired = True
+                    customer_awsmp_data.subscription_action = "unsubscribe-pending"
+                    if tenant_details:
+                        tenant_details.is_active = False
+                elif action == "unsubscribe-success":
+                    customer_awsmp_data.subscription_expired = True
+                    customer_awsmp_data.subscription_action = "unsubscribe-success"
+                    if tenant_details:
+                        tenant_details.is_active = False
+                is_free_trial_term_present = message.get(
+                    "isFreeTrialTermPresent", False
+                )
+                if isinstance(is_free_trial_term_present, str):
+                    is_free_trial_term_present = strtobool(is_free_trial_term_present)
+                customer_awsmp_data.is_free_trial_term_present = (
+                    is_free_trial_term_present
+                )
+                customer_awsmp_data.product_code = message.get("product-code")
+                customer_awsmp_data.updated_at = int((datetime.utcnow()).timestamp())
 
-                if request_type not in ["Create", "Update", "Delete"]:
-                    log.error(
-                        {
-                            **log_data,
-                            "error": "Unknown RequestType",
-                            "cf_message": body,
-                            "request_type": request_type,
-                        }
-                    )
-                    await return_cf_response(
-                        "FAILED",
-                        "Unknown Request Type",
-                        response_url,
-                        physical_resource_id,
-                        stack_id,
-                        request_id,
-                        logical_resource_id,
-                        tenant,
-                    )
-                    continue
-
-                if request_type in ["Update", "Delete"]:
-                    # Send success message to CloudFormation
-                    await return_cf_response(
-                        "SUCCESS",
-                        "OK",
-                        response_url,
-                        physical_resource_id,
-                        stack_id,
-                        request_id,
-                        logical_resource_id,
-                        tenant,
-                    )
-                    # TODO: Handle deletion in Noq. It's okay if this is manual for now.
-                    continue
-
-                if action_type == "AWSSpokeAcctRegistration":
-                    res = await handle_spoke_account_registration(body)
-                elif action_type == "AWSCentralAcctRegistration":
-                    res = await handle_central_account_registration(body)
-                else:
-                    error_message = "ActionType not supported"
-                    log.error(
-                        {
-                            **log_data,
-                            "error": error_message,
-                            "cf_message": body,
-                            "request_type": request_type,
-                            "action_type": action_type,
-                            "physical_resource_id": physical_resource_id,
-                            "response_url": response_url,
-                            "tenant": tenant,
-                            "external_id": external_id,
-                            "resource_properties": resource_properties,
-                            "stack_id": stack_id,
-                            "request_id": request_id,
-                        }
-                    )
-                    sentry_sdk.capture_message(error_message, "error")
-                    await return_cf_response(
-                        "FAILED",
-                        error_message,
-                        response_url,
-                        physical_resource_id,
-                        stack_id,
-                        request_id,
-                        logical_resource_id,
-                        tenant,
-                    )
-                    continue
-
-                if res["success"]:
-                    await return_cf_response(
-                        "SUCCESS",
-                        "OK",
-                        response_url,
-                        physical_resource_id,
-                        stack_id,
-                        request_id,
-                        logical_resource_id,
-                        tenant,
+                if customer_awsmp_data.change_history:
+                    customer_awsmp_data.change_history.append(
+                        {str(datetime.utcnow()): action}
                     )
                 else:
-                    await return_cf_response(
-                        "FAILED",
-                        res["message"],
-                        response_url,
-                        physical_resource_id,
-                        stack_id,
-                        request_id,
-                        logical_resource_id,
-                        tenant,
-                    )
-                    continue
-                # TODO: Refresh configuration
-                # Ensure it is written to Redis. trigger refresh job in worker
+                    customer_awsmp_data.change_history = [
+                        {str(datetime.utcnow()): action}
+                    ]
 
-                account_id_for_role = body["ResourceProperties"]["AWSAccountId"]
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_iam_resources_for_account",
-                    args=[account_id_for_role],
-                    kwargs={"tenant": tenant},
-                )
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_s3_buckets_for_account",
-                    args=[account_id_for_role],
-                    kwargs={"tenant": tenant},
-                )
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_sns_topics_for_account",
-                    args=[account_id_for_role],
-                    kwargs={"tenant": tenant},
-                )
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_sqs_queues_for_account",
-                    args=[account_id_for_role],
-                    kwargs={"tenant": tenant},
-                )
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_managed_policies_for_account",
-                    args=[account_id_for_role],
-                    kwargs={"tenant": tenant},
-                )
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_resources_from_aws_config_for_account",
-                    args=[account_id_for_role],
-                    kwargs={"tenant": tenant},
-                )
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_self_service_typeahead_task",
-                    kwargs={"tenant": tenant},
-                    countdown=120,
-                )
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_organization_structure",
-                    kwargs={"tenant": tenant},
-                )
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_scps_across_organizations",
-                    kwargs={"tenant": tenant},
-                    countdown=120,
+                await customer_awsmp_data.save()
+                if tenant_details:
+                    await tenant_details.save()
+            except Exception as e:
+                log.exception(
+                    {
+                        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
+                        "message": "Error processing AWS Marketplace message",
+                        "aws_marketplace_message": message,
+                        "error": str(e),
+                    }
                 )
 
-            except Exception:
-                raise
         if processed_messages:
             await aio_wrapper(
                 sqs_client.delete_message_batch,
@@ -906,3 +760,151 @@ async def handle_tenant_integration_queue(
         )
         messages = messages_awaitable.get("Messages", [])
     return {"message": "Successfully processed all messages", "num_events": num_events}
+
+
+async def meter_aws_customer(aws_customer_identifier: str):
+    aws_marketplace_tenant = await AWSMarketplaceTenantDetails.get(
+        aws_customer_identifier
+    )
+    tenant_name = aws_marketplace_tenant.tenant
+    tenant_active_user_counts: dict[str, int] = await Tenant.get_user_count_from_tenant(
+        tenant_name
+    )
+    user_count = tenant_active_user_counts[tenant_name]
+    usage_records = []
+    usage_records.append(
+        {
+            "Timestamp": datetime.utcnow(),
+            "CustomerIdentifier": aws_customer_identifier,
+            "Dimension": "Users",
+            "Quantity": user_count,
+        },
+    )
+    marketplace_metering = boto3.client(
+        "meteringmarketplace", region_name=config_globals.AWS_MARTKETPLACE_REGION
+    )
+    _micro_batch_metering_record(marketplace_metering, usage_records)
+
+
+async def handle_aws_marketplace_metering():
+    collection_require_statuses = ["subscribe-success", "unsubscribe-pending"]
+    tenant_active_user_counts: dict[str, int] = await Tenant.get_all_with_user_count()
+    # future optimization point to collect billable tenants without O(n)
+    aws_marketplace_billable_tenants = [
+        x
+        for x in await AWSMarketplaceTenantDetails.scan()
+        if x.subscription_action in collection_require_statuses
+    ]
+
+    marketplace_metering = boto3.client(
+        "meteringmarketplace", region_name=config_globals.AWS_MARTKETPLACE_REGION
+    )
+    # if config.get("_global_.development"):
+    #     prod = boto3.session.Session(
+    #         profile_name="prod/prod_admin", region_name="us-east-1"
+    #     )
+    #     marketplace_metering = prod.client("meteringmarketplace")
+
+    usage_records = []
+    for tenant in aws_marketplace_billable_tenants:
+        tenant_name = tenant.tenant
+        if not tenant_name:
+            continue
+        user_count = tenant_active_user_counts.get(tenant_name, 0)
+        usage_records.append(
+            {
+                "Timestamp": datetime.utcnow(),
+                "CustomerIdentifier": tenant.customer_identifier,
+                "Dimension": "Users",
+                "Quantity": user_count,
+            },
+        )
+
+    # Batch the usage records into groups of 25 and call batch_meter_usage
+    usage_record_batches = [
+        usage_records[i : i + 24] for i in range(0, len(usage_records), 24)
+    ]
+
+    for batch in usage_record_batches:
+        _micro_batch_metering_record(marketplace_metering, batch)
+
+
+def _micro_batch_metering_record(marketplace_metering_client, batch):
+    try:
+        response = marketplace_metering_client.batch_meter_usage(
+            ProductCode=config_globals.AWS_MARTKETPLACE_PRODUCT_CODE,
+            UsageRecords=batch,
+        )
+
+        # for each processed record, check the status
+        if response.get("Results"):
+            for result in response["Results"]:
+                result_status = result["Status"]
+                if result_status in ["CustomerNotSubscribed", "DuplicateRecord"]:
+                    log.error(
+                        f"Failed to report usage metrics due to {result_status}",
+                        record=result["UsageRecord"],
+                    )
+
+        # Check if any usage record failed
+        if response.get("UnprocessedRecords"):
+            for record in response["UnprocessedRecords"]:
+                log.error("Failed to report usage metrics", record=record)
+
+    except Exception as e:
+        log.exception("Failed to report usage metrics", batch=batch, error=str(e))
+
+
+# TODO: I don't think this is needed?
+async def retrieve_and_update_marketplace_entitlements():
+    aws_marketplace_product_code = config_globals.AWS_MARTKETPLACE_PRODUCT_CODE
+    if not aws_marketplace_product_code:
+        log.debug("AWS Marketplace Integration not configured")
+        return True
+
+    marketplace_entitlement = boto3.client(
+        "marketplace-entitlement", region_name="us-east-1"
+    )
+
+    # if config.get("_global_.development"):
+    #     prod = boto3.session.Session(
+    #         profile_name="prod/prod_admin", region_name="us-east-1"
+    #     )
+    #     marketplace_entitlement = prod.client("marketplace-entitlement")
+
+    next_token = None
+
+    while True:
+        try:
+            args = dict(ProductCode=aws_marketplace_product_code, MaxResults=25)
+            if next_token:
+                args["NextToken"] = next_token
+            response = marketplace_entitlement.get_entitlements(**args)
+        except Exception as e:
+            log.exception("Failed to fetch entitlements", error=str(e))
+            return
+
+        # Iterate over entitlements and update DynamoDB
+        for entitlement in response.get("Entitlements", []):
+            try:
+                customer_identifier = entitlement["CustomerIdentifier"]
+                tenant_details = AWSMarketplaceTenantDetails.get(customer_identifier)
+                # TODO: Need to update tenant subscription status and also TenantDetails
+                tenant_details.updated_at = int(datetime.now().timestamp())
+                tenant_details.save()
+            except AWSMarketplaceTenantDetails.DoesNotExist:
+                log.warning(
+                    "Tenant not found in DynamoDB",
+                    customer_identifier=customer_identifier,
+                )
+            except Exception as e:
+                log.error(
+                    "Failed to update tenant details",
+                    customer_identifier=customer_identifier,
+                    error=str(e),
+                )
+
+        # If there is a next token, continue the loop, else break
+        next_token = response.get("NextToken")
+        if not next_token:
+            break

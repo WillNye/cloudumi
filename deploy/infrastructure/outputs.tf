@@ -173,6 +173,26 @@ output "sqs_registration_response_queue_name" {
   value       = module.tenant_messaging.sqs_registration_response_queue_name
 }
 
+output "aws_marketplace_subscription_queue_arn" {
+  description = "The SQS queue ARN that is used to trigger customer registration using the NOQ CF template"
+  value       = module.tenant_messaging_us-east-1.aws_marketplace_subscription_queue_arn
+}
+
+output "aws_marketplace_subscription_queue_name" {
+  description = "The SQS queue name that is used to trigger customer registration using the NOQ CF template"
+  value       = module.tenant_messaging_us-east-1.aws_marketplace_subscription_queue_name
+}
+
+output "aws_marketplace_product_code" {
+  description = "The AWS Marketplace product code"
+  value       = var.aws_marketplace_product_code
+}
+
+output "aws_marketplace_region" {
+  description = "The AWS Marketplace region"
+  value       = var.aws_marketplace_region
+}
+
 output "sqs_github_app_noq_webhook_queue_arn" {
   description = "The SQS to see GitHub App Noq Webhook Events"
   value       = module.tenant_messaging.sqs_github_app_noq_webhook_queue_arn
