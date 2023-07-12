@@ -38,6 +38,7 @@ async def list_tenant_provider_definitions(
     tenant_id: int,
     provider: Optional[str] = None,
     name: Optional[str] = None,
+    sub_type: Optional[str] = None,
     template_id: Optional[str] = None,
     exclude_aws_org: Optional[bool] = True,
     page_size: Optional[int] = None,
@@ -53,7 +54,10 @@ async def list_tenant_provider_definitions(
                 TenantProviderDefinition.id
                 == IambicTemplateProviderDefinition.tenant_provider_definition_id,
             ).filter(IambicTemplateProviderDefinition.iambic_template_id == template_id)
-        if not template_id and exclude_aws_org and (not name or name == "aws"):
+
+        if not template_id and sub_type:
+            stmt = stmt.filter(TenantProviderDefinition.sub_type == sub_type)
+        elif not template_id and exclude_aws_org and (not name or name == "aws"):
             if not name:
                 stmt = stmt.filter(
                     not_(

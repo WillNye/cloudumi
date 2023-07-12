@@ -3,6 +3,11 @@ import tornado.web
 
 import common.lib.noq_json as json
 from api.handlers.utils import get_paginated_typeahead_response
+from common import Tenant
+from common.aws.iam.policy.utils import (
+    get_aws_managed_policy_arns,
+    list_customer_managed_policy_definitions,
+)
 from common.aws.iam.role.models import IAMRole
 from common.config import config
 from common.exceptions.exceptions import DataNotRetrievable, InvalidRequest
@@ -14,7 +19,7 @@ from common.lib.aws.typeahead_cache import get_all_resource_arns
 from common.lib.cache import retrieve_json_data_from_redis_or_s3
 from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler, redis_get
-from common.models import ArnArray, PaginatedRequestQueryParams, WebResponse
+from common.models import ArnArray, TypeAheadPaginatedRequestQueryParams, WebResponse
 
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 log = config.get_logger(__name__)
@@ -84,24 +89,49 @@ async def handle_aws_resource_type_ahead_request_for_all(
 async def handle_aws_resource_type_ahead_request(
     user: str,
     groups: list[str],
-    tenant_name: str,
+    tenant: Tenant,
     service: str,
-    resource_arn: str,
     page: int,
     page_size: int,
+    template_id: str = None,
+    resource_id: str = None,
+    provider_definition_ids: list[str] = None,
+    aws_managed_only: bool = False,
 ) -> list[str]:
+    if service != "managed_policy" and aws_managed_only:
+        raise InvalidRequest(
+            "The aws_managed_only parameter is only supported for managed_policy"
+        )
+
     if service == "all":
         return await handle_aws_resource_type_ahead_request_for_all(
-            user, groups, tenant_name, resource_arn, page, page_size
+            user, groups, tenant.name, resource_id, page, page_size
         )
 
     account_id = None
     topic_is_hash = True
-    resource_arn = resource_arn.lower()
+
+    resource_id = resource_id.lower()
     max_results = page * page_size
     allowed_accounts_for_viewing_resources = (
-        await get_accounts_user_can_view_resources_for(user, groups, tenant_name)
+        await get_accounts_user_can_view_resources_for(user, groups, tenant.name)
     )
+
+    if service == "managed_policy":
+        policy_arns = await get_aws_managed_policy_arns()
+        if resource_id:
+            policy_arns = [arn for arn in policy_arns if resource_id in arn.lower()]
+
+        if not aws_managed_only:
+            mp_defs = await list_customer_managed_policy_definitions(
+                tenant, resource_id, provider_definition_ids
+            )
+            # Prioritize customer managed policies
+            policy_arns = [
+                mp_def.secondary_resource_id for mp_def in mp_defs
+            ] + policy_arns
+
+        return policy_arns[(page - 1) * page_size : page * page_size]
 
     role_name = bool(service == "iam_role")
     if service in ["iam_arn", "iam_role"]:
@@ -109,7 +139,7 @@ async def handle_aws_resource_type_ahead_request(
         if account_id:
             filter_condition = IAMRole.accountId == account_id
         iam_roles = await IAMRole.query(
-            tenant_name,
+            tenant.name,
             filter_condition=filter_condition,
             attributes_to_get=["tenant", "accountId", "name", "arn", "resourceId"],
         )
@@ -117,39 +147,39 @@ async def handle_aws_resource_type_ahead_request(
     else:
         if service == "s3":
             topic = config.get_tenant_specific_key(
-                "redis.s3_bucket_key", tenant_name, f"{tenant_name}_S3_BUCKETS"
+                "redis.s3_bucket_key", tenant.name, f"{tenant.name}_S3_BUCKETS"
             )
             s3_bucket = config.get_tenant_specific_key(
-                "account_resource_cache.s3_combined.bucket", tenant_name
+                "account_resource_cache.s3_combined.bucket", tenant.name
             )
             s3_key = config.get_tenant_specific_key(
                 "account_resource_cache.s3_combined.file",
-                tenant_name,
+                tenant.name,
                 "account_resource_cache/cache_s3_combined_v1.json.gz",
             )
         elif service == "sqs":
             topic = config.get_tenant_specific_key(
-                "redis.sqs_queues_key", tenant_name, f"{tenant_name}_SQS_QUEUES"
+                "redis.sqs_queues_key", tenant.name, f"{tenant.name}_SQS_QUEUES"
             )
             s3_bucket = config.get_tenant_specific_key(
-                "account_resource_cache.sqs_combined.bucket", tenant_name
+                "account_resource_cache.sqs_combined.bucket", tenant.name
             )
             s3_key = config.get_tenant_specific_key(
                 "account_resource_cache.sqs_combined.file",
-                tenant_name,
+                tenant.name,
                 "account_resource_cache/cache_sqs_queues_combined_v1.json.gz",
             )
         elif service == "sns":
             topic = config.get_tenant_specific_key(
-                "redis.sns_topics_key", tenant_name, f"{tenant_name}_SNS_TOPICS"
+                "redis.sns_topics_key", tenant.name, f"{tenant.name}_SNS_TOPICS"
             )
             s3_bucket = config.get_tenant_specific_key(
                 "account_resource_cache.sns_topics_combined.bucket",
-                tenant_name,
+                tenant.name,
             )
             s3_key = config.get_tenant_specific_key(
                 "account_resource_cache.sns_topics_topics_combined.file",
-                tenant_name,
+                tenant.name,
                 "account_resource_cache/cache_sns_topics_combined_v1.json.gz",
             )
         elif service == "account":
@@ -160,8 +190,8 @@ async def handle_aws_resource_type_ahead_request(
         elif service == "app":
             topic = config.get_tenant_specific_key(
                 "celery.apps_to_roles.redis_key",
-                tenant_name,
-                f"{tenant_name}_APPS_TO_ROLES",
+                tenant.name,
+                f"{tenant.name}_APPS_TO_ROLES",
             )
             s3_bucket = None
             s3_key = None
@@ -178,20 +208,20 @@ async def handle_aws_resource_type_ahead_request(
                 redis_data_type="hash",
                 s3_bucket=s3_bucket,
                 s3_key=s3_key,
-                tenant=tenant_name,
+                tenant=tenant.name,
             )
         elif topic:
-            data = await redis_get(topic, tenant_name)
+            data = await redis_get(topic, tenant.name)
 
     results: list[dict] = []
 
     unique_roles: list[str] = []
 
     if service == "account":
-        account_ids_to_names = await get_account_id_to_name_mapping(tenant_name)
+        account_ids_to_names = await get_account_id_to_name_mapping(tenant.name)
         for account_id, account_name in account_ids_to_names.items():
             account_str = f"{account_name} ({account_id})"
-            if resource_arn in account_str.lower():
+            if resource_id in account_str.lower():
                 results.append(account_str)
     else:
         if not data:
@@ -207,19 +237,19 @@ async def handle_aws_resource_type_ahead_request(
                     r = k.split("role/")[1]
                 except IndexError:
                     continue
-                if resource_arn in r.lower():
+                if resource_id in r.lower():
                     if r not in unique_roles:
                         unique_roles.append(r)
                         results.append(r)
             elif service == "iam_arn":
-                if k.startswith("arn:") and resource_arn in k.lower():
+                if k.startswith("arn:") and resource_id in k.lower():
                     results.append(k)
             else:
                 list_of_items = json.loads(v)
                 for item in list_of_items:
                     if service == "s3":
                         item = f"arn:aws:s3:::{item}"
-                    if resource_arn in item.lower():
+                    if resource_id in item.lower():
                         results.append(item)
                     if len(results) > max_results:
                         break
@@ -229,8 +259,9 @@ async def handle_aws_resource_type_ahead_request(
     return results[(page - 1) * page_size : page * page_size]
 
 
-class AWSResourceQueryParams(PaginatedRequestQueryParams):
-    resource_arn: str = None
+class AWSResourceQueryParams(TypeAheadPaginatedRequestQueryParams):
+    resource_id: str = None
+    aws_managed_only: bool = False
     page_size: int = 50
 
 
@@ -242,8 +273,6 @@ class AWSResourceTypeAheadHandler(BaseHandler):
         query_params = AWSResourceQueryParams(
             **{k: self.get_argument(k) for k in self.request.arguments}
         )
-        tenant_name = self.ctx.tenant
-
         try:
             self.set_header("Content-Type", "application/json")
             self.write(
@@ -254,7 +283,7 @@ class AWSResourceTypeAheadHandler(BaseHandler):
                         await handle_aws_resource_type_ahead_request(
                             self.user,
                             self.groups,
-                            tenant_name,
+                            self.ctx.db_tenant,
                             service,
                             **query_params.dict(exclude_none=True),
                         ),

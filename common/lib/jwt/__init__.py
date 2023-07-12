@@ -160,7 +160,11 @@ async def validate_and_return_jwt_token(auth_cookie, tenant):
                 "mfa_verification_required", False
             ),
         }
-    except (jwt.ExpiredSignatureError, jwt.InvalidSignatureError, jwt.DecodeError):
+    except (
+        jwt.ExpiredSignatureError,
+        jwt.InvalidSignatureError,
+        jwt.DecodeError,
+    ):
         # Force user to reauth.
         return False
 

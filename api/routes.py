@@ -38,6 +38,7 @@ from api.handlers.v4.self_service.request_types import (
     SelfServiceChangeTypeHandler,
     SelfServiceRequestTypeHandler,
 )
+from api.handlers.v4.self_service.template_ref.aws import AWSResourceTemplateRefHandler
 from api.handlers.v4.self_service.type_ahead.aws import AWSResourceTypeAheadHandler
 from api.handlers.v4.self_service.type_ahead.noq import (
     NoqGroupTypeAheadHandler,
@@ -504,6 +505,10 @@ def make_app(jwt_validator=None):
         (r"/api/v4/providers/definitions/?", IambicProviderDefinitionHandler),
         (r"/api/v4/templates/?", IambicTemplateHandler),
         (r"/api/v4/template-types/?", IambicTemplateTypeHandler),
+        (
+            r"/api/v4/self-service/template-ref/aws/service/(?P<service>[\w-]+)",
+            AWSResourceTemplateRefHandler,
+        ),
         (
             r"/api/v4/self-service/typeahead/aws/service/(?P<service>[\w-]+)",
             AWSResourceTypeAheadHandler,
