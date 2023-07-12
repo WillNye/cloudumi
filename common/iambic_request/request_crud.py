@@ -302,20 +302,25 @@ async def approve_or_apply_request(
     request.updated_at = datetime.datetime.utcnow()
 
     if request.status == "Pending":
-        if (
-            not any(
-                approver_group in request.allowed_approvers
-                for approver_group in approver_groups
-            )
-            or request.status != "Pending"
-            or request.deleted
-        ):
-            raise Unauthorized("Unable to approve this request")
+        not_a_valid_approver = not any(
+            approver_group in request.allowed_approvers
+            for approver_group in approver_groups
+        )
+
+        if not_a_valid_approver or request.status != "Pending" or request.deleted:
+            if not_a_valid_approver:
+                reason = "You are not authorized to approve this request."
+            elif request.status != "Pending":
+                reason = "Cannot approve a request that is not pending."
+            else:
+                reason = "This request has been deleted."
+
+            raise Unauthorized(f"Unable to approve this request. {reason}")
 
         request.approved_by.append(approved_by)
         request.status = "Approved" if not apply_request else "Running"
     elif request.status != "Approved":
-        raise Unauthorized("Unable to apply this request")
+        raise Unauthorized("Unable to apply a request that is not approved.")
     else:
         request.status = "Running"
 

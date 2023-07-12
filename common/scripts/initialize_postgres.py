@@ -28,7 +28,7 @@ async def rebuild_tables():
         {
             "name": "cloudumisamldev_com",
             "user": "admin_user@noq.dev",
-            "group": ["noq_admins@noq.dev"],
+            "groups": ["noq_admins@noq.dev"],
         },
     ]
     async with ASYNC_PG_ENGINE.begin():

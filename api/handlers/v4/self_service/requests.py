@@ -1,5 +1,3 @@
-import sys
-
 import tornado.web
 from pydantic import ValidationError
 
@@ -41,8 +39,7 @@ class IambicRequestValidationHandler(BaseHandler):
             data = await run_request_validation(db_tenant, request_data)
         except (AssertionError, TypeError, ValidationError) as err:
             await log.aexception(
-                str(err),
-                function=f"{__name__}.{sys._getframe().f_code.co_name}",
+                "Unhandled exception while validating request",
                 error=str(err),
                 tenant_name=db_tenant.name,
             )
@@ -56,8 +53,7 @@ class IambicRequestValidationHandler(BaseHandler):
             return
         except Exception as err:
             await log.aexception(
-                str(err),
-                function=f"{__name__}.{sys._getframe().f_code.co_name}",
+                "Unhandled exception while validating user self service request",
                 error=str(err),
                 tenant_name=db_tenant.name,
             )
@@ -154,7 +150,6 @@ class IambicRequestHandler(BaseHandler):
         except Exception as err:
             await log.aexception(
                 str(err),
-                function=f"{__name__}.{sys._getframe().f_code.co_name}",
                 error=str(err),
                 tenant_name=db_tenant.name,
             )
@@ -181,10 +176,6 @@ class IambicRequestHandler(BaseHandler):
         """
         await self.fte_check()
         self.set_header("Content-Type", "application/json")
-        log_data = {
-            "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-            "tenant": self.ctx.db_tenant.name,
-        }
         db_tenant = self.ctx.db_tenant
         user = self.user
         groups = self.groups
@@ -227,7 +218,9 @@ class IambicRequestHandler(BaseHandler):
             self.set_status(400, reason=str(err))
             return
         except Exception as err:
-            await log.aexception(str(err), **log_data)
+            await log.aexception(
+                "Unhandled exception while validating request", tenant=db_tenant.name
+            )
             self.write(
                 WebResponse(
                     errors=[str(err)],
@@ -243,10 +236,6 @@ class IambicRequestHandler(BaseHandler):
         """
         await self.fte_check()
         self.set_header("Content-Type", "application/json")
-        log_data = {
-            "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-            "tenant": self.ctx.db_tenant.name,
-        }
         db_tenant = self.ctx.db_tenant
         user = self.user
         groups = self.groups
@@ -263,8 +252,8 @@ class IambicRequestHandler(BaseHandler):
             )
 
         try:
-            if status.lower() in {"approved", "applied"}:
-                apply_request = status.lower() == "applied"
+            if status.lower() in {"approved", "apply"}:
+                apply_request = status.lower() == "apply"
                 response = await approve_or_apply_request(
                     db_tenant, request_id, user, groups, apply_request
                 )
@@ -297,7 +286,9 @@ class IambicRequestHandler(BaseHandler):
             self.set_status(400, reason=str(err))
             return
         except Exception as err:
-            await log.aexception(str(err), **log_data)
+            await log.aexception(
+                "Unhandled exception while validating request", tenant=db_tenant.name
+            )
             self.write(
                 WebResponse(
                     errors=[str(err)],
@@ -329,6 +320,7 @@ class IambicRequestCommentHandler(BaseHandler):
         except Exception:
             await log.aerror(
                 "Error parsing request body",
+                tenant_name=db_tenant.name,
                 request_body=self.request.body,
                 exc_info=True,
             )
