@@ -176,6 +176,7 @@ application_admin:
 secrets:
   jwt_secret: {token_urlsafe(32)}
   scim:
+    enabled: true
     bearer_token: local_secret_scim_bearer_token
   auth:
     oidc:
@@ -352,6 +353,7 @@ application_admin:
   - noq_admins@noq.dev
 secrets:
   scim:
+    enabled: true
     bearer_token: local_secret_scim_bearer_token
   jwt_secret: {token_urlsafe(32)}
   auth:

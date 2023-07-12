@@ -11,5 +11,6 @@ export const AUTH_DEFAULT_VALUES = {
 
 export enum AUTH_SETTINGS_TABS {
   SAML = 'SAML',
-  OIDC = 'OIDC'
+  OIDC = 'OIDC',
+  SCIM = 'SCIM'
 }

@@ -3918,3 +3918,19 @@ components:
       required:
         - get_user_by_oidc_settings
         - auth
+    SCIMSettings:
+      title: SCIMSettings
+      description: SCIM Settings
+      type: object
+      properties:
+        enabled:
+          title: SCIM is Enabled
+          default: false
+          type: boolean
+    SCIMSettingsDto:
+      title: SCIMSettingsDto
+      description: SCIM Setttings for syncing users and groups from tenants IDP
+      type: object
+      properties:
+        scim:
+          $ref: "#/components/schemas/SCIMSettings"

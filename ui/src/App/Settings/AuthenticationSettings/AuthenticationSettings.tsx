@@ -107,6 +107,14 @@ const AuthenticationSettings = () => {
             >
               <div className={styles.text}>OIDC Settings</div>
             </li>
+            <li
+              className={`${styles.navItem} ${
+                currentTab === AUTH_SETTINGS_TABS.SCIM && styles.isActive
+              }`}
+              onClick={() => setCurrentTab(AUTH_SETTINGS_TABS.SCIM)}
+            >
+              <div className={styles.text}>SCIM</div>
+            </li>
           </ul>
         </nav>
       </div>

@@ -1333,6 +1333,8 @@ class ScimAuthHandler(TornadoRequestHandler):
         self.request_uuid: str = str(uuid.uuid4())
         tenant: str = self.get_tenant_name()
         tenant_config: TenantConfig = TenantConfig.get_instance(tenant)
+        if not tenant_config.scim_enabled:
+            raise tornado.web.HTTPError(403, "SCIM not configured.")
         if not tenant_config.scim_bearer_token:
             raise tornado.web.HTTPError(403, "Bearer token not configured.")
 

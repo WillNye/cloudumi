@@ -41,6 +41,7 @@ from api.handlers.v4.saml_settings.manage_saml_settings import (
     ManageSAMLSettingsCrudHandler,
 )
 from api.handlers.v4.scim.groups import ScimV2GroupHandler, ScimV2GroupsHandler
+from api.handlers.v4.scim.settings import ScimSettingsHandler
 from api.handlers.v4.scim.users import ScimV2UserHandler, ScimV2UsersHandler
 from api.handlers.v4.self_service.request_types import (
     SelfServiceChangeTypeHandler,
@@ -551,6 +552,7 @@ def make_app(jwt_validator=None):
             PasswordResetSelfServiceHandler,
         ),
         (r"/api/v4/verify/?", UnauthenticatedEmailVerificationHandler),
+        (r"/api/v4/scim/settings/?", ScimSettingsHandler),
         (r"/api/v4/scim/v2/Users/?", ScimV2UsersHandler),
         (r"/api/v4/scim/v2/Users/(.*)", ScimV2UserHandler),
         (r"/api/v4/scim/v2/Groups/?", ScimV2GroupsHandler),

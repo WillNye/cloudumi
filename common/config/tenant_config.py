@@ -164,6 +164,10 @@ class TenantConfigBase:
         )
 
     @property
+    def scim_enabled(self):
+        return config.get_tenant_specific_key("scim.enabled", self.tenant, False)
+
+    @property
     def scim_bearer_token(self):
         return config.get_tenant_specific_key("secrets.scim.bearer_token", self.tenant)
 
