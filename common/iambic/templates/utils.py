@@ -58,9 +58,7 @@ async def list_tenant_templates(
         if template_ids:
             stmt = stmt.filter(IambicTemplate.id.in_(template_ids))
         if template_type:
-            stmt = stmt.filter(
-                IambicTemplate.template_type == template_type
-            )
+            stmt = stmt.filter(IambicTemplate.template_type == template_type)
 
         if resource_id or provider_definition_ids or not exclude_template_provider_def:
             stmt = stmt.join(

@@ -477,13 +477,18 @@ async def api_service_service_request_validate(
     )
 
 
-async def api_self_service_request_create(request_data: SelfServiceRequestData = None):
+async def api_self_service_request_create(
+    request_data: SelfServiceRequestData = None,
+) -> dict:
     validated_data = await api_service_service_request_validate(request_data)
-    return generic_api_create_or_update_request(
+    response_data = generic_api_create_or_update_request(
         "post",
         "v4/self-service/requests",
         **validated_data["data"]["request_data"],
     )
+    print("Waiting 30 seconds for the noq-saas-iambic-integrations bot to run")
+    await asyncio.sleep(30)
+    return response_data
 
 
 async def get_or_create_self_service_request() -> Request:
@@ -563,12 +568,25 @@ async def api_self_service_request_approve(request: Optional[Request]):
     API Running
     Celery Running
     """
-    print("Waiting 30 seconds for the noq-saas-iambic-integrations bot to run")
-    await asyncio.sleep(30)
     return generic_api_create_or_update_request(
         "patch",
         f"v4/self-service/requests/{request.id}",
         status="approved",
+    )
+
+
+@default_request_setter()
+async def api_self_service_request_apply(request: Optional[Request]):
+    """
+    Requires:
+    lt --port 8092 --subdomain {your_github_app}
+    API Running
+    Celery Running
+    """
+    return generic_api_create_or_update_request(
+        "patch",
+        f"v4/self-service/requests/{request.id}",
+        status="apply",
     )
 
 
