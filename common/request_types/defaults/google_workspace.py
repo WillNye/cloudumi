@@ -41,7 +41,7 @@ def _get_default_google_workspace_request_access_request_types(
                     field_text="E-Mail",
                     description="The email of the user or group that requires access",
                     allow_none=False,
-                    allow_multiple=True,
+                    allow_multiple=False,
                 )
             ],
             change_template=ChangeTypeTemplate(

@@ -564,6 +564,8 @@ async def get_resource_arn(
     arn_base = "arn:aws:iam::{{ var.account_id }}:"
     path = iambic_template.properties.path
     resource_id = iambic_template.resource_id
-    role_arn = f"{arn_base}:{resource_name}{path}{resource_id}"
-    rtemplate = ImmutableSandboxedEnvironment(loader=BaseLoader()).from_string(role_arn)
+    resource_arn = f"{arn_base}:{resource_name}{path}{resource_id}"
+    rtemplate = ImmutableSandboxedEnvironment(loader=BaseLoader()).from_string(
+        resource_arn
+    )
     return rtemplate.render(var=variables)

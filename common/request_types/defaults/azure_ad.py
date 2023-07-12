@@ -39,7 +39,7 @@ def _get_default_azure_ad_request_access_request_types(
                     field_text="User E-Mail",
                     description="The email of the Azure AD user that requires access.",
                     allow_none=False,
-                    allow_multiple=True,
+                    allow_multiple=False,
                 )
             ],
             change_template=ChangeTypeTemplate(
@@ -65,7 +65,7 @@ def _get_default_azure_ad_request_access_request_types(
                     field_text="Group Name",
                     description="The name of the Azure AD group that requires access.",
                     allow_none=False,
-                    allow_multiple=True,
+                    allow_multiple=False,
                 )
             ],
             change_template=ChangeTypeTemplate(

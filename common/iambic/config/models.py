@@ -153,6 +153,8 @@ class TenantProviderDefinition(Base):
 
     @property
     def variables(self) -> list[Variable]:
+        # This is using IAMbic definitions for `account_id`, `account_name` for parity
+        # with what is in their AWS org. We are not using SaaS-defined definitions here.
         variables = [Variable(**v) for v in self.definition.get("variables", [])]
         if self.provider == "aws" and self.sub_type == "accounts":
             variables.extend(

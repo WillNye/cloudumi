@@ -110,6 +110,7 @@ async def handle_aws_resource_type_ahead_request(
 
     account_id = None
     topic_is_hash = True
+
     resource_id = resource_id.lower()
     max_results = page * page_size
     allowed_accounts_for_viewing_resources = (
