@@ -93,4 +93,4 @@ AWS_MARTKETPLACE_REGION = config.get("_global_.integrations.aws.aws_marketplace_
 if ENVIRONMENT == "prod":
     assert AWS_MARKETPLACE_SUBSCRIPTION_QUEUE
     assert AWS_MARTKETPLACE_PRODUCT_CODE
-    # assert AWS_MARTKETPLACE_REGION
+    assert AWS_MARTKETPLACE_REGION
