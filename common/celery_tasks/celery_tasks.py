@@ -3279,7 +3279,7 @@ schedule = {
     "handle_aws_marketplace_metering_task": {
         "task": "common.celery_tasks.celery_tasks.handle_aws_marketplace_metering_task",
         "options": {"expires": 3600},
-        "schedule": schedule_hour,
+        "schedule": get_schedule(30),
     },
 }
 
