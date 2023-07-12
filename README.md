@@ -40,10 +40,6 @@ Each target has a name that uniquely identifies a build target. The path disambi
 - Ensure you have a python environment with version 3.11+
 - Use the most advanced and doubtlessly the most superior IDE available to you: VSCODE. We have created deployment profiles, which are contained in the git repo. You may access them here by clicking the icon on the left pane with the play button and the bug on it and then the drop down towards the top of your IDE.
 - All dependencies are stored in `requirements.lock` in the root of the mono repo
-- These dependencies are used by bazel in establishing an hermetic build system - all requirements are cached in a central repository.
-- We use `pip-compile --resolver=backtracking --allow-unsafe --strip-extras --output-file requirements.lock $( find . -type f \( -name "requirements.in" -o -name "requirements-test.in" \))` to generate the set of dependencies by parsing all `requirements.in` and `requirements-test.in` files contained in all the sub-projects of the mono repo.
-- Because `pip-compile` optimistically caches all depdendencies, re-running the command will not update all python dependencies, but just look for newly added or freshly removed dependencies
-- To upgrade all dependencies, remove the `requirements.lock` file and re-run the `pip-compile --allow-unsafe --strip-extras --output-file requirements.lock $( find . -type f \( -name "requirements.in" -o -name "requirements-test.in" \))` command
 
 # Setup your dev environment
 
@@ -62,6 +58,34 @@ Each target has a name that uniquely identifies a build target. The path disambi
 
 - Make sure you've [setup your environment](https://perimy.atlassian.net/wiki/spaces/MAIN/pages/41648129/Development+Environment+Setup)
 - Navigate to https://cloudumidev.com
+
+## Managing Python Dependencies
+
+This project uses `pip-tools` to manage the Python dependencies. `pip-tools` allows us to specify our high-level requirements, and it then takes care of figuring out which specific versions of each package we should use in order to keep everything compatible. This can greatly simplify the process of adding, updating, or removing dependencies.
+
+We have a few helpful `make` commands for managing the `pip-tools` dependencies, all of which are included in our `Makefile`.
+
+### Updating Requirements
+
+**Command: `make python_requirements_update`**
+
+When adding a new package to the project, specify the package in the appropriate `requirements.in` or `requirements-test.in` file, then run this command. It will update the `requirements.lock` file based on all the `requirements.in` and `requirements-test.in` files present in the project. This is necessary to ensure the new package and its dependencies are locked to specific, compatible versions.
+
+### Upgrading All Packages
+
+**Command: `make python_requirements_upgrade_all`**
+
+To upgrade all Python packages to their latest supported versions, use this command. This will update all packages listed in the `requirements.lock` file. It's a good idea to do this periodically to keep up to date with the latest features and security fixes. However, be sure to thoroughly test your project after running this command, as major version upgrades may include breaking changes.
+
+### Upgrading a Specific Package
+
+**Command: `make python_requirements_upgrade_package PACKAGE_NAME=<PACKAGE_NAME>`**
+
+To upgrade a specific Python package to its latest version, use this command. Replace `<PACKAGE_NAME>` with the name of the package you wish to upgrade. This command will only upgrade the specified package and its dependencies, leaving all other packages untouched. Use this command if a specific package has a new feature or fix you need, and you don't want to upgrade all packages at this time.
+
+For example, to upgrade the `structlog` package, you would run: `make python_requirements_upgrade_package PACKAGE_NAME=structlog`
+
+Please refer to the `pip-tools` [documentation](https://github.com/jazzband/pip-tools) for more detailed information about managing Python dependencies with `pip-tools`.
 
 ## Profiling
 
