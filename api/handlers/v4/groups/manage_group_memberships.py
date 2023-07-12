@@ -160,7 +160,7 @@ class ManageGroupMembershipsHandler(BaseAdminHandler):
                     messages.append(
                         {
                             "type": "error",
-                            "message": "Invalid group {group_name}",
+                            "message": f"Invalid group {group_name}",
                             "group_name": group_name,
                         }
                     )
