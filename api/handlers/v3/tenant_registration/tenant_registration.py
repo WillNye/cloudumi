@@ -476,8 +476,12 @@ class TenantRegistrationHandler(TornadoRequestHandler):
 
         email = data.get("email")
         registration_code = data.get("registration_code")
+        first_name = data.get("first_name")
+        last_name = data.get("last_name")
 
-        return_data = await create_tenant(self, email, registration_code)
+        return_data = await create_tenant(
+            self, email, first_name, last_name, registration_code=registration_code
+        )
 
         log_data["email"] = data["email"]
         dev_mode = config.get("_global_.development")
