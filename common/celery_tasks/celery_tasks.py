@@ -76,7 +76,11 @@ from common.lib.assume_role import boto3_cached_conn
 from common.lib.aws.access_advisor import AccessAdvisor
 from common.lib.aws.cached_resources.iam import store_iam_managed_policies_for_tenant
 from common.lib.aws.cloudtrail import CloudTrail
-from common.lib.aws.marketplace import handle_aws_marketplace_queue, meter_aws_customer
+from common.lib.aws.marketplace import (
+    handle_aws_marketplace_metering,
+    handle_aws_marketplace_queue,
+    meter_aws_customer,
+)
 from common.lib.aws.s3 import list_buckets
 from common.lib.aws.sanitize import sanitize_session_name
 from common.lib.aws.sns import list_topics
@@ -3049,11 +3053,27 @@ def handle_aws_marketplace_subscription_queue() -> dict:
 
 
 @app.task(soft_time_limit=600, **default_celery_task_kwargs)
+def handle_aws_marketplace_metering_task() -> dict:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    log_data = {
+        "function": function,
+        "message": "Collect last bill for billable AWS Marketplace customers",
+    }
+    if not config_globals.AWS_MARKETPLACE_SUBSCRIPTION_QUEUE:
+        log_data["message"] = "AWS Marketplace Queue is not configured"
+        return log_data
+
+    log.debug(log_data)
+    res = async_to_sync(handle_aws_marketplace_metering)()
+    return {**log_data, "response": res}
+
+
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def handle_aws_marketplace_collect_last_bill(aws_customer_identifier: str) -> dict:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
-        "message": "Collect last bill for AWS customer",
+        "message": "Collect last bill for AWS Marketplace customer",
         "aws_customer_identifier": aws_customer_identifier,
     }
 
@@ -3082,6 +3102,7 @@ run_tasks_normally = not bool(
 time_to_start = datetime.utcnow() + timedelta(minutes=1)
 dev_schedule = crontab(hour=time_to_start.hour, minute=time_to_start.minute)
 schedule_minute = timedelta(minutes=1)
+schedule_hour = timedelta(minutes=60)
 schedule_5_minutes = timedelta(minutes=5) if run_tasks_normally else dev_schedule
 schedule_15_seconds = timedelta(seconds=15) if run_tasks_normally else dev_schedule
 
@@ -3254,6 +3275,11 @@ schedule = {
         "task": "common.celery_tasks.celery_tasks.handle_aws_marketplace_subscription_queue",
         "options": {"expires": 180},
         "schedule": schedule_minute,
+    },
+    "handle_aws_marketplace_metering_task": {
+        "task": "common.celery_tasks.celery_tasks.handle_aws_marketplace_metering_task",
+        "options": {"expires": 3600},
+        "schedule": schedule_hour,
     },
 }
 
