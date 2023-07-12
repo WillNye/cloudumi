@@ -98,6 +98,8 @@ def update_iambic_template_with_change(
     """
     split_property_attr = template_property.split(".")
     attr_name = split_property_attr[0]
+    if isinstance(iambic_template_instance, list):
+        iambic_template_instance = iambic_template_instance[0]
 
     if template_attr := iambic_template_instance.__fields__.get(attr_name):
         # Determine the class of the attribute
