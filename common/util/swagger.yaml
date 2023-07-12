@@ -3675,7 +3675,7 @@ components:
           description: Only required if command=reset
     SecretOIDCSettings:
       title: SecretOIDCSettings
-      description: BaseModel adds CamelCase aliases to a Pydantic model
+      description: Secrets for OIDC providers
       type: object
       properties:
         client_id:
@@ -3688,7 +3688,7 @@ components:
           type: string
     SecretAuthSettings:
       title: SecretAuthSettings
-      description: BaseModel adds CamelCase aliases to a Pydantic model
+      description: Secrets for auth providers
       type: object
       properties:
         oidc:
@@ -3698,7 +3698,7 @@ components:
             - $ref: "#/components/schemas/SecretOIDCSettings"
     GetUserByOIDCSettings:
       title: GetUserByOIDCSettings
-      description: BaseModel adds CamelCase aliases to a Pydantic model
+      description: OIDC settings
       type: object
       properties:
         metadata_url:
@@ -3753,7 +3753,7 @@ components:
           type: string
     JWTSAMLSettings:
       title: JWTSAMLSettings
-      description: BaseModel adds CamelCase aliases to a Pydantic model
+      description: JWT settings for SAML provider
       type: object
       properties:
         expiration_hours:
@@ -3770,7 +3770,7 @@ components:
           type: string
     AttributesSAMLSettings:
       title: AttributesSAMLSettings
-      description: BaseModel adds CamelCase aliases to a Pydantic model
+      description: SAML's attributes settings
       type: object
       properties:
         user:
@@ -3787,7 +3787,7 @@ components:
           type: string
     BindingSAMLSettings:
       title: BindingSAMLSettings
-      description: BaseModel adds CamelCase aliases to a Pydantic model
+      description: SAML Binding
       type: object
       properties:
         binding:
@@ -3801,7 +3801,7 @@ components:
         - url
     IdpSAMLSettings:
       title: IdpSAMLSettings
-      description: BaseModel adds CamelCase aliases to a Pydantic model
+      description: Fine grain IDP SAML settings
       type: object
       properties:
         entityId:
@@ -3823,7 +3823,7 @@ components:
         - x509cert
     SpSAMLSettings:
       title: SpSAMLSettings
-      description: BaseModel adds CamelCase aliases to a Pydantic model
+      description: Fine grain SP SAML settings
       type: object
       properties:
         Assertionconsumerservice:
@@ -3839,7 +3839,7 @@ components:
           type: string
     GetUserBySAMLSettings:
       title: GetUserBySAMLSettings
-      description: BaseModel adds CamelCase aliases to a Pydantic model
+      description: SAML settings
       type: object
       properties:
         jwt:
@@ -3864,7 +3864,7 @@ components:
           type: boolean
     AuthSettings:
       title: AuthSettings
-      description: BaseModel adds CamelCase aliases to a Pydantic model
+      description: Authentication Settings for each provider.
       type: object
       properties:
         get_user_by_oidc:
