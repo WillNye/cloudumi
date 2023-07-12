@@ -421,7 +421,7 @@ humanfriendly==10.0
     # via -r ./common/requirements.in
 humanize==4.6.0
     # via flower
-iambic-core==0.9.8
+iambic-core==0.10.7
     # via -r ./common/iambic/requirements.in
 identify==2.5.24
     # via pre-commit
@@ -1020,7 +1020,7 @@ stevedore==5.1.0
     # via bandit
 stringcase==1.2.0
     # via iambic-core
-structlog<23.0.0 # Temporary, so I can get around a hurdle with the latest version
+structlog==23.1.0
     # via
     #   -r ./common/config/requirements.in
     #   iambic-core
