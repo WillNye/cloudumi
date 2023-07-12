@@ -14,7 +14,7 @@ class TenantConfig:
     _instances: dict = {}
 
     @classmethod
-    def get_instance(cls, tenant: str):
+    def get_instance(cls, tenant: str) -> "TenantConfigBase":
         if tenant not in cls._instances:
             cls._instances[tenant] = TenantConfigBase(tenant)
         return cls._instances[tenant]

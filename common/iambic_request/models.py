@@ -29,6 +29,7 @@ log = config.get_logger(__name__)
 RequestStatus = ENUM(
     "Pending",
     "Pending in Git",
+    "Applied",
     "Approved",
     "Rejected",
     "Expired",
@@ -152,18 +153,13 @@ class BasePullRequest(PydanticBaseModel):
         description: str,
         template_changes: list[IambicTemplateChange],
         request_notes: Optional[str] = None,
-        reuse_branch_repo: bool = False,
     ):
         await self._set_repo(use_request_branch=False)
 
         self.title = f"Request on behalf of {self.requested_by}"
         self.description = description
         branch_name = await self.iambic_repo.create_branch(
-            self.request_id,
-            self.requested_by,
-            template_changes,
-            request_notes,
-            reuse_branch_repo=reuse_branch_repo,
+            self.request_id, self.requested_by, template_changes, request_notes
         )
         await self._create_request()
         return branch_name
@@ -195,15 +191,15 @@ class BasePullRequest(PydanticBaseModel):
                 template_changes, updated_by, request_notes, reset_branch=reset_branch
             )
 
-    async def _approve_request(self, approved_by: str):
+    async def _apply_request(self, approved_by: str):
         raise NotImplementedError
 
-    async def approve_request(self, approved_by: Union[str, list[str]]):
+    async def apply_request(self, approved_by: Union[str, list[str]]):
         if not self.pr_obj:
             await self.load_pr()
 
         if self.mergeable:
-            await self._approve_request(approved_by)
+            await self._apply_request(approved_by)
         elif self.mergeable and not self.merge_on_approval:
             # TODO: Return something to let user know they need to merge the PR manually
             pass
@@ -465,7 +461,7 @@ class GitHubPullRequest(BasePullRequest):
     async def _merge_request(self, approved_by: Union[str, list[str]]):
         await self.add_comment("iambic apply", approved_by)
 
-    async def _approve_request(self, approved_by: Union[str, list[str]]):
+    async def _apply_request(self, approved_by: Union[str, list[str]]):
         await self.sign_and_comment("iambic approve", approved_by)
 
     async def _reject_request(self):

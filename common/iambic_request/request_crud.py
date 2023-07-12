@@ -168,14 +168,8 @@ async def create_request(
     slack_channel_id: Optional[str] = None,
     slack_message_id: Optional[str] = None,
 ):
-    file_paths_being_changed = [change.file_path for change in changes]
     request_id = str(uuid.uuid4())
-    request_pr = await get_iambic_pr_instance(
-        tenant,
-        request_id,
-        created_by,
-        file_paths_being_changed=file_paths_being_changed,
-    )
+    request_pr = await get_iambic_pr_instance(tenant, request_id, created_by)
 
     request_link = (
         f"{config.get_tenant_specific_key('url', tenant.name)}/requests/{request_id}"
@@ -187,8 +181,9 @@ async def create_request(
         f"| **Created by** | {created_by} |\n"
         f"| **Justification**  | {justification} |\n"
     )
+
     branch_name = await request_pr.create_request(
-        comment, changes, request_notes=request_notes, reuse_branch_repo=True
+        comment, changes, request_notes=request_notes
     )
 
     request = Request(
@@ -240,7 +235,7 @@ async def update_request(
                 for updater_group in updater_groups
             )
         )
-        or request.status != "Pending"
+        or request.status not in {"Pending", "Approved"}
         or request.deleted
     ):
         raise Unauthorized("Unable to update this request")
@@ -256,6 +251,9 @@ async def update_request(
         request_notes=request_notes,
     )
 
+    if request.status == "Approved":
+        request.status = "Pending"
+        request.approved_by = []
     request.justification = justification
     request.request_notes = request_notes
     request.updated_by = updated_by
@@ -272,11 +270,12 @@ async def update_request(
     }
 
 
-async def approve_request(
+async def approve_or_apply_request(
     tenant: Tenant,
     request_id: Union[str, uuid.UUID],
     approved_by: str,
     approver_groups: list[str],
+    apply_request: bool,
 ):
     """
     Approve as bot
@@ -293,38 +292,44 @@ async def approve_request(
     Consume message
     """
     request = await get_request(tenant.id, request_id)
+    request.updated_by = approved_by
+    request.updated_at = datetime.datetime.utcnow()
 
-    if (
-        not any(
-            approver_group in request.allowed_approvers
-            for approver_group in approver_groups
-        )
-        or request.status != "Pending"
-        or request.deleted
-    ):
-        raise Unauthorized("Unable to approve this request")
+    if request.status == "Pending":
+        if (
+            not any(
+                approver_group in request.allowed_approvers
+                for approver_group in approver_groups
+            )
+            or request.status != "Pending"
+            or request.deleted
+        ):
+            raise Unauthorized("Unable to approve this request")
 
-    request.status = "Running"
+        request.approved_by.append(approved_by)
+        request.status = "Approved" if not apply_request else "Running"
+    elif request.status != "Approved":
+        raise Unauthorized("Unable to apply this request")
+    else:
+        request.status = "Running"
+
     request_pr = await get_iambic_pr_instance(
         tenant, request_id, request.created_by, request.pull_request_id
     )
     await request_pr.load_pr()
 
-    if request_pr.mergeable:
-        await request_pr.approve_request(approved_by)
+    if request_pr.mergeable and apply_request:
+        await request_pr.apply_request(approved_by)
     elif request_pr.closed_at and not request_pr.merged_at:
         # The PR has already been closed (Rejected) but the status was not updated in the DB
         request.status = "Rejected"
         # TODO: Handle this
         # request.rejected_by = ?
     elif request_pr.merged_at:
-        # TODO: Handle this
         # The PR has already been merged but the status was not updated in the DB
+        request.status = "Applied"
+        # TODO: Handle this
         # request.approved_by.append(?)
-        pass
-
-    if request.status != "Rejected":
-        request.approved_by.append(approved_by)
 
     await request.write()
     response = await get_request_response(request, request_pr)
