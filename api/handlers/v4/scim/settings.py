@@ -78,6 +78,7 @@ class ScimSettingsHandler(BaseAdminHandler):
         new_secret = str(uuid.uuid4())
 
         set_in(dynamic_config, "scim", upsert.get("scim", False))
+        # TODO: Only set bearer token if SCIM enabled
         set_in(dynamic_config, "secrets.scim.bearer_token", new_secret)
 
         await ddb.update_static_config_for_tenant(
