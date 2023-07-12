@@ -1013,8 +1013,10 @@ stevedore==5.1.0
     # via bandit
 stringcase==1.2.0
     # via iambic-core
-structlog==22.3.0
-    # via iambic-core
+structlog==23.1.0
+    # via
+    #   -r ./common/config/requirements.in
+    #   iambic-core
 tabulate==0.9.0
     # via checkov
 tenacity==8.2.2
