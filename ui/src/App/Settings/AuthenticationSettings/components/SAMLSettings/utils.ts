@@ -5,7 +5,7 @@ export const parseSAMLFormData = settings => {
         expiration_hours: 2
       },
       attributes: {
-        user: settings.attributes.user,
+        user: settings.attributes.email,
         groups: settings.attributes.groups,
         email: settings.attributes.email
       },
