@@ -39,8 +39,8 @@ async def create_tenant(
     email: str,
     first_name: str,
     last_name: str,
-    registation_code=None,
-    registation_code_required=True,
+    registration_code=None,
+    registration_code_required=True,
 ):
     log_data = {"function": "create_tenant", "email": email}
 
@@ -86,8 +86,8 @@ async def create_tenant(
         "noq_tenant_{}".format(email).encode()
     ).hexdigest()[0:20]
 
-    if registation_code_required and not dev_mode:
-        if registation_code != valid_registration_code:
+    if registration_code_required and not dev_mode:
+        if registration_code != valid_registration_code:
             request.set_status(400)
             request.write(
                 {
@@ -349,7 +349,7 @@ class TenantRegistrationAwsMarketplaceFormSubmissionHandler(TornadoRequestHandle
             contact_email,
             contact_person_first_name,
             contact_person_last_name,
-            registation_code_required=False,
+            registration_code_required=False,
         )
 
         if domain := return_data.get("domain"):
