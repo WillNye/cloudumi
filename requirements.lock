@@ -1020,7 +1020,7 @@ stevedore==5.1.0
     # via bandit
 stringcase==1.2.0
     # via iambic-core
-structlog==23.1.0
+structlog<23.0.0 # Temporary, so I can get around a hurdle with the latest version
     # via
     #   -r ./common/config/requirements.in
     #   iambic-core
