@@ -172,6 +172,16 @@ class TenantConfigBase:
         return config.get_tenant_specific_key("secrets.scim.bearer_token", self.tenant)
 
     @property
+    def scim_settings(self) -> dict[str, Any]:
+        scim_enabled = self.scim_enabled
+        scim_url = self.tenant_url + "/api/v4/scim/v2"
+
+        return {
+            "scim_enabled": scim_enabled,
+            "scim_url": scim_url,
+        }
+
+    @property
     def saml_key_passphrase(self):
         return self.jwt_secret.encode("utf-8")
 

@@ -1,5 +1,3 @@
-import * as Yup from 'yup';
-
 export const AUTH_DEFAULT_VALUES = {
   auth: {
     force_redirect_to_identity_provider: false,

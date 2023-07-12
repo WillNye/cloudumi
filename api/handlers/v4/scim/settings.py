@@ -19,18 +19,12 @@ class ScimSettingsHandler(BaseAdminHandler):
 
         tenant_config = TenantConfig.get_instance(self.ctx.tenant)
 
-        scim_enabled = tenant_config.scim_enabled
-        scim_url = tenant_config.tenant_url + "/api/v4/scim/v2"
-
         self.write(
             WebResponse(
                 status="success",
                 status_code=200,
                 reason=None,
-                data={
-                    "scim_enabled": scim_enabled,
-                    "scim_url": scim_url,
-                },
+                data=tenant_config.scim_settings,
             ).dict(exclude_unset=True, exclude_none=False)
         )
 
@@ -77,9 +71,9 @@ class ScimSettingsHandler(BaseAdminHandler):
 
         new_secret = str(uuid.uuid4())
 
-        set_in(dynamic_config, "scim", upsert.get("scim", False))
-        # TODO: Only set bearer token if SCIM enabled
-        set_in(dynamic_config, "secrets.scim.bearer_token", new_secret)
+        if scim := upsert.get("scim", False):
+            set_in(dynamic_config, "secrets.scim.bearer_token", new_secret)
+        set_in(dynamic_config, "scim", scim)
 
         await ddb.update_static_config_for_tenant(
             yaml.dump(dynamic_config),

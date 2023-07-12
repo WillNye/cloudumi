@@ -96,6 +96,7 @@ export interface GetUserByOidcSettings {
 export interface Auth {
   get_user_by_oidc: boolean;
   get_user_by_saml: boolean;
+  scim_enabled: boolean;
   extra_auth_cookies?: string[] | null;
   force_redirect_to_identity_provider: boolean;
   challenge_url?: { enabled: boolean };

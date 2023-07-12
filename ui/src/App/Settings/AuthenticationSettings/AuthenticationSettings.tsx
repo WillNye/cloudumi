@@ -12,6 +12,7 @@ import {
 } from 'core/API/ssoSettings';
 import { toast } from 'react-toastify';
 import { invalidateSsoQueries } from './components/utils';
+import SCIMSettings from './components/SCIMSettings/SCIMSettings';
 
 const AuthenticationSettings = () => {
   const [currentTab, setCurrentTab] = useState<AUTH_SETTINGS_TABS>(
@@ -65,6 +66,10 @@ const AuthenticationSettings = () => {
       );
     }
 
+    if (currentTab === AUTH_SETTINGS_TABS.SCIM) {
+      return <SCIMSettings isFetching={isLoading} />;
+    }
+
     return <Fragment />;
   }, [currentTab, isLoading, authSettings]);
 
@@ -73,6 +78,8 @@ const AuthenticationSettings = () => {
       setCurrentTab(AUTH_SETTINGS_TABS.SAML);
     } else if (authSettings?.get_user_by_oidc) {
       setCurrentTab(AUTH_SETTINGS_TABS.OIDC);
+    } else if (authSettings?.scim_enabled) {
+      setCurrentTab(AUTH_SETTINGS_TABS.SCIM);
     }
   }, [authSettings]);
 

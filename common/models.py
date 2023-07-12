@@ -1435,6 +1435,7 @@ class ChallengeSamlSettings(BaseModel):
 class AuthSettings(BaseModel):
     get_user_by_oidc: Optional[bool] = Field(False, title="Get User By Oidc")
     get_user_by_saml: Optional[bool] = Field(False, title="Get User By Saml")
+    scim_enabled: Optional[bool] = Field(False, title="SCIM enabled")
     extra_auth_cookies: Optional[List[str]] = Field([], title="Extra Auth Cookies")
     force_redirect_to_identity_provider: Optional[bool] = Field(
         False, title="Force Redirect To Identity Provider"

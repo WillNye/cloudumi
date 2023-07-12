@@ -9,7 +9,7 @@ interface ScimSettingsData {
   scim_secret?: string;
 }
 
-const SCIMSettings: React.FC = () => {
+const SCIMSettings = ({ isFetching }) => {
   const [scimData, setScimData] = useState<ScimSettingsData | null>(null);
 
   useEffect(() => {
