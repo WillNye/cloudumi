@@ -1,5 +1,6 @@
 import json
 from json import JSONDecodeError
+from typing import Union
 from urllib.parse import urljoin
 
 import requests
@@ -16,7 +17,7 @@ def sanitize_endpoint(endpoint: str) -> str:
     return endpoint
 
 
-def handle_response(response):
+def handle_response(response) -> Union[dict, None]:
     if not response.ok:
         print(response.text)
         response.raise_for_status()
@@ -30,7 +31,7 @@ def handle_response(response):
             return
 
 
-def generic_api_get_request(endpoint: str, **kwargs):
+def generic_api_get_request(endpoint: str, **kwargs) -> dict:
     response = requests.get(
         urljoin(TENANT_SUMMARY.tenant_url, sanitize_endpoint(endpoint)),
         cookies=TENANT_SUMMARY.cookies,
@@ -39,7 +40,9 @@ def generic_api_get_request(endpoint: str, **kwargs):
     return handle_response(response)
 
 
-def generic_api_create_or_update_request(http_method: str, endpoint: str, **kwargs):
+def generic_api_create_or_update_request(
+    http_method: str, endpoint: str, **kwargs
+) -> dict:
     # Handles POST, PUT, PATCH
     response = getattr(requests, http_method)(
         urljoin(TENANT_SUMMARY.tenant_url, sanitize_endpoint(endpoint)),

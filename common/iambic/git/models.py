@@ -204,7 +204,8 @@ class IambicRepo:
             try:
                 await run_command(
                     "git",
-                    "worktree" "add",
+                    "worktree",
+                    "add",
                     "--track",
                     f"-b{self.request_branch_name}",
                     self.request_file_path,
@@ -216,7 +217,8 @@ class IambicRepo:
                     raise
                 await run_command(
                     "git",
-                    "worktree" "add",
+                    "worktree",
+                    "add",
                     "-f",
                     self.request_file_path,
                     self.request_branch_name,

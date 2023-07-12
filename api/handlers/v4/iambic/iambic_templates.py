@@ -29,28 +29,32 @@ class IambicTemplateHandler(BaseHandler):
             query_params = IambicTemplateQueryParams(
                 **{k: self.get_argument(k) for k in self.request.arguments}
             )
+            data = []
+            for item in await list_tenant_templates(
+                tenant_id,
+                exclude_template_provider_def=False,
+                **query_params.dict(exclude_none=True),
+            ):
+                resource_ids = set(
+                    tpd.resource_id for tpd in item.provider_definition_refs
+                )
+                for resource_id in resource_ids:
+                    data.append(
+                        {
+                            "id": item.id,
+                            "resource_id": resource_id,
+                            "resource_type": item.resource_type,
+                            "template_type": item.template_type,
+                            "provider": item.provider,
+                        }
+                    )
+
             self.set_header("Content-Type", "application/json")
             self.write(
                 WebResponse(
                     success="success",
                     status_code=200,
-                    **get_paginated_typeahead_response(
-                        [
-                            {
-                                "id": item.id,
-                                "resource_id": item.resource_id,
-                                "resource_type": item.resource_type,
-                                "template_type": item.template_type,
-                                "provider": item.provider,
-                            }
-                            for item in (
-                                await list_tenant_templates(
-                                    tenant_id, **query_params.dict(exclude_none=True)
-                                )
-                            )
-                        ],
-                        query_params,
-                    ),
+                    **get_paginated_typeahead_response(data, query_params),
                 ).json(exclude_unset=True, exclude_none=True)
             )
         except (ValidationError, AssertionError) as e:

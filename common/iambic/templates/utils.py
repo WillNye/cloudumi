@@ -41,7 +41,8 @@ async def list_tenant_templates(
     template_type: Optional[str] = None,
     resource_id: Optional[str] = None,
     provider_definition_ids: Optional[list[str]] = None,
-    summary_only: Optional[bool] = True,
+    exclude_template_provider_def: Optional[bool] = True,
+    exclude_template_content: Optional[bool] = True,
     page_size: Optional[int] = None,
     page: Optional[int] = 1,
 ) -> list[IambicTemplate]:
@@ -51,15 +52,15 @@ async def list_tenant_templates(
         ), "template_type query param must be provided if resource_id is provided"
 
     async with ASYNC_PG_SESSION() as session:
+        options = []
+
         stmt = select(IambicTemplate).filter(IambicTemplate.tenant_id == tenant_id)
         if template_ids:
             stmt = stmt.filter(IambicTemplate.id.in_(template_ids))
         if template_type:
-            stmt = stmt.filter(
-                IambicTemplate.template_type == template_type
-            )  # noqa: E712
+            stmt = stmt.filter(IambicTemplate.template_type == template_type)
 
-        if resource_id or provider_definition_ids:
+        if resource_id or provider_definition_ids or not exclude_template_provider_def:
             stmt = stmt.join(
                 IambicTemplateProviderDefinition,
                 IambicTemplateProviderDefinition.iambic_template_id
@@ -74,7 +75,10 @@ async def list_tenant_templates(
                         f"%{resource_id}%"
                     ),
                 )
-            )  # noqa: E712
+            )
+
+        if not exclude_template_provider_def:
+            options.append(contains_eager(IambicTemplate.provider_definition_refs))
 
         if provider_definition_ids:
             stmt = stmt.filter(
@@ -83,11 +87,15 @@ async def list_tenant_templates(
                 )
             )
 
-        if not summary_only:
+        if not exclude_template_content:
             stmt = stmt.join(
                 IambicTemplateContent,
                 IambicTemplateContent.iambic_template_id == IambicTemplate.id,
-            ).options(contains_eager(IambicTemplate.content))
+            )
+            options.append(contains_eager(IambicTemplate.content))
+
+        if options:
+            stmt = stmt.options(*options)
 
         if template_type:
             stmt = stmt.order_by(IambicTemplate.resource_id)
@@ -100,10 +108,7 @@ async def list_tenant_templates(
             stmt = stmt.slice((page - 1) * page_size, page * page_size)
 
         items = await session.execute(stmt)
-
-    if resource_id or provider_definition_ids or not summary_only:
         return items.scalars().unique().all()
-    return items.scalars().all()
 
 
 def get_template_str_value_for_provider_definition(

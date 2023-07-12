@@ -69,7 +69,7 @@ async def get_referenced_templates_map(
 
     if template_ids:
         templates = await list_tenant_templates(
-            tenant_id, template_ids=template_ids, summary_only=False
+            tenant_id, template_ids=template_ids, exclude_template_content=False
         )
         for template in templates:
             provider_ref = TRUSTED_PROVIDER_RESOLVER_MAP[template.provider]
@@ -605,9 +605,9 @@ async def get_iambic_pr_instance(
     requested_by: str,
     pull_request_id: int = None,
     file_paths_being_changed: Optional[list[str]] = None,
+    use_request_branch: bool = True,
 ):
     iambic_repo_details: IambicRepoDetails = await get_iambic_repo(tenant.name)
-
     try:
         iambic_repo = await IambicRepo.setup(
             tenant,
@@ -615,7 +615,7 @@ async def get_iambic_pr_instance(
             request_id,
             requested_by,
             file_paths_being_changed=file_paths_being_changed,
-            use_request_branch=True,
+            use_request_branch=use_request_branch,
         )
     except AttributeError:
         return None

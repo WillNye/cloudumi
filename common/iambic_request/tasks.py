@@ -48,7 +48,7 @@ async def handle_tenant_iambic_github_event(
         else:
             request.status = "Pending in Git"
     elif is_merged:
-        request.status = "Approved"
+        request.status = "Applied"
         approved_by = [approver for approver in approved_by if "[bot]" not in approver]
         request.approved_by = list(set(request.approved_by + approved_by))
         await request_pr.remove_branch(pull_default=True)
