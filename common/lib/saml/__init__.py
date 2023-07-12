@@ -2,6 +2,7 @@ import datetime
 import sys
 import urllib.error
 from typing import TYPE_CHECKING, Any
+from urllib.request import Request
 
 import tornado.httputil
 from cryptography import x509
@@ -96,8 +97,9 @@ async def init_saml_auth(request: dict[str, Any], tenant: str):
     idp_metadata = {}
     if idp_metadata_url:
         try:
+            # https://sso.jumpcloud.com/saml2/metadata/6384ae55ed6c5345db399290
             idp_metadata = OneLogin_Saml2_IdPMetadataParser.parse_remote(
-                idp_metadata_url
+                Request(url=idp_metadata_url, headers={"User-Agent": "Mozilla/5.0"})
             )
         except urllib.error.HTTPError as e:
             if e.code == 403:
