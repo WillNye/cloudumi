@@ -38,7 +38,11 @@ def upgrade() -> None:
         """CREATE TYPE "ProviderDefinitionFieldEnum" AS ENUM('Allow One', 'Allow Multiple', 'Allow None');"""
     )
     op.add_column(
-        "request_type",
+        "typeahead_field_helper",
+        sa.Column("iambic_template_type", sa.String(), nullable=True),
+    )
+    op.add_column(
+        "change_type",
         sa.Column(
             "provider_definition_field",
             postgresql.ENUM(
@@ -51,11 +55,28 @@ def upgrade() -> None:
             nullable=True,
         ),
     )
-    op.add_column(
-        "typeahead_field_helper",
-        sa.Column("iambic_template_type", sa.String(), nullable=True),
-    )
     op.execute("""ALTER TYPE "FieldTypeEnum" ADD VALUE 'TypeAheadTemplateRef';""")
+
+    # Migrating apply_attr_behavior and template_attribute fields from request_type to change_type
+    op.add_column(
+        "change_type", sa.Column("template_attribute", sa.String(), nullable=True)
+    )
+    op.add_column(
+        "change_type",
+        sa.Column(
+            "apply_attr_behavior",
+            postgresql.ENUM(
+                "Append",
+                "Merge",
+                "Replace",
+                name="ApplyAttrBehaviorEnum",
+                create_type=False,
+            ),
+            nullable=True,
+        ),
+    )
+    op.drop_column("request_type", "apply_attr_behavior")
+    op.drop_column("request_type", "template_attribute")
 
 
 def downgrade() -> None:
@@ -67,9 +88,8 @@ def downgrade() -> None:
         "itpd_tenant_resource_idx", table_name="iambic_template_provider_definition"
     )
     op.drop_column("iambic_template_provider_definition", "secondary_resource_id")
-
     op.drop_column("typeahead_field_helper", "iambic_template_type")
-    op.drop_column("request_type", "provider_definition_field")
+    op.drop_column("change_type", "provider_definition_field")
     op.execute("""DROP TYPE "ProviderDefinitionFieldEnum";""")
 
     # Reverting FieldTypeEnum
@@ -81,3 +101,22 @@ def downgrade() -> None:
         """ALTER TABLE change_field ALTER COLUMN change_type TYPE "FieldTypeEnum" USING "status::text::FieldTypeEnum";"""
     )
     op.execute("""DROP TYPE "FieldTypeEnumOld";""")
+
+    # Reverting field definition migration from request_type to change_type
+    op.add_column(
+        "request_type",
+        sa.Column(
+            "template_attribute", sa.VARCHAR(), autoincrement=False, nullable=False
+        ),
+    )
+    op.add_column(
+        "request_type",
+        sa.Column(
+            "apply_attr_behavior",
+            postgresql.ENUM("Append", "Merge", "Replace", name="ApplyAttrBehaviorEnum"),
+            autoincrement=False,
+            nullable=False,
+        ),
+    )
+    op.drop_column("change_type", "apply_attr_behavior")
+    op.drop_column("change_type", "template_attribute")
