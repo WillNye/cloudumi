@@ -15,6 +15,7 @@ pynamodax
 psycopg2
 psycopg2-binary
 slack_bolt
+tldextract
 workos
 types-ujson
 types-pytz

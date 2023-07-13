@@ -221,6 +221,7 @@ resource "aws_iam_role" "ecs_task_role" {
         {
           "Action" : [
             "access-analyzer:ValidatePolicy",
+            "aws-marketplace:*",
             "ssmmessages:CreateControlChannel",
             "ssmmessages:CreateDataChannel",
             "ssmmessages:OpenControlChannel",
@@ -325,6 +326,8 @@ resource "aws_iam_role" "ecs_task_role" {
           "Effect" : "Allow",
           "Resource" : [
             "${var.registration_queue_arn}",
+            "${var.github_app_noq_webhook_queue_arn}",
+            "${var.aws_marketplace_subscription_queue_arn}",
           ]
         },
         {

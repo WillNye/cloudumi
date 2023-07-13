@@ -101,7 +101,7 @@ class ScimV2GroupHandler(ScimAuthHandler):
             self.set_status(404)
             self.write(
                 WebResponse(
-                    success="error",
+                    status="error",
                     status_code=404,
                     data={"message": "Group not found"},
                 ).dict(exclude_unset=True, exclude_none=True)

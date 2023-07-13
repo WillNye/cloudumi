@@ -1,20 +1,19 @@
 import sys
 from collections import defaultdict
 
-from iambic.core.utils import evaluate_on_provider, sanitize_string
+from iambic.core.utils import evaluate_on_provider
 from iambic.plugins.v0_1_0.aws.iam.role.models import (
     AWS_IAM_ROLE_TEMPLATE_TYPE,
     AwsIamRoleTemplate,
 )
-from jinja2 import BaseLoader
-from jinja2.sandbox import ImmutableSandboxedEnvironment
 
 from common.aws.accounts.models import AWSAccount
 from common.aws.role_access.models import AWSRoleAccess, RoleAccessTypes
+from common.aws.utils import get_resource_arn
 from common.config import config
 from common.groups.models import Group
 from common.iambic.interface import IambicConfigInterface
-from common.iambic.templates.utils import get_template_str_value_for_aws_account
+from common.iambic.templates.utils import get_template_str_value_for_provider_definition
 from common.iambic_request.models import IambicRepo
 from common.identity.models import AwsIdentityRole
 from common.pg_core.utils import bulk_delete
@@ -24,26 +23,6 @@ from common.users.models import User
 log = config.get_logger()
 
 
-def get_role_arn(aws_account: AWSAccount, role_template: AwsIamRoleTemplate) -> str:
-    variables = {
-        var.key: var.value for var in aws_account.variables
-    }  # TODO: Handle this: 'arn:aws:iam::420317713496:role/Noq Audit_administrator'
-    variables["account_id"] = aws_account.account_id
-    variables["account_name"] = aws_account.account_name
-    if hasattr(role_template, "owner") and (
-        owner := getattr(role_template, "owner", None)
-    ):
-        variables["owner"] = owner
-    valid_characters_re = r"[\w_+=,.@-]"
-    variables = {
-        k: sanitize_string(v, valid_characters_re) for k, v in variables.items()
-    }
-    role_arn = f"arn:aws:iam::{aws_account.account_id}:role{role_template.properties.path}{role_template.properties.role_name}"
-    rtemplate = ImmutableSandboxedEnvironment(loader=BaseLoader()).from_string(role_arn)
-    role_arn = rtemplate.render(var=variables)
-    return role_arn
-
-
 async def get_arn_to_role_template_mapping(
     aws_accounts: list[AWSAccount], role_template: AwsIamRoleTemplate
 ) -> dict[str, AwsIamRoleTemplate]:
@@ -51,7 +30,7 @@ async def get_arn_to_role_template_mapping(
     for aws_account in aws_accounts:
         if not evaluate_on_provider(role_template, aws_account, False):
             continue
-        role_arn = get_role_arn(aws_account, role_template)
+        role_arn = await get_resource_arn(aws_account, role_template)
         arn_mapping[role_arn] = role_template
     return arn_mapping
 
@@ -175,7 +154,9 @@ async def sync_role_access(
                     if evaluate_on_provider(access_rule, account, False)
                 ]
                 for effective_aws_account in effective_aws_accounts:
-                    role_arn = get_role_arn(effective_aws_account, role_template)
+                    role_arn = await get_resource_arn(
+                        effective_aws_account, role_template
+                    )
                     if identity_role := aws_identity_role_map.get(role_arn):
                         access_rule_users = []
                         if access_rule.users == "*":
@@ -185,8 +166,10 @@ async def sync_role_access(
                                 if not user_rule:
                                     continue
 
-                                user_rule = get_template_str_value_for_aws_account(
-                                    user_rule, effective_aws_account
+                                user_rule = (
+                                    get_template_str_value_for_provider_definition(
+                                        user_rule, effective_aws_account
+                                    )
                                 )
                                 if user := users.get(user_rule):
                                     access_rule_users.append(user)
@@ -221,8 +204,10 @@ async def sync_role_access(
                                 if not group_rule:
                                     continue
 
-                                group_rule = get_template_str_value_for_aws_account(
-                                    group_rule, effective_aws_account
+                                group_rule = (
+                                    get_template_str_value_for_provider_definition(
+                                        group_rule, effective_aws_account
+                                    )
                                 )
                                 if group := groups.get(group_rule):
                                     access_rule_groups.append(group)

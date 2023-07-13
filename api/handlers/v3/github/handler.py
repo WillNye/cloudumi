@@ -121,13 +121,13 @@ class GithubStatusHandler(BaseAdminHandler):
         if tenant_install_rel:
             self.write(
                 WebResponse(
-                    success="success", status_code=200, data={"installed": True}
+                    status="success", status_code=200, data={"installed": True}
                 ).dict(exclude_unset=True, exclude_none=True)
             )
         else:
             self.write(
                 WebResponse(
-                    success="success", status_code=200, data={"installed": False}
+                    status="success", status_code=200, data={"installed": False}
                 ).dict(exclude_unset=True, exclude_none=True)
             )
 
@@ -151,7 +151,7 @@ class GithubRepoHandler(BaseAdminHandler):
         if not github_install:
             self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     data={
                         "repos": [],
@@ -189,7 +189,7 @@ class GithubRepoHandler(BaseAdminHandler):
             self.set_header("Content-Type", "application/json")
             self.write(
                 WebResponse(
-                    success="failure",
+                    status="failure",
                     status_code=400,
                     message="Invalid input: " + str(e),
                 ).dict(exclude_unset=True, exclude_none=True)

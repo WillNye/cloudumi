@@ -133,6 +133,7 @@ class FunctionalTest(AsyncHTTPTestCase):
                     TEST_USER_GROUPS,
                     TEST_USER_DOMAIN_US,
                     eula_signed=True,
+                    tenant_active=True,
                 )
             )
 

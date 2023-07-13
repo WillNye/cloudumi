@@ -2667,6 +2667,24 @@ components:
           default: 50
           minimum: 1
           maximum: 100
+    TypeAheadPaginatedRequestQueryParams:
+      type: object
+      properties:
+        template_id:
+          type: string
+        provider_definition_ids:
+          type: array
+          items:
+            type: string
+        page:
+          type: integer
+          default: 1
+          minimum: 1
+        page_size:
+          type: integer
+          default: 50
+          minimum: 1
+          maximum: 100
     DataTableResponse:
       type: object
       required:

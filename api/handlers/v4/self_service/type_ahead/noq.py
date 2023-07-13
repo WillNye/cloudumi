@@ -33,7 +33,7 @@ class NoqUserTypeAheadHandler(BaseHandler):
             self.set_header("Content-Type", "application/json")
             self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     **get_paginated_typeahead_response(
                         [
@@ -72,7 +72,7 @@ class NoqGroupTypeAheadHandler(BaseHandler):
             self.set_header("Content-Type", "application/json")
             self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     **get_paginated_typeahead_response(
                         [
