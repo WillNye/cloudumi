@@ -3,16 +3,7 @@ FROM ubuntu:latest
 ARG TARGETPLATFORM
 ARG TARGETARCH
 ARG TARGETVARIANT
-ARG IAMBIC_REPO_USER
-ARG IAMBIC_REPO_TOKEN
-ENV IAMBIC_REPO_USER=$IAMBIC_REPO_USER
-ENV IAMBIC_REPO_TOKEN=$IAMBIC_REPO_TOKEN
 
-# Set environment variable PUBLIC_URL from build args, uses "/" as default
-ARG PUBLIC_URL
-ENV PUBLIC_URL=${PUBLIC_URL:-/}
-ARG PUBLIC_URL_V2
-ENV PUBLIC_URL_V2=${PUBLIC_URL_V2:-/}
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE=1
 
@@ -88,6 +79,14 @@ ENV PYTHONPATH="/app:$PYTHONPATH"
 
 COPY frontend frontend
 COPY ui ui
+
+# Set environment variable PUBLIC_URL from build args, uses "/" as default
+# These args are going to change during almost every execution of the docker build command.
+# Which means we put it later in the Dockerfile so we don't have to rebuild most of the things.
+ARG PUBLIC_URL
+ENV PUBLIC_URL=${PUBLIC_URL:-/}
+ARG PUBLIC_URL_V2
+ENV PUBLIC_URL_V2=${PUBLIC_URL_V2:-/}
 
 # We don't need node_modules after building, so we can remove it and save space
 RUN yarn --cwd frontend build --base=$PUBLIC_URL && \
