@@ -1450,6 +1450,7 @@ class AuthSettings(BaseModel):
     )
     challenge_url: Optional[ChallengeSamlSettings] = Field(None, title="Challenge Url")
     logout_redirect_url: Optional[str] = Field(None, title="Logout Redirect Url")
+    oidc_redirect_uri: Optional[str] = Field(None, title="OIDC redirect URL")
 
 
 class SAMLSettingsDto(BaseModel):

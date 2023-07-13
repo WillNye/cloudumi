@@ -1,4 +1,5 @@
 from common.config import config
+from common.config.tenant_config import TenantConfig
 from common.handlers.base import BaseAdminHandler
 from common.lib.asyncio import aio_wrapper
 from common.lib.dynamo import RestrictedDynamoHandler
@@ -12,6 +13,7 @@ class AuthSettingsReader(BaseAdminHandler):
 
     async def get(self):
         """Retrieve AUTH settings for tenant."""
+        tenant = TenantConfig.get_instance(self.ctx.tenant)
 
         ddb = RestrictedDynamoHandler()
         dynamic_config = await aio_wrapper(
@@ -20,7 +22,12 @@ class AuthSettingsReader(BaseAdminHandler):
             return_format="dict",
             filter_secrets=True,
         )
-        auth = AuthSettings(**dynamic_config.get("auth", {}))
+        auth = AuthSettings(
+            **{
+                **dynamic_config.get("auth", {}),
+                "oidc_redirect_uri": tenant.oidc_redirect_url,
+            }  # type: ignore
+        )
 
         self.write(
             WebResponse(

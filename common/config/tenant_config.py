@@ -142,6 +142,10 @@ class TenantConfigBase:
         )
 
     @property
+    def oidc_redirect_url(self):
+        return f"{self.tenant_url}/auth"
+
+    @property
     def saml_certificate_folder(self):
         return "saml_certificates"
 

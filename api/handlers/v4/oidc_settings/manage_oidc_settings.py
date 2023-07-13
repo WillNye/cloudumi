@@ -2,6 +2,7 @@ import tornado.escape
 import tornado.web
 
 from common.config import config
+from common.config.tenant_config import TenantConfig
 from common.handlers.base import BaseAdminHandler
 from common.lib.asyncio import aio_wrapper
 from common.lib.dictutils import delete_in, set_in
@@ -60,7 +61,7 @@ class ManageOIDCSettingsCrudHandler(BaseAdminHandler):
     async def post(self):
         """Update OIDC settings for tenant"""
 
-        # tenant = self.ctx.tenant
+        tenant = TenantConfig.get_instance(self.ctx.tenant)
         body = tornado.escape.json_decode(self.request.body or "{}")
         oidc_setting_dto = OIDCSettingsDto.parse_obj(body)
 
@@ -124,6 +125,9 @@ class ManageOIDCSettingsCrudHandler(BaseAdminHandler):
                 status=Status2.success,
                 status_code=200,
                 reason=None,
+                data=dict(
+                    redirect_url=tenant.oidc_redirect_url,
+                ),
             ).dict(exclude_unset=True, exclude_none=True)
         )
 

@@ -3910,6 +3910,9 @@ components:
         logout_redirect_url:
           title: Logout Redirect Url
           type: string
+        oidc_redirect_uri:
+          title: OIDC redirect URL
+          type: string
     SAMLSettingsDto:
       title: SAMLSettingsDto
       description: BaseModel adds CamelCase aliases to a Pydantic model
