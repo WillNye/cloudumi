@@ -308,11 +308,9 @@ class AWSResourceTypeAheadHandler(BaseHandler):
                     status_code=500,
                 ).json(exclude_unset=True, exclude_none=True)
             )
-            log.error(
-                {
-                    "message": "Error in AWSResourceTypeAheadHandler",
-                    "error": repr(err),
-                },
-                exc_info=True,
+            await log.aexception(
+                "Error in AWSResourceTypeAheadHandler.get",
+                tenant=self.ctx.db_tenant.name,
+                query_params=query_params,
             )
             raise tornado.web.Finish()

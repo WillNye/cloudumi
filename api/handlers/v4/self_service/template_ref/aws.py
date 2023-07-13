@@ -78,6 +78,11 @@ class AWSResourceTemplateRefHandler(BaseHandler):
             )
             raise tornado.web.Finish()
         except Exception as err:
+            await log.aexception(
+                "Unhandled exception in AWSResourceTemplateRefHandler.get",
+                tenant=self.ctx.db_tenant.name,
+                query_params=query_params,
+            )
             self.set_status(500)
             self.write(
                 WebResponse(
