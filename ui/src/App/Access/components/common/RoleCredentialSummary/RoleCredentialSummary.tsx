@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useRef, useState } from 'react';
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from 'shared/elements/Icon';
 import { Dialog } from 'shared/layers/Dialog';
 
@@ -12,7 +12,8 @@ import { useQuery } from '@tanstack/react-query';
 
 type RoleCredentialSummaryProps = {
   arn: string;
-  role: string;
+  accountName: string;
+  roleName: string;
 };
 
 type AWSCredentials = {
@@ -24,7 +25,8 @@ type AWSCredentials = {
 
 const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
   arn,
-  role
+  roleName,
+  accountName
 }) => {
   const [showDialog, setShowDialog] = useState(false);
   const [activeLink, setActiveLink] = useState(ROLE_SUMMARY_LINKS.NOQ_CLI);
@@ -68,6 +70,11 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
       }
     },
     [environmentVariableIntersection]
+  );
+
+  const role = useMemo(
+    () => `${accountName}/${roleName}`,
+    [accountName, roleName]
   );
 
   const { refetch, isFetching: isLoading } = useQuery({
@@ -191,7 +198,7 @@ export AWS_PROFILE=${role}`}
               />
               <div className={styles.subHeader}>ECS Credential Provider</div>
               <CodeBlock
-                code={`noq serve & export AWS_CONTAINER_CREDENTIALS_FULL_URI=${window.location.origin}/ecs/${role} `}
+                code={`noq serve & export AWS_CONTAINER_CREDENTIALS_FULL_URI=${window.location.origin}/ecs/${arn} `}
               />
 
               <div className={styles.subHeader}>Write Credentials to File</div>
