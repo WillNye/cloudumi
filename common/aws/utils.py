@@ -561,7 +561,7 @@ async def get_resource_arn(
     else:
         raise ValueError(f"Unknown template type: {iambic_template.template_type}")
 
-    arn_base = "arn:aws:iam::{{ var.account_id }}:"
+    arn_base = "arn:aws:iam::{{ var.account_id }}"
     path = iambic_template.properties.path
     resource_id = iambic_template.resource_id
     resource_arn = f"{arn_base}:{resource_name}{path}{resource_id}"
