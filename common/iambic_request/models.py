@@ -43,6 +43,7 @@ class GitComment(PydanticBaseModel):
     id: str
     user: str
     body: str
+    created_at: datetime
     in_reply_to_id: str = None
 
 
@@ -216,11 +217,8 @@ class BasePullRequest(PydanticBaseModel):
         if not self.pr_obj:
             await self.load_pr()
 
-        if self.mergeable and self.merge_on_approval:
+        if self.mergeable:
             await self._merge_request(approved_by)
-        elif self.mergeable and not self.merge_on_approval:
-            # TODO: Return something to let user know they need to merge the PR manually
-            pass
 
     async def remove_branch(self, pull_default: bool):
         await self.iambic_repo.delete_branch()
@@ -358,6 +356,7 @@ class GitHubPullRequest(BasePullRequest):
                         user=comment.user.login,
                         body=comment.body,
                         in_reply_to_id=getattr(comment, "in_reply_to", None),
+                        created_at=comment.created_at,
                     )
                 )
 

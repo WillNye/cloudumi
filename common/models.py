@@ -875,7 +875,7 @@ class IambicRepoDetails(BaseModel):
         description='The remote name to use when pushing to the repository. Defaults to "origin".',
     )
     merge_on_approval: Optional[bool] = Field(
-        True,
+        False,
         description="A boolean value indicating whether the PR for the request should be merged when the request is approved. Defaults to true.",
     )
     git_domain: Optional[str] = Field(
