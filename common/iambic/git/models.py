@@ -146,6 +146,7 @@ class IambicRepo:
             self.default_file_path,
             config="core.symlinks=false",
             filter="blob:none",  # also known as blobless clone
+            single_branch=True,  # minimize network operation to track HEAD
         )
         self.repo = repo
         await self.set_repo_auth()
