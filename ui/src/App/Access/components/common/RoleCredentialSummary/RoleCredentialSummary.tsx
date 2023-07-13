@@ -9,6 +9,7 @@ import { CodeBlock } from 'shared/elements/CodeBlock';
 import { Notification, NotificationType } from 'shared/elements/Notification';
 import { useIntersection } from 'react-use';
 import { useQuery } from '@tanstack/react-query';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 type RoleCredentialSummaryProps = {
   arn: string;
@@ -188,30 +189,61 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
               <div className={styles.sectionHeader} ref={noqCLIRef}>
                 Noq CLI
               </div>
-              <p className={styles.secondaryText}>
-                To retrieve AWS credentials on demand
-              </p>
               <div className={styles.subHeader}>Credential Process</div>
-              <CodeBlock
-                code={`noq credential_process -g
-export AWS_PROFILE=${role}`}
-              />
+              Run the following command to configure credential_process. This
+              only needs to be run once or as you gain access to new roles.
+              <LineBreak />
+              <CodeBlock code={`noq credential_process -g`} />
+              <LineBreak />
+              Set the following environment variables to instruct the AWS CLI to
+              use the credential_process flow that is defined in your
+              ~/.aws/config file. Ensure that the profile name isn&apos;t also
+              configured in your ~/.aws/credentials file. This method
+              automatically refreshes credentials when they expire, as long as
+              your credentials to the Noq platform are still valid.
+              <LineBreak />
+              <CodeBlock code={`export AWS_PROFILE=${role}`} />
               <div className={styles.subHeader}>ECS Credential Provider</div>
+              In another terminal or background process, run the following
+              command:
+              <LineBreak />
+              <CodeBlock code={`noq serve`} />
+              <LineBreak />
+              Set the following environment variable in your terminal or IDE to
+              instruct the AWS CLI to retrieve credentials from Noq CLI&apos;s
+              ECS Credential Provider. This method automatically refreshes
+              credentials when they expire, as long as your credentials to the
+              Noq platform are still valid.
+              <LineBreak />
               <CodeBlock
-                code={`noq serve & export AWS_CONTAINER_CREDENTIALS_FULL_URI=http://127.0.0.1:9091/ecs/${arn} `}
+                code={`export AWS_CONTAINER_CREDENTIALS_FULL_URI=http://127.0.0.1:9091/ecs/${arn}`}
               />
-
+              <LineBreak />
               <div className={styles.subHeader}>Write Credentials to File</div>
+              <LineBreak />
+              Use the Noq CLI to write temporary credentials to your
+              ~/.aws/credentials file. These credentials will expire, and you
+              will need to run the command again to refresh them.
+              <LineBreak />
               <CodeBlock
                 code={`noq file -p ${role} ${arn}
 export AWS_PROFILE=${role}`}
               />
-
+              <LineBreak />
               <div className={styles.subHeader}>Credential Export</div>
               <div className={styles.codeBlock}>
+                <LineBreak />
+                Use the Noq CLI to export temporary credentials as environment
+                variables. These credentials will expire, and you will need to
+                run the command again to refresh them.
+                <LineBreak />
                 <CodeBlock code={`noq export ${arn}`} />
+                <LineBreak />
+                Use the following command to set the environment variables in
+                your current terminal session:
+                <LineBreak />
+                <CodeBlock code={`eval $(noq export ${arn})`} />
               </div>
-
               <div
                 className={styles.sectionHeader}
                 ref={environmentVariablesRef}
@@ -219,7 +251,8 @@ export AWS_PROFILE=${role}`}
                 Environment Variables
               </div>
               <p className={styles.secondaryText}>
-                To configure your workspace
+                To source credentials without using the Noq CLI, use the
+                following environment variables:
               </p>
               {crendentials ? (
                 <CodeBlock
@@ -236,20 +269,26 @@ export AWS_SESSION_TOKEN=${crendentials?.SessionToken}`}
                   fullWidth
                 />
               )}
-
               <div ref={awsProfileRef} className={styles.sectionHeader}>
-                AWS Profile
+                AWS Credentials Profile
               </div>
               <p className={styles.secondaryText}>
-                Add a profile in your AWS credentials file
+                The following should be manually added to your
+                ~/.aws/credentials file:
               </p>
               {crendentials ? (
-                <CodeBlock
-                  code={`[${role}]
+                <>
+                  <CodeBlock
+                    code={`[${role}]
 aws_access_key_id=${crendentials?.AccessKeyId}
 aws_secret_access_key=${crendentials?.SecretAccessKey}
 aws_session_token=${crendentials?.SessionToken}`}
-                />
+                  />
+                  Use these credentials by setting the AWS_PROFILE environment
+                  variable:
+                  <LineBreak />
+                  <CodeBlock code={`export AWS_PROFILE=${role}`} />
+                </>
               ) : (
                 <Notification
                   header="Missing credentials"
