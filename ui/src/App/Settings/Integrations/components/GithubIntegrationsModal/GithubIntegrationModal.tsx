@@ -13,6 +13,7 @@ import { ChangeEvent } from 'react';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { Select, SelectOption } from 'shared/form/Select';
 import axios from 'core/Axios/Axios';
+import styles from './GithubIntegrationModal.module.css';
 
 interface GithubIntegrationModalProps {
   showDialog: boolean;
@@ -147,8 +148,8 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
         <LineBreak size="large" />
         <div>
           When GitHub prompts you for repository selection, please select only
-          your organization&apos;s iambic-templates repository to achieve least
-          privilege granted to the integration.
+          your organization&apos;s iambic-templates repository. This will
+          appropriately restrict the permissions of the Noq GitHub App.
         </div>
         <LineBreak size="large" />
 
@@ -170,14 +171,16 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
               </Select>
             </label>
             <LineBreak size="large" />
-            <div>
+            <div className={styles.customCheckbox}>
               <Checkbox
                 {...{
                   checked: mergeOnApproval,
                   onChange: handleAutoApplyChange
                 }}
               />
-              <Block>Auto apply after PR approval</Block>
+              <Block className="form-label">
+                Auto-apply IAMbic changes after they are approved
+              </Block>
             </div>
             <LineBreak size="large" />
           </>
