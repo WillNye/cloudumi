@@ -372,3 +372,22 @@ docker_download_volumes: docker_clean docker_deps_up
 		fi; \
 		echo "To inspect the volume, run: docker run -it --rm -v $$volume:/data ubuntu bash"; \
 	done
+
+# Update the requirements.lock file based on all requirements.in files
+.PHONY: python_requirements_update
+python_requirements_update:
+	pip-compile --allow-unsafe --resolver=backtracking --strip-extras --output-file requirements.lock $(shell find . -type f \( -name "requirements.in" -o -name "requirements-test.in" \) | tr '\n' ' ')
+
+# Upgrade all packages to the latest supported version
+.PHONY: python_requirements_upgrade_all
+python_requirements_upgrade_all:
+	pip-compile --allow-unsafe --resolver=backtracking --strip-extras --upgrade --output-file requirements.lock $(shell find . -type f \( -name "requirements.in" -o -name "requirements-test.in" \) | tr '\n' ' ')
+
+# Upgrade a specific named package
+# make python_requirements_upgrade_package PACKAGE_NAME=structlog
+.PHONY: python_requirements_upgrade_package
+python_requirements_upgrade_package:
+ifndef PACKAGE_NAME
+	$(error PACKAGE_NAME is undefined)
+endif
+	pip-compile --allow-unsafe --resolver=backtracking --strip-extras --upgrade-package $(PACKAGE_NAME) --output-file requirements.lock $(shell find . -type f \( -name "requirements.in" -o -name "requirements-test.in" \) | tr '\n' ' ')
