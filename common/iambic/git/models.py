@@ -129,7 +129,11 @@ class IambicRepo:
             self.repo.git.reset("--hard", default_branch)
             try:
                 self.repo.git.pull()
-            except Exception:
+            except Exception as err:
+                if "refusing to merge unrelated histories" not in err.stderr:
+                    # we have to be specific; otherwise, a transient network error
+                    # may cause us to blow away the directory.
+                    raise
                 # an upstream may have re-written history, fall back to a fresh blobless clone
                 shutil.rmtree(self.default_file)
                 await self._clone_blobless_repo()
