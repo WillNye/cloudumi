@@ -1,57 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'core/Axios/Axios';
 import { Button } from 'shared/elements/Button';
 import { toast } from 'react-toastify';
-
-interface ScimSettingsData {
-  scim_enabled: boolean;
-  scim_url: string;
-  scim_secret?: string;
-}
+import {
+  ScimSettingsData,
+  disableScimSettings,
+  enableScimSettings,
+  fetchScimSettings
+} from 'core/API/ssoSettings';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 const SCIMSettings = ({ isFetching }) => {
   const [scimData, setScimData] = useState<ScimSettingsData | null>(null);
 
+  const {
+    data: scimSettings,
+    isLoading,
+    isError
+  } = useQuery({
+    queryKey: ['scimSettings'],
+    queryFn: fetchScimSettings,
+    select: data => data.data
+  });
+
   useEffect(() => {
-    const fetchScimSettings = async () => {
-      try {
-        const response = await axios.get('/api/v4/scim/settings');
-        if (response.data.status === 'success') {
-          setScimData(response.data.data);
-        }
-      } catch (error) {
-        toast.error('Failed to load SCIM settings');
+    if (isError) {
+      toast.error('Failed to load SCIM settings');
+    }
+  }, [isError]);
+
+  useEffect(() => {
+    setScimData(scimSettings?.data);
+  }, [scimSettings]);
+
+  const handleDisableScim = useMutation({
+    mutationFn: disableScimSettings,
+    mutationKey: ['disableScimSettings'],
+    onSuccess: response => {
+      if (response.data.status === 'success') {
+        toast.success('SCIM settings disabled');
+        setScimData(null);
       }
-    };
+    },
+    onError: () => toast.error('Failed to disable SCIM settings')
+  });
 
-    fetchScimSettings();
-  }, []);
-
-  const handleNewToken = async () => {
-    try {
-      const response = await axios.post('/api/v4/scim/settings');
+  const handleNewToken = useMutation({
+    mutationFn: enableScimSettings,
+    mutationKey: ['enableScimSettings'],
+    onSuccess: response => {
       if (response.data.status === 'success') {
         toast.success('New SCIM token generated');
         setScimData(response.data.data);
       } else {
         toast.error(response.data.reason);
       }
-    } catch (error) {
-      toast.error('Failed to generate new SCIM token');
-    }
-  };
-
-  const handleDisableScim = async () => {
-    try {
-      const response = await axios.delete('/api/v4/scim/settings');
-      if (response.data.status === 'success') {
-        toast.success('SCIM settings disabled');
-        setScimData(null);
-      }
-    } catch (error) {
-      toast.error('Failed to disable SCIM settings');
-    }
-  };
+    },
+    onError: () => toast.error('Failed to generate new SCIM token')
+  });
 
   return (
     <div>
@@ -69,11 +74,15 @@ const SCIMSettings = ({ isFetching }) => {
             If you wish to regenerate your SCIM bearer token, please delete and
             recreate the configuration.
           </p>
-          <Button onClick={handleDisableScim}>Disable SCIM</Button>
+          <Button onClick={async () => await handleDisableScim.mutateAsync()}>
+            Disable SCIM
+          </Button>
         </>
       ) : (
         <>
-          <Button onClick={handleNewToken}>Generate New SCIM Token</Button>
+          <Button onClick={async () => await handleNewToken.mutateAsync()}>
+            Generate New SCIM Token
+          </Button>
         </>
       )}
 

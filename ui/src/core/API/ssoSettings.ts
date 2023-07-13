@@ -66,7 +66,36 @@ export const deleteOidcSettings = async (): Promise<AxiosResponse<void>> => {
   return axios.delete(OIDC_URL);
 };
 
+export const fetchScimSettings = async () => {
+  return axios.get<{ data: { scim_enabled: boolean; scim_url: string } }>(
+    '/api/v4/scim/settings'
+  );
+};
+
+export const disableScimSettings = async () => {
+  return await axios.delete('/api/v4/scim/settings');
+};
+
+export const enableScimSettings = async () => {
+  return await axios.post<{
+    data: ScimSettingsData;
+    status: string;
+    reason: string;
+  }>('/api/v4/scim/settings', {
+    scim: {
+      enabled: true
+    }
+  });
+};
+
 // Response Types
+
+export interface ScimSettingsData {
+  scim_enabled: boolean;
+  scim_url: string;
+  scim_secret?: string;
+}
+
 export interface OIDCResponse {
   get_user_by_oidc_settings: GetUserByOidcSettings;
   auth: Auth;
