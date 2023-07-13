@@ -8,6 +8,8 @@ import {
   fetchScimSettings
 } from 'core/API/ssoSettings';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { Segment } from 'shared/layout/Segment';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 const SCIMSettings = ({ isFetching }) => {
   const [scimData, setScimData] = useState<ScimSettingsData | null>(null);
@@ -59,14 +61,14 @@ const SCIMSettings = ({ isFetching }) => {
   });
 
   return (
-    <div>
+    <Segment isLoading={isLoading || isFetching}>
       <h2>Generate SCIM Configuration</h2>
       <p>
         SCIM (System for Cross-domain Identity Management) is used for
         automating the exchange of user identity information between identity
         domains.
       </p>
-
+      <LineBreak />
       {scimData?.scim_enabled ? (
         <>
           <p>SCIM is already enabled for this account.</p>
@@ -85,7 +87,7 @@ const SCIMSettings = ({ isFetching }) => {
           </Button>
         </>
       )}
-
+      <LineBreak />
       {scimData?.scim_secret && (
         <p>
           Your SCIM token: {scimData.scim_secret}. Please copy this token. You
@@ -93,8 +95,9 @@ const SCIMSettings = ({ isFetching }) => {
         </p>
       )}
 
+      <LineBreak />
       {scimData?.scim_url && <p>Your SCIM URL: {scimData.scim_url}</p>}
-    </div>
+    </Segment>
   );
 };
 
