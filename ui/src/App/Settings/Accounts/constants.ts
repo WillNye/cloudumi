@@ -17,8 +17,7 @@ export enum UPDATE_USER_ACTIONS {
 export const userTableColumns = [
   {
     header: 'Email',
-    accessorKey: 'email',
-    sortable: true
+    accessorKey: 'email'
   },
   {
     header: 'Status',
@@ -47,8 +46,7 @@ export const userTableColumns = [
 export const groupsTableColumns = [
   {
     header: 'Name',
-    accessorKey: 'name',
-    sortable: true
+    accessorKey: 'name'
   },
   {
     header: 'Description',

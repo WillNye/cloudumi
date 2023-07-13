@@ -6,7 +6,18 @@ import { Table } from 'shared/elements/Table';
 import { resourcesColumns } from './constants';
 import { useQuery } from '@tanstack/react-query';
 import { getAllResources } from 'core/API/resources';
+import { extractSortValue } from 'core/utils/helpers';
 import css from './ResourcesTable.module.css';
+
+const defaultSortField = {
+  sortingColumn: {
+    id: 'id',
+    sortingField: 'template_type',
+    header: 'template_type',
+    minWidth: 180
+  },
+  sortingDescending: false
+};
 
 const ResourcesTable = () => {
   const [query, setQuery] = useState({
@@ -14,15 +25,7 @@ const ResourcesTable = () => {
       currentPageIndex: 1,
       pageSize: 30
     },
-    sorting: {
-      sortingColumn: {
-        id: 'id',
-        sortingField: 'template_type',
-        header: 'template_type',
-        minWidth: 180
-      },
-      sortingDescending: false
-    },
+    sorting: extractSortValue(defaultSortField),
     filtering: {
       tokens: [],
       operation: 'and'
@@ -57,6 +60,14 @@ const ResourcesTable = () => {
         ...query.pagination,
         currentPageIndex: newPageIndex
       }
+    }));
+  }, []);
+
+  const handleOnSort = useCallback(value => {
+    const sortValue = extractSortValue(defaultSortField, value);
+    setQuery(query => ({
+      ...query,
+      sorting: sortValue
     }));
   }, []);
 
@@ -151,7 +162,9 @@ const ResourcesTable = () => {
             pageSize={query.pagination.pageSize}
             pageIndex={query.pagination.currentPageIndex}
             handleOnPageChange={handleOnPageChange}
+            handleOnSort={handleOnSort}
             showPagination
+            enableSorting
           />
         </div>
       </div>

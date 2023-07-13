@@ -6,13 +6,24 @@ import { Button } from 'shared/elements/Button';
 import { Divider } from 'shared/elements/Divider';
 import { PropertyFilter, PropertyFilterProps } from '@noqdev/cloudscape';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import styles from './RequestsList.module.css';
 import { Icon } from 'shared/elements/Icon';
 import { Menu } from 'shared/layers/Menu';
 import { Link, useNavigate } from 'react-router-dom';
 import { DateTime } from 'luxon';
 import { useQuery } from '@tanstack/react-query';
 import { getAllRequests } from 'core/API/iambicRequest';
+import { extractSortValue } from 'core/utils/helpers';
+import styles from './RequestsList.module.css';
+
+const defaultSortField = {
+  sortingColumn: {
+    id: 'id',
+    sortingField: 'repo_name',
+    header: 'Repo Name',
+    minWidth: 180
+  },
+  sortingDescending: false
+};
 
 const RequestsList = () => {
   const statusRef = useRef();
@@ -30,15 +41,7 @@ const RequestsList = () => {
       currentPageIndex: 1,
       pageSize: 10
     },
-    sorting: {
-      sortingColumn: {
-        id: 'id',
-        sortingField: 'repo_name',
-        header: 'Repo Name',
-        minWidth: 180
-      },
-      sortingDescending: false
-    },
+    sorting: defaultSortField,
     filtering: filter
   });
 
@@ -87,6 +90,14 @@ const RequestsList = () => {
         ...query.pagination,
         currentPageIndex: newPageIndex
       }
+    }));
+  }, []);
+
+  const handleOnSort = useCallback(value => {
+    const sortValue = extractSortValue(defaultSortField, value);
+    setQuery(query => ({
+      ...query,
+      sorting: sortValue
     }));
   }, []);
 
@@ -194,7 +205,9 @@ const RequestsList = () => {
           pageSize={query.pagination.pageSize}
           pageIndex={query.pagination.currentPageIndex}
           handleOnPageChange={handleOnPageChange}
+          handleOnSort={handleOnSort}
           showPagination
+          enableSorting
         />
       </div>
     </Segment>
