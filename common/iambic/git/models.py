@@ -1,5 +1,6 @@
 import asyncio
 import os
+import shutil
 import sys
 from datetime import datetime
 from typing import Optional
@@ -110,6 +111,10 @@ class IambicRepo:
                     cw.set("url", await self.get_repo_uri())
 
     async def clone_or_pull_git_repo(self):
+        """
+        Assumption is we will start with a blobless clone. Such that subsequent runs can use pull naturally.
+        Now if upstream break (like rewrite history), we will fallback to replace the clone.
+        """
         if os.path.exists(self.default_file_path):
             self.repo = Repo(self.default_file_path)
             await self.set_repo_auth()
@@ -122,16 +127,29 @@ class IambicRepo:
                 if "already exists and is not an empty directory" not in err.stderr:
                     raise
             self.repo.git.reset("--hard", default_branch)
-            self.repo.git.pull(depth=1)
+            try:
+                self.repo.git.pull()
+            except Exception as err:
+                if "refusing to merge unrelated histories" not in err.stderr:
+                    # we have to be specific; otherwise, a transient network error
+                    # may cause us to blow away the directory.
+                    raise
+                # an upstream may have re-written history, fall back to a fresh blobless clone
+                shutil.rmtree(self.default_file_path)
+                await self._clone_blobless_repo()
         else:
-            repo = Repo.clone_from(
-                await self.get_repo_uri(),
-                self.default_file_path,
-                config="core.symlinks=false",
-                depth=1,
-            )
-            self.repo = repo
-            await self.set_repo_auth()
+            await self._clone_blobless_repo()
+
+    async def _clone_blobless_repo(self):
+        repo = Repo.clone_from(
+            await self.get_repo_uri(),
+            self.default_file_path,
+            config="core.symlinks=false",
+            filter="blob:none",  # also known as blobless clone
+            single_branch=True,  # minimize network operation to track HEAD
+        )
+        self.repo = repo
+        await self.set_repo_auth()
 
     async def set_request_branch(self, reuse_branch_repo: bool = False):
         """THIS IS A DESTRUCTIVE OPERATION.
