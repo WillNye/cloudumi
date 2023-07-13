@@ -198,18 +198,18 @@ export AWS_PROFILE=${role}`}
               />
               <div className={styles.subHeader}>ECS Credential Provider</div>
               <CodeBlock
-                code={`noq serve & export AWS_CONTAINER_CREDENTIALS_FULL_URI=${window.location.origin}/ecs/${arn} `}
+                code={`noq serve & export AWS_CONTAINER_CREDENTIALS_FULL_URI=http://127.0.0.1:9091/ecs/${arn} `}
               />
 
               <div className={styles.subHeader}>Write Credentials to File</div>
               <CodeBlock
-                code={`noq file -p ${role}
+                code={`noq file -p ${role} ${arn}
 export AWS_PROFILE=${role}`}
               />
 
               <div className={styles.subHeader}>Credential Export</div>
               <div className={styles.codeBlock}>
-                <CodeBlock code={`noq export ${role}`} />
+                <CodeBlock code={`noq export ${arn}`} />
               </div>
 
               <div
