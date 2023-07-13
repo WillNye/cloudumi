@@ -193,7 +193,7 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
               </p>
               <div className={styles.subHeader}>Credential Process</div>
               <CodeBlock
-                code={`noq credential_process -g ${role}
+                code={`noq credential_process -g
 export AWS_PROFILE=${role}`}
               />
               <div className={styles.subHeader}>ECS Credential Provider</div>
