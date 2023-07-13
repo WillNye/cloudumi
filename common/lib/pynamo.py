@@ -6,7 +6,7 @@ from typing import Dict, Iterable, Mapping, Optional, Sequence, Text, Type, Unio
 import boto3
 from boto3.dynamodb.types import Binary  # noqa
 from cloudaux import get_iso_string
-from pynamodax.attributes import DynamicMapAttribute
+from pynamodax.attributes import DynamicMapAttribute, ListAttribute
 from pynamodax.connection.base import Connection
 from pynamodax.connection.dax import DaxClient
 from pynamodax.connection.table import MetaTable, TableConnection
@@ -371,6 +371,15 @@ class GlobalNoqModel(NoqModel):
     @staticmethod
     def aws_account_name():
         return "tenant_data"
+
+
+class NoqListAttribute(ListAttribute):
+    @classmethod
+    def is_raw(cls):
+        return cls == NoqListAttribute
+
+    def dict(self):  # Helper to standardize the method for converting object to dict
+        return sanitize_dynamo_obj(self.as_list())
 
 
 class NoqMapAttribute(DynamicMapAttribute):

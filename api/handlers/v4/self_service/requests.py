@@ -1,5 +1,3 @@
-import sys
-
 import tornado.web
 from pydantic import ValidationError
 
@@ -9,7 +7,7 @@ from common.exceptions.exceptions import NoMatchingRequest, Unauthorized
 from common.handlers.base import BaseHandler
 from common.iambic_request.models import Request
 from common.iambic_request.request_crud import (
-    approve_request,
+    approve_or_apply_request,
     create_request,
     create_request_comment,
     delete_request_comment,
@@ -40,13 +38,10 @@ class IambicRequestValidationHandler(BaseHandler):
             request_data = SelfServiceRequestData.parse_raw(self.request.body)
             data = await run_request_validation(db_tenant, request_data)
         except (AssertionError, TypeError, ValidationError) as err:
-            log.exception(
-                {
-                    "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-                    "error": str(err),
-                    "tenant_name": db_tenant.name,
-                },
-                exc_info=True,
+            await log.aexception(
+                "Unhandled exception while validating request",
+                error=str(err),
+                tenant_name=db_tenant.name,
             )
             self.write(
                 WebResponse(
@@ -57,13 +52,10 @@ class IambicRequestValidationHandler(BaseHandler):
             self.set_status(400, reason=str(err))
             return
         except Exception as err:
-            log.exception(
-                {
-                    "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-                    "error": str(err),
-                    "tenant_name": db_tenant.name,
-                },
-                exc_info=True,
+            await log.aexception(
+                "Unhandled exception while validating user self service request",
+                error=str(err),
+                tenant_name=db_tenant.name,
             )
             self.write(
                 WebResponse(
@@ -76,7 +68,7 @@ class IambicRequestValidationHandler(BaseHandler):
         else:
             return self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     data=data.dict(exclude_none=True),
                 ).json(exclude_unset=True, exclude_none=True)
@@ -116,7 +108,7 @@ class IambicRequestHandler(BaseHandler):
             filters = json.loads(filters_url_param) if filters_url_param else {}
             self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     data=[
                         item.dict()
@@ -147,11 +139,6 @@ class IambicRequestHandler(BaseHandler):
                 request_method="WEB",
             )
         except (AssertionError, TypeError, ValidationError) as err:
-            log.exception(
-                "Error creating request",
-                error=str(err),
-                tenant=db_tenant.name,
-            )
             self.write(
                 WebResponse(
                     errors=[str(err)],
@@ -161,13 +148,10 @@ class IambicRequestHandler(BaseHandler):
             self.set_status(400, reason=str(err))
             return
         except Exception as err:
-            log.exception(
-                {
-                    "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-                    "error": str(err),
-                    "tenant_name": db_tenant.name,
-                },
-                exc_info=True,
+            await log.aexception(
+                "Unhandled exception while creating user self service request",
+                error=str(err),
+                tenant_name=db_tenant.name,
             )
             self.write(
                 WebResponse(
@@ -180,7 +164,7 @@ class IambicRequestHandler(BaseHandler):
         else:
             return self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     data=response.get("friendly_request"),
                 ).json(exclude_unset=True, exclude_none=True)
@@ -192,10 +176,6 @@ class IambicRequestHandler(BaseHandler):
         """
         await self.fte_check()
         self.set_header("Content-Type", "application/json")
-        log_data = {
-            "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-            "tenant": self.ctx.db_tenant.name,
-        }
         db_tenant = self.ctx.db_tenant
         user = self.user
         groups = self.groups
@@ -215,7 +195,7 @@ class IambicRequestHandler(BaseHandler):
             )
             return self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     data=response["friendly_request"],
                 ).json(exclude_unset=True, exclude_none=True)
@@ -238,7 +218,9 @@ class IambicRequestHandler(BaseHandler):
             self.set_status(400, reason=str(err))
             return
         except Exception as err:
-            log.error({**log_data, "error": str(err)}, exc_info=True)
+            await log.aexception(
+                "Unhandled exception while validating request", tenant=db_tenant.name
+            )
             self.write(
                 WebResponse(
                     errors=[str(err)],
@@ -254,10 +236,6 @@ class IambicRequestHandler(BaseHandler):
         """
         await self.fte_check()
         self.set_header("Content-Type", "application/json")
-        log_data = {
-            "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-            "tenant": self.ctx.db_tenant.name,
-        }
         db_tenant = self.ctx.db_tenant
         user = self.user
         groups = self.groups
@@ -274,8 +252,11 @@ class IambicRequestHandler(BaseHandler):
             )
 
         try:
-            if status.lower() == "approved":
-                response = await approve_request(db_tenant, request_id, user, groups)
+            if status.lower() in {"approved", "apply"}:
+                apply_request = status.lower() == "apply"
+                response = await approve_or_apply_request(
+                    db_tenant, request_id, user, groups, apply_request
+                )
             elif status.lower() == "rejected":
                 response = await reject_request(db_tenant, request_id, user, groups)
             else:
@@ -305,7 +286,9 @@ class IambicRequestHandler(BaseHandler):
             self.set_status(400, reason=str(err))
             return
         except Exception as err:
-            log.error({**log_data, "error": str(err)}, exc_info=True)
+            await log.aexception(
+                "Unhandled exception while validating request", tenant=db_tenant.name
+            )
             self.write(
                 WebResponse(
                     errors=[str(err)],
@@ -317,7 +300,7 @@ class IambicRequestHandler(BaseHandler):
         else:
             return self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     data=response,
                 ).json(exclude_unset=True, exclude_none=True)
@@ -334,13 +317,11 @@ class IambicRequestCommentHandler(BaseHandler):
         user = self.user
         try:
             request_data = json.loads(self.request.body)
-        except Exception as e:
-            log.error(
-                {
-                    "message": "Error parsing request body",
-                    "error": str(e),
-                    "request_body": self.request.body,
-                },
+        except Exception:
+            await log.aerror(
+                "Error parsing request body",
+                tenant_name=db_tenant.name,
+                request_body=self.request.body,
                 exc_info=True,
             )
             self.write(

@@ -717,6 +717,13 @@ class PaginatedRequestQueryParams(BaseModel):
     page_size: Optional[conint(ge=1, le=100)] = 50
 
 
+class TypeAheadPaginatedRequestQueryParams(BaseModel):
+    template_id: Optional[str] = None
+    provider_definition_ids: Optional[List[str]] = None
+    page: Optional[conint(ge=1)] = 1
+    page_size: Optional[conint(ge=1, le=100)] = 50
+
+
 class DataTableResponse(BaseModel):
     totalCount: int
     filteredCount: int

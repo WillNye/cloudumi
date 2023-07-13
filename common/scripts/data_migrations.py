@@ -12,35 +12,56 @@ async def typeahead_upgrade():
             name="S3 Bucket ARN",
             description="Returns a list of S3 bucket ARNs.",
             endpoint="api/v4/self-service/typeahead/aws/service/s3",
-            query_param_key="resource_arn",
+            query_param_key="resource_id",
             provider="aws",
         ),
         dict(
             name="AWS Resource ARN",
             description="Returns a list of all matching AWS resource ARNs available to Noq.",
             endpoint="api/v4/self-service/typeahead/aws/service/all",
-            query_param_key="resource_arn",
+            query_param_key="resource_id",
             provider="aws",
         ),
         dict(
             name="IAM Role ARN",
             description="Returns a list of IAM Role ARNs.",
             endpoint="api/v4/self-service/typeahead/aws/service/iam_role",
-            query_param_key="resource_arn",
+            query_param_key="resource_id",
             provider="aws",
         ),
         dict(
             name="SNS Topic ARN",
             description="Returns a list of SNS Topic ARNs.",
             endpoint="api/v4/self-service/typeahead/aws/service/sns",
-            query_param_key="resource_arn",
+            query_param_key="resource_id",
             provider="aws",
         ),
         dict(
             name="SQS Queue ARN",
             description="Returns a list of SQS Queue ARNs.",
             endpoint="api/v4/self-service/typeahead/aws/service/sqs",
-            query_param_key="resource_arn",
+            query_param_key="resource_id",
+            provider="aws",
+        ),
+        dict(
+            name="AWS only Managed Policies",
+            description="Returns a list of IAM policies managed by AWS.",
+            endpoint="api/v4/self-service/typeahead/aws/service/managed_policy?aws_managed_only=true",
+            query_param_key="resource_id",
+            provider="aws",
+        ),
+        dict(
+            name="AWS and Customer Managed Policies",
+            description="Returns a list of IAM policies.",
+            endpoint="api/v4/self-service/typeahead/aws/service/managed_policy",
+            query_param_key="resource_id",
+            provider="aws",
+        ),
+        dict(
+            name="Customer Managed Policy Template Refs",
+            description="Returns a list of IAM policies.",
+            endpoint="api/v4/self-service/template-ref/aws/service/managed_policy",
+            query_param_key="resource_id",
             provider="aws",
         ),
         dict(
@@ -62,12 +83,12 @@ async def typeahead_upgrade():
 
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
-            stmt = postgresql.insert(TypeAheadFieldHelper).values(
-                default_typeahead_field_helpers
-            )
-            stmt = stmt.on_conflict_do_nothing()
-
-            await session.execute(stmt)
+            for row in default_typeahead_field_helpers:
+                stmt = postgresql.insert(TypeAheadFieldHelper).values(row)
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=["provider", "endpoint"], set_=row
+                )
+                await session.execute(stmt)
             await session.flush()
 
 

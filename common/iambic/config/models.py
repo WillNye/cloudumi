@@ -11,7 +11,9 @@ from iambic.plugins.v0_1_0.azure_ad.iambic_plugin import (
 from iambic.plugins.v0_1_0.google_workspace.iambic_plugin import (
     IAMBIC_PLUGIN as GOOGLE_WORKSPACE_IAMBIC_PLUGIN,
 )
+from iambic.plugins.v0_1_0.google_workspace.iambic_plugin import GoogleWorkspaceConfig
 from iambic.plugins.v0_1_0.okta.iambic_plugin import IAMBIC_PLUGIN as OKTA_IAMBIC_PLUGIN
+from pydantic.types import SecretStr
 from sqlalchemy import JSON, Column, ForeignKey, Index, Integer, String
 from sqlalchemy.dialects.postgresql import ENUM, UUID
 from sqlalchemy.orm import relationship
@@ -151,7 +153,18 @@ class TenantProviderDefinition(Base):
 
     @property
     def variables(self) -> list[Variable]:
-        return [Variable(**v) for v in self.definition.get("variables", [])]
+        # This is using IAMbic definitions for `account_id`, `account_name` for parity
+        # with what is in their AWS org. We are not using SaaS-defined definitions here.
+        variables = [Variable(**v) for v in self.definition.get("variables", [])]
+        if self.provider == "aws" and self.sub_type == "accounts":
+            variables.extend(
+                [
+                    Variable(key="account_id", value=self.definition["account_id"]),
+                    Variable(key="account_name", value=self.definition["account_name"]),
+                ]
+            )
+
+        return variables
 
     @property
     def preferred_identifier(self) -> str:
@@ -160,3 +173,36 @@ class TenantProviderDefinition(Base):
     @property
     def all_identifiers(self) -> list[str]:
         return self.definition.get("all_identifiers", [self.name])
+
+    def loaded_iambic_provider(self):
+        """Creates and returns an instance of the iambic provider class with the definition.
+
+        The benefit of this is you don't need to load the provider repo and config making it much more performant.
+        """
+
+        field_attr = self.sub_type
+        provider_config = TRUSTED_PROVIDER_RESOLVER_MAP[
+            self.provider
+        ].iambic_plugin.provider_config
+        if provider_config == GoogleWorkspaceConfig:
+            field_attr = "workspaces"
+        elif not field_attr:
+            field_attr = "organizations"
+
+        iambic_provider = provider_config.__fields__[field_attr].type_
+        definition = self.definition
+        definition.pop("all_identifiers", None)
+        definition.pop("preferred_identifier", None)
+
+        if provider_config == GoogleWorkspaceConfig:
+            definition = {"subjects": [definition]}
+
+        for field_name, field_obj in iambic_provider.__fields__.items():
+            if field_obj.required:
+                if field_obj.type_ in {str, SecretStr}:
+                    default_val = ""
+                else:
+                    default_val = []
+                definition.setdefault(field_name, default_val)
+
+        return provider_config.__fields__[field_attr].type_(**definition)

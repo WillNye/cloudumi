@@ -47,6 +47,7 @@ from api.handlers.v4.self_service.request_types import (
     SelfServiceChangeTypeHandler,
     SelfServiceRequestTypeHandler,
 )
+from api.handlers.v4.self_service.template_ref.aws import AWSResourceTemplateRefHandler
 from api.handlers.v4.self_service.type_ahead.aws import AWSResourceTypeAheadHandler
 from api.handlers.v4.self_service.type_ahead.noq import (
     NoqGroupTypeAheadHandler,
@@ -190,6 +191,7 @@ from api.handlers.v3.tenant_details.handler import (
     TenantEulaHandler,
 )
 from api.handlers.v3.tenant_registration.tenant_registration import (
+    TenantRegistrationAwsMarketplaceFormSubmissionHandler,
     TenantRegistrationAwsMarketplaceHandler,
     TenantRegistrationHandler,
 )
@@ -529,6 +531,10 @@ def make_app(jwt_validator=None):
         (r"/api/v4/templates/?", IambicTemplateHandler),
         (r"/api/v4/template-types/?", IambicTemplateTypeHandler),
         (
+            r"/api/v4/self-service/template-ref/aws/service/(?P<service>[\w-]+)",
+            AWSResourceTemplateRefHandler,
+        ),
+        (
             r"/api/v4/self-service/typeahead/aws/service/(?P<service>[\w-]+)",
             AWSResourceTypeAheadHandler,
         ),
@@ -573,8 +579,12 @@ def make_app(jwt_validator=None):
                 [
                     (r"/api/v3/tenant_registration", TenantRegistrationHandler),
                     (
-                        r"/api/v3/tenant_registration_aws_marketplace",
+                        r"/aws_marketplace/?",
                         TenantRegistrationAwsMarketplaceHandler,
+                    ),
+                    (
+                        r"/aws_marketplace/form_submission/?",
+                        TenantRegistrationAwsMarketplaceFormSubmissionHandler,
                     ),
                 ],
             )

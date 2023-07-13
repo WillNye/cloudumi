@@ -262,3 +262,21 @@ variable "noq_db_instance_type" {
   type    = string
   default = "db.t4g.medium"
 }
+
+variable "aws_marketplace_subscription_sns_topic_arn" {
+  description = "The ARN of the Amazon-managed SNS topic for AWS Marketplace Subscriptions"
+  type        = string
+  default     = ""
+}
+
+variable "aws_marketplace_product_code" {
+  description = "The AWS Marketplace product code for this product"
+  type        = string
+  default     = ""
+}
+
+variable "aws_marketplace_region" {
+  description = "The AWS Marketplace region for this product"
+  type        = string
+  default     = ""
+}

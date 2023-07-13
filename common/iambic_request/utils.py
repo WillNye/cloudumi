@@ -6,6 +6,11 @@ from deepdiff import DeepDiff
 from iambic.core.models import BaseModel as IambicBaseModel
 from iambic.core.models import BaseTemplate
 from iambic.core.template_generation import templatize_resource
+from iambic.core.utils import evaluate_on_provider
+from iambic.plugins.v0_1_0.aws.iam.policy.models import AwsIamManagedPolicyTemplate
+from iambic.plugins.v0_1_0.aws.identity_center.permission_set.models import (
+    AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
+)
 from jinja2 import BaseLoader
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 from regex import regex
@@ -21,9 +26,17 @@ from common import (
 )
 from common.config import config
 from common.config.globals import ASYNC_PG_SESSION
-from common.iambic.config.models import TRUSTED_PROVIDER_RESOLVER_MAP
+from common.iambic.config.models import (
+    TRUSTED_PROVIDER_RESOLVER_MAP,
+    TrustedProviderResolver,
+)
+from common.iambic.config.utils import list_tenant_provider_definitions
 from common.iambic.git.models import IambicRepo
-from common.iambic.templates.utils import get_template_by_id
+from common.iambic.templates.utils import (
+    get_template_by_id,
+    get_template_str_value_for_provider_definition,
+    list_tenant_templates,
+)
 from common.iambic.utils import get_iambic_repo
 from common.iambic_request.models import GitHubPullRequest, IambicTemplateChange
 from common.lib import noq_json as json
@@ -37,6 +50,36 @@ from common.request_types.utils import list_tenant_change_types
 
 class EnrichedChangeType(SelfServiceRequestChangeType):
     rendered_template: dict
+
+
+async def get_referenced_templates_map(
+    tenant_id: int,
+    change_types: list[SelfServiceRequestChangeType],
+    db_change_type_map: dict[str, ChangeType],
+) -> dict[str, Type[BaseTemplate]]:
+    template_map = {}
+    template_ids = []
+    for request_change_type in change_types:
+        change_type = db_change_type_map[request_change_type.change_type_id]
+        field_element_map = {f.field_key: f for f in change_type.change_fields}
+        for field in request_change_type.fields:
+            field_element = field_element_map[field.field_key]
+            if field_element.field_type == "TypeAheadTemplateRef":
+                template_ids.append(field.field_value)
+
+    if template_ids:
+        templates = await list_tenant_templates(
+            tenant_id, template_ids=template_ids, exclude_template_content=False
+        )
+        for template in templates:
+            provider_ref = TRUSTED_PROVIDER_RESOLVER_MAP[template.provider]
+            template_cls = provider_ref.template_map[template.template_type]
+            template_obj = template_cls(
+                file_path=template.file_path, **template.content.content
+            )
+            template_map[str(template.id)] = template_obj
+
+    return template_map
 
 
 def update_iambic_template_with_change(
@@ -55,6 +98,8 @@ def update_iambic_template_with_change(
     """
     split_property_attr = template_property.split(".")
     attr_name = split_property_attr[0]
+    if isinstance(iambic_template_instance, list):
+        iambic_template_instance = iambic_template_instance[0]
 
     if template_attr := iambic_template_instance.__fields__.get(attr_name):
         # Determine the class of the attribute
@@ -62,21 +107,20 @@ def update_iambic_template_with_change(
         if bool(get_origin(template_attr)):
             # Handle Union types by determining the preferred typing
             supported_types = template_attr.__args__
-            preferred_typing = supported_types[0]
+            preferred_typing = None
             for supported_type in supported_types:
-                # Prefer IambicBaseModel types
-                if issubclass(supported_type, IambicBaseModel):
-                    preferred_typing = supported_type
-                    break
+                if type(supported_type) == list:
+                    supported_type = supported_type.__args__[0]
 
                 try:
-                    # Handle lists[] type hints
-                    supported_type = supported_type.__args__[0]
+                    # Prefer IambicBaseModel types
                     if issubclass(supported_type, IambicBaseModel):
                         preferred_typing = supported_type
                         break
-                except AttributeError:
-                    pass
+                    elif preferred_typing is None:
+                        preferred_typing = supported_type
+                except TypeError:
+                    continue
 
             template_attr = preferred_typing
 
@@ -135,17 +179,26 @@ def templatize_form_val(form_val: any) -> any:
         except Exception:
             # This is to catch values that can't be cast to a set
             pass
-        return sorted(json.loads(json.dumps(form_val)))
-    else:
-        return form_val
+
+        if not issubclass(type(form_val[0]), BaseTemplate):
+            form_val = sorted(json.loads(json.dumps(form_val)))
+
+    return form_val
 
 
-async def get_field_value(change_field: ChangeField, form_value: any) -> any:
+async def get_field_value(
+    change_field: ChangeField,
+    form_value: any,
+    provider_definition: TenantProviderDefinition,
+    iambic_template_ref_map: dict[str, Type[BaseTemplate]],
+) -> any:
     """Validates and templatizes the field value for the given change field
 
     Args:
         change_field (ChangeField): Change field
         form_value (any): Value provided by the user in the form
+        provider_definition (TenantProviderDefinition): List of provider definitions.
+        iambic_template_ref_map (dict[str, Type[BaseTemplate]]): A map of IAMbic templates referenced in changes
     Returns:
         any: Templatized form value
     """
@@ -178,6 +231,49 @@ async def get_field_value(change_field: ChangeField, form_value: any) -> any:
             # This would mean checking that the provided value exists.
             # Example: If there was an EnforcedTypeAhead on a noq user, the user must exist in the DB.
             pass
+        elif change_field.field_type == "TypeAheadTemplateRef":
+            resolved_form_value = []
+            if not isinstance(form_value, list):
+                form_value = [form_value]
+
+            for template_id in form_value:
+                iambic_provider = provider_definition.loaded_iambic_provider()
+                iambic_template_ref = iambic_template_ref_map.get(template_id)
+                if not iambic_template_ref:
+                    raise AssertionError(
+                        f"Field {template_id} is not a valid template Id."
+                    )
+                elif not evaluate_on_provider(iambic_template_ref, iambic_provider):
+                    raise AssertionError(
+                        f"{iambic_template_ref.resource_id} does not exist in {provider_definition.name}."
+                    )
+
+                resource_dict = {
+                    "properties": iambic_template_ref.apply_resource_dict(
+                        iambic_provider
+                    )
+                }
+                if hasattr(iambic_template_ref, "identifier"):
+                    resource_dict[
+                        "identifier"
+                    ] = get_template_str_value_for_provider_definition(
+                        iambic_template_ref.identifier, provider_definition
+                    )
+
+                if isinstance(iambic_template_ref, AwsIamManagedPolicyTemplate):
+                    resource_dict["properties"]["PolicyDocument"] = json.loads(
+                        resource_dict["properties"]["PolicyDocument"]
+                    )
+
+                provider_specific_template = iambic_template_ref.__class__(
+                    file_path=iambic_template_ref.file_path, **resource_dict
+                )
+
+                resolved_form_value.append(provider_specific_template)
+
+            form_value = (
+                resolved_form_value if allow_multiple else resolved_form_value[0]
+            )
 
         return templatize_form_val(form_value)
 
@@ -217,32 +313,49 @@ async def get_field_value(change_field: ChangeField, form_value: any) -> any:
 
 async def render_change_type_template(
     change_type: ChangeType,
-    provider_definitions: list[TenantProviderDefinition],
+    provider_definition: TenantProviderDefinition,
+    iambic_template_ref_map: dict[str, Type[BaseTemplate]],
     request_change_type: SelfServiceRequestChangeType,
 ) -> EnrichedChangeType:
     """Renders change type template rendered using jinja2 with the provided parameters
 
     Args:
         change_type (ChangeType): The Change type object that relates to this request
-        provider_definitions (list[TenantProviderDefinition]): List of provider definitions.
+        provider_definition (TenantProviderDefinition): List of provider definitions.
+        iambic_template_ref_map (dict[str, Type[BaseTemplate]]): A map of IAMbic templates referenced in changes
         request_change_type (SelfServiceRequestChangeType): The change type as part of the request
     Returns:
         EnrichedChangeType: ChangeType with rendered change type template
     """
+    pd_count = len(request_change_type.provider_definition_ids)
+    pd_field = change_type.provider_definition_field
+    if pd_field == "Allow None" and pd_count > 1:
+        raise AssertionError(
+            f"Change type {change_type.name} does not allow providers definitions"
+        )
+    elif pd_field == "Allow One" and pd_count > 1:
+        raise AssertionError(
+            f"Change type {change_type.name} does not allow multiple providers definitions"
+        )
+
     field_element_map = {f.field_key: f for f in change_type.change_fields}
 
     # Set jinja2 template vars
     template_attrs = dict()
-    template_attrs["provider_definitions"] = templatize_form_val(
-        [pd.preferred_identifier for pd in provider_definitions]
-    )
+    if provider_definition:
+        template_attrs["provider_definitions"] = templatize_form_val(
+            [provider_definition.preferred_identifier]
+        )
+
     for field in request_change_type.fields:
         field_key = field.field_key
         field_value = field.field_value
         field = field_element_map.get(field_key)
         if not field:
             raise AssertionError(f"Invalid field provided: {field_key}")
-        template_attrs[field.field_key] = await get_field_value(field, field_value)
+        template_attrs[field.field_key] = await get_field_value(
+            field, field_value, provider_definition, iambic_template_ref_map
+        )
 
     rtemplate = ImmutableSandboxedEnvironment(loader=BaseLoader()).from_string(
         change_type.change_template.template
@@ -299,6 +412,68 @@ async def templatize_and_merge_rendered_change_types(
     return merged_change_types
 
 
+async def maybe_extend_change_type_provider_definitions(
+    tenant_id: int,
+    request_data: SelfServiceRequestData,
+    template_obj: Type[BaseTemplate],
+    provider_ref: TrustedProviderResolver,
+):
+
+    is_permission_set = (
+        template_obj.template_type == AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE
+    )
+    additional_provider_def = None
+    if is_permission_set:
+        tenant_aws_orgs = await list_tenant_provider_definitions(
+            tenant_id, provider="aws", sub_type="organizations"
+        )
+        if template_obj.included_orgs and template_obj.included_orgs[0] != "*":
+            org_id = template_obj.included_orgs[0]
+            tenant_org = next(
+                (org for org in tenant_aws_orgs if org.definition["org_id"] == org_id),
+                None,
+            )
+            if not tenant_org:
+                raise AssertionError(
+                    f"Organization {org_id} is not defined for this tenant"
+                )
+        else:
+            assert (
+                len(tenant_aws_orgs) == 1
+            ), "Please contact your administrator. An AWS Org must be defined as part of this request."
+            tenant_org = tenant_aws_orgs[0]
+
+        account_id = tenant_org.definition["org_account_id"]
+        provider_def = await list_tenant_provider_definitions(
+            tenant_id, provider="aws", name=account_id
+        )
+        additional_provider_def = provider_def[0]
+    elif any(
+        not bool(change_type.provider_definition_ids)
+        for change_type in request_data.changes
+    ):
+        if not provider_ref.template_provider_attribute:
+            raise AssertionError(
+                "Unable to determine the provider for this request. Please contact your administrator."
+            )
+        template_attr = template_obj
+        for attr in provider_ref.template_provider_attribute.split("."):
+            template_attr = getattr(template_attr, attr)
+
+        provider_def = await list_tenant_provider_definitions(
+            tenant_id, provider=provider_ref.provider, name=template_attr
+        )
+        additional_provider_def = provider_def[0]
+
+    if additional_provider_def:
+        for elem, change_type in enumerate(request_data.changes):
+            request_data.changes[elem].provider_definition_ids.append(
+                str(additional_provider_def.id)
+            )
+
+    return request_data
+
+
 async def generate_updated_iambic_template(
     tenant_id: int, request_data: SelfServiceRequestData
 ) -> Type[BaseTemplate]:
@@ -310,9 +485,18 @@ async def generate_updated_iambic_template(
     Returns:
         Type[BaseTemplate]: The updated iambic template
     """
-    provider_definition_ids = set()
-    for change_type in request_data.changes:
-        provider_definition_ids.update(set(change_type.provider_definition_ids))
+    if request_data.iambic_template_id:
+        template = await get_template_by_id(tenant_id, request_data.iambic_template_id)
+        provider_ref = TRUSTED_PROVIDER_RESOLVER_MAP[template.provider]
+        template_cls = provider_ref.template_map[template.template_type]
+        template_obj = template_cls(
+            file_path=template.file_path, **template.content.content
+        )
+    else:
+        # TODO: Add support for a create template request/change type
+        raise NotImplementedError
+
+    # TODO support resolving for create types
 
     db_change_types = await list_tenant_change_types(
         tenant_id,
@@ -320,6 +504,15 @@ async def generate_updated_iambic_template(
         summary_only=False,
     )
     db_change_type_map = {str(ct.id): ct for ct in db_change_types}
+    iambic_template_ref_map = await get_referenced_templates_map(
+        tenant_id, request_data.changes, db_change_type_map
+    )
+    request_data = await maybe_extend_change_type_provider_definitions(
+        tenant_id, request_data, template_obj, provider_ref
+    )
+    provider_definition_ids = set()
+    for change_type in request_data.changes:
+        provider_definition_ids.update(set(change_type.provider_definition_ids))
 
     # Retrieve the given provider definitions
     async with ASYNC_PG_SESSION() as session:
@@ -336,26 +529,22 @@ async def generate_updated_iambic_template(
 
     # Render and merge the change type templates for the request
     provider_definition_map = {str(pd.id): pd for pd in provider_definitions}
-    enriched_change_types = await asyncio.gather(
-        *[
-            render_change_type_template(
-                db_change_type_map[change_type.change_type_id],
-                provider_definitions,
-                change_type,
+    tasks = []
+    for change_type in request_data.changes:
+        for pd_id in change_type.provider_definition_ids:
+            tasks.append(
+                render_change_type_template(
+                    db_change_type_map[change_type.change_type_id],
+                    provider_definition_map[pd_id],
+                    iambic_template_ref_map,
+                    change_type,
+                )
             )
-            for change_type in request_data.changes
-        ]
-    )
+    enriched_change_types = await asyncio.gather(*tasks)
     merged_change_types = await templatize_and_merge_rendered_change_types(
         provider_definition_map, enriched_change_types
     )
 
-    template = await get_template_by_id(tenant_id, request_data.iambic_template_id)
-    provider_ref = TRUSTED_PROVIDER_RESOLVER_MAP[template.provider]
-    template_cls = provider_ref.template_map[template.template_type]
-    template_obj = template_cls(
-        file_path=template.file_path, **template.content.content
-    )
     if provider_ref.included_providers_attribute:
         # Get template provider def count
         async with ASYNC_PG_SESSION() as session:
@@ -373,7 +562,12 @@ async def generate_updated_iambic_template(
         if request_data.expires_at:
             change_type.rendered_template["expires_at"] = request_data.expires_at
 
-        if provider_ref.included_providers_attribute:
+        db_change_type = db_change_type_map[change_type.change_type_id]
+
+        if (
+            provider_ref.included_providers_attribute
+            and db_change_type.provider_definition_field != "Allow None"
+        ):
             if template_pd_count > len(change_type.provider_definition_ids):
                 change_type.rendered_template[
                     provider_ref.included_providers_attribute
@@ -382,12 +576,11 @@ async def generate_updated_iambic_template(
                     for pd_id in change_type.provider_definition_ids
                 ]
 
-        request_type = db_change_type_map[change_type.change_type_id].request_type
         update_iambic_template_with_change(
             template_obj,
-            request_type.template_attribute,
+            db_change_type.template_attribute,
             change_type.rendered_template,
-            request_type.apply_attr_behavior,
+            db_change_type.apply_attr_behavior,
         )
 
     return template_obj
@@ -412,6 +605,7 @@ async def get_iambic_pr_instance(
     requested_by: str,
     pull_request_id: int = None,
     file_paths_being_changed: Optional[list[str]] = None,
+    use_request_branch: bool = True,
 ):
     iambic_repo_details: IambicRepoDetails = await get_iambic_repo(tenant.name)
     try:
@@ -421,7 +615,7 @@ async def get_iambic_pr_instance(
             request_id,
             requested_by,
             file_paths_being_changed=file_paths_being_changed,
-            use_request_branch=True,
+            use_request_branch=use_request_branch,
         )
     except AttributeError:
         return None
