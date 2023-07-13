@@ -135,7 +135,7 @@ class IambicRepo:
                     # may cause us to blow away the directory.
                     raise
                 # an upstream may have re-written history, fall back to a fresh blobless clone
-                shutil.rmtree(self.default_file)
+                shutil.rmtree(self.default_file_path)
                 await self._clone_blobless_repo()
         else:
             await self._clone_blobless_repo()
