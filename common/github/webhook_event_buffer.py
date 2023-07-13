@@ -59,10 +59,6 @@ async def webhook_request_handler(request):
     """
     from common.celery_tasks.celery_tasks import app as celery_app
 
-    log_data = {
-        "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-    }
-
     headers = request["headers"]
     body = request["body"]
 
@@ -94,16 +90,19 @@ async def webhook_request_handler(request):
         # we must return to consume the event.
         log.error(
             {
-                **log_data,
                 "message": "Unassociated installation_id",
                 "github_installation_id": github_installation_id,
             }
         )
         return
 
+    db_tenant: Tenant = await Tenant.get_by_id(tenant_github_install.tenant_id)
+    log_data = {
+        "tenant": db_tenant.name,
+    }
+
     if github_event_type == "push":
         branch_name = github_event["ref"].split("/")[-1]
-        db_tenant: Tenant = await Tenant.get_by_id(tenant_github_install.tenant_id)
         tenant_repos = await IambicRepo.get_all_tenant_repos(db_tenant.name)
         for tenant_repo in tenant_repos:
             if tenant_repo.repo_name == github_event["repository"]["full_name"]:
@@ -120,10 +119,20 @@ async def webhook_request_handler(request):
     if github_event_type == "meta" and github_action == "deleted":
         await tenant_github_install.delete()
         return
-    elif github_event_type == "pull_request" and github_action == "synchronized":
+    elif github_event_type == "pull_request" and github_action == "synchronize":
         # FIXME hm, what's to do if someone push a change to the request branch
         # is calling sync_iambic_templates_for_tenant sufficient.
-        pass
+        login = github_event["sender"]["login"]
+        repo_name = (github_event["repository"]["full_name"],)
+        pr_number = (github_event["pull_request"]["number"],)
+        log.info(
+            {
+                **log_data,
+                "message": f"out-of-band changes have triggered by {login}",
+                "repo_name": repo_name,
+                "pr_number": pr_number,
+            }
+        )
     elif (github_event_type == "pull_request" and github_action == "closed") or (
         github_event_type == "pull_request_review"
         and github_action == "submitted"

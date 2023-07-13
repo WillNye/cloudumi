@@ -42,6 +42,37 @@ async def list_requests(tenant_id: int, **filter_kwargs) -> list[Request]:
 
 
 def compare_date_time(obj):
+    """
+    Extracts the 'created_at' attribute from the provided object and returns it.
+    The function supports objects that either have a 'created_at' attribute, or are dictionaries
+    with a 'created_at' key. If the value is a string, it will be converted to a datetime object
+    using the fromisoformat method.
+
+    Args:
+        obj (object or dict): An object that has a 'created_at' attribute, or a dictionary
+                              with a 'created_at' key.
+
+    Returns:
+        datetime.datetime: The 'created_at' value as a datetime object.
+
+    Raises:
+        ValueError: If the object does not have a 'created_at' attribute or key, or if the
+                    value of 'created_at' cannot be converted to a datetime object.
+
+    Examples:
+        obj1 = SomeClass()
+        obj1.created_at = datetime.datetime.now()
+        print(compare_date_time(obj1)) # returns the datetime value of obj1.created_at
+
+        obj2 = {"created_at": "2023-06-23T19:20:30+01:00"}
+        print(compare_date_time(obj2)) # returns datetime.datetime(2023, 6, 23, 19, 20, 30, tzinfo=datetime.timezone(datetime.timedelta(seconds=3600)))
+
+        obj3 = {"created_at": datetime.datetime.now()}
+        print(compare_date_time(obj3)) # returns the datetime value of obj3["created_at"]
+
+        obj4 = "string object"
+        print(compare_date_time(obj4)) # Raises ValueError: created_at not supported by {obj}
+    """
     if created_at := getattr(obj, "created_at", None):
         return created_at
     elif type(obj) == dict and "created_at" in obj and type(obj["created_at"]) == str:
