@@ -25,6 +25,7 @@ export const parseOIDCFormData = settings => {
       access_token_response_key:
         settings.get_user_by_oidc_settings.access_token_response_key,
       jwt_email_key: settings.get_user_by_oidc_settings.jwt_email_key,
+      jwt_groups_key: settings.get_user_by_oidc_settings.user_info_groups_key,
       enable_mfa: settings.get_user_by_oidc_settings.enable_mfa,
       get_groups_from_access_token:
         settings.get_user_by_oidc_settings.get_groups_from_access_token,

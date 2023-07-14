@@ -3749,6 +3749,10 @@ components:
           title: Jwt Email Key
           default: email
           type: string
+        jwt_groups_key:
+          title: Jwt Email Key
+          default: groups
+          type: string
         enable_mfa:
           title: Enable Mfa
           default: false
