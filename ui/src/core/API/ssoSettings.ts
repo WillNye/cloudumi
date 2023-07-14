@@ -52,10 +52,8 @@ export const downloadSamlCert = async (): Promise<any> => {
     });
 };
 
-export const updateOIDCSettings = async (
-  data: any
-): Promise<AxiosResponse<any>> => {
-  return axios.post(OIDC_URL, data);
+export const updateOIDCSettings = async (data: any) => {
+  return axios.post<{ data: { redirect_url: string } }>(OIDC_URL, data);
 };
 
 export const deleteSamlSettings = async (): Promise<AxiosResponse<void>> => {
@@ -130,6 +128,7 @@ export interface Auth {
   force_redirect_to_identity_provider: boolean;
   challenge_url?: { enabled: boolean };
   logout_redirect_url?: string;
+  oidc_redirect_uri?: string;
 }
 
 export interface SAMLResponse {

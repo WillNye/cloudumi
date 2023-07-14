@@ -22,7 +22,7 @@ import { parseOIDCFormData } from './utils';
 import { Tooltip } from 'shared/elements/Tooltip';
 import { invalidateSsoQueries } from '../utils';
 
-const OIDCSettings = ({ isFetching, current }) => {
+const OIDCSettings = ({ isFetching, current, oidcRedirectUrl }) => {
   const [formValues, setFormValues] = useState({
     ...AUTH_DEFAULT_VALUES,
     ...DEFAULT_OIDC_SETTINGS
@@ -87,7 +87,7 @@ const OIDCSettings = ({ isFetching, current }) => {
     () => isSubmitting || isLoadingQuery || isFetching,
     [isSubmitting, isLoadingQuery, isFetching]
   );
-
+  console.log(oidcRedirectUrl);
   return (
     <Segment isLoading={isLoading}>
       <form onSubmit={handleSave}>
@@ -223,6 +223,12 @@ const OIDCSettings = ({ isFetching, current }) => {
         </Button>
         <LineBreak />
       </form>
+      {oidcRedirectUrl && (
+        <p>
+          You must set this redirect url in your OIDC admin page:{' '}
+          <strong>{oidcRedirectUrl}</strong>
+        </p>
+      )}
     </Segment>
   );
 };
