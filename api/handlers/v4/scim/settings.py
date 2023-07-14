@@ -5,10 +5,13 @@ import tornado.escape
 from common.config.tenant_config import TenantConfig
 from common.handlers.base import BaseAdminHandler
 from common.lib.asyncio import aio_wrapper
-from common.lib.dictutils import delete_in, get_in, set_in
+from common.lib.dictutils import delete_in, set_in
 from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.yaml import yaml
 from common.models import SCIMSettingsDto, Status2, WebResponse
+
+SCIM_ENABLED = "scim.enabled"
+SCIM_BEARER_TOKEN = "secrets.scim.bearer_token"
 
 
 class ScimSettingsHandler(BaseAdminHandler):
@@ -59,21 +62,10 @@ class ScimSettingsHandler(BaseAdminHandler):
             filter_secrets=True,
         )
 
-        upsert = (
-            scim_setting_dto.dict(
-                exclude_secrets=False,
-                exclude_unset=False,
-                exclude_none=False,
-            )
-            if scim_setting_dto is not None
-            else {}
-        )
-
         new_secret = str(uuid.uuid4())
 
-        scim: bool = get_in(upsert, "scim.enabled", False)  # type: ignore
-        set_in(dynamic_config, "secrets.scim.bearer_token", new_secret)
-        set_in(dynamic_config, "scim.enabled", scim)
+        set_in(dynamic_config, SCIM_BEARER_TOKEN, new_secret)
+        set_in(dynamic_config, SCIM_ENABLED, True)
 
         await ddb.update_static_config_for_tenant(
             yaml.dump(dynamic_config),
