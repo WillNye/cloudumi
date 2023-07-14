@@ -2,7 +2,6 @@ import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from 'shared/elements/Icon';
 import { Dialog } from 'shared/layers/Dialog';
 
-import styles from './RoleCredentialSummary.module.css';
 import { HEADER_FIXED_HIEGHT, ROLE_SUMMARY_LINKS } from './constants';
 import { getRoleCredentials } from 'core/API/roles';
 import { CodeBlock } from 'shared/elements/CodeBlock';
@@ -10,6 +9,8 @@ import { Notification, NotificationType } from 'shared/elements/Notification';
 import { useIntersection } from 'react-use';
 import { useQuery } from '@tanstack/react-query';
 import { LineBreak } from 'shared/elements/LineBreak';
+import classNames from 'classnames';
+import styles from './RoleCredentialSummary.module.css';
 
 type RoleCredentialSummaryProps = {
   arn: string;
@@ -38,6 +39,11 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
   const noqCLIRef = useRef<HTMLDivElement>();
   const environmentVariablesRef = useRef<HTMLDivElement>();
   const awsProfileRef = useRef<HTMLDivElement>();
+
+  const credentialProcessRef = useRef<HTMLDivElement>();
+  const credentialsProviderRef = useRef<HTMLDivElement>();
+  const writeCredentialsRef = useRef<HTMLDivElement>();
+  const credentialExportRef = useRef<HTMLDivElement>();
 
   const noqCLIIntersection = useIntersection(noqCLIRef, {});
   const awsProfileIntersection = useIntersection(awsProfileRef, {});
@@ -99,6 +105,16 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
     [showDialog, refetch]
   );
 
+  const scrollToRef = useCallback(
+    activeRef => {
+      dialogRef?.current.scrollTo({
+        top: activeRef?.current.offsetTop - HEADER_FIXED_HIEGHT,
+        behavior: 'smooth'
+      });
+    },
+    [dialogRef]
+  );
+
   const handleOnClick = useCallback(
     (newLink: ROLE_SUMMARY_LINKS) => {
       setActiveLink(newLink);
@@ -112,13 +128,9 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
       if (newLink === ROLE_SUMMARY_LINKS.AWS_PROFILE) {
         activeRef = awsProfileRef;
       }
-
-      dialogRef?.current.scrollTo({
-        top: activeRef?.current.offsetTop - HEADER_FIXED_HIEGHT,
-        behavior: 'smooth'
-      });
+      scrollToRef(activeRef);
     },
-    [awsProfileRef, dialogRef, environmentVariablesRef, noqCLIRef]
+    [awsProfileRef, environmentVariablesRef, noqCLIRef, scrollToRef]
   );
 
   return (
@@ -143,15 +155,39 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
               <nav className={styles.nav}>
                 <ul className={styles.navList}>
                   <li
-                    className={`${styles.navItem} ${
-                      activeLink === ROLE_SUMMARY_LINKS.NOQ_CLI
-                        ? styles.active
-                        : ''
-                    }`}
+                    className={classNames(styles.navItem, {
+                      [styles.active]: activeLink === ROLE_SUMMARY_LINKS.NOQ_CLI
+                    })}
                     onClick={() => handleOnClick(ROLE_SUMMARY_LINKS.NOQ_CLI)}
                   >
-                    Noq CLI
+                    <div>Noq CLI</div>
                   </li>
+                  <ul className={styles.subNavList}>
+                    <li
+                      className={styles.subNavItem}
+                      onClick={() => scrollToRef(credentialProcessRef)}
+                    >
+                      Credential Process
+                    </li>
+                    <li
+                      className={styles.subNavItem}
+                      onClick={() => scrollToRef(credentialsProviderRef)}
+                    >
+                      ECS Credential Provider
+                    </li>
+                    <li
+                      className={styles.subNavItem}
+                      onClick={() => scrollToRef(writeCredentialsRef)}
+                    >
+                      Write Credentials to File
+                    </li>
+                    <li
+                      className={styles.subNavItem}
+                      onClick={() => scrollToRef(credentialExportRef)}
+                    >
+                      Credential Export
+                    </li>
+                  </ul>
                   <li
                     className={`${styles.navItem} ${
                       activeLink === ROLE_SUMMARY_LINKS.ENVIRONMENT_VARIABLES
@@ -174,7 +210,7 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
                       handleOnClick(ROLE_SUMMARY_LINKS.AWS_PROFILE)
                     }
                   >
-                    AWS Profile
+                    AWS Credentials File
                   </li>
                 </ul>
               </nav>
@@ -189,7 +225,9 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
               <div className={styles.sectionHeader} ref={noqCLIRef}>
                 Noq CLI
               </div>
-              <div className={styles.subHeader}>Credential Process</div>
+              <div className={styles.subHeader} ref={credentialProcessRef}>
+                Credential Process
+              </div>
               Run the following command to configure credential_process. This
               only needs to be run once or as you gain access to new roles.
               <LineBreak />
@@ -203,7 +241,9 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
               your credentials to the Noq platform are still valid.
               <LineBreak />
               <CodeBlock code={`export AWS_PROFILE=${role}`} />
-              <div className={styles.subHeader}>ECS Credential Provider</div>
+              <div className={styles.subHeader} ref={credentialsProviderRef}>
+                ECS Credential Provider
+              </div>
               In another terminal or background process, run the following
               command:
               <LineBreak />
@@ -219,8 +259,9 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
                 code={`export AWS_CONTAINER_CREDENTIALS_FULL_URI=http://127.0.0.1:9091/ecs/${arn}`}
               />
               <LineBreak />
-              <div className={styles.subHeader}>Write Credentials to File</div>
-              <LineBreak />
+              <div className={styles.subHeader} ref={writeCredentialsRef}>
+                Write Credentials to File
+              </div>
               Use the Noq CLI to write temporary credentials to your
               ~/.aws/credentials file. These credentials will expire, and you
               will need to run the command again to refresh them.
@@ -230,9 +271,10 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
 export AWS_PROFILE=${role}`}
               />
               <LineBreak />
-              <div className={styles.subHeader}>Credential Export</div>
+              <div className={styles.subHeader} ref={credentialExportRef}>
+                Credential Export
+              </div>
               <div className={styles.codeBlock}>
-                <LineBreak />
                 Use the Noq CLI to export temporary credentials as environment
                 variables. These credentials will expire, and you will need to
                 run the command again to refresh them.
@@ -250,6 +292,7 @@ export AWS_PROFILE=${role}`}
               >
                 Environment Variables
               </div>
+              <LineBreak />
               <p className={styles.secondaryText}>
                 To source credentials without using the Noq CLI, use the
                 following environment variables:
@@ -272,6 +315,7 @@ export AWS_SESSION_TOKEN=${crendentials?.SessionToken}`}
               <div ref={awsProfileRef} className={styles.sectionHeader}>
                 AWS Credentials Profile
               </div>
+              <LineBreak />
               <p className={styles.secondaryText}>
                 The following should be manually added to your
                 ~/.aws/credentials file:
