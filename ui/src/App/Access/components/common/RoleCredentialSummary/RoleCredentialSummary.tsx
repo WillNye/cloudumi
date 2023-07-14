@@ -35,15 +35,15 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
   const [crendentials, setCredentials] = useState<AWSCredentials | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const dialogRef = useRef<HTMLDivElement>();
-  const noqCLIRef = useRef<HTMLDivElement>();
-  const environmentVariablesRef = useRef<HTMLDivElement>();
-  const awsProfileRef = useRef<HTMLDivElement>();
-
   const credentialProcessRef = useRef<HTMLDivElement>();
   const credentialsProviderRef = useRef<HTMLDivElement>();
   const writeCredentialsRef = useRef<HTMLDivElement>();
   const credentialExportRef = useRef<HTMLDivElement>();
+
+  const dialogRef = useRef<HTMLDivElement>();
+  const noqCLIRef = useRef<HTMLDivElement>();
+  const environmentVariablesRef = useRef<HTMLDivElement>();
+  const awsProfileRef = useRef<HTMLDivElement>();
 
   const noqCLIIntersection = useIntersection(noqCLIRef, {});
   const awsProfileIntersection = useIntersection(awsProfileRef, {});
@@ -58,7 +58,7 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
         setActiveLink(ROLE_SUMMARY_LINKS.NOQ_CLI);
       }
     },
-    [noqCLIIntersection]
+    [noqCLIIntersection?.isIntersecting]
   );
 
   useEffect(
@@ -67,7 +67,7 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
         setActiveLink(ROLE_SUMMARY_LINKS.AWS_PROFILE);
       }
     },
-    [awsProfileIntersection]
+    [awsProfileIntersection?.isIntersecting]
   );
 
   useEffect(
@@ -76,7 +76,7 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
         setActiveLink(ROLE_SUMMARY_LINKS.ENVIRONMENT_VARIABLES);
       }
     },
-    [environmentVariableIntersection]
+    [environmentVariableIntersection?.isIntersecting]
   );
 
   const role = useMemo(
@@ -160,30 +160,42 @@ const RoleCredentialSummary: FC<RoleCredentialSummaryProps> = ({
                     })}
                     onClick={() => handleOnClick(ROLE_SUMMARY_LINKS.NOQ_CLI)}
                   >
-                    <div>Noq CLI</div>
+                    Noq CLI
                   </li>
                   <ul className={styles.subNavList}>
                     <li
                       className={styles.subNavItem}
-                      onClick={() => scrollToRef(credentialProcessRef)}
+                      onClick={() => {
+                        setActiveLink(ROLE_SUMMARY_LINKS.NOQ_CLI);
+                        scrollToRef(credentialProcessRef);
+                      }}
                     >
                       Credential Process
                     </li>
                     <li
                       className={styles.subNavItem}
-                      onClick={() => scrollToRef(credentialsProviderRef)}
+                      onClick={() => {
+                        scrollToRef(credentialsProviderRef);
+                        setActiveLink(ROLE_SUMMARY_LINKS.NOQ_CLI);
+                      }}
                     >
                       ECS Credential Provider
                     </li>
                     <li
                       className={styles.subNavItem}
-                      onClick={() => scrollToRef(writeCredentialsRef)}
+                      onClick={() => {
+                        scrollToRef(writeCredentialsRef);
+                        setActiveLink(ROLE_SUMMARY_LINKS.NOQ_CLI);
+                      }}
                     >
                       Write Credentials to File
                     </li>
                     <li
                       className={styles.subNavItem}
-                      onClick={() => scrollToRef(credentialExportRef)}
+                      onClick={() => {
+                        setActiveLink(ROLE_SUMMARY_LINKS.NOQ_CLI);
+                        scrollToRef(credentialExportRef);
+                      }}
                     >
                       Credential Export
                     </li>
