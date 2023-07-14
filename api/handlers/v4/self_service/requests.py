@@ -401,6 +401,11 @@ class IambicRequestDataTableHandler(BaseHandler):
             )
         except Exception as exc:
             errors = [str(exc)]
+            await log.aexception(
+                "Unhandled exception in IambicRequestDataTableHandler.post",
+                tenant=tenant.name,
+                data=data,
+            )
             self.write(
                 WebResponse(
                     errors=errors,

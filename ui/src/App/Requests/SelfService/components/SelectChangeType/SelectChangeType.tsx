@@ -146,18 +146,15 @@ const SelectChangeType = () => {
     () => [
       {
         header: 'Change Name',
-        accessorKey: 'name',
-        sortable: false
+        accessorKey: 'name'
       },
       {
         header: 'Description',
-        accessorKey: 'description',
-        sortable: true
+        accessorKey: 'description'
       },
       // {
       //   header: 'Field Changes',
       //   accessorKey: 'fields',
-      //   sortable: false,
       //   Cell: ({ value }) => (
       //     <ul>
       //       {value.map(field => (
@@ -170,7 +167,6 @@ const SelectChangeType = () => {
       // },
       {
         header: 'Actions',
-        sortable: false,
         accessorFn: (_data, index: number) => {
           return (
             <Button

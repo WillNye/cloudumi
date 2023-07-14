@@ -50,6 +50,11 @@ class NoqUserTypeAheadHandler(BaseHandler):
                 ).json(exclude_unset=True, exclude_none=True)
             )
         except Exception as err:
+            await log.aexception(
+                "Error in NoqUserTypeAheadHandler.get",
+                tenant=self.ctx.db_tenant.name,
+                query_params=query_params,
+            )
             self.set_status(500)
             self.write(
                 WebResponse(
@@ -89,6 +94,11 @@ class NoqGroupTypeAheadHandler(BaseHandler):
                 ).json(exclude_unset=True, exclude_none=True)
             )
         except Exception as err:
+            await log.aexception(
+                "Error in NoqGroupTypeAheadHandler.get",
+                tenant=self.ctx.db_tenant.name,
+                query_params=query_params,
+            )
             self.set_status(500)
             self.write(
                 WebResponse(

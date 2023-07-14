@@ -5,30 +5,25 @@ export const eligibleRolesColumns = [
     header: 'AWS Console Sign-In',
     accessorKey: 'arn',
     id: 'arn',
-    width: '220px',
-    sortable: false
+    width: '220px'
   },
   {
     header: 'Account Details',
-    accessorKey: 'name',
-    sortable: true
+    accessorKey: 'name'
   },
   {
     header: 'Role Name',
-    accessorKey: 'roleName',
-    sortable: true
+    accessorKey: 'roleName'
   },
   {
     header: 'View Details',
     accessorKey: 'viewDetails',
-    width: '50px',
-    sortable: false
+    width: '50px'
   },
   {
     header: 'More Actions',
     accessorKey: 'moreActions',
-    width: '50px',
-    sortable: false
+    width: '50px'
   }
 ];
 
@@ -38,21 +33,17 @@ export const allRolesColumns: ColumnDef<any, any>[] = [
     accessorKey: 'name',
     id: 'name',
     footer: props => props.column.id
-    // sortable: true
   },
   {
     header: 'Role Name',
     accessorKey: 'roleName',
     id: 'roleName',
-    // sortable: true,
     footer: props => props.column.id
   },
   {
     header: 'More Actions',
     accessorKey: 'moreActions',
     id: 'moreActions',
-    // width: '50px',
-    // sortable: false,
     footer: props => props.column.id
   }
 ];
