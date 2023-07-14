@@ -13,7 +13,7 @@ import css from './EligibleRoles.module.css';
 import { useQuery } from '@tanstack/react-query';
 import { getEligibleRoles } from 'core/API/roles';
 import { LineBreak } from 'shared/elements/LineBreak';
-import { getSearchParams } from './utils';
+import { getSearchParams, parseRoleEnvVariable } from './utils';
 
 const EligibleRoles = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -82,7 +82,8 @@ const EligibleRoles = () => {
         viewDetails: (
           <RoleCredentialSummary
             arn={item.arn}
-            role={`${item.account_name}/${roleName}`}
+            accountName={parseRoleEnvVariable(item.account_name)}
+            roleName={roleName}
           />
         ),
         moreActions: <MoreActions role={item} />

@@ -4,4 +4,4 @@ export enum ROLE_SUMMARY_LINKS {
   AWS_PROFILE = 'aws_profile'
 }
 
-export const HEADER_FIXED_HIEGHT = 60;
+export const HEADER_FIXED_HIEGHT = 70;
