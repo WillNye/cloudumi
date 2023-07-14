@@ -2636,9 +2636,12 @@ components:
         message:
           type: string
         errors:
-          type: array
-          items:
-            type: string
+          oneOf:
+            - type: array
+              items:
+                oneOf:
+                  - type: string
+                  - type: object
         count:
           type: integer
         total:

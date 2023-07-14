@@ -1,4 +1,4 @@
-import { FC, Fragment, useCallback, useState } from 'react';
+import { FC, Fragment, useCallback, useMemo, useRef, useState } from 'react';
 import { Button } from 'shared/elements/Button';
 import { Icon } from 'shared/elements/Icon';
 import { Input } from 'shared/form/Input';
@@ -10,6 +10,7 @@ import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
   createGroupMemberships,
+  deleteGroupMemberships,
   getAllGroups,
   updateUser
 } from 'core/API/settings';
@@ -22,6 +23,7 @@ import { Divider } from 'shared/elements/Divider';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import styles from './EditUserModal.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
+import classNames from 'classnames';
 import { Chip } from 'shared/elements/Chip';
 
 type UpdateUserParams = {
@@ -32,10 +34,11 @@ type UpdateUserParams = {
 type CreateUserGroupsParams = {
   users: string[];
   groups: string[];
+  check_deleted?: boolean;
 };
 
 type EditUserModalProps = {
-  canEdit: boolean;
+  canEdit?: boolean;
   user: User;
 };
 
@@ -44,12 +47,17 @@ const updatingUserSchema = Yup.object().shape({
   username: Yup.string().required('Required')
 });
 
+// eslint-disable-next-line complexity
 const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
   const [showDialog, setShowDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [userGroups, setUserGroups] = useState(user.groups);
+  const [groupEdition, setGroupEdition] = useState({
+    add: [],
+    remove: []
+  });
   const [isSearching, setIsSearching] = useState(false);
   const [isUpdatingGroups, setIsUpdatingGroups] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
@@ -66,7 +74,13 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
   });
 
   const { mutateAsync: createUserGroupsMutation } = useMutation({
-    mutationFn: (data: CreateUserGroupsParams) => createGroupMemberships(data)
+    mutationFn: (data: CreateUserGroupsParams) =>
+      createGroupMemberships({ ...data })
+  });
+
+  const { mutateAsync: deleteGroupUsersMutation } = useMutation({
+    mutationFn: (data: CreateUserGroupsParams) =>
+      deleteGroupMemberships({ ...data })
   });
 
   const { mutateAsync: searchMutation } = useMutation({
@@ -101,17 +115,47 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
   const resultRenderer = result => <p>{result.name}</p>;
   const onSelectResult = group => {
     setSearchValue(group.name);
-    setUserGroups(groups => [...new Set([...groups, group.name])]);
+    setUserGroups([...new Set([...userGroups, group.name])]);
+
+    if (groupEdition.remove.includes(group.name)) {
+      setGroupEdition({
+        ...groupEdition,
+        remove: groupEdition.remove.filter(u => u != group.name)
+      });
+    } else {
+      setGroupEdition({
+        ...groupEdition,
+        add: [...new Set([...groupEdition.add, group.name])]
+      });
+    }
   };
 
-  const reseActions = useCallback(() => {
+  const handleDeleteChip = (group, index) => {
+    setUserGroups([...new Set([...userGroups.filter((ug, i) => i != index)])]);
+
+    setUserGroups([...new Set([...userGroups.filter((ug, i) => i != index)])]);
+
+    if (groupEdition.add.includes(group)) {
+      setGroupEdition({
+        ...groupEdition,
+        add: groupEdition.add.filter(u => u == group)
+      });
+    } else {
+      setGroupEdition({
+        ...groupEdition,
+        remove: [...new Set([...groupEdition.remove, group])]
+      });
+    }
+  };
+
+  const resetActions = useCallback(() => {
     setErrorMessage(null);
     setSuccessMessage(null);
   }, []);
 
   const resetUserCredentials = useCallback(
     async (action: UPDATE_USER_ACTIONS) => {
-      reseActions();
+      resetActions();
       setIsLoading(true);
       try {
         await updateUserMutation({
@@ -131,12 +175,12 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
       }
       setIsLoading(false);
     },
-    [user.id, reseActions, updateUserMutation]
+    [user.id, resetActions, updateUserMutation]
   );
 
   const onSubmit = useCallback(
     async ({ email, username }) => {
-      reseActions();
+      resetActions();
       try {
         await updateUserMutation({
           data: {
@@ -157,8 +201,10 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
         );
       }
     },
-    [user.id, reseActions, updateUserMutation]
+    [user.id, resetActions, updateUserMutation]
   );
+
+  let reqDelay = useRef<any>();
 
   const handleSearch = useCallback(
     async e => {
@@ -169,29 +215,68 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
         setSearchResults([]);
         return;
       }
-      setIsSearching(true);
-      try {
-        const res = await searchMutation(value);
-        setSearchResults(res.data.data);
-      } catch (error) {
-        // TODO: Properly handle error
-        console.error(error);
-      }
-      setIsSearching(false);
+      clearTimeout(reqDelay.current);
+      reqDelay.current = setTimeout(async () => {
+        setIsSearching(true);
+        try {
+          const res = await searchMutation(value);
+          setSearchResults(res.data.data);
+        } catch (error) {
+          // TODO: Properly handle error
+          console.error(error);
+        }
+        setIsSearching(false);
+      }, 500);
     },
     [searchMutation]
   );
 
   const updateGroupMemberships = useCallback(async () => {
-    reseActions();
+    resetActions();
     setIsUpdatingGroups(true);
     try {
-      await createUserGroupsMutation({
-        users: [user.email],
-        groups: userGroups
-      });
-      // TODO: update user groups
-      setSuccessMessage('Successfully updated user groups');
+      const responses = await Promise.all([
+        groupEdition.add.length
+          ? createUserGroupsMutation({
+              users: [user.email], //groupEdition.add,
+              groups: groupEdition.add
+            })
+          : null,
+        groupEdition.remove.length
+          ? deleteGroupUsersMutation({
+              users: [user.email],
+              groups: groupEdition.remove
+            })
+          : null
+      ]);
+
+      const successMessages = [];
+      const errorMessages = [];
+
+      for (const res of responses) {
+        if (!res) {
+          continue;
+        }
+
+        res.data.data.message.forEach(message => {
+          if (message.type === 'success') {
+            successMessages.push(message.message);
+          } else if (message.type === 'error') {
+            errorMessages.push(message.message);
+          }
+        });
+      }
+
+      // Concatenate all the messages separated by a newline
+      if (successMessages.length > 0) {
+        setSuccessMessage(successMessages.join('\n'));
+      }
+      if (errorMessages.length > 0) {
+        setErrorMessage(errorMessages.join('\n'));
+      } else {
+        // Reset the group edition
+        setGroupEdition({ add: [], remove: [] });
+      }
     } catch (error) {
       const err = error as AxiosError;
       const errorRes = err?.response;
@@ -201,9 +286,21 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
       );
     }
     setIsUpdatingGroups(false);
-  }, [user.email, userGroups, reseActions, createUserGroupsMutation]);
+  }, [
+    resetActions,
+    groupEdition.add,
+    groupEdition.remove,
+    createUserGroupsMutation,
+    user.email,
+    deleteGroupUsersMutation
+  ]);
 
-  if (!canEdit) {
+  const isDisabled = useMemo(
+    () => user.managed_by != 'MANUAL',
+    [user.managed_by]
+  );
+
+  if (!(canEdit ?? true)) {
     return <Fragment />;
   }
 
@@ -245,7 +342,9 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
               placeholder="username"
               autoCapitalize="none"
               autoCorrect="off"
-              {...register('username')}
+              {...register('username', {
+                disabled: user?.managed_by != 'MANUAL'
+              })}
             />
             {errors?.username && touchedFields.username && (
               <p>{errors.username.message}</p>
@@ -257,7 +356,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
               placeholder="email"
               autoCapitalize="none"
               autoCorrect="off"
-              {...register('email')}
+              {...register('email', { disabled: user?.managed_by != 'MANUAL' })}
             />
             {errors?.email && touchedFields.email && (
               <p>{errors.email.message}</p>
@@ -266,7 +365,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
             <Button
               size="small"
               type="submit"
-              disabled={isSubmitting || !isValid || isLoading}
+              disabled={isSubmitting || !isValid || isLoading || isDisabled}
               fullWidth
             >
               {isSubmitting ? 'Updating User...' : 'Update User'}
@@ -274,16 +373,20 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
           </form>
           <LineBreak />
           <div className={styles.userGroups}>
-            <Block disableLabelPadding label="Add Groups" required></Block>
-            <Search
-              fullWidth
-              resultRenderer={resultRenderer}
-              results={searchResults}
-              onChange={handleSearch}
-              value={searchValue}
-              onResultSelect={onSelectResult}
-              isLoading={isSearching}
-            />
+            {!isDisabled && (
+              <>
+                <Block disableLabelPadding label="Add Groups" required></Block>
+                <Search
+                  fullWidth
+                  resultRenderer={resultRenderer}
+                  results={searchResults}
+                  onChange={handleSearch}
+                  value={searchValue}
+                  onResultSelect={onSelectResult}
+                  isLoading={isSearching}
+                />
+              </>
+            )}
             <div className={styles.groups}>
               <h5>User Groups</h5>
               <Divider />
@@ -292,6 +395,16 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
                   {userGroups.map((group, index) => (
                     <Chip className={styles.group} key={index}>
                       {group}
+                      {!isDisabled && (
+                        <>
+                          {' '}
+                          <Icon
+                            name="close"
+                            size="small"
+                            onClick={() => handleDeleteChip(group, index)}
+                          />
+                        </>
+                      )}
                     </Chip>
                   ))}
                 </div>
@@ -300,7 +413,7 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
               )}
             </div>
             <Button
-              disabled={isUpdatingGroups}
+              disabled={isUpdatingGroups || isDisabled}
               size="small"
               fullWidth
               onClick={updateGroupMemberships}
@@ -309,7 +422,11 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
             </Button>
           </div>
           <LineBreak />
-          <div className={styles.actions}>
+          <div
+            className={classNames(styles.actions, {
+              [styles.hidden]: isDisabled
+            })}
+          >
             <Button
               color="secondary"
               variant="outline"
