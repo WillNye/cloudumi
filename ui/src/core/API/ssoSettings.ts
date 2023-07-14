@@ -113,6 +113,7 @@ export interface GetUserByOidcSettings {
   id_token_response_key: string;
   access_token_response_key: string;
   jwt_email_key: string;
+  jwt_groups_key: string;
   enable_mfa: boolean;
   get_groups_from_access_token: boolean;
   access_token_audience: string;

@@ -470,7 +470,7 @@ async def authenticate_user_by_oidc(request, return_200=False, force_redirect=No
             auth = get_plugin_by_name(
                 config.get_tenant_specific_key("plugins.auth", tenant, "cmsaas_auth")
             )()
-            groups = await auth.get_groups(groups, email, request, only_google=True)
+            groups = await auth.get_groups(groups, email, request)
             expiration = datetime.utcnow().replace(tzinfo=pytz.UTC) + timedelta(
                 minutes=config.get_tenant_specific_key(
                     "jwt.expiration_minutes", tenant, 1200

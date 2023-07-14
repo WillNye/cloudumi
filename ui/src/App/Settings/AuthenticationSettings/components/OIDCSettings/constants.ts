@@ -32,6 +32,7 @@ export const oidcSchema = Yup.object()
         .default('email')
         .required()
         .label('JWT Email Key'),
+      jwt_groups_key: Yup.string().required(),
       get_groups_from_access_token: Yup.boolean()
         .default(false)
         .label('Get Groups from Access Token'),
@@ -69,6 +70,7 @@ export const DEFAULT_OIDC_SETTINGS = {
     id_token_response_key: 'id_token',
     access_token_response_key: 'access_token',
     jwt_email_key: 'email',
+    jwt_groups_key: 'groups',
     enable_mfa: false,
     get_groups_from_access_token: true,
     access_token_audience: 'noq',
