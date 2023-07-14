@@ -11,6 +11,8 @@ export type User = {
 
   email: string;
   username: string;
-  managed_by: string;
+  managed_by: ManagedBy;
   groups: string[];
 };
+
+export type ManagedBy = 'MANUAL' | 'SCIM' | 'SSO';
