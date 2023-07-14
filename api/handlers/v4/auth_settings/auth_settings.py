@@ -26,7 +26,6 @@ class AuthSettingsReader(BaseAdminHandler):
             **{
                 **dynamic_config.get("auth", {}),
                 "oidc_redirect_uri": tenant.oidc_redirect_url,
-                "scim_enabled": tenant.scim_enabled,
             }  # type: ignore
         )
 
@@ -35,8 +34,11 @@ class AuthSettingsReader(BaseAdminHandler):
                 status=Status2.success,
                 status_code=200,
                 reason=None,
-                data=auth.dict(
-                    exclude_unset=False, exclude_none=False, exclude_secrets=False
+                data=dict(
+                    **auth.dict(
+                        exclude_unset=False, exclude_none=False, exclude_secrets=False
+                    ),
+                    scim_enabled=tenant.scim_enabled
                 ),
             ).dict(exclude_unset=True, exclude_none=True, exclude_secrets=False)
         )

@@ -3897,10 +3897,6 @@ components:
           title: Get User By Saml
           default: false
           type: boolean
-        scim_enabled:
-          title: SCIM enabled
-          default: false
-          type: boolean
         extra_auth_cookies:
           title: Extra Auth Cookies
           default: []
