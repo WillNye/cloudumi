@@ -8,6 +8,7 @@ import { Loader } from 'shared/elements/Loader';
 import { useAxiosInterceptors } from './hooks';
 import { useQuery } from '@tanstack/react-query';
 import { ErrorFallback } from 'shared/elements/ErrorFallback';
+import { isUserLoggedIn } from './utils';
 
 export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -26,23 +27,24 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
     queryFn: getUserDetails,
     onSuccess: userData => {
       setUser(userData);
+      const preLoginPath = sessionStorage.getItem('preLoginPath');
+      if (isUserLoggedIn(userData) && preLoginPath) {
+        sessionStorage.removeItem('preLoginPath');
+        window.location.href = preLoginPath;
+      }
       setIsLoading(false);
     },
     onError: () => {
       const relativePath = window.location.pathname + window.location.search;
-      sessionStorage.setItem('preLoginPath', relativePath);
+      if (!relativePath?.startsWith('/login')) {
+        sessionStorage.setItem('preLoginPath', relativePath);
+      }
       if (!isResetPasswordRoute) {
         navigate('/login');
       }
       setIsLoading(false);
     }
   });
-
-  const preLoginPath = sessionStorage.getItem('preLoginPath');
-  if (user && preLoginPath) {
-    sessionStorage.removeItem('preLoginPath');
-    window.location.href = preLoginPath;
-  }
 
   const values = useMemo(
     () => ({

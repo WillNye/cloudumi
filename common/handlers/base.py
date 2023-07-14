@@ -43,6 +43,7 @@ from common.lib.redis import RedisHandler
 from common.lib.request_context.models import RequestContext
 from common.lib.saml import authenticate_user_by_saml
 from common.lib.tenant.models import TenantDetails
+from common.lib.tenant.utils import is_tenant_active
 from common.lib.tracing import ConsoleMeTracer
 from common.lib.web import handle_generic_error_response
 from common.lib.workos import WorkOS
@@ -100,6 +101,10 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
             "/api/v3/github/callback/",
             "/api/v3/github/events/",
         ]
+        landing_page_domains_unprotected_routes = [
+            "/aws_marketplace",
+            "/aws_marketplace/form_submission",
+        ]
         tenant = self.get_tenant_name()
         # Ensure request is for a valid tenant
         if config.is_tenant_configured(tenant):
@@ -113,6 +118,14 @@ class TornadoRequestHandler(tornado.web.RequestHandler):
 
         # Ignore unprotected routes, like /healthcheck
         if self.request.path in unprotected_routes:
+            return
+
+        # ok to ignore landing pages unprotected routes if
+        # this is on landing page domains
+        if (
+            self.request.host in config.get("_global_.landing_page_domains", [])
+            and self.request.path in landing_page_domains_unprotected_routes
+        ):
             return
 
         # Complain loudly that we don't have a configuration for the tenant. Instruct
@@ -430,6 +443,7 @@ class BaseHandler(TornadoRequestHandler):
         tenant = self.get_tenant_name()
         tenant_config = TenantConfig.get_instance(tenant)
         self.eula_signed = None
+        self.tenant_active = None
         self.mfa_setup_required = None
         self.password_reset_required = None
         self.mfa_verification_required = None
@@ -497,6 +511,7 @@ class BaseHandler(TornadoRequestHandler):
                 self.eligible_roles = res.get("additional_roles", [])
                 self.auth_cookie_expiration = res.get("exp")
                 self.eula_signed = res.get("eula_signed", False)
+                self.tenant_active = res.get("tenant_active", False)
                 self.mfa_setup_required = res.get("mfa_setup_required", None)
                 self.mfa_verification_required = res.get(
                     "mfa_verification_required", None
@@ -685,6 +700,44 @@ class BaseHandler(TornadoRequestHandler):
                 #   Also, this should redirect to a sign-up page per https://perimy.atlassian.net/browse/EN-930
                 self.eula_signed = False
 
+            # This is also our chance to validate subscription status
+            if not tenant_details:
+                self.write(
+                    f"Tenant {tenant} was not found. Please contact your administrator. "
+                    "If you are an administrator, please confirm your subscription status in "
+                    "Amazon Marketplace."
+                )
+                raise tornado.web.Finish(
+                    f"Tenant {tenant} not found. Please contact your administrator."
+                )
+            # We take advantage of the eula request that we're already performing to also check
+            # tenant status. If the tenant is not active, we'll return a 401. This is so we're not
+            # querying the database for every single user/request, and we don't have to have
+            # complex caching logic in place. This also means that tenants will be "expired"
+            # after all JWTs have expired (By default, every 6 hours)
+        if not self.tenant_active:
+            self.tenant_active = await is_tenant_active(tenant)
+
+            if not self.tenant_active:
+                tenant_not_active_message = (
+                    "Your tenant is not active. Please contact your administrator or the Noq team. "
+                    "If you are an administrator, please confirm your subscription status in "
+                    "Amazon Marketplace."
+                )
+                self.set_status(401)
+                self.write(
+                    WebResponse(
+                        status="error",
+                        status_code=401,
+                        data={"message": tenant_not_active_message},
+                    ).dict(exclude_unset=True, exclude_none=True)
+                )
+                log.error(
+                    tenant_not_active_message,
+                    tenant=tenant,
+                )
+                raise tornado.web.Finish()
+
         self.contractor = False  # TODO: Add functionality later for contractor detection via regex or something else
 
         if (
@@ -719,6 +772,7 @@ class BaseHandler(TornadoRequestHandler):
         if (
             not self.eligible_accounts
             and self.eula_signed
+            and self.tenant_active
             and not self.mfa_setup_required
         ):
             try:
@@ -779,6 +833,18 @@ class BaseHandler(TornadoRequestHandler):
         if self.__class__.__name__ == "UserProfileHandler":
             # Let the user profile endpoint through
             pass
+        elif not self.tenant_active:
+            # Tenant is inactive in Global tenant_details DynamoDB Table.
+            # Possibly unsubscribed in AWS Marketplace.
+            self.set_status(403)
+            self.write(
+                WebResponse(
+                    status_code=403,
+                    reason="Tenant is not active",
+                    data={"message": "TENANT_INACTIVE"},
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            raise tornado.web.Finish()
         elif (
             self.password_reset_required
             or self.__class__.__name__ == "PasswordResetSelfServiceHandler"
@@ -941,6 +1007,12 @@ class BaseHandler(TornadoRequestHandler):
         eligible_roles = await get_user_eligible_roles(
             self.ctx.db_tenant, self.ctx.db_user, self.groups
         )
+        await log.awarning(
+            "Retrieved eligible roles for user",
+            user=self.ctx.db_user.email,
+            groups=self.groups,
+            eligible_roles=eligible_roles,
+        )
         self.eligible_roles = list(set(eligible_roles + self.eligible_roles))
 
     async def clear_jwt_cookie(self):
@@ -961,6 +1033,7 @@ class BaseHandler(TornadoRequestHandler):
             roles,
             exp=expiration,
             eula_signed=self.eula_signed,
+            tenant_active=self.tenant_active,
             mfa_setup_required=self.mfa_setup_required,
         )
         self.set_cookie(

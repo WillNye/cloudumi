@@ -16,3 +16,5 @@ export const getSearchParams = (): PropertyFilterProps.Token[] => {
   }
   return keyValuePairs;
 };
+
+export const parseRoleEnvVariable = (role: string) => role.replace(' ', '_');

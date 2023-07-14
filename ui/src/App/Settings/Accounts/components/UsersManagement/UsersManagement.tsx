@@ -63,14 +63,13 @@ const UsersManagement = () => {
             dataType={DELETE_DATA_TYPE.USER}
             dataId={item.email}
             title="Delete User"
-            refreshData={callGetAllUsers}
           />
         ),
         edit: <UserModal user={item} />,
         groups: item.groups.length
       };
     });
-  }, [allUsersData, callGetAllUsers]);
+  }, [allUsersData]);
 
   return (
     <div className={css.container}>

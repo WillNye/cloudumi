@@ -7,46 +7,44 @@ import { DELETE_DATA_TYPE } from 'App/Settings/Accounts/constants';
 import { deleteGroup, deleteUser } from 'core/API/settings';
 import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
-import { Notification, NotificationType } from 'shared/elements/Notification';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { LineBreak } from 'shared/elements/LineBreak';
+import { toast } from 'react-toastify';
+import { Divider } from 'shared/elements/Divider';
 
 interface DeleteProps {
   canEdit?: boolean;
   dataType: DELETE_DATA_TYPE;
   dataId: string;
   title: string;
-  refreshData: () => void;
 }
 
 type DeleteUserGroupParams = {
   [x: string]: string;
 };
 
-const Delete: FC<DeleteProps> = ({
-  canEdit,
-  dataType,
-  dataId,
-  title,
-  refreshData
-}) => {
+const Delete: FC<DeleteProps> = ({ canEdit, dataType, dataId, title }) => {
   const [showDialog, setShowDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const queryClient = useQueryClient();
 
   const isUser = useMemo(() => dataType === DELETE_DATA_TYPE.USER, [dataType]);
 
   const { mutateAsync: deleteUserMutation } = useMutation({
-    mutationFn: (data: DeleteUserGroupParams) => deleteUser(data)
+    mutationFn: (data: DeleteUserGroupParams) => deleteUser(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`allUsers`] });
+    }
   });
   const { mutateAsync: deleteGroupMutation } = useMutation({
-    mutationFn: (data: DeleteUserGroupParams) => deleteGroup(data)
+    mutationFn: (data: DeleteUserGroupParams) => deleteGroup(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`allGroups`] });
+    }
   });
 
   const handleOnSubmit = useCallback(async () => {
-    setErrorMessage(null);
-    setSuccessMessage(null);
     setIsLoading(true);
     try {
       const deleteAction = isUser ? deleteUserMutation : deleteGroupMutation;
@@ -54,27 +52,19 @@ const Delete: FC<DeleteProps> = ({
       await deleteAction({
         [deleteKey]: dataId
       });
-      setSuccessMessage(`Successfully deleted ${dataType}: ${dataId}`);
+      toast.success(`Successfully deleted ${dataType}: ${dataId}`);
       setIsLoading(false);
       setShowDialog(false);
-      refreshData();
     } catch (error) {
       const err = error as AxiosError;
       const errorRes = err?.response;
       const errorMsg = extractErrorMessage(errorRes?.data);
-      setErrorMessage(
+      toast.error(
         errorMsg || `An error occurred while deleting ${dataType}: ${dataId}`
       );
       setIsLoading(false);
     }
-  }, [
-    dataId,
-    isUser,
-    dataType,
-    refreshData,
-    deleteGroupMutation,
-    deleteUserMutation
-  ]);
+  }, [dataId, isUser, dataType, deleteGroupMutation, deleteUserMutation]);
 
   if (!(canEdit ?? true)) {
     return <Fragment />;
@@ -97,24 +87,7 @@ const Delete: FC<DeleteProps> = ({
             {`Are you sure you want to delete this ${dataType}: `}{' '}
             <strong>{dataId}?</strong>
           </div>
-          <LineBreak />
-          {errorMessage && (
-            <Notification
-              type={NotificationType.ERROR}
-              header={errorMessage}
-              showCloseIcon={false}
-              fullWidth
-            />
-          )}
-          {successMessage && (
-            <Notification
-              type={NotificationType.SUCCESS}
-              header={successMessage}
-              showCloseIcon={false}
-              fullWidth
-            />
-          )}
-          <LineBreak />
+          <LineBreak size="large" />
           <div className={styles.deleteActions}>
             <Button
               className={styles.btn}
@@ -125,6 +98,7 @@ const Delete: FC<DeleteProps> = ({
             >
               {isLoading ? 'Deleting...' : 'Delete'}
             </Button>
+            <Divider orientation="vertical" />
             <Button
               color="secondary"
               variant="outline"

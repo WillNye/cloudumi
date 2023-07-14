@@ -91,8 +91,6 @@ echo "Building and tagging docker image"
 echo
 
 docker build --platform=linux/amd64 \
-    --build-arg IAMBIC_REPO_USER="$IAMBIC_REPO_USER" \
-    --build-arg IAMBIC_REPO_TOKEN="$IAMBIC_REPO_TOKEN" \
     --build-arg PUBLIC_URL="$PUBLIC_URL" \
     --build-arg PUBLIC_URL_V2="$PUBLIC_URL_V2" \
     -t $DOCKER_IMAGE_NAME \

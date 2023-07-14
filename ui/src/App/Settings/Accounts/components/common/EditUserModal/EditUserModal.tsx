@@ -20,7 +20,7 @@ import { User } from '../../../types';
 import { UPDATE_USER_ACTIONS } from '../../../constants';
 import { Search } from 'shared/form/Search';
 import { Divider } from 'shared/elements/Divider';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import styles from './EditUserModal.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
 import classNames from 'classnames';
@@ -63,9 +63,14 @@ const EditUserModal: FC<EditUserModalProps> = ({ canEdit, user }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [searchValue, setSearchValue] = useState('');
 
+  const queryClient = useQueryClient();
+
   const { mutateAsync: updateUserMutation } = useMutation({
     mutationFn: (userData: UpdateUserParams) =>
-      updateUser(userData.data, userData.action)
+      updateUser(userData.data, userData.action),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`allUsers`] });
+    }
   });
 
   const { mutateAsync: createUserGroupsMutation } = useMutation({

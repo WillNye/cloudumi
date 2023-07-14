@@ -62,7 +62,7 @@ _development_user_override: {override_email}
 _development_run_celery_tasks_1_min: true
 _development_groups_override:
   - engineering@noq.dev
-  - noq_admins
+  - noq_admins@noq.dev
   - {override_email}
 cloudtrail:
   enabled: true
@@ -72,7 +72,7 @@ cache_self_service_typeahead:
   cache_resource_templates: true
 groups:
   can_admin:
-    - noq_admins
+    - noq_admins@noq.dev
 cache_resource_templates:
   repositories:
     - type: git
@@ -349,7 +349,7 @@ headers:
 url: https://cloudumidev.com:3000
 application_admin:
   - engineering@noq.dev
-  - noq_admins
+  - noq_admins@noq.dev
 secrets:
   scim:
     bearer_token: local_secret_scim_bearer_token

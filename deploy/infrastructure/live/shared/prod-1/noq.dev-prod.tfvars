@@ -12,7 +12,7 @@ zone                 = "noq.dev"
 stage                = "prod"
 attributes           = 1
 domain_name          = "*.noq.dev"
-landing_page_domains = ["shared.noq.dev"]
+landing_page_domains = ["shared.noq.dev", "registration.noq.dev"]
 profile              = "prod/prod_admin"
 
 region     = "us-west-2"
@@ -69,3 +69,7 @@ api_count    = 1
 worker_count = 1
 
 log_expiry = 365
+
+aws_marketplace_subscription_sns_topic_arn = "arn:aws:sns:us-east-1:287250355862:aws-mp-subscription-notification-ci3g7nysfa7luy3vlhw4g7zwa"
+aws_marketplace_product_code               = "ci3g7nysfa7luy3vlhw4g7zwa"
+aws_marketplace_region                     = "us-east-1"

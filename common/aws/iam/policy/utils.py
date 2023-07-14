@@ -15,19 +15,26 @@ import sentry_sdk
 from botocore.exceptions import ClientError, ParamValidationError
 from cachetools import TTLCache
 from deepdiff import DeepDiff
+from iambic.plugins.v0_1_0.aws.iam.policy.models import AWS_MANAGED_POLICY_TEMPLATE_TYPE
 from iambic.plugins.v0_1_0.aws.utils import paginated_search
 from jinja2 import FileSystemLoader, select_autoescape
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 from joblib import Parallel, delayed
 from parliament import analyze_policy_string, enhance_finding
+from sqlalchemy import select
 
 from common.aws.iam.role.utils import get_role_managed_policy_documents
 from common.aws.iam.statement.utils import condense_statements
 from common.aws.iam.user.utils import fetch_iam_user
 from common.aws.utils import ResourceAccountCache, ResourceSummary
 from common.config import config
+from common.config.globals import ASYNC_PG_SESSION
 from common.config.models import ModelAdapter
 from common.core.async_cached import noq_cached
+from common.iambic.templates.models import (
+    IambicTemplate,
+    IambicTemplateProviderDefinition,
+)
 from common.lib import noq_json as json
 from common.lib.assume_role import ConsoleMeCloudAux, rate_limited, sts_conn
 from common.lib.asyncio import NoqSemaphore, aio_wrapper
@@ -43,6 +50,7 @@ from common.lib.plugins import get_plugin_by_name
 from common.lib.redis import RedisHandler
 from common.lib.s3_helpers import is_object_older_than_seconds
 from common.models import SpokeAccount
+from common.tenants.models import Tenant
 
 log = config.get_logger(__name__)
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
@@ -66,7 +74,7 @@ async def get_aws_managed_policy_names() -> set[str]:
 
 
 @noq_cached(cache=TTLCache(maxsize=1024, ttl=120))
-async def get_aws_managed_policy_arns() -> set[str]:
+async def get_aws_managed_policy_arns() -> list[str]:
     iam_client = boto3.client("iam")
     managed_policies = await paginated_search(
         iam_client.list_policies,
@@ -75,7 +83,56 @@ async def get_aws_managed_policy_arns() -> set[str]:
         OnlyAttached=False,
         PathPrefix="/",
     )
-    return set(policy["Arn"] for policy in managed_policies)
+    return sorted(list(set(policy["Arn"] for policy in managed_policies)))
+
+
+async def list_customer_managed_policy_definitions(
+    tenant: Tenant,
+    resource_id: str = None,
+    provider_definition_ids: list[str] = None,
+    page: int = None,
+    page_size: int = None,
+) -> list[IambicTemplateProviderDefinition]:
+    template_type = AWS_MANAGED_POLICY_TEMPLATE_TYPE
+    async with ASYNC_PG_SESSION() as session:
+        stmt = (
+            select(IambicTemplateProviderDefinition)
+            .join(
+                IambicTemplate,
+                IambicTemplate.id
+                == IambicTemplateProviderDefinition.iambic_template_id,
+            )
+            .filter(
+                IambicTemplateProviderDefinition.tenant_id == tenant.id,
+                IambicTemplate.template_type == template_type,
+            )
+            .order_by(IambicTemplateProviderDefinition.secondary_resource_id)
+        )
+
+        if resource_id and provider_definition_ids:
+            stmt = stmt.filter(
+                IambicTemplateProviderDefinition.secondary_resource_id.ilike(
+                    f"%{resource_id}%"
+                )
+            )
+        elif resource_id and not provider_definition_ids:
+            stmt = stmt.filter(
+                IambicTemplateProviderDefinition.resource_id.ilike(f"%{resource_id}%")
+            )
+
+        if provider_definition_ids:
+            stmt = stmt.filter(
+                IambicTemplateProviderDefinition.tenant_provider_definition_id.in_(
+                    provider_definition_ids
+                )
+            )
+
+        if page_size:
+            stmt = stmt.slice((page - 1) * page_size, page * page_size)
+
+        items = await session.execute(stmt)
+
+    return items.scalars().unique().all()
 
 
 def is_tenant_policy(arn: str) -> bool:

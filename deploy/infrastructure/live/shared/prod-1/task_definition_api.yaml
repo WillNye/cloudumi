@@ -41,6 +41,11 @@ containerDefinitions:
     privileged: false
     name: noq-dev-shared-prod-1-api
 
+    command:
+      - bash
+      - -c
+      - pip install argh watchdog; watchmedo auto-restart --recursive --pattern="api/*.py;common/*.py" --directory="." --ignore-patterns="./env/*" --verbose python3.11 api/__main__.py
+
 placementConstraints: []
 memory: "8192"
 taskRoleArn: arn:aws:iam::940552945933:role/noq-dev-shared-prod-1-ecsTaskRole

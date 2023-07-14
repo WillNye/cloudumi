@@ -55,6 +55,10 @@ export default defineConfig(({ mode, command }) => {
         '/docs': {
           target: env.VITE_API_URL,
           changeOrigin: false
+        },
+        '/aws_marketplace': {
+          target: env.VITE_API_URL,
+          changeOrigin: false
         }
       }
     },

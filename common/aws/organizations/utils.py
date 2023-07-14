@@ -4,6 +4,7 @@ from typing import Any, Dict, Set, Tuple
 
 import boto3
 import sentry_sdk
+from botocore.exceptions import ClientError
 
 from common.config import config
 from common.config.models import ModelAdapter
@@ -392,10 +393,25 @@ async def autodiscover_aws_org_accounts(tenant: str) -> set[str]:
                 account_details = org_client.describe_account(AccountId=account_id)
                 if account_details:
                     org_account_name = account_details["Account"]["Name"]
-        except Exception as e:
-            log.error(
-                "Unable to retrieve roles from AWS Organizations: {}".format(e),
-                exc_info=True,
+        # Handle Access Denied Exception
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "AccessDeniedException":
+                log.debug(
+                    "Unable to retrieve organization details due to AccessDeniedException",
+                    account_id=account_id,
+                    tenant=tenant,
+                )
+            else:
+                log.exception(
+                    "Unable to retrieve organization details for account",
+                    account_id=account_id,
+                    tenant=tenant,
+                )
+        except Exception:
+            log.exception(
+                "Unable to retrieve roles from AWS Organizations",
+                account_id=account_id,
+                tenant=tenant,
             )
         spoke_account.org_access_checked = True
         await spoke_accounts.from_dict(spoke_account.dict()).with_object_key(

@@ -84,7 +84,8 @@ async def get_repo_access_token(
     now = int(time.time())
     payload = {
         "iat": now,  # Issued at time
-        "exp": now + (10 * 60),  # JWT expiration time (10 minute maximum)
+        "exp": now + (10 * 60),  # JWT expiration time (10 minute maximum). Source:
+        # https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-json-web-token-jwt-for-a-github-app
         "iss": GITHUB_APP_ID,  # GitHub App's identifier
     }
     jwt_token = jwt.encode(payload, GITHUB_APP_PRIVATE_KEY, algorithm="RS256")
@@ -103,7 +104,7 @@ async def get_repo_access_token(
     access_token = response.json()["token"]
     if repo_name:
         # Set cache
-        red.set(cache_key, access_token, ex=60 * 45)  # TTL is 45 minutes
+        red.set(cache_key, access_token, ex=8 * 60)  # TTL is 8 minutes
 
     return access_token
 

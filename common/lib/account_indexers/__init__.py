@@ -114,4 +114,4 @@ async def get_account_id_to_name_mapping(
     tenant, status="active", environment=None, force_sync=False
 ):
     accounts = ModelAdapter(SpokeAccount).load_config("spoke_accounts", tenant).models
-    return {account.account_id: account.account_name for account in accounts}
+    return {act.account_id: act.account_name for act in accounts if act}

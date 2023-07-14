@@ -63,14 +63,13 @@ const GroupsManagement = () => {
             dataType={DELETE_DATA_TYPE.GROUP}
             dataId={item.name}
             title="Delete Group"
-            refreshData={callGetAllGroups}
           />
         ),
         edit: <GroupsModal group={item} />,
         users: item.users.length
       };
     });
-  }, [allGroupsData, callGetAllGroups]);
+  }, [allGroupsData]);
 
   return (
     <div className={css.container}>
