@@ -10,7 +10,7 @@ export const oidcSchema = Yup.object()
           .min(1, x => `${x.label} must not be empty`)
           .label('Client Scope')
       )
-        .default([])
+        .default(['email', 'openid', 'profile'])
         .required()
         .label('Client Scopes'),
       include_admin_scope: Yup.boolean()
@@ -63,7 +63,7 @@ export const oidcSchema = Yup.object()
 export const DEFAULT_OIDC_SETTINGS = {
   get_user_by_oidc_settings: {
     metadata_url: '',
-    client_scopes: [],
+    client_scopes: ['email', 'openid', 'profile'],
     include_admin_scope: false,
     grant_type: 'authorization_code',
     id_token_response_key: 'id_token',

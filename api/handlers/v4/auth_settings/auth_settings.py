@@ -14,6 +14,7 @@ class AuthSettingsReader(BaseAdminHandler):
     async def get(self):
         """Retrieve AUTH settings for tenant."""
         tenant = TenantConfig.get_instance(self.ctx.tenant)
+
         ddb = RestrictedDynamoHandler()
         dynamic_config = await aio_wrapper(
             ddb.get_static_config_for_tenant_sync,
@@ -22,8 +23,11 @@ class AuthSettingsReader(BaseAdminHandler):
             filter_secrets=True,
         )
         auth = AuthSettings(
-            **dynamic_config.get("auth", {}),
-            scim_enabled=tenant.scim_enabled,
+            **{
+                **dynamic_config.get("auth", {}),
+                "oidc_redirect_uri": tenant.oidc_redirect_url,
+                "scim_enabled": tenant.scim_enabled,
+            }  # type: ignore
         )
 
         self.write(
