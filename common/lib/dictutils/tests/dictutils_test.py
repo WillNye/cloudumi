@@ -17,6 +17,7 @@ class TestSetIn:
                 3,
                 dict(a=dict(b=3)),
             ),
+            (dict(a=dict(b=3)), "a.c.b", 1, dict(a=dict(b=3, c=dict(b=1)))),
         ],
     )
     def test_set_in(self, items: tuple[dict, str | list[str], Any, Any]):

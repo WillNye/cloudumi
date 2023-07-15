@@ -39,6 +39,16 @@ def set_in(
 ):
     """Set obj[key_0][key_1]...[key_X] where [key_0, key_1, ..., key_X] belongs to keys
 
+    Recursive implementation:
+    >>> if len(keys) == 1:
+    >>>     obj[keys[0]] = value
+    >>>     return obj
+    >>> key = keys[0]
+    >>> if key not in inner:
+    >>>     inner[key] = dict()
+    >>> set_in(inner[key], keys[1:], value)
+
+    # return obj
     Args:
         obj (dict): dictionary to be modified
         keys (str | list[str]): list of keys or string of keys separated by '.': 'key.subkey.0'
@@ -46,13 +56,15 @@ def set_in(
     keys = keys.split(".") if isinstance(keys, str) else keys
     inner = obj
 
-    for key in keys[:-1]:
-        if key not in inner:
-            inner[key] = dict()
+    for key, idx in zip(keys, range(len(keys))):
+        # if it is last key
+        if idx == len(keys) - 1:
+            inner[key] = value
         else:
+            if key not in inner:
+                inner[key] = dict()
             inner = inner[key]
 
-    inner[keys[-1]] = value
     return obj
 
 

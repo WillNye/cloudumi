@@ -64,8 +64,8 @@ class ScimSettingsHandler(BaseAdminHandler):
 
         new_secret = str(uuid.uuid4())
 
-        set_in(dynamic_config, SCIM_BEARER_TOKEN, new_secret)
-        set_in(dynamic_config, SCIM_ENABLED, True)
+        dynamic_config = set_in(dynamic_config, SCIM_BEARER_TOKEN, new_secret)
+        dynamic_config = set_in(dynamic_config, SCIM_ENABLED, True)
 
         await ddb.update_static_config_for_tenant(
             yaml.dump(dynamic_config),
