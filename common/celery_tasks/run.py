@@ -1,5 +1,6 @@
 import argparse
 import os
+from multiprocessing import Process
 
 from common.celery_tasks import celery_tasks
 from common.config import config
@@ -15,21 +16,62 @@ if os.getenv("DEBUG"):
 # functional_tests.run()  ## functional tests are only for API :( - TODO: make functional tests for both API and Celery
 
 
-def run_celery_worker(log_level: str = "DEBUG", concurrency: str = os.cpu_count()):
-    celery_tasks.app.start(
-        f"worker -l {log_level} -E --concurrency={concurrency} "
-        "--max-memory-per-child=4000000 --max-tasks-per-child=50 "
-        "--soft-time-limit=3600 -O fair".split(" ")
-    )
+def start_worker(queue_name=None, hostname=None, beat=None):
+    args = [
+        "worker",
+        "-l",
+        log_level,
+        "-E",
+        "--concurrency",
+        str(concurrency),
+        "--max-memory-per-child",
+        "4000000",
+        "--max-tasks-per-child",
+        "50",
+        "--soft-time-limit",
+        "3600",
+        "-O",
+        "fair",
+    ]
+    if queue_name is not None:
+        args.extend(["-Q", queue_name])
+    if hostname is not None:
+        args.extend(["-n", hostname])
+    if beat is not None:
+        args.extend(["-B"])
+    celery_tasks.app.start(args)
+
+
+def run_celery_worker(log_level: str = "DEBUG", concurrency: str = str(os.cpu_count())):
+
+    # default worker
+    p1 = Process(target=start_worker)
+    p1.start()
+
+    # high priority worker
+    p2 = Process(target=start_worker, args=("high_priority", "high_priority@%h"))
+    p2.start()
+
+    p1.join()
+    p2.join()
 
 
 def run_celery_test_worker(log_level: str = "DEBUG", concurrency: str = os.cpu_count()):
     """Like the run_celery_worker but with beat scheduler integrated for testing."""
-    celery_tasks.app.start(
-        f"worker -l {log_level} -E --concurrency={concurrency} "
-        "--max-memory-per-child=4000000 --max-tasks-per-child=50 "
-        "--soft-time-limit=3600 -O fair -B".split(" ")
-    )
+    # default worker
+    p1 = Process(target=run_celery_scheduler)
+    p1.start()
+
+    p2 = Process(target=start_worker)
+    p2.start()
+
+    # high priority worker
+    p3 = Process(target=start_worker, args=("high_priority", "high_priority@%h"))
+    p3.start()
+
+    p1.join()
+    p2.join()
+    p3.join()
 
 
 def run_celery_scheduler(log_level: str = "DEBUG"):

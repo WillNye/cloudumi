@@ -3206,16 +3206,16 @@ schedule = {
         "options": {"expires": 180},
         "schedule": get_schedule(30),
     },
-    "trigger_credential_mapping_refresh_from_role_changes_for_all_tenants": {
-        "task": "common.celery_tasks.celery_tasks.trigger_credential_mapping_refresh_from_role_changes_for_all_tenants",
-        "options": {"expires": 180},
-        "schedule": schedule_minute,
-    },
-    "cache_cloudtrail_denies_for_all_tenants": {
-        "task": "common.celery_tasks.celery_tasks.cache_cloudtrail_denies_for_all_tenants",
-        "options": {"expires": 180},
-        "schedule": schedule_minute,
-    },
+    # "trigger_credential_mapping_refresh_from_role_changes_for_all_tenants": {
+    #     "task": "common.celery_tasks.celery_tasks.trigger_credential_mapping_refresh_from_role_changes_for_all_tenants",
+    #     "options": {"expires": 180},
+    #     "schedule": schedule_minute,
+    # },
+    # "cache_cloudtrail_denies_for_all_tenants": {
+    #     "task": "common.celery_tasks.celery_tasks.cache_cloudtrail_denies_for_all_tenants",
+    #     "options": {"expires": 180},
+    #     "schedule": schedule_minute,
+    # },
     # "cache_access_advisor_across_accounts_for_all_tenants": {
     #     "task": "common.celery_tasks.celery_tasks.cache_access_advisor_across_accounts_for_all_tenants",
     #     "options": {"expires": 180},
@@ -3233,12 +3233,12 @@ schedule = {
     # },
     "handle_tenant_aws_integration_queue": {
         "task": "common.celery_tasks.celery_tasks.handle_tenant_aws_integration_queue",
-        "options": {"expires": 180},
+        "options": {"expires": 180, "queue": "high_priority"},
         "schedule": schedule_15_seconds,
     },
     "handle_github_webhook_integration_queue": {
         "task": "common.celery_tasks.celery_tasks.handle_github_webhook_integration_queue",
-        "options": {"expires": 180},
+        "options": {"expires": 180, "queue": "high_priority"},
         "schedule": schedule_15_seconds,
     },
     "cache_terraform_resources_task_for_all_tenants": {
@@ -3273,7 +3273,7 @@ schedule = {
     },
     "handle_aws_marketplace_subscription_queue": {
         "task": "common.celery_tasks.celery_tasks.handle_aws_marketplace_subscription_queue",
-        "options": {"expires": 180},
+        "options": {"expires": 180, "queue": "high_priority"},
         "schedule": schedule_minute,
     },
     "handle_aws_marketplace_metering_task": {
