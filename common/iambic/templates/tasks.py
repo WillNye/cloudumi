@@ -313,17 +313,18 @@ async def update_tenant_template(
         await iambic_template.write()
 
     async with ASYNC_PG_SESSION() as session:
-        stmt = (
-            update(IambicTemplateContent)
-            .where(
-                and_(
-                    IambicTemplateContent.iambic_template_id == iambic_template.id,
-                    IambicTemplateContent.tenant_id == tenant.id,
+        async with session.begin():
+            stmt = (
+                update(IambicTemplateContent)
+                .where(
+                    and_(
+                        IambicTemplateContent.iambic_template_id == iambic_template.id,
+                        IambicTemplateContent.tenant_id == tenant.id,
+                    )
                 )
+                .values(content=raw_iambic_template.dict(exclude_unset=False))
             )
-            .values(content=raw_iambic_template.dict(exclude_unset=False))
-        )
-        await session.execute(stmt)
+            await session.execute(stmt)
 
     # Create a map of the template provider definitions already in the db
     # After we process the template we will remove any that are still in the map
