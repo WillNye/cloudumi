@@ -1,2 +1,2 @@
-cython<3.0
+cython<3.0 # Pinned due to a conflict with PyYAML and Cython 3.0 - https://github.com/yaml/pyyaml/issues/724
 packaging
