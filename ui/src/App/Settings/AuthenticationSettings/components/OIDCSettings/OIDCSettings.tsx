@@ -91,7 +91,6 @@ const OIDCSettings = ({ isFetching, current, oidcRedirectUrl }) => {
   return (
     <Segment isLoading={isLoading}>
       <form onSubmit={handleSave}>
-        <LineBreak />
         <Block disableLabelPadding label="Client ID">
           <Input
             {...register('secrets.oidc.client_id')}

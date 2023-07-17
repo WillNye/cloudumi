@@ -13,8 +13,13 @@ import {
 import { toast } from 'react-toastify';
 import { invalidateSsoQueries } from './components/utils';
 import SCIMSettings from './components/SCIMSettings/SCIMSettings';
+import { Dialog } from 'shared/layers/Dialog';
+import { Divider } from 'shared/elements/Divider';
+import { LineBreak } from 'shared/elements/LineBreak';
+import { Icon } from 'shared/elements/Icon';
 
 const AuthenticationSettings = () => {
+  const [showDialog, setShowDialog] = useState(false);
   const [currentTab, setCurrentTab] = useState<AUTH_SETTINGS_TABS>(
     AUTH_SETTINGS_TABS.SAML
   );
@@ -89,9 +94,10 @@ const AuthenticationSettings = () => {
     <div className={styles.container}>
       <div className={styles.remove}>
         <Button
-          onClick={() => saveMutation()}
+          onClick={() => setShowDialog(true)}
           color="secondary"
           variant="outline"
+          size="small"
           disabled={isLoadingMutation}
         >
           Deactivate
@@ -106,7 +112,12 @@ const AuthenticationSettings = () => {
               }`}
               onClick={() => setCurrentTab(AUTH_SETTINGS_TABS.SAML)}
             >
-              <div className={styles.text}>SAML Settings</div>
+              <div className={styles.tabHeader}>
+                SAML Settings
+                {authSettings?.get_user_by_saml && (
+                  <Icon name="notification-success" />
+                )}
+              </div>
             </li>
             <li
               className={`${styles.navItem} ${
@@ -114,7 +125,12 @@ const AuthenticationSettings = () => {
               }`}
               onClick={() => setCurrentTab(AUTH_SETTINGS_TABS.OIDC)}
             >
-              <div className={styles.text}>OIDC Settings</div>
+              <div className={styles.tabHeader}>
+                OIDC Settings
+                {authSettings?.get_user_by_oidc && (
+                  <Icon name="notification-success" />
+                )}
+              </div>
             </li>
             <li
               className={`${styles.navItem} ${
@@ -122,12 +138,47 @@ const AuthenticationSettings = () => {
               }`}
               onClick={() => setCurrentTab(AUTH_SETTINGS_TABS.SCIM)}
             >
-              <div className={styles.text}>SCIM</div>
+              <div className={styles.tabHeader}>
+                SCIM
+                {authSettings?.scim_enabled && (
+                  <Icon name="notification-success" />
+                )}
+              </div>
             </li>
           </ul>
         </nav>
       </div>
       <div className={styles.content}>{content}</div>
+      <Dialog
+        setShowDialog={setShowDialog}
+        showDialog={showDialog}
+        header="Deactivate SSO"
+      >
+        <div className={styles.modalContent}>
+          <p className={styles.text}>
+            Are you sure you would like to deactivate the identity and access
+            management protocols?
+          </p>
+          <LineBreak size="large" />
+          <div className={styles.modalActions}>
+            <Button size="small" color="secondary" variant="outline" fullWidth>
+              Cancel
+            </Button>
+            <Divider orientation="vertical" />
+            <Button
+              size="small"
+              color="error"
+              onClick={() => {
+                saveMutation();
+                setShowDialog(false);
+              }}
+              fullWidth
+            >
+              Remove
+            </Button>
+          </div>
+        </div>
+      </Dialog>
     </div>
   );
 };

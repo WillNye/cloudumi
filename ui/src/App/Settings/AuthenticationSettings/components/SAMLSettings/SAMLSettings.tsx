@@ -293,7 +293,7 @@ const SAMLSettings = ({ isFetching, current }) => {
         </Block>
         <LineBreak /> */}
 
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting} fullWidth>
           {current ? 'Update' : 'Save'}
         </Button>
 
