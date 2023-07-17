@@ -46,6 +46,8 @@ RUN addgroup --gid 1111 appgroup && \
 COPY requirements.lock requirements.lock
 RUN  python3.11 -m venv $VIRTUAL_ENV && \
     . env/bin/activate && \
+    python3.11 -m pip install --upgrade wheel pip setuptools && \
+    python3.11 -m pip install "Cython<3.0" "pyyaml<6" --no-build-isolation && \
     python3.11 -m pip install -r requirements.lock
 
 # Install frontend
