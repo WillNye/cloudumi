@@ -1,3 +1,5 @@
+import traceback
+
 import tornado.web
 from pydantic import ValidationError
 
@@ -148,9 +150,12 @@ class IambicRequestHandler(BaseHandler):
             self.set_status(400, reason=str(err))
             return
         except Exception as err:
+            # please make sure to only capture traceback string in logs and not
+            # send to frontend as a information leak pre-caution
+            traceback_string = traceback.format_exc()
             await log.aexception(
                 "Unhandled exception while creating user self service request",
-                error=str(err),
+                error=traceback_string,
                 tenant_name=db_tenant.name,
             )
             self.write(
