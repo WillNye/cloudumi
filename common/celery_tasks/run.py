@@ -16,7 +16,7 @@ if os.getenv("DEBUG"):
 # functional_tests.run()  ## functional tests are only for API :( - TODO: make functional tests for both API and Celery
 
 
-def start_worker(queue_name=None, hostname=None, beat=None):
+def start_worker(log_level, concurrency, queue_name=None, hostname=None, beat=None):
     args = [
         "worker",
         "-l",
@@ -45,11 +45,14 @@ def start_worker(queue_name=None, hostname=None, beat=None):
 def run_celery_worker(log_level: str = "DEBUG", concurrency: str = str(os.cpu_count())):
 
     # default worker
-    p1 = Process(target=start_worker)
+    p1 = Process(target=start_worker, args=(log_level, concurrency))
     p1.start()
 
     # high priority worker
-    p2 = Process(target=start_worker, args=("high_priority", "high_priority@%h"))
+    p2 = Process(
+        target=start_worker,
+        args=(log_level, concurrency, "high_priority", "high_priority@%h"),
+    )
     p2.start()
 
     p1.join()
@@ -62,11 +65,14 @@ def run_celery_test_worker(log_level: str = "DEBUG", concurrency: str = os.cpu_c
     p1.start()
 
     # default worker
-    p2 = Process(target=start_worker)
+    p2 = Process(target=start_worker, args=(log_level, concurrency))
     p2.start()
 
     # high priority worker
-    p3 = Process(target=start_worker, args=("high_priority", "high_priority@%h"))
+    p3 = Process(
+        target=start_worker,
+        args=(log_level, concurrency, "high_priority", "high_priority@%h"),
+    )
     p3.start()
 
     p1.join()
