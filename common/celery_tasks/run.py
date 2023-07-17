@@ -58,10 +58,10 @@ def run_celery_worker(log_level: str = "DEBUG", concurrency: str = str(os.cpu_co
 
 def run_celery_test_worker(log_level: str = "DEBUG", concurrency: str = os.cpu_count()):
     """Like the run_celery_worker but with beat scheduler integrated for testing."""
-    # default worker
     p1 = Process(target=run_celery_scheduler)
     p1.start()
 
+    # default worker
     p2 = Process(target=start_worker)
     p2.start()
 
