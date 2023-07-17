@@ -46,6 +46,11 @@ RUN addgroup --gid 1111 appgroup && \
 COPY requirements.lock requirements.lock
 RUN  python3.11 -m venv $VIRTUAL_ENV && \
     . env/bin/activate && \
+    # TEMPORARY CHANGE
+    # Pinned due to a conflict with PyYAML and Cython 3.0 - https://github.com/yaml/pyyaml/issues/724
+    python3.11 -m pip install --upgrade wheel pip setuptools && \
+    python3.11 -m pip install "Cython<3.0" "pyyaml<6" --no-build-isolation && \
+    # END TEMPORARY CHANGE
     python3.11 -m pip install -r requirements.lock
 
 # Install frontend

@@ -33,7 +33,7 @@ pyjwt
 pyotp
 python-terraform
 pytz
-PyYAML
+PyYAML<6 # Pinned due to a conflict with Cython 3.0 - https://github.com/yaml/pyyaml/issues/724
 requests
 retrying
 ruamel.yaml
