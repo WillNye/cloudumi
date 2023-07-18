@@ -1403,9 +1403,9 @@ class ScimAuthHandler(TornadoRequestHandler):
             raise tornado.web.HTTPError(403, "Bearer token not configured.")
 
         bearer_header: str = self.request.headers.get("Authorization", "")
-        if not bearer_header.startswith("Bearer "):
+        if not bearer_header:
             raise tornado.web.HTTPError(403, "Invalid bearer token.")
-        authorization_token = bearer_header.split("Bearer ")[1]
+        authorization_token = bearer_header.replace("Bearer ", "").strip()
 
         if authorization_token != tenant_config.scim_bearer_token:
             raise tornado.web.HTTPError(403, "Invalid bearer token.")
