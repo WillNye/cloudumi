@@ -129,7 +129,7 @@ const SCIMSettings = ({ isFetching }) => {
         </>
       )}
 
-      {scimData?.scim_url && (
+      {scimData?.scim_enabled && scimData?.scim_url && (
         <>
           <LineBreak />
 
