@@ -30,14 +30,14 @@ _global_:
       attributes: 1
       registration_topic_arn: arn:aws:sns:us-west-2:259868150464:staging-noq-dev-shared-staging-1-registration-topic
       registration_queue_arn: arn:aws:sqs:us-west-2:259868150464:staging-noq-dev-shared-staging-1-registration-queue
-      registration_queue_url: "https://sqs.us-west-2.amazonaws.com/259868150464/staging-noq-dev-shared-staging-1-registration-queue"
+      registration_queue_url: https://sqs.us-west-2.amazonaws.com/259868150464/staging-noq-dev-shared-staging-1-registration-queue
 
       registration_central_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_central_role.yaml"
       registration_spoke_role_cf_template: "https://s3.us-east-1.amazonaws.com/cloudumi-cf-templates/cloudumi_spoke_role.yaml"
     github:
       webhook_event_buffer:
         queue_arn: arn:aws:sqs:us-west-2:259868150464:staging-noq-dev-shared-staging-1-github-app-noq-webhook
-        queue_url: "https://sqs.us-west-2.amazonaws.com/259868150464/staging-noq-dev-shared-staging-1-github-app-noq-webhook"
+        queue_url: https://sqs.us-west-2.amazonaws.com/259868150464/staging-noq-dev-shared-staging-1-github-app-noq-webhook
   accounts:
     tenant_data:
       name: NoqServiceConnRole
