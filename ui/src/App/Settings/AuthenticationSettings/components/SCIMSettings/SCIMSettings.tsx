@@ -25,7 +25,8 @@ const SCIMSettings = ({ isFetching }) => {
   } = useQuery({
     queryKey: ['scimSettings'],
     queryFn: fetchScimSettings,
-    select: data => data.data
+    select: data => data.data,
+    refetchOnWindowFocus: false
   });
 
   useEffect(() => {
@@ -129,7 +130,7 @@ const SCIMSettings = ({ isFetching }) => {
         </>
       )}
 
-      {scimData?.scim_url && (
+      {scimData?.scim_enabled && scimData?.scim_url && (
         <>
           <LineBreak />
 
