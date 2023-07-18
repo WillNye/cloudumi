@@ -16,13 +16,16 @@ interface CreateAWSStackProps {
   setIsLoading: Dispatch<boolean>;
   isHubAccount: boolean;
   selectedMode: MODES;
+  canContinue: (can: boolean) => void;
 }
 
 const CreateAWSStack: FC<CreateAWSStackProps> = ({
   accountName,
   setIsLoading,
   isHubAccount,
-  selectedMode
+  selectedMode,
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  canContinue = can => {}
 }) => {
   const [generateLinkError, setGenerateLinkError] = useState(null);
   const [cloudFormationUrl, setCloudFormationUrl] = useState('');
@@ -58,7 +61,13 @@ const CreateAWSStack: FC<CreateAWSStackProps> = ({
   );
 
   const handleClick = () => {
+    canContinue(true);
     window.open(cloudFormationUrl, '_blank');
+  };
+
+  const handleCopyText = () => {
+    canContinue(true);
+    setCopyText(cloudFormationUrl);
   };
 
   return (
@@ -74,7 +83,7 @@ const CreateAWSStack: FC<CreateAWSStackProps> = ({
         </Button>
         <Button
           color={copiedText ? 'secondary' : 'primary'}
-          onClick={() => setCopyText(cloudFormationUrl)}
+          onClick={handleCopyText}
         >
           {copiedText ? 'URL Copied!' : 'Copy URL'}
         </Button>
