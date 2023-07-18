@@ -14,7 +14,6 @@ import common.lib.noq_json as json
 from common.config import config
 from common.config import globals as config_globals
 from common.config import models
-from common.exceptions.exceptions import DataNotRetrievable
 from common.lib.assume_role import boto3_cached_conn
 from common.lib.asyncio import aio_wrapper
 from common.lib.messaging import iterate_event_messages
@@ -630,6 +629,7 @@ async def handle_central_account_registration(body) -> Dict[str, Any]:
 
 async def handle_aws_marketplace_queue(
     queue_arn,
+    queue_url,
     max_num_messages_to_process: Optional[int] = None,
 ) -> Dict[str, Any]:
 
@@ -639,7 +639,6 @@ async def handle_aws_marketplace_queue(
             100,
         )
 
-    queue_name = queue_arn.split(":")[-1]
     queue_region = queue_arn.split(":")[3]
 
     sqs_client = boto3.client("sqs", region_name=queue_region)
@@ -652,13 +651,11 @@ async def handle_aws_marketplace_queue(
     #     )
     #     sqs_client = prod.client("sqs")
 
-    queue_url_res = await aio_wrapper(sqs_client.get_queue_url, QueueName=queue_name)
-    queue_url = queue_url_res.get("QueueUrl")
-    if not queue_url:
-        raise DataNotRetrievable(f"Unable to retrieve Queue URL for {queue_arn}")
-
     messages_awaitable = await aio_wrapper(
-        sqs_client.receive_message, QueueUrl=queue_url, MaxNumberOfMessages=10
+        sqs_client.receive_message,
+        QueueUrl=queue_url,
+        MaxNumberOfMessages=10,
+        WaitTimeSeconds=0,  # we are using short pooling because this task is scheduled in high priority queue and frequently.
     )
     messages = messages_awaitable.get("Messages", [])
     num_events = 0
@@ -756,7 +753,10 @@ async def handle_aws_marketplace_queue(
                 Entries=processed_messages,
             )
         messages_awaitable = await aio_wrapper(
-            sqs_client.receive_message, QueueUrl=queue_url, MaxNumberOfMessages=10
+            sqs_client.receive_message,
+            QueueUrl=queue_url,
+            MaxNumberOfMessages=10,
+            WaitTimeSeconds=0,  # we are using short pooling because this task is scheduled in high priority queue and frequently.
         )
         messages = messages_awaitable.get("Messages", [])
     return {"message": "Successfully processed all messages", "num_events": num_events}
