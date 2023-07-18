@@ -3045,7 +3045,7 @@ def handle_aws_marketplace_subscription_queue() -> dict:
         log_data["message"] = "AWS Marketplace Queue is not configured"
         return log_data
 
-    if not config_globals.AWS_MARKETPLACE_SUBSCRIPTION_URL:
+    if not config_globals.AWS_MARKETPLACE_SUBSCRIPTION_QUEUE_URL:
         log_data["message"] = "AWS Marketplace Queue URL is not configured"
         return log_data
 
