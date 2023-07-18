@@ -351,13 +351,13 @@ async def approve_or_apply_request(
     request.updated_by = approved_by
     request.updated_at = datetime.datetime.utcnow()
 
-    if request.status == "Pending":
-        not_a_valid_approver = not any(
-            approver_group in request.allowed_approvers
-            for approver_group in approver_groups
-        )
+    not_a_valid_approver = not any(
+        approver_group in request.allowed_approvers
+        for approver_group in approver_groups
+    )
 
-        if not_a_valid_approver or request.status != "Pending" or request.deleted:
+    if request.status == "Pending" and not apply_request:
+        if not_a_valid_approver or request.deleted:
             if not_a_valid_approver:
                 reason = "You are not authorized to approve this request."
             elif request.status != "Pending":
@@ -368,20 +368,20 @@ async def approve_or_apply_request(
             raise Unauthorized(f"Unable to approve this request. {reason}")
 
         request.approved_by.append(approved_by)
-        request.status = "Approved" if not apply_request else "Running"
+        request.status = "Approving"
     elif request.status != "Approved":
         raise Unauthorized("Unable to apply a request that is not approved.")
+    elif request.created_by != approved_by and not_a_valid_approver:
+        raise Unauthorized("Unable to approve this request.")
     else:
-        request.status = "Running"
+        request.status = "Applying"
 
     request_pr = await get_iambic_pr_instance(
         tenant, request_id, request.created_by, request.pull_request_id
     )
     await request_pr.load_pr()
 
-    if request_pr.mergeable and apply_request:
-        await request_pr.apply_request(approved_by)
-    elif request_pr.closed_at and not request_pr.merged_at:
+    if request_pr.closed_at and not request_pr.merged_at:
         # The PR has already been closed (Rejected) but the status was not updated in the DB
         request.status = "Rejected"
         # TODO: Handle this
@@ -391,6 +391,10 @@ async def approve_or_apply_request(
         request.status = "Applied"
         # TODO: Handle this
         # request.approved_by.append(?)
+    elif request.status == "Approving":
+        await request_pr.approve_request(approved_by)
+    elif request.status == "Applying":
+        await request_pr.merge_request(approved_by)
 
     await request.write()
     response = await get_request_response(request, request_pr)

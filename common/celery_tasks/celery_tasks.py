@@ -3082,6 +3082,7 @@ def handle_aws_marketplace_collect_last_bill(aws_customer_identifier: str) -> di
     return {**log_data, "response": res}
 
 
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def run_full_iambic_sync_for_tenant(tenant: str) -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
