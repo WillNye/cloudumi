@@ -12,6 +12,7 @@ import { Checkbox } from 'shared/form/Checkbox';
 import { ChangeEvent } from 'react';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { Select, SelectOption } from 'shared/form/Select';
+import { CodeBlock } from 'shared/elements/CodeBlock';
 import axios from 'core/Axios/Axios';
 import styles from './GithubIntegrationModal.module.css';
 
@@ -34,6 +35,7 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
   const [repos, setRepos] = useState([]);
   const [selectedRepo, setSelectedRepo] = useState(null);
   const [mergeOnApproval, setMergeOnApproval] = useState(false);
+  const [integrationConfig, setIntegrationConfig] = useState(null);
 
   useEffect(() => {
     axios
@@ -42,6 +44,7 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
         setRepos(response.data.data.repos);
         setSelectedRepo(response.data.data.configured_repo || null);
         setMergeOnApproval(response.data.data.merge_on_approval || false);
+        setIntegrationConfig(response.data.data.integration_config || null);
       })
       .catch(error => {
         console.error(error);
@@ -135,23 +138,43 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
       showCloseIcon
     >
       <Segment isLoading={isGettingIntegrations}>
-        <div>Noq&apos;s Github App integrates with your IAMbic repository.</div>
-        <LineBreak size="large" />
-        <div>
-          You will need GitHub App installation privilege to complete the
-          installation.
-        </div>
-        <div>
-          If you are not Github Administrator, installation will require
-          multiple pass and your GitHub administrator&apos;s approval.
-        </div>
-        <LineBreak size="large" />
-        <div>
-          When GitHub prompts you for repository selection, please select only
-          your organization&apos;s iambic-templates repository. This will
-          appropriately restrict the permissions of the Noq GitHub App.
-        </div>
-        <LineBreak size="large" />
+        {!isGithubConnected && (
+          <>
+            <div>
+              Noq&apos;s Github App integrates with your IAMbic repository.
+            </div>
+            <LineBreak size="large" />
+            <div>
+              You will need GitHub App installation privilege to complete the
+              installation.
+            </div>
+            <div>
+              If you are not Github Administrator, installation will require
+              multiple pass and your GitHub administrator&apos;s approval.
+            </div>
+            <LineBreak size="large" />
+            <div>
+              When GitHub prompts you for repository selection, please select
+              only your organization&apos;s iambic-templates repository. This
+              will appropriately restrict the permissions of the Noq GitHub App.
+            </div>
+            <LineBreak size="large" />
+          </>
+        )}
+
+        {isGithubConnected && (
+          <>
+            <div>
+              To allow Noq Platform to approve the IAMbic PR, add following
+              integration to your IAMbic config.
+            </div>
+            <LineBreak size="large" />
+            <div className={styles.codeBlockContainer}>
+              <CodeBlock code={integrationConfig} />
+            </div>
+            <LineBreak size="large" />
+          </>
+        )}
 
         {isGithubConnected && (
           <>
