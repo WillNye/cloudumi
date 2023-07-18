@@ -2978,6 +2978,15 @@ components:
         mfa:
           $ref: "#/components/schemas/MfaDetails"
           is_secret: true
+        jwt_secret:
+          title: Jwt Secret
+          is_secret: true
+          type: string
+        auth:
+          title: Auth
+          is_secret: true
+          allOf:
+            - $ref: "#/components/schemas/SecretAuthSettings"
 
     SpokeAccount:
       type: object
@@ -3685,3 +3694,271 @@ components:
         token:
           type: string
           description: Only required if command=reset
+    SecretOIDCSettings:
+      title: SecretOIDCSettings
+      description: Secrets for OIDC providers
+      type: object
+      properties:
+        client_id:
+          title: Client Id
+          is_secret: true
+          type: string
+        client_secret:
+          title: Client Secret
+          is_secret: true
+          type: string
+    SecretAuthSettings:
+      title: SecretAuthSettings
+      description: Secrets for auth providers
+      type: object
+      properties:
+        oidc:
+          title: Oidc
+          is_secret: true
+          allOf:
+            - $ref: "#/components/schemas/SecretOIDCSettings"
+    GetUserByOIDCSettings:
+      title: GetUserByOIDCSettings
+      description: OIDC settings
+      type: object
+      properties:
+        metadata_url:
+          title: Metadata Url
+          default: null
+          type: string
+        client_scopes:
+          title: Client Scopes
+          default: []
+          type: array
+          items:
+            type: string
+        include_admin_scope:
+          title: Include Admin Scope
+          default: false
+          type: boolean
+        grant_type:
+          title: Grant Type
+          default: authorization_code
+          type: string
+        id_token_response_key:
+          title: Id Token Response Key
+          default: id_token
+          type: string
+        access_token_response_key:
+          title: Access Token Response Key
+          default: access_token
+          type: string
+        jwt_email_key:
+          title: Jwt Email Key
+          default: email
+          type: string
+        jwt_groups_key:
+          title: Jwt Email Key
+          default: groups
+          type: string
+        enable_mfa:
+          title: Enable Mfa
+          default: false
+          type: boolean
+        get_groups_from_access_token:
+          title: Get Groups From Access Token
+          default: true
+          type: boolean
+        access_token_audience:
+          title: Access Token Audience
+          default: noq
+          type: string
+        get_groups_from_userinfo_endpoint:
+          title: Get Groups From Userinfo Endpoint
+          default: true
+          type: boolean
+        user_info_groups_key:
+          title: User Info Groups Key
+          default: groups
+          type: string
+    JWTSAMLSettings:
+      title: JWTSAMLSettings
+      description: JWT settings for SAML provider
+      type: object
+      properties:
+        expiration_hours:
+          title: Expiration Hours
+          default: 1
+          type: integer
+        email_key:
+          title: Email Key
+          default: email
+          type: string
+        group_key:
+          title: Group Key
+          default: groups
+          type: string
+    AttributesSAMLSettings:
+      title: AttributesSAMLSettings
+      description: SAML's attributes settings
+      type: object
+      properties:
+        user:
+          title: USER
+          default: user
+          type: string
+        groups:
+          title: GROUPS
+          default: groups
+          type: string
+        email:
+          title: EMAIL
+          default: email
+          type: string
+    BindingSAMLSettings:
+      title: BindingSAMLSettings
+      description: SAML Binding
+      type: object
+      properties:
+        binding:
+          title: Binding
+          type: string
+        url:
+          title: Url
+          type: string
+      required:
+        - binding
+        - url
+    IdpSAMLSettings:
+      title: IdpSAMLSettings
+      description: Fine grain IDP SAML settings
+      type: object
+      properties:
+        entityId:
+          title: Entity Id
+          type: string
+        singleSignOnService:
+          title: Single Sign On Service
+          allOf:
+            - $ref: "#/components/schemas/BindingSAMLSettings"
+        singleLogoutService:
+          title: Single Sign On Service
+          allOf:
+            - $ref: "#/components/schemas/BindingSAMLSettings"
+        x509cert:
+          title: X509cert
+          type: string
+      required:
+        - entityId
+        - x509cert
+    SpSAMLSettings:
+      title: SpSAMLSettings
+      description: Fine grain SP SAML settings
+      type: object
+      properties:
+        Assertionconsumerservice:
+          title: Single Logout Service
+          allOf:
+            - $ref: "#/components/schemas/BindingSAMLSettings"
+        Singlelogoutservice:
+          title: Single Logout Service
+          allOf:
+            - $ref: "#/components/schemas/BindingSAMLSettings"
+        Entityid:
+          title: Entity Id
+          type: string
+    GetUserBySAMLSettings:
+      title: GetUserBySAMLSettings
+      description: SAML settings
+      type: object
+      properties:
+        jwt:
+          $ref: "#/components/schemas/JWTSAMLSettings"
+        attributes:
+          $ref: "#/components/schemas/AttributesSAMLSettings"
+        idp:
+          $ref: "#/components/schemas/IdpSAMLSettings"
+        sp:
+          $ref: "#/components/schemas/SpSAMLSettings"
+        idp_metadata_url:
+          title: Idp Metadata Url
+          type: string
+    ChallengeSamlSettings:
+      title: ChallengeSamlSettings
+      description: BaseModel adds CamelCase aliases to a Pydantic model
+      type: object
+      properties:
+        enabled:
+          title: Enabled
+          default: true
+          type: boolean
+    AuthSettings:
+      title: AuthSettings
+      description: Authentication Settings for each provider.
+      type: object
+      properties:
+        get_user_by_oidc:
+          title: Get User By Oidc
+          default: false
+          type: boolean
+        get_user_by_saml:
+          title: Get User By Saml
+          default: false
+          type: boolean
+        extra_auth_cookies:
+          title: Extra Auth Cookies
+          default: []
+          type: array
+          items:
+            type: string
+        force_redirect_to_identity_provider:
+          title: Force Redirect To Identity Provider
+          default: false
+          type: boolean
+        challenge_url:
+          title: Challenge Url
+          allOf:
+            - $ref: "#/components/schemas/ChallengeSamlSettings"
+        logout_redirect_url:
+          title: Logout Redirect Url
+          type: string
+        oidc_redirect_uri:
+          title: OIDC redirect URL
+          type: string
+    SAMLSettingsDto:
+      title: SAMLSettingsDto
+      description: BaseModel adds CamelCase aliases to a Pydantic model
+      type: object
+      properties:
+        get_user_by_saml_settings:
+          $ref: "#/components/schemas/GetUserBySAMLSettings"
+        auth:
+          $ref: "#/components/schemas/AuthSettings"
+      required:
+        - get_user_by_saml_settings
+        - auth
+    OIDCSettingsDto:
+      title: OIDCSettingsDto
+      description: BaseModel adds CamelCase aliases to a Pydantic model
+      type: object
+      properties:
+        get_user_by_oidc_settings:
+          $ref: "#/components/schemas/GetUserByOIDCSettings"
+        secrets:
+          $ref: "#/components/schemas/SecretAuthSettings"
+        auth:
+          $ref: "#/components/schemas/AuthSettings"
+      required:
+        - get_user_by_oidc_settings
+        - auth
+    SCIMSettings:
+      title: SCIMSettings
+      description: SCIM Settings
+      type: object
+      properties:
+        enabled:
+          title: SCIM is Enabled
+          default: false
+          type: boolean
+    SCIMSettingsDto:
+      title: SCIMSettingsDto
+      description: SCIM Setttings for syncing users and groups from tenants IDP
+      type: object
+      properties:
+        scim:
+          $ref: "#/components/schemas/SCIMSettings"

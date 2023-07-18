@@ -439,6 +439,7 @@ class BaseHandler(TornadoRequestHandler):
         """Perform high level authorization flow."""
         # TODO: Prevent any sites being created with a subdomain that is a yaml keyword, ie: false, no, yes, true, etc
         # TODO: Return Authentication prompt regardless of subdomain
+        # TODO: When it fails, all the process got truncated. e.g. when saml setting is enabled but idp_metadata_url is not correct.
 
         tenant = self.get_tenant_name()
         tenant_config = TenantConfig.get_instance(tenant)
@@ -1398,7 +1399,9 @@ class ScimAuthHandler(TornadoRequestHandler):
         await super(ScimAuthHandler, self).prepare()
         self.request_uuid: str = str(uuid.uuid4())
         tenant: str = self.get_tenant_name()
-        tenant_config: TenantConfig = TenantConfig.get_instance(tenant)
+        tenant_config = TenantConfig.get_instance(tenant)
+        if not tenant_config.scim_enabled:
+            raise tornado.web.HTTPError(403, "SCIM not configured.")
         if not tenant_config.scim_bearer_token:
             raise tornado.web.HTTPError(403, "Bearer token not configured.")
 

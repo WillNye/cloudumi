@@ -44,7 +44,7 @@
   }
 
   &.error {
-    border: solid 2px var(--red-500);
+    border: solid 1px var(--red-100);
   }
 
   &.disabled {
@@ -89,5 +89,14 @@
 
   &.showBorder {
     border: solid 2px var(--gray-400);
+  }
+}
+
+.errorContainer {
+  color: var(--red-100);
+  font-size: var(--font-size-sm);
+
+  &.fullWidth {
+    width: 100%;
   }
 }

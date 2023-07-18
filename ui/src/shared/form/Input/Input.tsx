@@ -1,6 +1,7 @@
 import React, { FC, forwardRef, Ref } from 'react';
 import classNames from 'classnames';
 import css from './Input.module.css';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 export interface InputProps
   extends Omit<
@@ -9,7 +10,7 @@ export interface InputProps
   > {
   fullWidth?: boolean;
   selectOnFocus?: boolean;
-  error?: boolean;
+  error?: string | null;
   containerClassname?: string;
   size?: 'small' | 'medium' | 'large';
   prefix?: React.ReactNode | string;
@@ -60,36 +61,50 @@ export const Input: FC<InputProps> = forwardRef(
       disabled,
       value,
       size = 'small',
-      showBorder,
+      showBorder = true,
       onFocus,
       ...rest
     },
     ref: Ref<HTMLInputElement>
   ) => (
-    <span
-      className={classNames(css.container, containerClassname, {
-        [css.fullWidth]: fullWidth,
-        [css.error]: error,
-        [css[size]]: size,
-        [css.disabled]: disabled,
-        [css.showBorder]: showBorder
-      })}
-    >
-      {prefix && <div className={css.prefix}>{prefix}</div>}
-      <BaseInput
-        {...rest}
-        ref={ref}
-        value={value}
-        disabled={disabled}
-        className={className}
-        onFocus={event => {
-          if (selectOnFocus) {
-            event.target.select();
-          }
-          onFocus?.(event);
-        }}
-      />
-      {suffix && <div className={css.suffix}>{suffix}</div>}
-    </span>
+    <>
+      <span
+        className={classNames(css.container, containerClassname, {
+          [css.fullWidth]: fullWidth,
+          [css.error]: error,
+          [css[size]]: size,
+          [css.disabled]: disabled,
+          [css.showBorder]: showBorder
+        })}
+      >
+        {prefix && <div className={css.prefix}>{prefix}</div>}
+        <BaseInput
+          {...rest}
+          ref={ref}
+          value={value}
+          disabled={disabled}
+          className={className}
+          onFocus={event => {
+            if (selectOnFocus) {
+              event.target.select();
+            }
+            onFocus?.(event);
+          }}
+        />
+        {suffix && <div className={css.suffix}>{suffix}</div>}
+      </span>
+      {error && (
+        <>
+          <LineBreak size="small" />
+          <span
+            className={classNames(css.errorContainer, {
+              [css.fullWidth]: fullWidth
+            })}
+          >
+            {error}
+          </span>
+        </>
+      )}
+    </>
   )
 );
