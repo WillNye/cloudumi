@@ -199,18 +199,32 @@ async def handle_github_webhook_event_queue(
             "Unable to find required configuration value: "
             "`_global_.integrations.github.webhook_event_buffer.queue_arn`"
         )
-    queue_name = queue_arn.split(":")[-1]
     queue_region = queue_arn.split(":")[3]
 
     sqs_client = boto3.client("sqs", region_name=queue_region)
 
-    queue_url_res = await aio_wrapper(sqs_client.get_queue_url, QueueName=queue_name)
-    queue_url = queue_url_res.get("QueueUrl")
-    if not queue_url:
-        raise DataNotRetrievable(f"Unable to retrieve Queue URL for {queue_arn}")
+    queue_url = config.get(
+        "_global_.integrations.github.webhook_event_buffer.queue_url", None
+    )
+    if not queue_url and not config.is_development:
+        raise MissingConfigurationValue(
+            "Unable to find required configuration value: "
+            "`_global_.integrations.github.webhook_event_buffer.queue_url`"
+        )
+    if config.is_development:
+        queue_name = queue_arn.split(":")[-1]
+        queue_url_res = await aio_wrapper(
+            sqs_client.get_queue_url, QueueName=queue_name
+        )
+        queue_url = queue_url_res.get("QueueUrl")
+        if not queue_url:
+            raise DataNotRetrievable(f"Unable to retrieve Queue URL for {queue_arn}")
 
     messages_awaitable = await aio_wrapper(
-        sqs_client.receive_message, QueueUrl=queue_url, MaxNumberOfMessages=10
+        sqs_client.receive_message,
+        QueueUrl=queue_url,
+        MaxNumberOfMessages=10,
+        WaitTimeSeconds=0,  # we are using short pooling because this task is scheduled in high priority queue and frequently.
     )
     messages = messages_awaitable.get("Messages", [])
     num_events = 0
@@ -248,7 +262,10 @@ async def handle_github_webhook_event_queue(
                 Entries=processed_messages,
             )
         messages_awaitable = await aio_wrapper(
-            sqs_client.receive_message, QueueUrl=queue_url, MaxNumberOfMessages=10
+            sqs_client.receive_message,
+            QueueUrl=queue_url,
+            MaxNumberOfMessages=10,
+            WaitTimeSeconds=0,  # we are using short pooling because this task is scheduled in high priority queue and frequently.
         )
         messages = messages_awaitable.get("Messages", [])
     return {"message": "Successfully processed all messages", "num_events": num_events}
