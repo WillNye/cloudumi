@@ -30,10 +30,10 @@ _global_:
       attributes: {{ attributes }}
       registration_topic_arn: {{ sns_registration_topic_arn }}
       registration_queue_arn: {{ sqs_registration_queue_arn }}
-      registration_queue_url: {{ sqs_registration_queue_url }}
+      registration_queue_url: "{{ sqs_registration_queue_url }}"
       {% if aws_marketplace_subscription_queue_arn %}
       aws_marketplace_subscription_queue_arn: {{ aws_marketplace_subscription_queue_arn }}
-      aws_marketplace_subscription_queue_url: {{ aws_marketplace_subscription_queue_url }}
+      aws_marketplace_subscription_queue_url: "{{ aws_marketplace_subscription_queue_url }}"
       {% endif %}
       {% if aws_marketplace_product_code %}
       aws_marketplace_product_code: {{ aws_marketplace_product_code }}
@@ -44,7 +44,7 @@ _global_:
     github:
       webhook_event_buffer:
         queue_arn: {{ sqs_github_app_noq_webhook_queue_arn }}
-        queue_url: {{ sqs_github_app_noq_webhook_queue_url }}
+        queue_url: "{{ sqs_github_app_noq_webhook_queue_url }}"
   accounts:
     tenant_data:
       name: NoqServiceConnRole
