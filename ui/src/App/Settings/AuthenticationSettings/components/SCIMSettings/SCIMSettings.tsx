@@ -25,7 +25,8 @@ const SCIMSettings = ({ isFetching }) => {
   } = useQuery({
     queryKey: ['scimSettings'],
     queryFn: fetchScimSettings,
-    select: data => data.data
+    select: data => data.data,
+    refetchOnWindowFocus: false
   });
 
   useEffect(() => {
