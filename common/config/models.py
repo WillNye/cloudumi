@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Self, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 from common.config import config
 from common.lib.dynamo import RestrictedDynamoHandler
@@ -226,7 +226,7 @@ class ModelAdapter:
         self._model = model
         return self
 
-    def from_dict(self, model_dict: dict) -> Self:
+    def from_dict(self, model_dict: dict):
         self._model = self.__validate_and_return_model(model_dict)
         return self
 
