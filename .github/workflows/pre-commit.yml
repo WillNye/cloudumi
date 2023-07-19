@@ -38,8 +38,8 @@ jobs:
           export PATH="$PATH:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
           export NODE_OPTIONS=--openssl-legacy-provider
           curl -sL https://deb.nodesource.com/setup_18.x | sudo bash
-          sudo sh -c 'curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg > /etc/apt/trusted.gpg.d/debian-pubkey.gpg'
-          gpg --dearmor /etc/apt/trusted.gpg.d/debian-pubkey.gpg
+          curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | sudo tee /usr/share/keyrings/yarnkey.gpg >/dev/null
+          echo "deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
           sudo sh -c 'curl -fsSL https://apt.releases.hashicorp.com/gpg > /etc/apt/trusted.gpg.d/hashicorp.gpg'
           gpg --dearmor /etc/apt/trusted.gpg.d/hashicorp.gpg
           echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
