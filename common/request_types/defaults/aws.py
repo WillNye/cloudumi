@@ -407,7 +407,7 @@ def _get_default_aws_request_permission_request_types(
     for elem, change_type in enumerate(
         add_permission_to_permission_set_request.change_types
     ):
-        change_type.template_attribute = "properties.inline_policies"
+        change_type.template_attribute = "properties.inline_policy"
         change_type.apply_attr_behavior = "Append"
         change_type.provider_definition_field = "Allow None"
         add_permission_to_permission_set_request.change_types[elem] = change_type
