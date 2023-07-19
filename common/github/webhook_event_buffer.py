@@ -130,7 +130,7 @@ async def github_event_handler(
             if tenant_repo.repo_name == github_event["repository"]["full_name"]:
                 if tenant_repo.default_branch_name == branch_name:
                     celery_app.send_task(
-                        "common.celery_tasks.celery_tasks.run_all_iambic_tasks_for_tenant",
+                        "common.celery_tasks.celery_tasks.run_full_iambic_sync_for_tenant",
                         kwargs={"tenant": db_tenant.name},
                     )
                 break

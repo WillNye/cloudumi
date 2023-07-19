@@ -425,8 +425,8 @@ class GitHubPullRequest(BasePullRequest):
             if isinstance(commented_by, str):
                 commented_by = [commented_by]
 
-            commented_by = ", ".join([f"@{user}" for user in commented_by])
-            body = f"{body} on behalf of {commented_by}"
+            commented_by = ", ".join([f"{user}" for user in commented_by])
+            body = f"{body}\nOn behalf of: {commented_by}"
         self.pr_obj.create_issue_comment(body)
 
     async def update_comment(self, comment_id: int, body: str):
