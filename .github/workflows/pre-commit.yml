@@ -38,8 +38,10 @@ jobs:
           export PATH="$PATH:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
           export NODE_OPTIONS=--openssl-legacy-provider
           curl -sL https://deb.nodesource.com/setup_18.x | sudo bash
-          curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
-          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+          curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | sudo tee /usr/share/keyrings/yarnkey.gpg >/dev/null
+          echo "deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+          curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | sudo tee /usr/share/keyrings/yarnkey.gpg >/dev/null
+          curl -fsSL https://apt.releases.hashicorp.com/gpg  | gpg --dearmor
           echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
           sudo apt-add-repository "deb [arch=$(dpkg --print-architecture)] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
           sudo apt-get update
