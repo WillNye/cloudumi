@@ -8,7 +8,8 @@ RUN apt-get install curl telnet iputils-ping sudo systemctl apt-transport-https 
 
 # logstash
 # test with: /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/00-cloudumi-s3-es.conf
-RUN bash -c 'wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -'
+RUN bash -c 'wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch > /etc/apt/trusted.gpg.d/elasticsearch.gpg'
+RUN bash -c 'gpg --dearmor /etc/apt/trusted.gpg.d/elasticsearch.gpg'
 RUN bash -c 'echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list'
 RUN bash -c 'sudo apt-get update && sudo apt-get install logstash'
 RUN systemctl enable logstash
@@ -20,14 +21,14 @@ ENV PKG_CONFIG_PATH=/usr/local/lib/x86_64-linux-gnu/pkgconfig:/usr/local/lib/pkg
 # RUN dpkg -i metricbeat-7.14.2-amd64.deb
 # RUN rm -rf metricbeat-7.14.2-amd64.deb
 
-COPY docker/base/root/ /
+#COPY docker/base/root/ /
 
 # TODO: Filebeat (elasticsearch to ingest system logs.)
 #RUN curl -L -O https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-7.14.2-amd64.deb
 #RUN dpkg -i filebeat-7.14.2-amd64.deb
 
 # fluentbit
-#RUN sudo wget -qO - http://packages.fluentbit.io/fluentbit.key | sudo apt-key add -
+#RUN sudo wget -qO - http://packages.fluentbit.io/fluentbit.key ??? set as gpg key
 #RUN sudo echo 'deb https://packages.fluentbit.io/ubuntu/focal focal main' >> /etc/apt/sources.list
 #RUN sudo apt update
 #RUN sudo apt install -y td-agent-bit
