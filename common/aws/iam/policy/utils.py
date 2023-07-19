@@ -66,6 +66,7 @@ async def get_aws_managed_policy_names() -> set[str]:
     managed_policies = await paginated_search(
         iam_client.list_policies,
         response_key="Policies",
+        # Note, this is listing policies on the SaaS role. Do not modify the scope.
         Scope="AWS",
         OnlyAttached=False,
         PathPrefix="/",
