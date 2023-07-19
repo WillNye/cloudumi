@@ -73,7 +73,7 @@ class GitHubInstall(Base):
                 GitHubInstall.installation_id == installation_id,
             )
             result = await session.execute(stmt)
-            return result.scalars().first()
+            return result.scalars().all()
 
         if session:
             return await _query(session)
