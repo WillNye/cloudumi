@@ -43,14 +43,20 @@ async def handle_tenant_iambic_github_event(
     await request_pr.load_pr()
 
     if approved_by and not is_closed and not is_merged:
-        if request_pr.merge_on_approval:
+        if request.status == "Approving" and request_pr.merge_on_approval:
             await request_pr.merge_request(request.approved_by)
+            request.status = "Applying"
         else:
-            request.status = "Pending in Git"
+            request.status = "Approved"
+            # TODO: Figure out how to handle this case
+            # request.status = "Pending in Git"
     elif is_merged:
         request.status = "Applied"
-        approved_by = [approver for approver in approved_by if "[bot]" not in approver]
-        request.approved_by = list(set(request.approved_by + approved_by))
+        if approved_by:
+            approved_by = [
+                approver for approver in approved_by if "[bot]" not in approver
+            ]
+            request.approved_by = list(set(request.approved_by + approved_by))
         await request_pr.remove_branch(pull_default=True)
     elif is_closed:
         request.status = "Rejected"
