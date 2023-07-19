@@ -62,6 +62,31 @@ const Downloads: FC = () => {
     return (
       noqInstallScript && (
         <div className={css.codeBlockContainer}>
+          <br />
+          <p className={css.description}>
+            Use the link below to download and install the latest version of the
+            Noq CLI. <br />
+            Alternatively, you may download the binaries directly from the links
+            further down on this page.
+          </p>
+          <CodeBlock
+            code={
+              '/bin/bash -c "$(curl -fsSL https://public-noq-binaries.s3.us-west-2.amazonaws.com/noq-cli/latest/install.sh)"'
+            }
+          />
+          <p className={css.description}>
+            If this is your first time using the Noq CLI, you will need to
+            configure it. For your convenience, you can run the below commands
+            to write your unique Noq CLI configuration.
+          </p>
+          <CodeBlock code={noqInstallScript} />
+        </div>
+      )
+    );
+
+    return (
+      noqInstallScript && (
+        <div className={css.codeBlockContainer}>
           <CodeBlock code={noqInstallScript} />
         </div>
       )
