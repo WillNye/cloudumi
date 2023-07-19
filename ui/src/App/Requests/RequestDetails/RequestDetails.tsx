@@ -174,6 +174,69 @@ const RequestChangeDetails = () => {
     [getRequestStatus, requestData?.data?.status]
   );
 
+  const buttons = useCallback(() => {
+    const status = requestData?.data?.status ?? '';
+    const rejectButton = (
+      <Button
+        onClick={handleReject}
+        color="error"
+        disabled={readOnly}
+        fullWidth
+        size="small"
+      >
+        Reject
+      </Button>
+    );
+
+    const approveButton = (
+      <Button
+        onClick={handleApprove}
+        disabled={readOnly}
+        fullWidth
+        size="small"
+      >
+        Approve
+      </Button>
+    );
+
+    const applyButton = (
+      <Button
+        onClick={handleApply}
+        color="success"
+        disabled={readOnly}
+        fullWidth
+        size="small"
+      >
+        Apply
+      </Button>
+    );
+
+    switch (status) {
+      case 'Approved':
+        return (
+          <>
+            {rejectButton} {applyButton}
+          </>
+        );
+      case 'Pending':
+        return (
+          <>
+            {rejectButton} {approveButton}
+          </>
+        );
+      case '':
+        return ``;
+      default:
+        return `Can't modify a ${status.toString().toLowerCase()} request`;
+    }
+  }, [
+    handleApply,
+    handleApprove,
+    handleReject,
+    readOnly,
+    requestData?.data?.status
+  ]);
+
   if (isLoading) {
     return <Loader />;
   }
@@ -216,34 +279,7 @@ const RequestChangeDetails = () => {
           Comment
         </Button>
         <LineBreak size="large" />
-        <div className={styles.actions}>
-          <Button
-            onClick={handleReject}
-            color="error"
-            disabled={readOnly}
-            fullWidth
-            size="small"
-          >
-            Reject
-          </Button>
-          <Button
-            onClick={handleApprove}
-            disabled={readOnly}
-            fullWidth
-            size="small"
-          >
-            Approve
-          </Button>
-          <Button
-            onClick={handleApply}
-            color="success"
-            disabled={readOnly}
-            fullWidth
-            size="small"
-          >
-            Apply
-          </Button>
-        </div>
+        <div className={styles.actions}>{buttons()}</div>
       </div>
     </Segment>
   );
