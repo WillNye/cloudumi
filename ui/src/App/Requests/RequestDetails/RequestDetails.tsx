@@ -84,7 +84,9 @@ const RequestChangeDetails = () => {
   const handleApply = async () => {
     setIsSubmitting(true);
     try {
-      await axios.post(`/api/v4/self-service/requests/${requestId}/apply`);
+      await axios.patch(`/api/v4/self-service/requests/${requestId}`, {
+        status: 'apply'
+      });
       refetchData();
     } catch (error) {
       console.error(error);

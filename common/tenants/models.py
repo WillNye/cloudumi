@@ -40,6 +40,23 @@ class Tenant(SoftDeleteMixin, Base):
                 tenant = await session.execute(stmt)
                 return tenant.scalars().first()
 
+    @classmethod
+    async def get_all_by_ids(cls, tenant_ids):
+        if tenant_ids == []:
+            raise ValueError(
+                "It's dangerous to let ORM generate IN statement using empty list"
+            )
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = select(Tenant).where(
+                    and_(
+                        Tenant.id.in_(tenant_ids),
+                        Tenant.deleted == False,  # noqa
+                    )
+                )
+                tenant = await session.execute(stmt)
+                return tenant.scalars().all()
+
     def dict(self):
         return dict(
             id=self.id,

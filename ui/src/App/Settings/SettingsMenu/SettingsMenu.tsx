@@ -3,12 +3,14 @@ import { Link, Outlet, useMatch } from 'react-router-dom';
 import styles from './SettingsMenu.module.css';
 import {
   BREAD_CRUMBS_ACCOUNTS_PATH,
+  BREAD_CRUMBS_AUTH_SETTINGS_PATH,
   BREAD_CRUMBS_INTEGRATIONS_PATH,
   BREAD_CRUMBS_PROFILE_PATH,
   BREAD_CRUMBS_SETTINGS_PATH
 } from './constants';
 import { Breadcrumbs } from 'shared/elements/Breadcrumbs';
 import { useAuth } from 'core/Auth';
+import classNames from 'classnames';
 
 const SettingsMenu: FC = () => {
   const { user } = useAuth();
@@ -16,6 +18,7 @@ const SettingsMenu: FC = () => {
   const isMyProfilePath = useMatch('/settings');
   const isIntegrationsPath = useMatch('/settings/integrations');
   const isAccountsPath = useMatch('/settings/user_management');
+  const isAuthenticationPath = useMatch('/settings/authentication-settings');
 
   const breadCrumbsPaths = useMemo(() => {
     if (isMyProfilePath) {
@@ -24,8 +27,14 @@ const SettingsMenu: FC = () => {
     if (isIntegrationsPath) {
       return [...BREAD_CRUMBS_SETTINGS_PATH, ...BREAD_CRUMBS_INTEGRATIONS_PATH];
     }
+    if (isAuthenticationPath) {
+      return [
+        ...BREAD_CRUMBS_SETTINGS_PATH,
+        ...BREAD_CRUMBS_AUTH_SETTINGS_PATH
+      ];
+    }
     return [...BREAD_CRUMBS_SETTINGS_PATH, ...BREAD_CRUMBS_ACCOUNTS_PATH];
-  }, [isMyProfilePath, isIntegrationsPath]);
+  }, [isMyProfilePath, isIntegrationsPath, isAuthenticationPath]);
 
   return (
     <div className={styles.container}>
@@ -58,6 +67,15 @@ const SettingsMenu: FC = () => {
                   >
                     <Link to="/settings/user_management">User Management</Link>
                   </li>
+                  <li
+                    className={classNames(styles.navItem, {
+                      [styles.isActive]: isAuthenticationPath
+                    })}
+                  >
+                    <Link to={'/settings/authentication-settings'}>
+                      Authentication Settings
+                    </Link>
+                  </li>
                 </>
               )}
             </ul>
@@ -66,10 +84,6 @@ const SettingsMenu: FC = () => {
 
         <div className={styles.outlet}>
           <Breadcrumbs items={breadCrumbsPaths} />
-          <p className={styles.description}>
-            Manage and customize all aspects of your account and system
-            integrations.
-          </p>
 
           <Outlet />
         </div>

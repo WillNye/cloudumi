@@ -142,6 +142,10 @@ class TenantConfigBase:
         )
 
     @property
+    def oidc_redirect_url(self):
+        return f"{self.tenant_url}/auth"
+
+    @property
     def saml_certificate_folder(self):
         return "saml_certificates"
 
@@ -164,8 +168,22 @@ class TenantConfigBase:
         )
 
     @property
+    def scim_enabled(self):
+        return config.get_tenant_specific_key("scim.enabled", self.tenant, False)
+
+    @property
     def scim_bearer_token(self):
         return config.get_tenant_specific_key("secrets.scim.bearer_token", self.tenant)
+
+    @property
+    def scim_settings(self) -> dict[str, Any]:
+        scim_enabled = self.scim_enabled
+        scim_url = self.tenant_url + "/api/v4/scim/v2"
+
+        return {
+            "scim_enabled": scim_enabled,
+            "scim_url": scim_url,
+        }
 
     @property
     def saml_key_passphrase(self):
@@ -225,6 +243,11 @@ class TenantConfigBase:
             _saml_config["idp"] = idp_config
             if not _saml_config["idp"].get("entityId"):
                 _saml_config["idp"]["entityId"] = self.tenant_url
+
+        if sp_config := config.get_tenant_specific_key(
+            "get_user_by_saml_settings.sp", self.tenant
+        ):
+            _saml_config["sp"] = _saml_config["sp"] | sp_config
         return _saml_config
 
     @property

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Type, Union
+from typing import Any, Dict, List, Optional, Self, Type, Union
 
 from common.config import config
 from common.lib.dynamo import RestrictedDynamoHandler
@@ -174,7 +174,12 @@ class ModelAdapter:
                 _model_array.append(self.__validate_and_return_model(item))
         return _model_array
 
-    def load_config(self, key: str, tenant: str = None, default: Any = None) -> object:
+    def load_config(
+        self,
+        key: str,
+        tenant: Optional[str] = None,
+        default: Any = None,
+    ) -> "ModelAdapter":
         """Required to be run before using any other functions."""
         self._key = key
         self._tenant = tenant
@@ -221,7 +226,7 @@ class ModelAdapter:
         self._model = model
         return self
 
-    def from_dict(self, model_dict: dict) -> object:
+    def from_dict(self, model_dict: dict) -> Self:
         self._model = self.__validate_and_return_model(model_dict)
         return self
 

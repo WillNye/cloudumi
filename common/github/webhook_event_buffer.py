@@ -57,7 +57,6 @@ async def webhook_request_handler(request):
     Note: this is where we wire up the control plane between webhook events and
     Noq SaaS Self Service request
     """
-    from common.celery_tasks.celery_tasks import app as celery_app
 
     headers = request["headers"]
     body = request["body"]
@@ -72,10 +71,13 @@ async def webhook_request_handler(request):
     github_event_type = headers["x-github-event"]
     github_installation_id = github_event["installation"]["id"]
 
-    tenant_github_install = await GitHubInstall.get_with_installation_id(
+    # Note about why we allow a single installation id to map to multiple tenant
+    # Naturally, it's not possible. In order for Noq Org GitHub app to have
+    # more than one tenant: (corp) and (end-2-end-day-testing).
+    tenant_github_installs = await GitHubInstall.get_with_installation_id(
         github_installation_id
     )
-    if not tenant_github_install:
+    if not tenant_github_installs:
         # this is an opportunity to cause denial-of-service.
         # anyone can install an app and forgot to
         # complete the installation process. For example, installer
@@ -96,7 +98,27 @@ async def webhook_request_handler(request):
         )
         return
 
-    db_tenant: Tenant = await Tenant.get_by_id(tenant_github_install.tenant_id)
+    # push event does not carry the action key
+    github_action = github_event.get("action", None)
+    if github_event_type == "meta" and github_action == "deleted":
+        for tenant_github_install in tenant_github_installs:
+            await tenant_github_install.delete()
+            return
+
+    db_tenants = await Tenant.get_all_by_ids(
+        [install.tenant_id for install in tenant_github_installs]
+    )
+    for db_tenant in db_tenants:
+        await github_event_handler(
+            github_event_type, github_action, github_event, db_tenant
+        )
+
+
+async def github_event_handler(
+    github_event_type, github_action, github_event, db_tenant
+):
+    from common.celery_tasks.celery_tasks import app as celery_app
+
     log_data = {
         "tenant": db_tenant.name,
     }
@@ -115,11 +137,7 @@ async def webhook_request_handler(request):
 
         return
 
-    github_action = github_event["action"]
-    if github_event_type == "meta" and github_action == "deleted":
-        await tenant_github_install.delete()
-        return
-    elif github_event_type == "pull_request" and github_action == "synchronize":
+    if github_event_type == "pull_request" and github_action == "synchronize":
         # FIXME hm, what's to do if someone push a change to the request branch
         # is calling sync_iambic_templates_for_tenant sufficient.
         login = github_event["sender"]["login"]
@@ -153,7 +171,7 @@ async def webhook_request_handler(request):
         celery_app.send_task(
             "common.celery_tasks.celery_tasks.update_self_service_state",
             kwargs={
-                "tenant_id": tenant_github_install.tenant_id,
+                "tenant_id": db_tenant.id,
                 "repo_name": github_event["repository"]["full_name"],
                 "pull_request": github_event["pull_request"]["number"],
                 "pr_created_at": github_event["pull_request"]["created_at"],
@@ -199,18 +217,32 @@ async def handle_github_webhook_event_queue(
             "Unable to find required configuration value: "
             "`_global_.integrations.github.webhook_event_buffer.queue_arn`"
         )
-    queue_name = queue_arn.split(":")[-1]
     queue_region = queue_arn.split(":")[3]
 
     sqs_client = boto3.client("sqs", region_name=queue_region)
 
-    queue_url_res = await aio_wrapper(sqs_client.get_queue_url, QueueName=queue_name)
-    queue_url = queue_url_res.get("QueueUrl")
-    if not queue_url:
-        raise DataNotRetrievable(f"Unable to retrieve Queue URL for {queue_arn}")
+    queue_url = config.get(
+        "_global_.integrations.github.webhook_event_buffer.queue_url", None
+    )
+    if not queue_url and not config.is_development:
+        raise MissingConfigurationValue(
+            "Unable to find required configuration value: "
+            "`_global_.integrations.github.webhook_event_buffer.queue_url`"
+        )
+    if config.is_development:
+        queue_name = queue_arn.split(":")[-1]
+        queue_url_res = await aio_wrapper(
+            sqs_client.get_queue_url, QueueName=queue_name
+        )
+        queue_url = queue_url_res.get("QueueUrl")
+        if not queue_url:
+            raise DataNotRetrievable(f"Unable to retrieve Queue URL for {queue_arn}")
 
     messages_awaitable = await aio_wrapper(
-        sqs_client.receive_message, QueueUrl=queue_url, MaxNumberOfMessages=10
+        sqs_client.receive_message,
+        QueueUrl=queue_url,
+        MaxNumberOfMessages=10,
+        WaitTimeSeconds=0,  # we are using short pooling because this task is scheduled in high priority queue and frequently.
     )
     messages = messages_awaitable.get("Messages", [])
     num_events = 0
@@ -248,7 +280,10 @@ async def handle_github_webhook_event_queue(
                 Entries=processed_messages,
             )
         messages_awaitable = await aio_wrapper(
-            sqs_client.receive_message, QueueUrl=queue_url, MaxNumberOfMessages=10
+            sqs_client.receive_message,
+            QueueUrl=queue_url,
+            MaxNumberOfMessages=10,
+            WaitTimeSeconds=0,  # we are using short pooling because this task is scheduled in high priority queue and frequently.
         )
         messages = messages_awaitable.get("Messages", [])
     return {"message": "Successfully processed all messages", "num_events": num_events}

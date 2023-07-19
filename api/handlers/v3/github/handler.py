@@ -9,6 +9,7 @@ from common.config.globals import GITHUB_APP_URL
 from common.github.models import GitHubInstall, GitHubOAuthState
 from common.handlers.base import BaseAdminHandler, TornadoRequestHandler
 from common.iambic.utils import delete_iambic_repos, get_iambic_repo, save_iambic_repos
+from common.iambic_request.utils import noq_github_app_identity
 from common.lib.iambic.git import IambicGit
 from common.lib.pydantic import BaseModel
 from common.models import IambicRepoDetails, WebResponse
@@ -180,6 +181,7 @@ class GithubRepoHandler(BaseAdminHandler):
                     "repos": repo_fullnames,
                     "configured_repo": iambic_repo_name,
                     "merge_on_approval": merge_on_approval,
+                    "integration_config": noq_github_app_identity(),
                 },
             ).dict(exclude_unset=True, exclude_none=True)
         )

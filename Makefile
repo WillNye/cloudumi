@@ -262,7 +262,7 @@ tf-global-dev-apply:
 tf-global-staging-plan:
 	@cd deploy/global_infrastructure && \
 	export AWS_PROFILE=$(AWS_PROFILE_GLOBAL_STAGING) AWS_REGION=$(AWS_REGION_STAGING); \
-	terraform workspace select shared-staging-global; \
+	terraform init; terraform workspace select shared-staging-global; \
 	terraform plan --var-file=live/shared/staging-global/noq.dev-staging.tfvars
 
 # This is for our global Tenant DDB table
