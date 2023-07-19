@@ -75,6 +75,7 @@ resource "aws_iam_role" "ecs_task_role" {
             "dynamodb:updateitem",
             "dynamodb:CreateTable",
             "dynamodb:UpdateTimeToLive",
+            "iam:ListPolicies",
             "sns:createplatformapplication",
             "sns:createplatformendpoint",
             "sns:deleteendpoint",
