@@ -543,7 +543,7 @@ def _get_default_aws_attach_managed_policy_request_types(
             ),
             template_attribute="properties.managed_policies",
             apply_attr_behavior="Append",
-            provider_definition_field="Allow None",
+            provider_definition_field="Allow One",
             created_by="Noq",
         )
     ]
