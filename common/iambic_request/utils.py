@@ -517,6 +517,7 @@ async def maybe_add_hub_role_assume_role_policy_document(
     elif "access_rules" not in impacted_template_attrs:
         return template_obj
 
+    statement_sid = "GeneratedUserAssumeRoleViaNoq"
     assume_role_policy_docs = template_obj.properties.assume_role_policy_document
     set_assume_role_policy_as_list = isinstance(assume_role_policy_docs, list)
     if not set_assume_role_policy_as_list:
@@ -527,6 +528,12 @@ async def maybe_add_hub_role_assume_role_policy_document(
         policy_statements = assume_role_policy_doc.statement
         if not isinstance(policy_statements, list):
             policy_statements = [policy_statements]
+
+        if any(
+            policy_statement.sid == statement_sid
+            for policy_statement in policy_statements
+        ):
+            continue
 
         for policy_statement in policy_statements:
             if policy_statement.included_accounts != ["*"] and sorted(
@@ -558,7 +565,7 @@ async def maybe_add_hub_role_assume_role_policy_document(
                     effect="Allow",
                     action=["sts:AssumeRole", "sts:TagSession"],
                     principal=hub_role_arn,
-                    sid="GeneratedUserAssumeRoleViaNoq",
+                    sid=statement_sid,
                 )
             )
             assume_role_policy_doc.statement = policy_statements
