@@ -186,9 +186,7 @@ async def get_template_change_for_request(
             template_body=request_data.template.get_body(exclude_unset=False),
         )
     elif request_data.changes:
-        iambic_template = await generate_updated_iambic_template(
-            tenant.id, request_data
-        )
+        iambic_template = await generate_updated_iambic_template(tenant, request_data)
         return IambicTemplateChange(
             file_path=iambic_template.file_path,
             template_body=iambic_template.get_body(exclude_unset=False),
