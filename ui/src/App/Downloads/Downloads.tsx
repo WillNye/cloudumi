@@ -30,6 +30,14 @@ const Downloads: FC = () => {
   const [noqDownloadTable, setNoqDownloadTable] = useState<DownloadLink[]>([]);
 
   useEffect(() => {
+    const fetchDownloadLinks = async () => {
+      const response = await axios.get<DownloadLink[]>(
+        'https://public-noq-binaries.s3.us-west-2.amazonaws.com/noq-cli/download_links/latest/download_links.json',
+        { withCredentials: false }
+      );
+      setNoqDownloadTable(response.data);
+    };
+
     const fetchData = async () => {
       const response = await axios.get<DownloadResponse>(
         '/api/v3/downloads/noq'
@@ -38,9 +46,10 @@ const Downloads: FC = () => {
 
       setNoqInstallScript(resJson.install_script);
       setNoqInstallScriptWindows(resJson.install_script_windows);
-      setNoqDownloadTable(resJson.download_links);
     };
+
     fetchData();
+    fetchDownloadLinks();
   }, []);
 
   const isWindows = navigator.userAgent.toLowerCase().indexOf('win') > -1;
