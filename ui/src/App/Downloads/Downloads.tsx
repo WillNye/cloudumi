@@ -73,7 +73,7 @@ const Downloads: FC = () => {
         <div className={css.codeBlockContainer}>
           <br />
           <p className={css.description}>
-            Use the link below to download and install the latest version of the
+            Use the command below to download and install the latest version of the
             Noq CLI. <br />
             Alternatively, you may download the binaries directly from the links
             further down on this page.
