@@ -558,6 +558,7 @@ async def maybe_add_hub_role_assume_role_policy_document(
                     effect="Allow",
                     action=["sts:AssumeRole", "sts:TagSession"],
                     principal=hub_role_arn,
+                    sid="GeneratedUserAssumeRoleViaNoq"
                 )
             )
             assume_role_policy_doc.statement = policy_statements
