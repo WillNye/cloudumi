@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext, useMemo } from 'react';
 import { Button } from 'shared/elements/Button';
 import { AxiosError } from 'axios';
 
@@ -48,6 +48,15 @@ const RequestChangeDetails = ({
     }
   }, [providerDefinition]);
 
+  const providerDefinitionFields = useMemo(() => {
+    if (changeTypeDetails?.provider_definition_field == 'Allow Multiple') {
+      return 'multiple';
+    } else if (changeTypeDetails?.provider_definition_field == 'Allow One') {
+      return 'single';
+    }
+    return null;
+  }, [changeTypeDetails]);
+
   const { isLoading } = useQuery({
     queryFn: getRequestChangeDetails,
     queryKey: [
@@ -61,7 +70,7 @@ const RequestChangeDetails = ({
       // setErrorMessage(errorMsg || 'An error occurred fetching resource');
     },
     onSuccess: ({ data }) => {
-      setChangeTypeDetails(data);
+      setChangeTypeDetails(data as unknown as ChangeTypeDetails);
     }
   });
 
@@ -79,6 +88,37 @@ const RequestChangeDetails = ({
       included_providers: includedProviders
     });
     setSelectedOptions({});
+  };
+
+  const accountNamesValue = useMemo(() => {
+    // on multiple selects, the value is an array of strings
+    // on single selects, the value is a string
+    if (providerDefinitionFields === 'multiple') {
+      return includedProviders.map(
+        provider => provider.definition.account_name
+      );
+    } else if (providerDefinitionFields === 'single') {
+      return includedProviders.length > 0
+        ? includedProviders[0]?.definition.account_name
+        : null;
+    }
+    return null;
+  }, [includedProviders, providerDefinitionFields]);
+
+  const handleOnChangeAccountName = (value: any[] | any) => {
+    // refer to accountNamesValue for explanation of value
+    let selectedProviders = [];
+    if (Array.isArray(value)) {
+      selectedProviders = providerDefinition.filter(provider =>
+        value.includes(provider.definition.account_name)
+      );
+    } else {
+      selectedProviders = providerDefinition.filter(
+        provider => value == provider.definition.account_name
+      );
+    }
+
+    setIncludedProviders(selectedProviders);
   };
 
   return (
@@ -101,38 +141,35 @@ const RequestChangeDetails = ({
             <LineBreak />
           </div>
         ))}
-        {selfServiceRequest?.provider === 'aws' && (
-          <>
-            <Block
-              disableLabelPadding
-              key={'Included Accounts'}
-              label={'Included Accounts'}
-              required={true}
-            ></Block>
-            <Select
-              id="accountNames"
-              name="accountNames"
-              placeholder="Select account(s)"
-              multiple
-              value={includedProviders.map(
-                provider => provider.definition.account_name
-              )}
-              onChange={value => {
-                const selectedProviders = providerDefinition.filter(provider =>
-                  value.includes(provider.definition.account_name)
-                );
-                setIncludedProviders(selectedProviders);
-              }}
-              closeOnSelect={false}
-            >
-              {providerDefinition?.map(def => (
-                <SelectOption key={def.id} value={def.definition.account_name}>
-                  {def.definition.account_name}
-                </SelectOption>
-              ))}
-            </Select>
-          </>
-        )}
+        {selfServiceRequest?.provider === 'aws' &&
+          providerDefinitionFields != null && (
+            <>
+              <Block
+                disableLabelPadding
+                key={'Included Accounts'}
+                label={'Included Accounts'}
+                required={true}
+              ></Block>
+              <Select
+                id="accountNames"
+                name="accountNames"
+                placeholder="Select account(s)"
+                multiple={providerDefinitionFields === 'multiple'}
+                value={accountNamesValue}
+                onChange={handleOnChangeAccountName}
+                closeOnSelect={providerDefinitionFields === 'single'}
+              >
+                {providerDefinition?.map(def => (
+                  <SelectOption
+                    key={def.id}
+                    value={def.definition.account_name}
+                  >
+                    {def.definition.account_name}
+                  </SelectOption>
+                ))}
+              </Select>
+            </>
+          )}
         <LineBreak />
         <Button type="submit" size="small" disabled={!changeTypeDetails}>
           Add Change

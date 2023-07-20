@@ -753,12 +753,9 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
         except Exception as err:
             tenant.iambic_templates_last_parsed = iambic_templates_last_parsed
             await tenant.write()
-            log.exception(
+            await log.aerror(
                 str(err),
-                {
-                    "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-                    "repo": repo.repo_name,
-                    "tenant": tenant.name,
-                },
+                repo=repo.repo_name,
+                tenant=tenant.name,
             )
             return
