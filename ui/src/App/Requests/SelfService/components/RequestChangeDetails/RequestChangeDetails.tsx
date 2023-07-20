@@ -157,7 +157,7 @@ const RequestChangeDetails = ({
                 multiple={providerDefinitionFields === 'multiple'}
                 value={accountNamesValue}
                 onChange={handleOnChangeAccountName}
-                closeOnSelect={false}
+                closeOnSelect={providerDefinitionFields === 'single'}
               >
                 {providerDefinition?.map(def => (
                   <SelectOption
