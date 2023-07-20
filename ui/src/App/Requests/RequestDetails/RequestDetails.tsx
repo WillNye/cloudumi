@@ -16,6 +16,7 @@ import { getIambicRequest } from 'core/API/iambicRequest';
 import { Loader } from 'shared/elements/Loader';
 import { Chip, ChipType } from 'shared/elements/Chip';
 import ChangeViewer from './components/ChangeViewer';
+import { parseGithubMarkdown } from 'core/utils/markdown';
 
 const RequestChangeDetails = () => {
   const { requestId } = useParams<{ requestId: string }>();
@@ -266,7 +267,7 @@ const RequestChangeDetails = () => {
         ))}
         <LineBreak size="large" />
         {requestData?.data?.comments.map((commentData, index) => (
-          <div key={index}>{commentData?.body}</div>
+          <div key={index}>{parseGithubMarkdown(commentData?.body)}</div>
         ))}
         <Block disableLabelPadding label="Comment" />
         <TextArea
