@@ -38,10 +38,7 @@ async def handle_aws_resource_template_ref_request(
                 "option_text": mp_def.secondary_resource_id.split(":policy")[1],
                 "option_value": str(mp_def.iambic_template_id),
             }
-            for mp_def in filter(
-                lambda df: df is not None and df.secondary_resource_id is not None,
-                mp_defs,
-            )
+            for mp_def in mp_defs
         ]
     else:
         raise NotImplementedError
