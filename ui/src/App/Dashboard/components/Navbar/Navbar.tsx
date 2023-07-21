@@ -33,19 +33,15 @@ const commonProps: Partial<Step> = {
   hideBackButton: true,
   placement: 'right',
   spotlightClicks: true,
-  hideFooter: true,
+  showProgress: false,
   styles: {
     options: {
       zIndex: 10000,
-      arrowColor: theme.colors.gray[500],
-      backgroundColor: theme.colors.gray[500],
+      arrowColor: theme.colors.gray[600],
+      backgroundColor: theme.colors.gray[600],
       primaryColor: theme.colors.blue[600],
       textColor: theme.colors.white,
-      overlayColor: theme.colors.gray[600]
-    },
-    buttonNext: {
-      backgroundColor: theme.colors.blue[500]
-      // outlineColor: theme.colors.gray[500],
+      overlayColor: theme.colors.gray[700]
     }
   }
 };
@@ -63,11 +59,7 @@ export const Navbar = () => {
 
   const navigate = useNavigate();
 
-  const accessRef = useRef<HTMLAnchorElement>(null);
-  const resourcesRef = useRef<HTMLAnchorElement>(null);
-  const requestsRef = useRef<HTMLAnchorElement>(null);
   const settingsRef = useRef<HTMLAnchorElement>(null);
-  const downloadsRef = useRef<HTMLAnchorElement>(null);
 
   useMount(() => {
     setState({
@@ -77,58 +69,17 @@ export const Navbar = () => {
           content:
             'You can interact with your own components through the spotlight.',
           ...commonProps,
-          target: accessRef.current!,
-          title: 'Access'
-        },
-        {
-          content: 'This is our sidebar, you can find everything you need here',
-          ...commonProps,
-          target: resourcesRef.current!,
-          title: 'Sidebar'
-        },
-        {
-          content: 'Check the availability of the team!',
-          ...commonProps,
-          target: requestsRef.current!,
-          title: 'The schedule'
-        },
-        {
-          content: <div>Our rate is off the charts!</div>,
-          ...commonProps,
           target: settingsRef.current!,
-          title: 'Our Growth'
-        },
-        {
-          content: <div>User</div>,
-          ...commonProps,
-          target: downloadsRef.current!,
-          title: 'Our Users'
+          locale: { last: 'Next' },
+          title: 'Welcome'
         }
-        // {
-        //   content: 'The awesome connections you have made',
-        //   placement: 'top',
-        //   target: connections.current!,
-        // },
       ]
     });
-
-    // a11yChecker();
   });
 
-  const handleJoyrideCallback = (data: CallBackProps) => {
-    const { action, index, status, type } = data;
-
-    if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status)) {
-      // Need to set our running state to false, so we can restart if we click start again.
-      setState({ run: false, stepIndex: 0 });
-    } else if (
-      ([EVENTS.STEP_AFTER, EVENTS.TARGET_NOT_FOUND] as string[]).includes(type)
-    ) {
-      const nextStepIndex = index + (action === ACTIONS.PREV ? -1 : 1);
-      setState({
-        stepIndex: nextStepIndex
-      });
-    }
+  const handleJoyrideCallback = () => {
+    setState({ run: false, stepIndex: 0 });
+    navigate('/settings');
   };
 
   return (
@@ -149,35 +100,39 @@ export const Navbar = () => {
         </div>
       </Link>
       <nav className={styles.sidebarNav}>
-        <Link to="/" ref={accessRef}>
+        <Link to="/">
           <Tooltip text="Access" alignment="right">
             <div>
               <Icon name="lock" width="26px" height="26px" />
             </div>
           </Tooltip>
         </Link>
-        <Link to="/resources" ref={resourcesRef}>
+        <Link to="/resources">
           <Tooltip text="Resources" alignment="right">
             <div>
               <Icon width="26px" height="26px" name="resource" />
             </div>
           </Tooltip>
         </Link>
-        <Link to="/requests" ref={requestsRef}>
+        <Link to="/requests">
           <Tooltip text="Requests" alignment="right">
             <div>
               <Icon width="26px" height="26px" name="pointer" />
             </div>
           </Tooltip>
         </Link>
-        <Link to="/settings" ref={settingsRef}>
+        <Link
+          to="/settings"
+          ref={settingsRef}
+          onClick={() => setState({ run: false, stepIndex: 0 })}
+        >
           <Tooltip text="Settings" alignment="right">
             <div>
               <Icon width="26px" height="26px" name="settings" />
             </div>
           </Tooltip>
         </Link>
-        <Link to="/downloads" ref={downloadsRef}>
+        <Link to="/downloads">
           <Tooltip text="Downloads" alignment="right">
             <div>
               <Icon width="26px" height="26px" name="download" />
