@@ -350,15 +350,14 @@ class ChangeType(SoftDeleteMixin, Base):
         Index("ct_request_type_idx", "tenant_id", "request_type_id"),
     )
 
-    def dict(self):
+    def self_service_dict(self):
         response = {
             "id": str(self.id),
             "name": self.name,
             "description": self.description,
             "request_type_id": str(self.request_type_id),
-            "included_iambic_template_provider_definition": [
-                x.dict() for x in self.included_iambic_template_provider_definition
-            ],
+            "is_favorite": getattr(self, "is_favorite", False),
+            "is_suggested": getattr(self, "is_suggested", False),
             "provider_definition_field": self.provider_definition_field,
         }
         return response

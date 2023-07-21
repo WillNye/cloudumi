@@ -70,7 +70,7 @@ class SelfServiceChangeTypeHandler(BaseHandler):
                 )
                 self.set_status(404, reason="Change type not found")
                 raise tornado.web.Finish()
-            data = change_type.dict()
+            data = change_type.self_service_dict()
             data["fields"] = [
                 field.self_service_dict() for field in change_type.change_fields
             ]
@@ -84,7 +84,7 @@ class SelfServiceChangeTypeHandler(BaseHandler):
                 request_type_id,
                 **query_params.dict(),
             )
-            data = [change_type.dict() for change_type in change_types]
+            data = [change_type.self_service_dict() for change_type in change_types]
 
         self.write(
             WebResponse(

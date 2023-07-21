@@ -187,6 +187,9 @@ async def self_service_list_tenant_change_types(
         change_types = []
         for val in values:
             change_type = val[0]
+            # This is a way to future-proof the inclusion of suggestion rules
+            # e.g. suggest this change type if the user is in a certain group
+            change_type.is_suggested = change_type.suggest_to_all
             change_type.is_favorite = bool(val[1])
             change_types.append(change_type)
 
