@@ -6,14 +6,18 @@ from common.handlers.base import BaseHandler
 from common.models import BaseModel, WebResponse
 from common.request_types.utils import (
     get_tenant_change_type,
-    list_tenant_change_types,
     list_tenant_request_types,
+    self_service_list_tenant_change_types,
 )
 
 
 class SelfServiceRequestTypeParams(BaseModel):
     provider: str = None
+
+
+class SelfServiceChangeTypeParams(BaseModel):
     template_type: Optional[str] = None
+    boosted_only: Optional[bool] = False
 
 
 class SelfServiceRequestTypeHandler(BaseHandler):
@@ -37,7 +41,6 @@ class SelfServiceRequestTypeHandler(BaseHandler):
                         await list_tenant_request_types(
                             tenant_id,
                             provider=query_params.provider,
-                            template_type=query_params.template_type,
                         )
                     )
                 ],
@@ -53,11 +56,6 @@ class SelfServiceChangeTypeHandler(BaseHandler):
 
         List or retrieve the supported change type(s) for a request type.
         """
-        # Get query params
-
-        iambic_templates_specified = self.get_argument(
-            "iambic_templates_specified", None
-        )
         tenant_id = self.ctx.db_tenant.id
         self.set_header("Content-Type", "application/json")
 
@@ -78,11 +76,13 @@ class SelfServiceChangeTypeHandler(BaseHandler):
             ]
 
         else:
-            change_types = await list_tenant_change_types(
+            query_params = SelfServiceChangeTypeParams(
+                **{k: self.get_argument(k) for k in self.request.arguments}
+            )
+            change_types = await self_service_list_tenant_change_types(
                 tenant_id,
                 request_type_id,
-                iambic_templates_specified=iambic_templates_specified,
-                summary_only=False,
+                **query_params.dict(),
             )
             data = [change_type.dict() for change_type in change_types]
 

@@ -6,6 +6,9 @@ from sqlalchemy.orm import relationship
 
 from common.iambic.config.models import TrustedProvider
 from common.pg_core.models import Base
+from common.request_types.models import (
+    change_type_iambic_template_provider_definition_association,
+)
 from common.tenants.models import Tenant  # noqa: F401
 
 
@@ -119,6 +122,13 @@ class IambicTemplateProviderDefinition(Base):
         "IambicTemplate", back_populates="provider_definition_refs"
     )
     tenant_provider_definition = relationship("TenantProviderDefinition")
+
+    associated_change_types = relationship(
+        "ChangeType",
+        secondary=change_type_iambic_template_provider_definition_association,
+        back_populates="included_iambic_template_provider_definition",
+        uselist=True,
+    )
 
     __table_args__ = (
         Index("itpd_template_id_idx", "iambic_template_id"),

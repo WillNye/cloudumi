@@ -1,6 +1,7 @@
+from operator import or_
 from typing import Optional
 
-from sqlalchemy import and_, cast, select
+from sqlalchemy import and_, cast, func, select
 from sqlalchemy.orm import contains_eager, joinedload
 
 from common.config.globals import ASYNC_PG_SESSION
@@ -11,6 +12,7 @@ from common.request_types.models import (
     ChangeTypeTemplate,
     RequestType,
     TypeAheadFieldHelper,
+    user_favorited_change_type_association,
 )
 
 
@@ -31,7 +33,6 @@ async def list_tenant_request_types(
     provider: str = None,
     summary_only: bool = True,
     exclude_deleted: bool = True,
-    template_type: Optional[str] = None,
 ) -> list[RequestType]:
     async with ASYNC_PG_SESSION() as session:
         stmt = select(RequestType).filter(RequestType.tenant_id == tenant_id)
@@ -128,6 +129,68 @@ async def list_tenant_change_types(
         stmt = stmt.order_by(ChangeType.name)
         items = await session.execute(stmt)
         return items.scalars().all()
+
+
+async def self_service_list_tenant_change_types(
+    tenant_id: int,
+    user_id: str,
+    request_type_id: str,
+    template_type: str = None,
+    only_boosted: bool = False,
+) -> list[ChangeType]:
+    optional_filters = (
+        [ChangeType.template_types.any(template_type)] if template_type else []
+    )
+    async with ASYNC_PG_SESSION() as session:
+        stmt = (
+            select(ChangeType)
+            .filter(
+                ChangeType.tenant_id == tenant_id,
+                ChangeType.request_type_id == request_type_id,
+                ChangeType.deleted == False,
+                *optional_filters
+            )
+            .outerjoin(
+                user_favorited_change_type_association,
+                and_(
+                    user_favorited_change_type_association.c.change_type_id
+                    == ChangeType.id,
+                    user_favorited_change_type_association.c.user_id == user_id,
+                ),
+            )
+            .add_columns(
+                func.count(
+                    user_favorited_change_type_association.c.change_type_id
+                ).label("is_favorite")
+            )
+            .group_by(
+                ChangeType,
+                user_favorited_change_type_association.c.change_type_id,
+            )
+        )
+
+        if only_boosted:
+            stmt = stmt.having(
+                or_(
+                    func.count(user_favorited_change_type_association.c.change_type_id)
+                    > 0,
+                    ChangeType.suggest_to_all == True,
+                )
+            )
+
+        stmt = stmt.order_by(
+            func.count(user_favorited_change_type_association.c.change_type_id).desc(),
+            ChangeType.suggest_to_all.desc(),
+            ChangeType.name,
+        )
+        values = await session.execute(stmt)
+        change_types = []
+        for val in values:
+            change_type = val[0]
+            change_type.is_favorite = bool(val[1])
+            change_types.append(change_type)
+
+        return change_types
 
 
 async def get_tenant_change_type(tenant_id: int, change_type_id: str) -> ChangeType:

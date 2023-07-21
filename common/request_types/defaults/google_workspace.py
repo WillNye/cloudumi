@@ -25,9 +25,6 @@ def _get_default_google_workspace_request_access_request_types(
         name="Request access to Google Workspace Group",
         description="Request access to a Google Workspace Group for 1 or more users or groups",
         provider=google_workspace_provider_resolver.provider,
-        template_types=[
-            GOOGLE_GROUP_TEMPLATE_TYPE,
-        ],
         created_by="Noq",
     )
 
@@ -55,6 +52,9 @@ def _get_default_google_workspace_request_access_request_types(
             template_attribute="properties.members",
             apply_attr_behavior="Append",
             provider_definition_field="Allow One",
+            supported_template_types=[
+                GOOGLE_GROUP_TEMPLATE_TYPE,
+            ],
             created_by="Noq",
         )
     ]
@@ -75,5 +75,4 @@ async def get_default_google_workspace_request_types() -> list[RequestType]:
     default_request_types = _get_default_google_workspace_request_access_request_types(
         field_helper_map
     )
-
     return [deepcopy(request_type) for request_type in default_request_types]

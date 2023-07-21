@@ -1,9 +1,20 @@
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-from sqlalchemy import JSON, Boolean, Column, ForeignKey, Index, Integer, String, update
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    select,
+    update,
+)
 from sqlalchemy.dialects.postgresql import ARRAY, ENUM, JSONB, UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, selectinload
 from sqlalchemy.sql.schema import Table
 
 from common.config import config
@@ -11,6 +22,11 @@ from common.config.globals import ASYNC_PG_SESSION
 from common.iambic.config.models import TrustedProvider
 from common.pg_core.models import Base, SoftDeleteMixin
 from common.tenants.models import Tenant  # noqa: F401
+
+if TYPE_CHECKING:
+    from common.users.models import User
+else:
+    User = object
 
 log = config.get_logger(__name__)
 
@@ -102,9 +118,6 @@ user_favorited_change_type_association = Table(
     ),
     Index("ufcta_user_favorite_idx", "user_id", "change_type_id"),
 )
-user_favorited_change_type_association.change_type = relationship(
-    "ChangeType", back_populates="favorited_by"
-)
 
 user_favorited_express_access_request_association = Table(
     "user_favorited_express_access_request_association",
@@ -116,9 +129,6 @@ user_favorited_express_access_request_association = Table(
         ForeignKey("express_access_request.id"),
     ),
     Index("ufeara_user_favorite_idx", "user_id", "express_access_request_id"),
-)
-user_favorited_express_access_request_association.express_access_request = relationship(
-    "ExpressAccessRequest", back_populates="favorited_by"
 )
 
 
@@ -207,10 +217,9 @@ class ExpressAccessRequest(SoftDeleteMixin, Base):
     tenant = relationship("Tenant")
     change_type = relationship("ChangeType")
     favorited_by = relationship(
-        "user_favorited_express_access_request_association",
-        back_populates="express_access_request",
-        uselist=True,
-        cascade="all, delete-orphan",
+        "User",
+        secondary=user_favorited_express_access_request_association,
+        back_populates="favorited_access_requests",
     )
 
     __table_args__ = (
@@ -223,6 +232,54 @@ class ExpressAccessRequest(SoftDeleteMixin, Base):
             "change_type_id",
         ),
     )
+
+    @classmethod
+    async def favorite(
+        cls, tenant_id: int, express_access_request_id: str, user: User
+    ) -> "ExpressAccessRequest":
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = (
+                    select(cls)
+                    .filter(
+                        cls.id == express_access_request_id, cls.tenant_id == tenant_id
+                    )
+                    .options(selectinload(cls.favorited_by))
+                )
+                items = await session.execute(stmt)
+                express_access_request = items.scalars().unique().one_or_none()
+                if not express_access_request:
+                    return
+
+                express_access_request.favorited_by.append(user)
+                session.add(express_access_request)
+                await session.commit()
+
+        return express_access_request
+
+    @classmethod
+    async def unfavorite(
+        cls, tenant_id: int, express_access_request_id: str, user: User
+    ) -> "ExpressAccessRequest":
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = (
+                    select(cls)
+                    .filter(
+                        cls.id == express_access_request_id, cls.tenant_id == tenant_id
+                    )
+                    .options(selectinload(cls.favorited_by))
+                )
+                items = await session.execute(stmt)
+                express_access_request = items.scalars().unique().one_or_none()
+                if not express_access_request:
+                    return
+
+                express_access_request.favorited_by.remove(user)
+                session.add(express_access_request)
+                await session.commit()
+
+        return express_access_request
 
 
 class ChangeType(SoftDeleteMixin, Base):
@@ -280,10 +337,9 @@ class ChangeType(SoftDeleteMixin, Base):
         back_populates="associated_change_types",
     )
     favorited_by = relationship(
-        "user_favorited_change_type_association",
-        back_populates="change_type",
-        uselist=True,
-        cascade="all, delete-orphan",
+        "User",
+        secondary=user_favorited_change_type_association,
+        back_populates="favorited_change_types",
     )
 
     __table_args__ = (
@@ -292,7 +348,6 @@ class ChangeType(SoftDeleteMixin, Base):
             "ct_suggested_change_type_idx", "id", "tenant_id", "name", "suggest_to_all"
         ),
         Index("ct_request_type_idx", "tenant_id", "request_type_id"),
-        Index("uix_change_type_request_name", "request_type_id", "name", unique=True),
     )
 
     def dict(self):
@@ -318,6 +373,50 @@ class ChangeType(SoftDeleteMixin, Base):
         self.deleted_at = None
         self.deleted = False
         await self.write()
+
+    @classmethod
+    async def favorite(
+        cls, tenant_id: int, change_type_id: str, user: User
+    ) -> "ChangeType":
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = (
+                    select(cls)
+                    .filter(cls.id == change_type_id, cls.tenant_id == tenant_id)
+                    .options(selectinload(cls.favorited_by))
+                )
+                items = await session.execute(stmt)
+                change_type = items.scalars().unique().one_or_none()
+                if not change_type:
+                    return
+
+                change_type.favorited_by.append(user)
+                session.add(change_type)
+                await session.commit()
+
+        return change_type
+
+    @classmethod
+    async def unfavorite(
+        cls, tenant_id: int, change_type_id: str, user: User
+    ) -> "ChangeType":
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = (
+                    select(cls)
+                    .filter(cls.id == change_type_id, cls.tenant_id == tenant_id)
+                    .options(selectinload(cls.favorited_by))
+                )
+                items = await session.execute(stmt)
+                change_type = items.scalars().unique().one_or_none()
+                if not change_type:
+                    return
+
+                change_type.favorited_by.remove(user)
+                session.add(change_type)
+                await session.commit()
+
+        return change_type
 
 
 class ChangeField(Base):

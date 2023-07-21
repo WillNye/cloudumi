@@ -23,9 +23,6 @@ def _get_default_azure_ad_request_access_request_types(
         name="Request access to Azure AD Group",
         description="Request access to an Azure AD Group for 1 or more users or groups",
         provider=azure_ad_provider_resolver.provider,
-        template_types=[
-            AZURE_AD_GROUP_TEMPLATE_TYPE,
-        ],
         created_by="Noq",
     )
 
@@ -54,6 +51,9 @@ def _get_default_azure_ad_request_access_request_types(
             template_attribute="properties.members",
             apply_attr_behavior="Append",
             provider_definition_field="Allow One",
+            supported_template_types=[
+                AZURE_AD_GROUP_TEMPLATE_TYPE,
+            ],
             created_by="Noq",
         ),
         ChangeType(
@@ -80,6 +80,9 @@ def _get_default_azure_ad_request_access_request_types(
             template_attribute="properties.members",
             apply_attr_behavior="Append",
             provider_definition_field="Allow One",
+            supported_template_types=[
+                AZURE_AD_GROUP_TEMPLATE_TYPE,
+            ],
             created_by="Noq",
         ),
     ]

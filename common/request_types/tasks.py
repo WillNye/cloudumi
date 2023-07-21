@@ -1,8 +1,5 @@
-import asyncio
 from collections import defaultdict
-from copy import deepcopy
 from datetime import datetime
-from itertools import chain
 
 from sqlalchemy import select
 
@@ -52,7 +49,7 @@ async def upsert_tenant_request_types(tenant_name: str):
         return
     updated_at = datetime.utcnow()
 
-    # Ensure tenant.supported_tenant_types is up to date
+    # Ensure tenant.supported_template_types is up to date
     async with ASYNC_PG_SESSION() as session:
         stmt = (
             select(IambicTemplate)
@@ -92,18 +89,12 @@ async def upsert_tenant_request_types(tenant_name: str):
             ] = change_type
 
     default_request_types = await get_default_aws_request_types()
-    default_request_types.extend(
-        await asyncio.gather(get_default_google_workspace_request_types())
-    )
-    default_request_types.extend(
-        await asyncio.gather(get_default_azure_ad_request_types())
-    )
-    default_request_types = list(chain.from_iterable(default_request_types))
+    default_request_types.extend(await get_default_google_workspace_request_types())
+    default_request_types.extend(await get_default_azure_ad_request_types())
     default_request_type_map = {rt.name: rt for rt in default_request_types}
     default_request_type_change_map = defaultdict(dict)
     for request_type in default_request_types:
-        for default_change_type in request_type.change_types:
-            change_type = deepcopy(default_change_type)
+        for change_type in request_type.change_types:
             change_type.template_types = [
                 tt
                 for tt in change_type.supported_template_types
@@ -284,13 +275,14 @@ async def upsert_tenant_request_types(tenant_name: str):
     for default_request_type in default_request_types:
         if default_request_type.name not in tenant_request_type_map:
             default_request_type.tenant_id = tenant.id
-            default_request_type.supported_template_types = [
-                tt
-                for tt in default_request_type.template_types
-                if tt in tenant_template_types
-            ]
-            if default_request_type.supported_template_types:
-                new_request_types.append(deepcopy(default_request_type))
+            for change_type in default_request_type.change_types:
+                change_type.template_types = [
+                    tt
+                    for tt in change_type.template_types
+                    if tt in tenant_template_types
+                ]
+
+            new_request_types.append(default_request_type)
 
     if new_request_types:
         await bulk_add(new_request_types)

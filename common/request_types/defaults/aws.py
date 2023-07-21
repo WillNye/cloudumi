@@ -53,7 +53,7 @@ def get_services_permissions() -> dict[dict[list[str]]]:
 
 def _get_default_aws_request_permission_request_types(
     field_helper_map: dict[str:TypeAheadFieldHelper],
-) -> list[RequestType]:
+) -> RequestType:
     # Formatted like this to catch all RDS variants
     permission_changes = [
         ChangeType(
@@ -100,6 +100,11 @@ def _get_default_aws_request_permission_request_types(
           "Resource": ["{{form.resource_arns|join('","')}}"]
         }"""
             ),
+            supported_template_types=[
+                AWS_IAM_GROUP_TEMPLATE_TYPE,
+                AWS_IAM_ROLE_TEMPLATE_TYPE,
+                AWS_IAM_USER_TEMPLATE_TYPE,
+            ],
             created_by="Noq",
         ),
         ChangeType(
@@ -172,6 +177,11 @@ def _get_default_aws_request_permission_request_types(
           "Resource": [{% for s3_bucket in form.s3_buckets %}"{{ s3_bucket }}", "{{ s3_bucket }}/*"{% if not loop.last %}, {% endif %}{% endfor %}]
         }"""
             ),
+            supported_template_types=[
+                AWS_IAM_GROUP_TEMPLATE_TYPE,
+                AWS_IAM_ROLE_TEMPLATE_TYPE,
+                AWS_IAM_USER_TEMPLATE_TYPE,
+            ],
             created_by="Noq",
         ),
         ChangeType(
@@ -235,6 +245,11 @@ def _get_default_aws_request_permission_request_types(
           "Resource": ["{{form.sqs_queues|join('","')}}"]
         }"""
             ),
+            supported_template_types=[
+                AWS_IAM_GROUP_TEMPLATE_TYPE,
+                AWS_IAM_ROLE_TEMPLATE_TYPE,
+                AWS_IAM_USER_TEMPLATE_TYPE,
+            ],
             created_by="Noq",
         ),
         ChangeType(
@@ -291,6 +306,11 @@ def _get_default_aws_request_permission_request_types(
           "Resource": ["{{form.sns_topics|join('","')}}"]
         }"""
             ),
+            supported_template_types=[
+                AWS_IAM_GROUP_TEMPLATE_TYPE,
+                AWS_IAM_ROLE_TEMPLATE_TYPE,
+                AWS_IAM_USER_TEMPLATE_TYPE,
+            ],
             created_by="Noq",
         ),
     ]
@@ -346,23 +366,22 @@ def _get_default_aws_request_permission_request_types(
           "Resource": ["{{form.resource_arns|join('","')}}"]
         }"""
                 ),
+                supported_template_types=[
+                    AWS_IAM_GROUP_TEMPLATE_TYPE,
+                    AWS_IAM_ROLE_TEMPLATE_TYPE,
+                    AWS_IAM_USER_TEMPLATE_TYPE,
+                ],
                 created_by="Noq",
             )
         )
 
     add_permission_to_identity_request = RequestType(
-        name="Add permissions to identity",
-        description="Add permissions to an identity on 1 or more accounts",
+        name="I need cloud permissions.",
+        description="I need permissions to a cloud resource for myself, an Application, or a Managed Policy.",
         provider=aws_provider_resolver.provider,
-        template_types=[
-            AWS_IAM_GROUP_TEMPLATE_TYPE,
-            AWS_IAM_ROLE_TEMPLATE_TYPE,
-            AWS_IAM_USER_TEMPLATE_TYPE,
-        ],
         created_by="Noq",
     )
     add_permission_to_identity_request.change_types = deepcopy(permission_changes)
-
     for elem, change_type in enumerate(add_permission_to_identity_request.change_types):
         change_type.template_attribute = "properties.inline_policies"
         change_type.apply_attr_behavior = "Append"
@@ -394,130 +413,94 @@ def _get_default_aws_request_permission_request_types(
             elem
         ].change_template.template = template
 
-    add_permission_to_permission_set_request = RequestType(
-        name="Add permissions to a permission set.",
-        description="Add permissions to a permission set in your AWS Org.",
-        provider=aws_provider_resolver.provider,
-        template_types=[
-            AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
-        ],
-        created_by="Noq",
-    )
-    add_permission_to_permission_set_request.change_types = deepcopy(permission_changes)
-    for elem, change_type in enumerate(
-        add_permission_to_permission_set_request.change_types
-    ):
+    permission_set_change_types = deepcopy(permission_changes)
+    for elem, change_type in enumerate(permission_set_change_types):
+        change_type.supported_template_types = [
+            AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE
+        ]
         change_type.template_attribute = "properties.inline_policy"
         change_type.apply_attr_behavior = "Append"
         change_type.provider_definition_field = "Allow None"
-        add_permission_to_permission_set_request.change_types[elem] = change_type
+        permission_set_change_types[elem] = change_type
+    add_permission_to_identity_request.change_types.extend(permission_set_change_types)
 
-    add_permission_to_mp_request = RequestType(
-        name="Add permissions to managed policy",
-        description="Add permissions to a managed policy on 1 or more accounts",
-        provider=aws_provider_resolver.provider,
-        template_types=[AWS_MANAGED_POLICY_TEMPLATE_TYPE],
-        created_by="Noq",
-    )
-    add_permission_to_mp_request.change_types = deepcopy(permission_changes)
-    for elem, change_type in enumerate(add_permission_to_mp_request.change_types):
+    mp_change_types = deepcopy(permission_changes)
+    for elem, change_type in enumerate(mp_change_types):
+        change_type.supported_template_types = [AWS_MANAGED_POLICY_TEMPLATE_TYPE]
         change_type.template_attribute = "properties.policy_document.statement"
         change_type.apply_attr_behavior = "Append"
         change_type.provider_definition_field = "Allow Multiple"
-        add_permission_to_mp_request.change_types[elem] = change_type
+        mp_change_types[elem] = change_type
+    add_permission_to_identity_request.change_types.extend(mp_change_types)
 
-    return [
-        add_permission_to_identity_request,
-        add_permission_to_mp_request,
-        add_permission_to_permission_set_request,
-    ]
-
-
-def _get_default_aws_attach_managed_policy_request_types(
-    field_helper_map: dict[str:TypeAheadFieldHelper],
-) -> list[RequestType]:
-
-    attach_to_permission_set_request = RequestType(
-        name="Attach a managed policy to AWS PermissionSet",
-        description="Attach a managed policy to AWS PermissionSet in your AWS Org.",
-        provider=aws_provider_resolver.provider,
-        template_types=[
-            AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
-        ],
-        created_by="Noq",
-    )
-    attach_to_permission_set_request.change_types = [
-        ChangeType(
-            name="Attach a customer managed policy to a permission set",
-            description="Attach a customer managed policy to a permission set",
-            change_fields=[
-                ChangeField(
-                    change_element=0,
-                    field_key="policy",
-                    field_type="TypeAheadTemplateRef",
-                    field_text="Managed Policy",
-                    description="The managed policy that will be attached/added to the permission set.",
-                    allow_none=False,
-                    allow_multiple=False,
-                    typeahead_field_helper_id=field_helper_map[
-                        "Customer Managed Policy Template Refs"
-                    ].id,
-                )
-            ],
-            change_template=ChangeTypeTemplate(
-                template="""
+    add_permission_to_identity_request.change_types.extend(
+        [
+            ChangeType(
+                name="Attach a customer managed policy to a permission set",
+                description="Attach a customer managed policy to a permission set",
+                change_fields=[
+                    ChangeField(
+                        change_element=0,
+                        field_key="policy",
+                        field_type="TypeAheadTemplateRef",
+                        field_text="Managed Policy",
+                        description="The managed policy that will be attached/added to the permission set.",
+                        allow_none=False,
+                        allow_multiple=False,
+                        typeahead_field_helper_id=field_helper_map[
+                            "Customer Managed Policy Template Refs"
+                        ].id,
+                    )
+                ],
+                change_template=ChangeTypeTemplate(
+                    template="""
         {
             "name": "{{ form.policy.properties.policy_name }}",
             "path": "{{ form.policy.properties.path }}"
         }"""
+                ),
+                template_attribute="properties.customer_managed_policy_references",
+                apply_attr_behavior="Append",
+                provider_definition_field="Allow None",
+                supported_template_types=[
+                    AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
+                ],
+                created_by="Noq",
             ),
-            template_attribute="properties.customer_managed_policy_references",
-            apply_attr_behavior="Append",
-            provider_definition_field="Allow None",
-            created_by="Noq",
-        ),
-        ChangeType(
-            name="Attach an AWS managed policy to a permission set",
-            description="Attach a policy managed by AWS to a permission set",
-            change_fields=[
-                ChangeField(
-                    change_element=0,
-                    field_key="policy_arn",
-                    field_type="TypeAhead",
-                    field_text="Managed Policy",
-                    description="The managed policy that will be attached/added to the permission set.",
-                    allow_none=False,
-                    allow_multiple=False,
-                    typeahead_field_helper_id=field_helper_map[
-                        "AWS only Managed Policies"
-                    ].id,
-                )
-            ],
-            change_template=ChangeTypeTemplate(
-                template="""
+            ChangeType(
+                name="Attach an AWS managed policy to a permission set",
+                description="Attach a policy managed by AWS to a permission set",
+                change_fields=[
+                    ChangeField(
+                        change_element=0,
+                        field_key="policy_arn",
+                        field_type="TypeAhead",
+                        field_text="Managed Policy",
+                        description="The managed policy that will be attached/added to the permission set.",
+                        allow_none=False,
+                        allow_multiple=False,
+                        typeahead_field_helper_id=field_helper_map[
+                            "AWS only Managed Policies"
+                        ].id,
+                    )
+                ],
+                change_template=ChangeTypeTemplate(
+                    template="""
         {
             "arn": "{{ form.policy_arn }}"
         }"""
+                ),
+                template_attribute="properties.managed_policies",
+                apply_attr_behavior="Append",
+                provider_definition_field="Allow None",
+                supported_template_types=[
+                    AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
+                ],
+                created_by="Noq",
             ),
-            template_attribute="properties.managed_policies",
-            apply_attr_behavior="Append",
-            provider_definition_field="Allow None",
-            created_by="Noq",
-        ),
-    ]
-
-    attach_to_identity_request = RequestType(
-        name="Attach a managed policy to an AWS User, Group, or Role",
-        description="Attach a managed policy to an AWS User, Group, or Role in your AWS Org.",
-        provider=aws_provider_resolver.provider,
-        template_types=[
-            AWS_IAM_ROLE_TEMPLATE_TYPE,
-            AWS_IAM_USER_TEMPLATE_TYPE,
-            AWS_IAM_GROUP_TEMPLATE_TYPE,
-        ],
-        created_by="Noq",
+        ]
     )
-    attach_to_identity_request.change_types = [
+    add_permission_to_identity_request.change_types.append(
         ChangeType(
             name="Attach a managed policy",
             description="Attach a managed policy.",
@@ -544,24 +527,26 @@ def _get_default_aws_attach_managed_policy_request_types(
             template_attribute="properties.managed_policies",
             apply_attr_behavior="Append",
             provider_definition_field="Allow One",
+            supported_template_types=[
+                AWS_IAM_ROLE_TEMPLATE_TYPE,
+                AWS_IAM_USER_TEMPLATE_TYPE,
+                AWS_IAM_GROUP_TEMPLATE_TYPE,
+            ],
             created_by="Noq",
         )
-    ]
+    )
 
-    return [attach_to_identity_request, attach_to_permission_set_request]
+    return add_permission_to_identity_request
 
 
 def _get_default_aws_request_access_request_types(
     field_helper_map: dict[str:TypeAheadFieldHelper],
-) -> list[RequestType]:
+) -> RequestType:
 
     access_to_aws_request = RequestType(
-        name="Request access to AWS",
-        description="Request access to 1 or more AWS accounts",
+        name="I need access.",
+        description="I do not have the AWS credentials to do my job.",
         provider=aws_provider_resolver.provider,
-        template_types=[
-            AWS_IAM_ROLE_TEMPLATE_TYPE,
-        ],
         created_by="Noq",
     )
     access_to_aws_request.change_types = [
@@ -590,6 +575,9 @@ def _get_default_aws_request_access_request_types(
             template_attribute="access_rules",
             apply_attr_behavior="Append",
             provider_definition_field="Allow Multiple",
+            supported_template_types=[
+                AWS_IAM_ROLE_TEMPLATE_TYPE,
+            ],
             created_by="Noq",
         ),
         ChangeType(
@@ -617,75 +605,77 @@ def _get_default_aws_request_access_request_types(
             template_attribute="access_rules",
             apply_attr_behavior="Append",
             provider_definition_field="Allow Multiple",
+            supported_template_types=[
+                AWS_IAM_ROLE_TEMPLATE_TYPE,
+            ],
             created_by="Noq",
         ),
     ]
 
-    access_to_permission_set_request = RequestType(
-        name="Request access to AWS Identity Center (SSO) PermissionSet",
-        description="Request access to an AWS Identity Center (SSO) PermissionSet in you AWS Org.",
-        provider=aws_provider_resolver.provider,
-        template_types=[
-            AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
-        ],
-        created_by="Noq",
-    )
-    access_to_permission_set_request.change_types = [
-        ChangeType(
-            name="SSO User access request",
-            description="Request SSO User access to an AWS SSO PermissionSet.",
-            change_fields=[
-                ChangeField(
-                    change_element=0,
-                    field_key="sso_username",
-                    field_type="TextBox",
-                    field_text="User",
-                    description="The SSO user that requires access.",
-                    allow_none=False,
-                    allow_multiple=False,
-                )
-            ],
-            change_template=ChangeTypeTemplate(
-                template="""
+    access_to_aws_request.change_types.extend(
+        [
+            ChangeType(
+                name="SSO User access request",
+                description="Request SSO User access to an AWS SSO PermissionSet.",
+                change_fields=[
+                    ChangeField(
+                        change_element=0,
+                        field_key="sso_username",
+                        field_type="TextBox",
+                        field_text="User",
+                        description="The SSO user that requires access.",
+                        allow_none=False,
+                        allow_multiple=False,
+                    )
+                ],
+                change_template=ChangeTypeTemplate(
+                    template="""
         {
             "users":["{{form.sso_username}}"],
             "included_accounts": ["{{form.provider_definitions|join('","')}}"]
         }"""
+                ),
+                template_attribute="access_rules",
+                apply_attr_behavior="Append",
+                provider_definition_field="Allow Multiple",
+                supported_template_types=[
+                    AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
+                ],
+                created_by="Noq",
             ),
-            template_attribute="access_rules",
-            apply_attr_behavior="Append",
-            provider_definition_field="Allow Multiple",
-            created_by="Noq",
-        ),
-        ChangeType(
-            name="SSO Group access request",
-            description="Request SSO Group access to an AWS SSO PermissionSet.",
-            change_fields=[
-                ChangeField(
-                    change_element=0,
-                    field_key="sso_group",
-                    field_type="TextBox",
-                    field_text="Group",
-                    description="The SSO group that requires access.",
-                    allow_none=False,
-                    allow_multiple=False,
-                )
-            ],
-            change_template=ChangeTypeTemplate(
-                template="""
+            ChangeType(
+                name="SSO Group access request",
+                description="Request SSO Group access to an AWS SSO PermissionSet.",
+                change_fields=[
+                    ChangeField(
+                        change_element=0,
+                        field_key="sso_group",
+                        field_type="TextBox",
+                        field_text="Group",
+                        description="The SSO group that requires access.",
+                        allow_none=False,
+                        allow_multiple=False,
+                    )
+                ],
+                change_template=ChangeTypeTemplate(
+                    template="""
         {
             "groups":["{{form.sso_group}}"],
             "included_accounts": ["{{form.provider_definitions|join('","')}}"]
         }"""
+                ),
+                template_attribute="access_rules",
+                apply_attr_behavior="Append",
+                provider_definition_field="Allow Multiple",
+                supported_template_types=[
+                    AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
+                ],
+                created_by="Noq",
             ),
-            template_attribute="access_rules",
-            apply_attr_behavior="Append",
-            provider_definition_field="Allow Multiple",
-            created_by="Noq",
-        ),
-    ]
+        ]
+    )
 
-    return [access_to_permission_set_request, access_to_aws_request]
+    return access_to_aws_request
 
 
 async def get_default_aws_request_types() -> list[RequestType]:
@@ -695,14 +685,9 @@ async def get_default_aws_request_types() -> list[RequestType]:
     field_helper_map = {
         field_helper.name: field_helper for field_helper in aws_typeahead_field_helpers
     }
-    default_request_types = _get_default_aws_request_permission_request_types(
-        field_helper_map
-    )
-    default_request_types.extend(
-        _get_default_aws_request_access_request_types(field_helper_map)
-    )
-    default_request_types.extend(
-        _get_default_aws_attach_managed_policy_request_types(field_helper_map)
-    )
+    default_request_types = [
+        _get_default_aws_request_permission_request_types(field_helper_map),
+        _get_default_aws_request_access_request_types(field_helper_map),
+    ]
 
     return [deepcopy(request_type) for request_type in default_request_types]
