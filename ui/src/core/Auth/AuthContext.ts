@@ -14,15 +14,17 @@ export interface AuthResetPasswordInputs {
 
 export interface AuthContextProps {
   user: User | null;
+  isHubAccountInstalled: boolean;
+  isGithubInstalled: boolean;
   setUser: Dispatch<User | null>;
-  setInternalServerError: Dispatch<boolean>;
   getUser: () => Promise<QueryObserverResult<any, unknown>>;
 }
 
 export const AuthContext = createContext<AuthContextProps>({
   user: null,
+  isHubAccountInstalled: true,
+  isGithubInstalled: true,
   setUser: () => undefined,
-  setInternalServerError: () => undefined,
   getUser: () => undefined
 });
 

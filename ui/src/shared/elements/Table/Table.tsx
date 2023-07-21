@@ -155,7 +155,6 @@ export const Table = <T, D>({
           {table.getHeaderGroups().map(headerGroup => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map(header => {
-                console.log(header.column);
                 return (
                   <th
                     key={header.id}

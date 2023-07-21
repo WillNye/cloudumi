@@ -5,7 +5,6 @@ import CloudImage from '../../../assets/illustrations/cloud.svg';
 import { Button } from '../Button';
 import { LineBreak } from '../LineBreak';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from 'core/Auth';
 
 interface ErrorFallbackProps {
   fullPage?: boolean;
@@ -16,7 +15,6 @@ export const ErrorFallback: FC<ErrorFallbackProps> = ({
   className,
   fullPage = false
 }) => {
-  const { setInternalServerError } = useAuth();
   const navigate = useNavigate();
 
   const classes = useMemo(
@@ -33,8 +31,7 @@ export const ErrorFallback: FC<ErrorFallbackProps> = ({
 
   const handleHome = useCallback(() => {
     navigate('/');
-    setInternalServerError(false);
-  }, [setInternalServerError, navigate]);
+  }, [navigate]);
 
   return (
     <div className={`${className} ${classes}`}>

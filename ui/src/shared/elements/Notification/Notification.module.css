@@ -12,6 +12,11 @@
     max-width: 100%;
   }
 
+  &.floating {
+    position: absolute;
+    z-index: 20;
+  }
+
   .content {
     padding: 2px 10px;
     width: 100%;

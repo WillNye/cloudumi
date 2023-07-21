@@ -6,27 +6,30 @@ import { User } from './types';
 import { getUserDetails } from 'core/API/auth';
 import { Loader } from 'shared/elements/Loader';
 import { useAxiosInterceptors } from './hooks';
-import { useQuery } from '@tanstack/react-query';
-import { ErrorFallback } from 'shared/elements/ErrorFallback';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isUserLoggedIn } from './utils';
+import { getGithubInstallationStatus } from 'core/API/integrations';
+import { getHubAccounts } from 'core/API/awsConfig';
 
 export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [invalidTenant, setInvalidTenant] = useState(false);
-  const [internalServerError, setInternalServerError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const isResetPasswordRoute = useMatch('/login/password-reset');
 
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  useAxiosInterceptors({ setUser, setInvalidTenant, setInternalServerError });
+  useAxiosInterceptors({ setUser, setInvalidTenant });
 
   const { refetch: getUser } = useQuery({
     queryKey: ['userProfile'],
     queryFn: getUserDetails,
     onSuccess: userData => {
       setUser(userData);
+      queryClient.invalidateQueries({ queryKey: ['integrationsStatuses'] });
+      queryClient.invalidateQueries({ queryKey: ['getHubAccounts'] });
       const preLoginPath = sessionStorage.getItem('preLoginPath');
       if (isUserLoggedIn(userData) && preLoginPath) {
         sessionStorage.removeItem('preLoginPath');
@@ -46,17 +49,25 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
     }
   });
 
-  const values = useMemo(
-    () => ({
-      user,
-      setUser,
-      getUser,
-      setInternalServerError
-    }),
-    [user, setUser, getUser, setInternalServerError]
+  const { data: githubData } = useQuery({
+    queryFn: getGithubInstallationStatus,
+    queryKey: ['githubIntegrationStatus']
+  });
+
+  const { data: hubAccount } = useQuery({
+    queryFn: getHubAccounts,
+    queryKey: ['getHubAccounts']
+  });
+
+  const isHubAccountInstalled = useMemo(
+    () => Boolean(hubAccount?.count),
+    [hubAccount?.count]
+  );
+  const isGithubInstalled = useMemo(
+    () => Boolean(githubData?.data?.installed),
+    [githubData?.data]
   );
 
-  // NOTE: I don't think we should put these 2 loading/invalid checks here
   if (isLoading) {
     return <Loader fullPage />;
   }
@@ -76,5 +87,17 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
   //   return <ErrorFallback fullPage />;
   // }
 
-  return <AuthProvider value={values}>{children}</AuthProvider>;
+  return (
+    <AuthProvider
+      value={{
+        isHubAccountInstalled,
+        isGithubInstalled,
+        user,
+        setUser,
+        getUser
+      }}
+    >
+      {children}
+    </AuthProvider>
+  );
 };

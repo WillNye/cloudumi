@@ -11,6 +11,11 @@ export enum NotificationType {
   WARNING = 'warning'
 }
 
+export enum NotificationPosition {
+  EMBEDDED = 'embedded',
+  FLOATING = 'floating'
+}
+
 interface NotificationProps {
   type?: NotificationType;
   message?: string;
@@ -19,6 +24,7 @@ interface NotificationProps {
   onClose?: () => void;
   showCloseIcon?: boolean;
   fullWidth?: boolean;
+  position?: NotificationPosition;
 }
 
 export const Notification: FC<NotificationProps> = ({
@@ -28,12 +34,14 @@ export const Notification: FC<NotificationProps> = ({
   children,
   showCloseIcon = true,
   onClose,
-  fullWidth
+  fullWidth,
+  position = NotificationPosition.EMBEDDED
 }) => {
   return (
     <div
       className={classNames(styles.notification, {
-        [styles.fullWidth]: fullWidth
+        [styles.fullWidth]: fullWidth,
+        [styles.floating]: position === NotificationPosition.FLOATING
       })}
     >
       {type && (

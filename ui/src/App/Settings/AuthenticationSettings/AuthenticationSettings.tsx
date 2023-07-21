@@ -54,7 +54,6 @@ const AuthenticationSettings = () => {
 
   const content = useMemo(() => {
     if (currentTab === AUTH_SETTINGS_TABS.OIDC) {
-      console.log(authSettings?.oidc_redirect_uri);
       return (
         <OIDCSettings
           isFetching={isLoading}

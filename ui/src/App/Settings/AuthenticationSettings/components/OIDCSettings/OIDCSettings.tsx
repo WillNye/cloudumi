@@ -87,7 +87,7 @@ const OIDCSettings = ({ isFetching, current, oidcRedirectUrl }) => {
     () => isSubmitting || isLoadingQuery || isFetching,
     [isSubmitting, isLoadingQuery, isFetching]
   );
-  console.log(oidcRedirectUrl);
+
   return (
     <Segment isLoading={isLoading}>
       <form onSubmit={handleSave}>

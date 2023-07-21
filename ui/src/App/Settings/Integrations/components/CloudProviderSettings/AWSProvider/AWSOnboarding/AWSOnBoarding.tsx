@@ -50,8 +50,6 @@ const OnBoarding = () => {
     }
   });
 
-  // const handleModeChange = ({ target: { value } }) => setSelectedMode(value);
-
   const handleAccNameChange = event => {
     event.preventDefault();
     const { value } = event.target;
