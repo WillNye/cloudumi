@@ -89,7 +89,9 @@ class IambicRepo:
 
     def get_default_branch(self) -> str:
         return next(
-            ref for ref in self.repo.remotes.origin.refs if ref.name == "origin/HEAD"
+            ref
+            for ref in getattr(self.repo.remotes, self.remote_name).refs
+            if ref.name == f"{self.remote_name}/HEAD"
         ).ref.name
 
     async def get_last_updated(self, file_path: str) -> Optional[str]:
@@ -118,15 +120,13 @@ class IambicRepo:
         if os.path.exists(self.default_file_path):
             self.repo = Repo(self.default_file_path)
             await self.set_repo_auth()
-            default_branch = self.get_default_branch()
-            default_branch_name = default_branch.split("/")[-1]
             try:
-                self.repo.git.checkout(default_branch_name)
+                self.repo.git.checkout(self.default_branch_name)
             except Exception as err:
                 # The main branch is already checked out
                 if "already exists and is not an empty directory" not in err.stderr:
                     raise
-            self.repo.git.reset("--hard", default_branch)
+            self.repo.git.reset("--hard", self.get_default_branch())
             try:
                 self.repo.git.pull()
             except Exception as err:
@@ -469,12 +469,9 @@ class IambicRepo:
     @property
     def default_branch_name(self):
         if not self._default_branch_name:
-            self._default_branch_name = next(
-                ref
-                for ref in getattr(self.repo.remotes, self.remote_name).refs
-                if ref.name == f"{self.remote_name}/HEAD"
-            ).ref.name.replace(f"{self.remote_name}/", "")
-
+            self._default_branch_name = self.get_default_branch().replace(
+                f"{self.remote_name}/", ""
+            )
         return self._default_branch_name
 
     @classmethod
