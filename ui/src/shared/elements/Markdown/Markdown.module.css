@@ -8,8 +8,8 @@
   border-collapse: collapse;
   width: 100%;
 }
-.table th,
-td {
+.table .th,
+.td {
   padding: 10px;
   text-align: center;
   border: 1px solid white;

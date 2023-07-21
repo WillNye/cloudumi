@@ -1,5 +1,4 @@
 import remarkGfm from 'remark-gfm';
-import remarkBreaks from 'remark-breaks';
 import ReactMarkdown from 'react-markdown';
 import remarkGithub from 'remark-github';
 import rehypeRaw from 'rehype-raw';
@@ -9,8 +8,8 @@ export const NoqMarkdown = ({ markdown }) => {
   return (
     <ReactMarkdown
       remarkPlugins={[
-        remarkBreaks,
-        remarkGfm,
+        // remarkBreaks,
+        [remarkGfm, { singleTilde: true }],
         [
           remarkGithub,
           { repository: 'https://github.com/noqdev/noq-templates/' }
@@ -27,7 +26,9 @@ export const NoqMarkdown = ({ markdown }) => {
         ),
         code: ({ node, ...props }) => (
           <code className={styles.code} {...props}></code>
-        )
+        ),
+        td: ({ node, ...props }) => <td className={styles.td} {...props}></td>,
+        th: ({ node, ...props }) => <th className={styles.td} {...props}></th>
       }}
     >
       {markdown}
