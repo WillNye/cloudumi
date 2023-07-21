@@ -3045,9 +3045,14 @@ def handle_aws_marketplace_subscription_queue() -> dict:
         log_data["message"] = "AWS Marketplace Queue is not configured"
         return log_data
 
+    if not config_globals.AWS_MARKETPLACE_SUBSCRIPTION_QUEUE_URL:
+        log_data["message"] = "AWS Marketplace Queue URL is not configured"
+        return log_data
+
     log.debug(log_data)
     res = async_to_sync(handle_aws_marketplace_queue)(
-        config_globals.AWS_MARKETPLACE_SUBSCRIPTION_QUEUE
+        config_globals.AWS_MARKETPLACE_SUBSCRIPTION_QUEUE,
+        config_globals.AWS_MARKETPLACE_SUBSCRIPTION_QUEUE_URL,
     )
     return {**log_data, "response": res}
 
@@ -3082,6 +3087,7 @@ def handle_aws_marketplace_collect_last_bill(aws_customer_identifier: str) -> di
     return {**log_data, "response": res}
 
 
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def run_full_iambic_sync_for_tenant(tenant: str) -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
@@ -3206,16 +3212,16 @@ schedule = {
         "options": {"expires": 180},
         "schedule": get_schedule(30),
     },
-    "trigger_credential_mapping_refresh_from_role_changes_for_all_tenants": {
-        "task": "common.celery_tasks.celery_tasks.trigger_credential_mapping_refresh_from_role_changes_for_all_tenants",
-        "options": {"expires": 180},
-        "schedule": schedule_minute,
-    },
-    "cache_cloudtrail_denies_for_all_tenants": {
-        "task": "common.celery_tasks.celery_tasks.cache_cloudtrail_denies_for_all_tenants",
-        "options": {"expires": 180},
-        "schedule": schedule_minute,
-    },
+    # "trigger_credential_mapping_refresh_from_role_changes_for_all_tenants": {
+    #     "task": "common.celery_tasks.celery_tasks.trigger_credential_mapping_refresh_from_role_changes_for_all_tenants",
+    #     "options": {"expires": 180},
+    #     "schedule": schedule_minute,
+    # },
+    # "cache_cloudtrail_denies_for_all_tenants": {
+    #     "task": "common.celery_tasks.celery_tasks.cache_cloudtrail_denies_for_all_tenants",
+    #     "options": {"expires": 180},
+    #     "schedule": schedule_minute,
+    # },
     # "cache_access_advisor_across_accounts_for_all_tenants": {
     #     "task": "common.celery_tasks.celery_tasks.cache_access_advisor_across_accounts_for_all_tenants",
     #     "options": {"expires": 180},
@@ -3233,12 +3239,12 @@ schedule = {
     # },
     "handle_tenant_aws_integration_queue": {
         "task": "common.celery_tasks.celery_tasks.handle_tenant_aws_integration_queue",
-        "options": {"expires": 180},
+        "options": {"expires": 180, "queue": "high_priority"},
         "schedule": schedule_15_seconds,
     },
     "handle_github_webhook_integration_queue": {
         "task": "common.celery_tasks.celery_tasks.handle_github_webhook_integration_queue",
-        "options": {"expires": 180},
+        "options": {"expires": 180, "queue": "high_priority"},
         "schedule": schedule_15_seconds,
     },
     "cache_terraform_resources_task_for_all_tenants": {
@@ -3273,7 +3279,7 @@ schedule = {
     },
     "handle_aws_marketplace_subscription_queue": {
         "task": "common.celery_tasks.celery_tasks.handle_aws_marketplace_subscription_queue",
-        "options": {"expires": 180},
+        "options": {"expires": 180, "queue": "high_priority"},
         "schedule": schedule_minute,
     },
     "handle_aws_marketplace_metering_task": {

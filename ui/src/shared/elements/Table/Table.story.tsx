@@ -61,8 +61,7 @@ export const Filter = () => {
         columns: [
           {
             header: 'First Name',
-            accessorKey: 'firstName',
-            sortable: true
+            accessorKey: 'firstName'
           },
           {
             header: 'Last Name',

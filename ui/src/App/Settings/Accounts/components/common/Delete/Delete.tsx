@@ -13,7 +13,7 @@ import { toast } from 'react-toastify';
 import { Divider } from 'shared/elements/Divider';
 
 interface DeleteProps {
-  canEdit: boolean;
+  canEdit?: boolean;
   dataType: DELETE_DATA_TYPE;
   dataId: string;
   title: string;
@@ -66,7 +66,7 @@ const Delete: FC<DeleteProps> = ({ canEdit, dataType, dataId, title }) => {
     }
   }, [dataId, isUser, dataType, deleteGroupMutation, deleteUserMutation]);
 
-  if (!canEdit) {
+  if (!(canEdit ?? true)) {
     return <Fragment />;
   }
 

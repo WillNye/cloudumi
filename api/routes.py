@@ -18,6 +18,7 @@ from api.handlers.v3.slack.install import (
     AsyncSlackOAuthHandler,
 )
 from api.handlers.v3.typeahead import UserAndGroupTypeAheadHandler
+from api.handlers.v4.auth_settings.auth_settings import AuthSettingsReader
 from api.handlers.v4.aws.roles import RolesHandlerV4
 from api.handlers.v4.groups.manage_group_memberships import (
     ManageGroupMembershipsHandler,
@@ -31,8 +32,16 @@ from api.handlers.v4.iambic.iambic_templates import (
     IambicTemplateHandler,
     IambicTemplateTypeHandler,
 )
+from api.handlers.v4.oidc_settings.manage_oidc_settings import (
+    ManageOIDCSettingsCrudHandler,
+)
 from api.handlers.v4.resources.datatable import ResourcesDataTableHandler
+from api.handlers.v4.saml_settings.manage_saml_settings import (
+    DownloadSAMLCertificateHandler,
+    ManageSAMLSettingsCrudHandler,
+)
 from api.handlers.v4.scim.groups import ScimV2GroupHandler, ScimV2GroupsHandler
+from api.handlers.v4.scim.settings import ScimSettingsHandler
 from api.handlers.v4.scim.users import ScimV2UserHandler, ScimV2UsersHandler
 from api.handlers.v4.self_service.request_types import (
     SelfServiceChangeTypeHandler,
@@ -390,6 +399,10 @@ def make_app(jwt_validator=None):
             IpRestrictionsRequesterIpOnlyToggleHandler,
         ),
         (
+            r"/api/v4/auth/sso/?",
+            AuthSettingsReader,
+        ),
+        (
             r"/api/v3/auth/sso/google/?",
             GoogleOidcIdpConfigurationCrudHandler,
         ),
@@ -400,6 +413,18 @@ def make_app(jwt_validator=None):
         (
             r"/api/v3/auth/sso/oidc/?",
             OidcIdpConfigurationCrudHandler,
+        ),
+        (
+            r"/api/v4/auth/sso/oidc/?",
+            ManageOIDCSettingsCrudHandler,
+        ),
+        (
+            r"/api/v4/auth/sso/saml/?",
+            ManageSAMLSettingsCrudHandler,
+        ),
+        (
+            r"/api/v4/auth/sso/saml/download",
+            DownloadSAMLCertificateHandler,
         ),
         (
             r"/api/v3/auth/sso/?",
@@ -533,6 +558,7 @@ def make_app(jwt_validator=None):
             PasswordResetSelfServiceHandler,
         ),
         (r"/api/v4/verify/?", UnauthenticatedEmailVerificationHandler),
+        (r"/api/v4/scim/settings/?", ScimSettingsHandler),
         (r"/api/v4/scim/v2/Users/?", ScimV2UsersHandler),
         (r"/api/v4/scim/v2/Users/(.*)", ScimV2UserHandler),
         (r"/api/v4/scim/v2/Groups/?", ScimV2GroupsHandler),

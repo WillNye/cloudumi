@@ -1,3 +1,5 @@
+import { ProviderDefinitionField } from 'core/API/iambicRequest';
+
 export interface RequestType {
   id: string;
   name: string;
@@ -64,6 +66,7 @@ export interface ChangeTypeDetails {
   description: string;
   request_type_id: string;
   fields: ChangeTypeField[];
+  provider_definition_field?: ProviderDefinitionField;
   included_providers: ProviderDefinition[];
 }
 

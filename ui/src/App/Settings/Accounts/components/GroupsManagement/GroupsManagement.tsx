@@ -55,20 +55,17 @@ const GroupsManagement = () => {
 
   const tableRows = useMemo(() => {
     return (allGroupsData?.data || []).map(item => {
-      const canEdit = item.managed_by === 'MANUAL';
-
       return {
         ...item,
         name: <div>{item.name}</div>,
         delete: (
           <Delete
-            canEdit={canEdit}
             dataType={DELETE_DATA_TYPE.GROUP}
             dataId={item.name}
             title="Delete Group"
           />
         ),
-        edit: <GroupsModal canEdit={canEdit} group={item} />,
+        edit: <GroupsModal group={item} />,
         users: item.users.length
       };
     });

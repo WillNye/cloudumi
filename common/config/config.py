@@ -18,6 +18,7 @@ import boto3
 import botocore.exceptions
 import sentry_sdk
 import structlog
+import tornado.web
 from cachetools import TTLCache, cached, cachedmethod
 
 import common.lib.noq_json as json
@@ -28,6 +29,26 @@ from common.lib.singleton import Singleton
 from common.lib.yaml import yaml, yaml_safe
 
 main_exit_flag = threading.Event()
+
+
+class StructlogConsoleRenderer(structlog.dev.ConsoleRenderer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __call__(self, logger, name, event_dict):
+        if isinstance(event_dict.get("event"), tornado.web.Finish):
+            raise structlog.DropEvent
+        return super().__call__(logger, name, event_dict)
+
+
+class StructlogJSONRenderer(structlog.processors.JSONRenderer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __call__(self, logger, name, event_dict):
+        if isinstance(event_dict.get("event"), tornado.web.Finish):
+            raise structlog.DropEvent
+        return super().__call__(logger, name, event_dict)
 
 
 def validate_config(dct: Dict):
@@ -47,6 +68,7 @@ def validate_config(dct: Dict):
 
 def dict_merge(dct: dict, merge_dct: dict):
     """Recursively merge two dictionaries, including nested dicts"""
+
     for k, v in merge_dct.items():
 
         if k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], Mapping):
@@ -529,9 +551,9 @@ class Configuration(metaclass=Singleton):
         # Env var will take precedence, but if not set, use the config value
         stage = os.getenv("STAGE", self.get("_global_.environment", "dev"))
         renderer = (
-            structlog.dev.ConsoleRenderer()
+            StructlogConsoleRenderer()
             if stage == "dev"
-            else structlog.processors.JSONRenderer(serializer=json.dumps)
+            else StructlogJSONRenderer(serializer=json.dumps)
         )
         structlog.configure(
             processors=[

@@ -39,7 +39,8 @@ class ManageListUsersHandler(BaseAdminHandler):
                     count=len(errors),
                 ).dict(exclude_unset=True, exclude_none=True)
             )
-            self.set_status(500, reason=str(exc))
+            # reason is in the response header and cannot contain newline
+            self.set_status(500, reason="GenericException")
             raise tornado.web.Finish()
 
         res = [x.dict() for x in query_response.data]
@@ -599,7 +600,7 @@ class UnauthenticatedPasswordResetSelfServiceHandler(TornadoRequestHandler):
                 )
                 raise tornado.web.Finish()
             if not await user.reset_password(
-                tenant, email, password_reset_token, password
+                self.ctx.db_tenant, email, password_reset_token, password
             ):
                 self.set_status(400)
                 self.write(

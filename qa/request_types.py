@@ -16,7 +16,11 @@ from common.request_types.models import (
     RequestType,
 )
 from common.request_types.tasks import upsert_tenant_request_types
-from common.request_types.utils import list_tenant_request_types, list_tenant_change_types, get_tenant_change_type
+from common.request_types.utils import (
+    get_tenant_change_type,
+    list_tenant_change_types,
+    list_tenant_request_types,
+)
 from qa import TENANT_SUMMARY
 from qa.utils import generic_api_get_request
 

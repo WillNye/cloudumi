@@ -22,9 +22,7 @@ const SelfService = () => {
   const [currentStep, setCurrentStep] = useState(
     SELF_SERVICE_STEPS.SELECT_PROVIDER
   );
-  const [expirationType, setExpirationType] = useState(
-    EXPIRATION_TYPE.RELATIVE
-  );
+  const [expirationType, setExpirationType] = useState(EXPIRATION_TYPE.NEVER);
   const [relativeValue, setRelativeValue] = useState('4');
   const [relativeUnit, setRelativeUnit] = useState('hours');
   const [dateValue, setDateValue] = useState(

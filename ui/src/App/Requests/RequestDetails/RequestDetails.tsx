@@ -84,7 +84,9 @@ const RequestChangeDetails = () => {
   const handleApply = async () => {
     setIsSubmitting(true);
     try {
-      await axios.post(`/api/v4/self-service/requests/${requestId}/apply`);
+      await axios.patch(`/api/v4/self-service/requests/${requestId}`, {
+        status: 'apply'
+      });
       refetchData();
     } catch (error) {
       console.error(error);
@@ -94,16 +96,13 @@ const RequestChangeDetails = () => {
   };
 
   const handleModifyChange = useCallback(
-    async newFile => {
+    async e => {
       setIsSubmitting(true);
       try {
         await axios.put(`/api/v4/self-service/requests/${requestId}`, {
-          files: requestData?.data.files?.map(currentFile => {
-            if (newFile.file_path === currentFile.file_path) {
-              return newFile;
-            }
-            return currentFile;
-          })
+          file_path: e.file_path,
+          template_body: e.template_body,
+          justification: requestData?.data?.justification
         });
         refetchData();
         setIsSubmitting(false);
@@ -172,6 +171,69 @@ const RequestChangeDetails = () => {
     [getRequestStatus, requestData?.data?.status]
   );
 
+  const buttons = useCallback(() => {
+    const status = requestData?.data?.status ?? '';
+    const rejectButton = (
+      <Button
+        onClick={handleReject}
+        color="error"
+        disabled={readOnly}
+        fullWidth
+        size="small"
+      >
+        Reject
+      </Button>
+    );
+
+    const approveButton = (
+      <Button
+        onClick={handleApprove}
+        disabled={readOnly}
+        fullWidth
+        size="small"
+      >
+        Approve
+      </Button>
+    );
+
+    const applyButton = (
+      <Button
+        onClick={handleApply}
+        color="success"
+        disabled={readOnly}
+        fullWidth
+        size="small"
+      >
+        Apply
+      </Button>
+    );
+
+    switch (status) {
+      case 'Approved':
+        return (
+          <>
+            {rejectButton} {applyButton}
+          </>
+        );
+      case 'Pending':
+        return (
+          <>
+            {rejectButton} {approveButton}
+          </>
+        );
+      case '':
+        return ``;
+      default:
+        return `Can't modify a ${status.toString().toLowerCase()} request`;
+    }
+  }, [
+    handleApply,
+    handleApprove,
+    handleReject,
+    readOnly,
+    requestData?.data?.status
+  ]);
+
   if (isLoading) {
     return <Loader />;
   }
@@ -194,7 +256,9 @@ const RequestChangeDetails = () => {
         {requestData?.data?.files.map((file, index) => (
           <ChangeViewer
             file={file}
-            handleModifyChange={handleModifyChange}
+            handleModifyChange={e => {
+              handleModifyChange(e);
+            }}
             key={index}
             readOnly={readOnly}
           />
@@ -214,34 +278,7 @@ const RequestChangeDetails = () => {
           Comment
         </Button>
         <LineBreak size="large" />
-        <div className={styles.actions}>
-          <Button
-            onClick={handleReject}
-            color="error"
-            disabled={readOnly}
-            fullWidth
-            size="small"
-          >
-            Reject
-          </Button>
-          <Button
-            onClick={handleApprove}
-            disabled={readOnly}
-            fullWidth
-            size="small"
-          >
-            Approve
-          </Button>
-          <Button
-            onClick={handleApply}
-            color="success"
-            disabled={readOnly}
-            fullWidth
-            size="small"
-          >
-            Apply
-          </Button>
-        </div>
+        <div className={styles.actions}>{buttons()}</div>
       </div>
     </Segment>
   );

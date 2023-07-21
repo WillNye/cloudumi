@@ -358,7 +358,6 @@ def _get_default_aws_request_permission_request_types(
             AWS_IAM_GROUP_TEMPLATE_TYPE,
             AWS_IAM_ROLE_TEMPLATE_TYPE,
             AWS_IAM_USER_TEMPLATE_TYPE,
-            AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
         ],
         created_by="Noq",
     )
@@ -408,7 +407,7 @@ def _get_default_aws_request_permission_request_types(
     for elem, change_type in enumerate(
         add_permission_to_permission_set_request.change_types
     ):
-        change_type.template_attribute = "properties.inline_policies"
+        change_type.template_attribute = "properties.inline_policy"
         change_type.apply_attr_behavior = "Append"
         change_type.provider_definition_field = "Allow None"
         add_permission_to_permission_set_request.change_types[elem] = change_type
@@ -544,7 +543,7 @@ def _get_default_aws_attach_managed_policy_request_types(
             ),
             template_attribute="properties.managed_policies",
             apply_attr_behavior="Append",
-            provider_definition_field="Allow None",
+            provider_definition_field="Allow One",
             created_by="Noq",
         )
     ]
@@ -562,7 +561,6 @@ def _get_default_aws_request_access_request_types(
         provider=aws_provider_resolver.provider,
         template_types=[
             AWS_IAM_ROLE_TEMPLATE_TYPE,
-            AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
         ],
         created_by="Noq",
     )
@@ -621,6 +619,18 @@ def _get_default_aws_request_access_request_types(
             provider_definition_field="Allow Multiple",
             created_by="Noq",
         ),
+    ]
+
+    access_to_permission_set_request = RequestType(
+        name="Request access to AWS Identity Center (SSO) PermissionSet",
+        description="Request access to an AWS Identity Center (SSO) PermissionSet in you AWS Org.",
+        provider=aws_provider_resolver.provider,
+        template_types=[
+            AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
+        ],
+        created_by="Noq",
+    )
+    access_to_permission_set_request.change_types = [
         ChangeType(
             name="SSO User access request",
             description="Request SSO User access to an AWS SSO PermissionSet.",
@@ -675,7 +685,7 @@ def _get_default_aws_request_access_request_types(
         ),
     ]
 
-    return [access_to_aws_request]
+    return [access_to_permission_set_request, access_to_aws_request]
 
 
 async def get_default_aws_request_types() -> list[RequestType]:

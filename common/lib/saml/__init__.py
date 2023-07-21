@@ -1,5 +1,8 @@
 import datetime
 import sys
+import urllib.error
+from typing import TYPE_CHECKING, Any
+from urllib.request import Request
 
 import tornado.httputil
 from cryptography import x509
@@ -13,32 +16,29 @@ from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
 
 from common.config import config
 from common.config.config import dict_merge
-from common.config.tenant_config import TenantConfig
+from common.config.tenant_config import TenantConfig, TenantConfigBase
 from common.exceptions.exceptions import WebAuthNError
 from common.lib.asyncio import aio_wrapper
 from common.lib.generic import should_force_redirect
 from common.lib.storage import TenantFileStorageHandler
 
+if TYPE_CHECKING:
+    from common.handlers.base import TornadoRequestHandler
+
+
 log = config.get_logger(__name__)
 
 
-async def init_saml_auth(request, tenant):
-    tenant_storage = TenantFileStorageHandler(tenant)
-    tenant_config = TenantConfig.get_instance(tenant)
-    idp_metadata_url = config.get_tenant_specific_key(
-        "get_user_by_saml_settings.idp_metadata_url", tenant
-    )
-    idp_metadata = {}
-    if idp_metadata_url:
-        idp_metadata = OneLogin_Saml2_IdPMetadataParser.parse_remote(idp_metadata_url)
-
-    saml_config = dict_merge(tenant_config.saml_config, idp_metadata)
-
+async def generate_saml_certificates(
+    tenant_storage: TenantFileStorageHandler,
+    tenant_config: TenantConfigBase,
+):
+    # If we don't have a cert or key, generate them.
+    # Then, upload them to the service provider
     if not (
         await tenant_storage.tenant_file_exists(tenant_config.saml_key_path)
         and await tenant_storage.tenant_file_exists(tenant_config.saml_cert_path)
     ):
-
         key = rsa.generate_private_key(
             public_exponent=65537,
             key_size=2048,
@@ -86,6 +86,35 @@ async def init_saml_auth(request, tenant):
         await tenant_storage.write_file(
             tenant_config.saml_cert_path, "wb", encoded_cert
         )
+
+
+async def init_saml_auth(request: dict[str, Any], tenant: str):
+    tenant_storage = TenantFileStorageHandler(tenant)
+    tenant_config = TenantConfig.get_instance(tenant)
+    idp_metadata_url = config.get_tenant_specific_key(
+        "get_user_by_saml_settings.idp_metadata_url", tenant
+    )
+    idp_metadata = {}
+    if idp_metadata_url:
+        try:
+            idp_metadata = OneLogin_Saml2_IdPMetadataParser.parse_remote(
+                Request(url=idp_metadata_url, headers={"User-Agent": "Mozilla/5.0"})
+            )
+        except urllib.error.HTTPError as e:
+            if e.code == 403:
+                error_message = "SAML metadata URL returned a 403 error. Please check your settings."
+                log.exception(
+                    error_message,
+                    tenant=tenant,
+                    idp_metadata_url=idp_metadata_url,
+                )
+                raise tornado.Web.Finish(error_message)
+            raise
+
+    # NOTE: if it is dev environment, please check the port number at assertionConsumerService.url
+    saml_config = dict_merge(tenant_config.saml_config, idp_metadata)
+
+    await generate_saml_certificates(tenant_storage, tenant_config)
 
     auth = await aio_wrapper(
         OneLogin_Saml2_Auth,
@@ -135,7 +164,9 @@ async def prepare_tornado_request_for_saml(request, tenant):
     return result
 
 
-async def authenticate_user_by_saml(request, return_200=False, force_redirect=None):
+async def authenticate_user_by_saml(
+    request: "TornadoRequestHandler", return_200=False, force_redirect=None
+):
     log_data = {"function": f"{__name__}.{sys._getframe().f_code.co_name}"}
     # TODO: Start here
     tenant = request.get_tenant_name()

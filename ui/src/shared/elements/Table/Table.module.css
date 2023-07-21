@@ -6,7 +6,7 @@
   th {
     background-color: var(--gray-800);
     text-align: left;
-    padding: 8px;
+    padding: var(--spacing-sm);
   }
 
   tr:hover {
@@ -131,6 +131,17 @@
     cursor: pointer;
     background-color: var(--gray-800);
     padding: var(--spacing-lg) var(--spacing-md);
+  }
+
+  .pointer {
+    cursor: pointer;
+  }
+
+  .tableHeader {
+    display: flex;
+    align-items: center;
+    justify-content: left;
+    width: 100%;
   }
 }
 

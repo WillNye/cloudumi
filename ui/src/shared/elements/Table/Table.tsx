@@ -1,11 +1,20 @@
-import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
+import {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react';
 import classNames from 'classnames';
 import {
   useReactTable,
   getCoreRowModel,
   getFilteredRowModel,
   ColumnDef,
-  flexRender
+  flexRender,
+  getSortedRowModel,
+  SortingState
 } from '@tanstack/react-table';
 import styles from './Table.module.css';
 import { Loader } from '../Loader';
@@ -30,7 +39,9 @@ interface TableProps<D> {
   totalCount?: number;
   pageSize?: number;
   pageIndex?: number;
+  enableSorting?: boolean;
   handleSelectRows?: (data: D[]) => void;
+  handleOnSort?: (data: SortingState) => void;
   handleOnPageChange?: (pageIndex: number) => void;
 }
 
@@ -44,10 +55,12 @@ export const Table = <T, D>({
   enableColumnVisibility = false,
   isLoading = false,
   showPagination = false,
+  enableSorting = false,
   totalCount,
   pageSize,
   pageIndex,
   noResultsComponent,
+  handleOnSort,
   handleSelectRows,
   handleOnPageChange
 }: TableProps<D>) => {
@@ -56,6 +69,7 @@ export const Table = <T, D>({
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState({});
   const [isColumnMenuOpen, setIsColumnMenuOpen] = useState(false);
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   const classes = classNames(styles.table, {
     [styles[spacing]]: spacing,
@@ -63,11 +77,19 @@ export const Table = <T, D>({
     [styles[border]]: border
   });
 
+  useEffect(
+    function onUpdateSort() {
+      handleOnSort?.(sorting);
+    },
+    [handleOnSort, sorting]
+  );
+
   const formattedColumns = useMemo(() => {
     if (enableRowSelection) {
       return [
         {
           id: 'select',
+          enableSorting: false,
           header: ({ table }) => (
             <Checkbox
               {...{
@@ -105,13 +127,18 @@ export const Table = <T, D>({
     columns: formattedColumns,
     state: {
       rowSelection,
-      columnVisibility
+      columnVisibility,
+      sorting
     },
+    onSortingChange: setSorting,
+    manualSorting: true,
     enableRowSelection,
     onRowSelectionChange: setRowSelection,
+    getSortedRowModel: getSortedRowModel(),
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: onChange,
+    enableSorting,
     debugTable: true,
     debugHeaders: true,
     debugColumns: true
@@ -128,14 +155,28 @@ export const Table = <T, D>({
           {table.getHeaderGroups().map(headerGroup => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map(header => {
+                console.log(header.column);
                 return (
-                  <th key={header.id} colSpan={header.colSpan}>
+                  <th
+                    key={header.id}
+                    colSpan={header.colSpan}
+                    className={styles.tableHead}
+                  >
                     {header.isPlaceholder ? null : (
-                      <div>
+                      <div
+                        className={classNames(styles.tableHeader, {
+                          [styles.pointer]: header.column.getCanSort()
+                        })}
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
                         {flexRender(
                           header.column.columnDef.header,
                           header.getContext()
                         )}
+                        {{
+                          asc: <Icon size="large" name="sort-ascending" />,
+                          desc: <Icon size="large" name="sort-descending" />
+                        }[header.column.getIsSorted() as string] ?? null}
                         {/* {header.column.getCanFilter() ? (
                           <div>
                             <Filter column={header.column} table={table} />

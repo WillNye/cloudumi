@@ -1,3 +1,5 @@
+import traceback
+
 import tornado.web
 from pydantic import ValidationError
 
@@ -49,8 +51,9 @@ class IambicRequestValidationHandler(BaseHandler):
                     status_code=400,
                 ).json(exclude_unset=True, exclude_none=True)
             )
-            self.set_status(400, reason=str(err))
-            return
+            # reason is in the response header and cannot contain newline
+            self.set_status(400, reason="ValidationError")
+            raise tornado.web.Finish()
         except Exception as err:
             await log.aexception(
                 "Unhandled exception while validating user self service request",
@@ -63,7 +66,8 @@ class IambicRequestValidationHandler(BaseHandler):
                     status_code=500,
                 ).json(exclude_unset=True, exclude_none=True)
             )
-            self.set_status(500, reason=str(err))
+            # reason is in the response header and cannot contain newline
+            self.set_status(500, reason="GenericException")
             raise tornado.web.Finish()
         else:
             return self.write(
@@ -100,7 +104,8 @@ class IambicRequestHandler(BaseHandler):
                         status_code=404,
                     ).json(exclude_unset=True, exclude_none=True)
                 )
-                self.set_status(404, reason=str(e))
+                # reason is in the response header and cannot contain newline
+                self.set_status(404, reason="NoMatchingRequest")
                 return
         else:
             arguments = {k: self.get_argument(k) for k in self.request.arguments}
@@ -145,12 +150,16 @@ class IambicRequestHandler(BaseHandler):
                     status_code=400,
                 ).json(exclude_unset=True, exclude_none=True)
             )
-            self.set_status(400, reason=str(err))
+            # reason is in the response header and cannot contain newline
+            self.set_status(400, reason="ValidationException")
             return
         except Exception as err:
+            # please make sure to only capture traceback string in logs and not
+            # send to frontend as a information leak pre-caution
+            traceback_string = traceback.format_exc()
             await log.aexception(
                 "Unhandled exception while creating user self service request",
-                error=str(err),
+                error=traceback_string,
                 tenant_name=db_tenant.name,
             )
             self.write(
@@ -159,7 +168,8 @@ class IambicRequestHandler(BaseHandler):
                     status_code=500,
                 ).json(exclude_unset=True, exclude_none=True)
             )
-            self.set_status(500, reason=str(err))
+            # reason is in the response header and cannot contain newline
+            self.set_status(500, reason="GenericException")
             raise tornado.web.Finish()
         else:
             return self.write(
@@ -201,7 +211,8 @@ class IambicRequestHandler(BaseHandler):
                 ).json(exclude_unset=True, exclude_none=True)
             )
         except Unauthorized as e:
-            self.set_status(403, reason=str(e))
+            # reason is in the response header and cannot contain newline
+            self.set_status(403, reason="Unauthorized")
             return self.write(
                 WebResponse(
                     error=str(e),
@@ -215,19 +226,22 @@ class IambicRequestHandler(BaseHandler):
                     status_code=400,
                 ).json(exclude_unset=True, exclude_none=True)
             )
-            self.set_status(400, reason=str(err))
+            # reason is in the response header and cannot contain newline
+            self.set_status(400, reason="ValidationError")
             return
         except Exception as err:
             await log.aexception(
                 "Unhandled exception while validating request", tenant=db_tenant.name
             )
+            self.set_status(500, reason=str(err))
             self.write(
                 WebResponse(
                     errors=[str(err)],
                     status_code=500,
                 ).json(exclude_unset=True, exclude_none=True)
             )
-            self.set_status(500, reason=str(err))
+            # reason is in the response header and cannot contain newline
+            self.set_status(500, reason="GenericException")
             raise tornado.web.Finish()
 
     async def patch(self, request_id: str):
@@ -269,7 +283,8 @@ class IambicRequestHandler(BaseHandler):
                     ).json(exclude_unset=True, exclude_none=True)
                 )
         except Unauthorized as e:
-            self.set_status(403, reason=str(e))
+            # reason is in the response header and cannot contain newline
+            self.set_status(403, reason="Unauthorized")
             return self.write(
                 WebResponse(
                     error=str(e),
@@ -283,7 +298,8 @@ class IambicRequestHandler(BaseHandler):
                     status_code=400,
                 ).json(exclude_unset=True, exclude_none=True)
             )
-            self.set_status(400, reason=str(err))
+            # reason is in the response header and cannot contain newline
+            self.set_status(400, reason="ValidationError")
             return
         except Exception as err:
             await log.aexception(
@@ -295,7 +311,8 @@ class IambicRequestHandler(BaseHandler):
                     status_code=500,
                 ).json(exclude_unset=True, exclude_none=True)
             )
-            self.set_status(500, reason=str(err))
+            # reason is in the response header and cannot contain newline
+            self.set_status(500, reason="GenericException")
             raise tornado.web.Finish()
         else:
             return self.write(
@@ -355,7 +372,8 @@ class IambicRequestCommentHandler(BaseHandler):
                 ).json(exclude_unset=True, exclude_none=True)
             )
         except Unauthorized as e:
-            self.set_status(403, reason=str(e))
+            # reason is in the response header and cannot contain newline
+            self.set_status(403, reason="Unauthorized")
             return self.write(
                 WebResponse(
                     error=str(e),
@@ -379,7 +397,8 @@ class IambicRequestCommentHandler(BaseHandler):
                 ).json(exclude_unset=True, exclude_none=True)
             )
         except Unauthorized as e:
-            self.set_status(403, reason=str(e))
+            # reason is in the response header and cannot contain newline
+            self.set_status(403, reason="Unauthorized")
             return self.write(
                 WebResponse(
                     error=str(e),
@@ -401,6 +420,11 @@ class IambicRequestDataTableHandler(BaseHandler):
             )
         except Exception as exc:
             errors = [str(exc)]
+            await log.aexception(
+                "Unhandled exception in IambicRequestDataTableHandler.post",
+                tenant=tenant.name,
+                data=data,
+            )
             self.write(
                 WebResponse(
                     errors=errors,
@@ -408,7 +432,8 @@ class IambicRequestDataTableHandler(BaseHandler):
                     count=len(errors),
                 ).dict(exclude_unset=True, exclude_none=True)
             )
-            self.set_status(500, reason=str(exc))
+            # reason is in the response header and cannot contain newline
+            self.set_status(500, reason="GenericException")
             raise tornado.web.Finish()
 
         query_response.data = [

@@ -33,6 +33,12 @@ const OnBoarding = () => {
   const [selectedMode, _setSelectedMode] = useState(MODES.READ_ONLY);
   const [isLoading, setIsLoading] = useState(false);
   const [isHubAccount, setIsHubAccount] = useState(true);
+  const [isNextDisabledBySection, setNextDisabledBySection] = useState({
+    [CREATE_STACK.id]: true,
+    [CONNECTION_METHOD.id]: true,
+    [CONFIGURE.id]: true,
+    [STATUS.id]: true
+  });
 
   const { isLoading: isFetchingData } = useQuery({
     queryFn: getHubAccounts,
@@ -72,6 +78,12 @@ const OnBoarding = () => {
           setIsLoading={setIsLoading}
           selectedMode={selectedMode}
           isHubAccount={isHubAccount}
+          canContinue={can => {
+            setNextDisabledBySection({
+              ...isNextDisabledBySection,
+              [CREATE_STACK.id]: !can
+            });
+          }}
         />
       ),
       [STATUS.id]: (
@@ -94,8 +106,11 @@ const OnBoarding = () => {
   );
 
   const isNextDisabled = useMemo(() => {
-    return activeId === CONFIGURE.id && !accountName;
-  }, [accountName, activeId]); // eslint-disable-line react-hooks/exhaustive-deps
+    return (
+      (activeId === CONFIGURE.id && !accountName) ||
+      (activeId === CREATE_STACK.id && isNextDisabledBySection[CREATE_STACK.id])
+    );
+  }, [accountName, activeId, isNextDisabledBySection]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const connectedComponent = useMemo(
     () => (

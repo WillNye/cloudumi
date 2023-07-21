@@ -158,6 +158,11 @@ output "sqs_registration_queue_arn" {
   value       = module.tenant_messaging.sqs_registration_queue_arn
 }
 
+output "sqs_registration_queue_url" {
+  description = "The SQS registration queue URL that is used to trigger customer registration using the NOQ CF templates"
+  value       = module.tenant_messaging.sqs_registration_queue_url
+}
+
 output "sqs_registration_queue_name" {
   description = "The SQS queue name that is used to trigger customer registration using the NOQ CF template"
   value       = module.tenant_messaging.sqs_registration_queue_name
@@ -178,6 +183,11 @@ output "aws_marketplace_subscription_queue_arn" {
   value       = module.tenant_messaging_us-east-1.aws_marketplace_subscription_queue_arn
 }
 
+output "aws_marketplace_subscription_queue_url" {
+  description = "The SQS queue URL that is used to trigger customer registration using the NOQ CF template"
+  value       = module.tenant_messaging_us-east-1.aws_marketplace_subscription_queue_url
+}
+
 output "aws_marketplace_subscription_queue_name" {
   description = "The SQS queue name that is used to trigger customer registration using the NOQ CF template"
   value       = module.tenant_messaging_us-east-1.aws_marketplace_subscription_queue_name
@@ -196,6 +206,11 @@ output "aws_marketplace_region" {
 output "sqs_github_app_noq_webhook_queue_arn" {
   description = "The SQS to see GitHub App Noq Webhook Events"
   value       = module.tenant_messaging.sqs_github_app_noq_webhook_queue_arn
+}
+
+output "sqs_github_app_noq_webhook_queue_url" {
+  description = "The SQS URL to see GitHub App Noq Webhook Events"
+  value       = module.tenant_messaging.sqs_github_app_noq_webhook_queue_url
 }
 
 output "stage" {

@@ -2,6 +2,7 @@ import asyncio
 from collections import defaultdict
 from typing import Optional, Type, get_origin
 
+from cryptography.hazmat.primitives import serialization
 from deepdiff import DeepDiff
 from iambic.core.models import BaseModel as IambicBaseModel
 from iambic.core.models import BaseTemplate
@@ -25,7 +26,11 @@ from common import (
     TenantProviderDefinition,
 )
 from common.config import config
-from common.config.globals import ASYNC_PG_SESSION
+from common.config.globals import (
+    ASYNC_PG_SESSION,
+    GITHUB_APP_APPROVE_PRIVATE_PEM_1,
+    GITHUB_APP_URL,
+)
 from common.iambic.config.models import (
     TRUSTED_PROVIDER_RESOLVER_MAP,
     TrustedProviderResolver,
@@ -40,6 +45,7 @@ from common.iambic.templates.utils import (
 from common.iambic.utils import get_iambic_repo
 from common.iambic_request.models import GitHubPullRequest, IambicTemplateChange
 from common.lib import noq_json as json
+from common.lib.yaml import yaml
 from common.models import (
     IambicRepoDetails,
     SelfServiceRequestChangeType,
@@ -631,3 +637,27 @@ async def get_iambic_pr_instance(
         )
 
     raise ValueError(f"Unsupported git provider: {iambic_repo.git_provider}")
+
+
+def noq_github_app_identity() -> str:
+    public_key = serialization.load_pem_private_key(
+        GITHUB_APP_APPROVE_PRIVATE_PEM_1, None
+    ).public_key()
+    public_pem = public_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    url_parts = GITHUB_APP_URL.split("/")
+    url_parts = [p for p in url_parts if p]  # remove empty string
+    login = f"{url_parts[-1]}[bot]"
+    integration_config = {
+        "github": {
+            "allowed_bot_approvers": [
+                {
+                    "login": login,
+                    "es256_pub_key": public_pem.decode("utf-8"),
+                },
+            ]
+        }
+    }
+    return yaml.dump(integration_config)

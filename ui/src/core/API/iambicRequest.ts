@@ -22,7 +22,7 @@ export const getChangeRequestType = async ({
   const [_, id] = queryKey;
   // eslint-disable-next-line max-len
   const url = `${V4_API_URL}/self-service/request-types/${id}/change-types/?iambic_templates_specified=${iambic_templates_specified}`;
-  const response = await axios.get(url);
+  const response = await axios.get<{ data: ChangeTypeItem[] }>(url);
   return response.data;
 };
 
@@ -48,7 +48,7 @@ export const getRequestTemplateTypes = async ({ queryKey }) => {
 export const getRequestChangeDetails = async ({ queryKey }) => {
   const [_, requestTypeId, changeTypeId] = queryKey;
   const url = `${V4_API_URL}/self-service/request-types/${requestTypeId}/change-types/${changeTypeId}`;
-  const response = await axios.get(url);
+  const response = await axios.get<{ data: ChangeTypeItem }>(url);
   return response.data;
 };
 
@@ -71,6 +71,40 @@ export const createIambicRequest = async data => {
   const response = await axios.post(url, data);
   return response.data;
 };
+
+// TODO: these requests types should be here or in a separate file?
+export type ChangeTypeItem = {
+  id: string;
+  name: string;
+  description: string;
+  request_type_id: string;
+  provider_definition_field?: ProviderDefinitionField;
+  fields: {
+    id: string;
+    change_type_id: string;
+    change_element: number;
+    field_key: string;
+    field_type: string;
+    field_text: string;
+    description: string;
+    allow_none: boolean;
+    allow_multiple: boolean;
+    options?: string[];
+    typeahead: {
+      endpoint: string;
+      query_param_key: string;
+    };
+    default_value?: any;
+    max_char?: number;
+    validation_regex?: string;
+  };
+  included_providers?: any[];
+};
+
+export type ProviderDefinitionField =
+  | 'Allow Multiple'
+  | 'Allow One'
+  | 'Allow None';
 
 export type RequestStatus =
   | 'Pending'

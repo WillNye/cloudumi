@@ -105,7 +105,9 @@ async def upsert_tenant_request_types(tenant_name: str):
         for default_change_type in request_type.change_types:
             change_type = deepcopy(default_change_type)
             change_type.template_types = [
-                tt for tt in change_type.supported_template_types if tt in tenant_template_types
+                tt
+                for tt in change_type.supported_template_types
+                if tt in tenant_template_types
             ]
             if not change_type.template_types:
                 change_type.deleted = True
@@ -150,9 +152,15 @@ async def upsert_tenant_request_types(tenant_name: str):
             init_template_types = sorted(change_type.template_types)
             init_supported_template_types = sorted(change_type.supported_template_types)
             if default_change_type:
-                change_type.supported_template_types = sorted(default_change_type.supported_template_types)
+                change_type.supported_template_types = sorted(
+                    default_change_type.supported_template_types
+                )
             change_type.template_types = sorted(
-                [tt for tt in change_type.supported_template_types if tt in tenant_template_types]
+                [
+                    tt
+                    for tt in change_type.supported_template_types
+                    if tt in tenant_template_types
+                ]
             )
 
             if not change_type.template_types and not change_type.deleted:
@@ -160,9 +168,7 @@ async def upsert_tenant_request_types(tenant_name: str):
                 change_type.updated_by = "Noq"
                 await change_type.delete()
                 continue
-            elif not init_template_types and bool(
-                    change_type.template_types
-            ):
+            elif not init_template_types and bool(change_type.template_types):
                 if change_type.updated_by == "Noq":
                     await change_type.reinitialize()
                     # The tenant now supports this request so un-delete it
@@ -171,8 +177,8 @@ async def upsert_tenant_request_types(tenant_name: str):
                 # No change was detected in request type usability so continue
                 continue
             elif (
-                    init_template_types != change_type.template_types
-                    or init_supported_template_types != change_type.supported_template_types
+                init_template_types != change_type.template_types
+                or init_supported_template_types != change_type.supported_template_types
             ):
                 # The supported template types have changed so update the request type
                 change_type.updated_at = updated_at

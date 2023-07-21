@@ -1,12 +1,17 @@
 import uuid
+from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, ForeignKey, and_
+from sqlalchemy import Column, ForeignKey, and_, column
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.sql import select
+from sqlalchemy.sql import Values, select
 
 from common.config.globals import ASYNC_PG_SESSION
 from common.pg_core.models import Base, SoftDeleteMixin
 from common.pg_core.utils import bulk_add, bulk_delete
+
+if TYPE_CHECKING:
+    from common.groups.models import Group
+    from common.users.models import User
 
 
 class GroupMembership(SoftDeleteMixin, Base):
@@ -33,7 +38,7 @@ class GroupMembership(SoftDeleteMixin, Base):
                 return membership.scalars().first()
 
     @classmethod
-    async def get_by_user(cls, user):
+    async def get_by_user(cls, user) -> list["GroupMembership"]:
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 stmt = select(GroupMembership).where(
@@ -43,6 +48,75 @@ class GroupMembership(SoftDeleteMixin, Base):
                 )
                 membership = await session.execute(stmt)
                 return membership.scalars().all()
+
+    @classmethod
+    async def get_by_group(cls, group) -> list["GroupMembership"]:
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = select(GroupMembership).where(
+                    and_(
+                        GroupMembership.group_id == group.id,
+                    )
+                )
+                membership = await session.execute(stmt)
+                return membership.scalars().all()
+
+    @classmethod
+    async def exists_by_group_and_user(cls, user, group) -> bool:
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = (
+                    select(GroupMembership)
+                    .where(
+                        and_(
+                            GroupMembership.group_id == group.id,
+                            GroupMembership.user_id == user.id,
+                        )
+                    )
+                    .exists()
+                )
+                result = await session.scalars(select(True).filter(stmt))
+                return result.unique().first() or False
+
+    @classmethod
+    async def get_by_user_and_group(cls, user, group) -> "GroupMembership":
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = select(GroupMembership).where(
+                    and_(
+                        GroupMembership.group_id == group.id,
+                        GroupMembership.user_id == user.id,
+                    )
+                )
+                result = await session.scalars(stmt)
+                return result.unique().first()
+
+    @classmethod
+    async def exists_by_users_and_groups(
+        cls, users_groups: list[tuple["User", "Group"]]
+    ) -> "GroupMembership":
+        # reference: https://github.com/sqlalchemy/sqlalchemy/blob/main/test/sql/test_values.py
+
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                cte = select(
+                    Values(
+                        column("user_id", UUID), column("group_id", UUID), name="data"
+                    ).data(list(map(lambda ug: (ug[0].id, ug[1].id), users_groups)))
+                ).cte("info")
+
+                stmt = select(GroupMembership).join_from(
+                    cte,
+                    GroupMembership,
+                    and_(
+                        GroupMembership.user_id == cte.c.user_id,
+                        GroupMembership.group_id == cte.c.group_id,
+                    ),
+                    isouter=True,
+                )
+
+                result = await session.execute(stmt)
+                return result.scalars().all()
 
     @classmethod
     async def create(cls, user, group):

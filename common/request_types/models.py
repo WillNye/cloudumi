@@ -103,8 +103,7 @@ user_favorited_change_type_association = Table(
     Index("ufcta_user_favorite_idx", "user_id", "change_type_id"),
 )
 user_favorited_change_type_association.change_type = relationship(
-    "ChangeType",
-    back_populates="favorited_by"
+    "ChangeType", back_populates="favorited_by"
 )
 
 user_favorited_express_access_request_association = Table(
@@ -119,8 +118,7 @@ user_favorited_express_access_request_association = Table(
     Index("ufeara_user_favorite_idx", "user_id", "express_access_request_id"),
 )
 user_favorited_express_access_request_association.express_access_request = relationship(
-    "ExpressAccessRequest",
-    back_populates="favorited_by"
+    "ExpressAccessRequest", back_populates="favorited_by"
 )
 
 
@@ -217,7 +215,13 @@ class ExpressAccessRequest(SoftDeleteMixin, Base):
 
     __table_args__ = (
         Index("ear_change_type_idx", "tenant_id", "change_type_id"),
-        Index("ear_suggest_to_all_idx", "tenant_id", "suggest_to_all", "name", "change_type_id"),
+        Index(
+            "ear_suggest_to_all_idx",
+            "tenant_id",
+            "suggest_to_all",
+            "name",
+            "change_type_id",
+        ),
     )
 
 
@@ -284,7 +288,9 @@ class ChangeType(SoftDeleteMixin, Base):
 
     __table_args__ = (
         Index("ct_tenant_idx", "id", "tenant_id"),
-        Index("ct_suggested_change_type_idx", "id", "tenant_id", "name", "suggest_to_all"),
+        Index(
+            "ct_suggested_change_type_idx", "id", "tenant_id", "name", "suggest_to_all"
+        ),
         Index("ct_request_type_idx", "tenant_id", "request_type_id"),
         Index("uix_change_type_request_name", "request_type_id", "name", unique=True),
     )

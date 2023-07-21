@@ -30,10 +30,11 @@ RequestStatus = ENUM(
     "Pending",
     "Pending in Git",
     "Applied",
+    "Applying",
+    "Approving",
     "Approved",
     "Rejected",
     "Expired",
-    "Running",
     "Failed",
     name="RequestStatusEnum",
 )
@@ -192,15 +193,15 @@ class BasePullRequest(PydanticBaseModel):
                 template_changes, updated_by, request_notes, reset_branch=reset_branch
             )
 
-    async def _apply_request(self, approved_by: str):
+    async def _approve_request(self, approved_by: str):
         raise NotImplementedError
 
-    async def apply_request(self, approved_by: Union[str, list[str]]):
+    async def approve_request(self, approved_by: Union[str, list[str]]):
         if not self.pr_obj:
             await self.load_pr()
 
         if self.mergeable:
-            await self._apply_request(approved_by)
+            await self._approve_request(approved_by)
         elif self.mergeable and not self.merge_on_approval:
             # TODO: Return something to let user know they need to merge the PR manually
             pass
@@ -424,8 +425,8 @@ class GitHubPullRequest(BasePullRequest):
             if isinstance(commented_by, str):
                 commented_by = [commented_by]
 
-            commented_by = ", ".join([f"@{user}" for user in commented_by])
-            body = f"{body} on behalf of {commented_by}"
+            commented_by = ", ".join([f"{user}" for user in commented_by])
+            body = f"{body}\nOn behalf of: {commented_by}"
         self.pr_obj.create_issue_comment(body)
 
     async def update_comment(self, comment_id: int, body: str):
@@ -460,7 +461,7 @@ class GitHubPullRequest(BasePullRequest):
     async def _merge_request(self, approved_by: Union[str, list[str]]):
         await self.add_comment("iambic apply", approved_by)
 
-    async def _apply_request(self, approved_by: Union[str, list[str]]):
+    async def _approve_request(self, approved_by: Union[str, list[str]]):
         await self.sign_and_comment("iambic approve", approved_by)
 
     async def _reject_request(self):

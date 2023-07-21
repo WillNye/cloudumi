@@ -97,6 +97,20 @@ class Group(SoftDeleteMixin, Base):
                 return group.scalars().first()
 
     @classmethod
+    async def get_by_names(cls, tenant, names: list) -> list["Group"]:
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = select(Group).where(
+                    and_(
+                        Group.tenant == tenant,
+                        Group.name.in_(names),
+                        Group.deleted == False,  # noqa
+                    ),
+                )
+                result = await session.scalars(stmt)
+                return result.unique().all()
+
+    @classmethod
     async def get_by_email(cls, tenant, email):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
