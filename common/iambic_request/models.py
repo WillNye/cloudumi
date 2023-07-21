@@ -407,10 +407,8 @@ class GitHubPullRequest(BasePullRequest):
         # <!--{encoded_jwt}-->
         # remember last line cannot have any newline character, the signature metadata must be on the last line
 
-        message = f"""{body}
-    ```json
-    {json.dumps(payload)}
-    ```
+        message = f"""{body}\n
+Approving user: {", ".join(payload["signee"])}\n
 <!--{encoded_jwt}-->"""
 
         await self.add_comment(message)
