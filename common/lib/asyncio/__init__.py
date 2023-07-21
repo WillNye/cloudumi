@@ -5,6 +5,10 @@ from typing import List
 
 from asgiref.sync import sync_to_async
 
+from common.config import config
+
+log = config.get_logger(__name__)
+
 
 async def aio_wrapper(fnc, *args, **kwargs):
     thread_sensitive = kwargs.pop("thread_sensitive", False)
@@ -118,3 +122,24 @@ class NoqSemaphore:
         return await asyncio.gather(
             *[asyncio.create_task(self.handle_message(**msg)) for msg in messages]
         )
+
+
+async def run_command(*args, cwd=None):
+    process = await asyncio.create_subprocess_exec(
+        *args, cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+    )
+
+    stdout, stderr = await process.communicate()
+
+    if process.returncode != 0:
+        log.error(
+            "Error running command asynchronosly",
+            command=args,
+            return_code=process.returncode,
+            stderr=stderr.decode(),
+        )
+        raise Exception(
+            f"Command failed with exit code {process.returncode}: {stderr.decode()}"
+        )
+
+    return stdout.decode()

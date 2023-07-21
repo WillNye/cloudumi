@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from iambic.plugins.v0_1_0.google_workspace.group.models import (
     GOOGLE_GROUP_TEMPLATE_TYPE,
 )
@@ -26,8 +28,6 @@ def _get_default_google_workspace_request_access_request_types(
         template_types=[
             GOOGLE_GROUP_TEMPLATE_TYPE,
         ],
-        template_attribute="properties.members",
-        apply_attr_behavior="Append",
         created_by="Noq",
     )
 
@@ -43,7 +43,7 @@ def _get_default_google_workspace_request_access_request_types(
                     field_text="E-Mail",
                     description="The email of the user or group that requires access",
                     allow_none=False,
-                    allow_multiple=True,
+                    allow_multiple=False,
                 )
             ],
             change_template=ChangeTypeTemplate(
@@ -52,6 +52,9 @@ def _get_default_google_workspace_request_access_request_types(
             "email":"{{form.email}}"
         }"""
             ),
+            template_attribute="properties.members",
+            apply_attr_behavior="Append",
+            provider_definition_field="Allow One",
             created_by="Noq",
         )
     ]
@@ -73,4 +76,4 @@ async def get_default_google_workspace_request_types() -> list[RequestType]:
         field_helper_map
     )
 
-    return default_request_types
+    return [deepcopy(request_type) for request_type in default_request_types]

@@ -7,9 +7,13 @@ import { extractErrorMessage } from 'core/API/utils';
 import { Segment } from 'shared/layout/Segment';
 import { toast } from 'react-toastify';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { Block } from 'shared/layout/Block';
+import { Checkbox } from 'shared/form/Checkbox';
+import { ChangeEvent } from 'react';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { Select, SelectOption } from 'shared/form/Select';
 import axios from 'core/Axios/Axios';
+import styles from './GithubIntegrationModal.module.css';
 
 interface GithubIntegrationModalProps {
   showDialog: boolean;
@@ -29,6 +33,7 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [repos, setRepos] = useState([]);
   const [selectedRepo, setSelectedRepo] = useState(null);
+  const [mergeOnApproval, setMergeOnApproval] = useState(false);
 
   useEffect(() => {
     axios
@@ -36,6 +41,7 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
       .then(response => {
         setRepos(response.data.data.repos);
         setSelectedRepo(response.data.data.configured_repo || null);
+        setMergeOnApproval(response.data.data.merge_on_approval || false);
       })
       .catch(error => {
         console.error(error);
@@ -44,7 +50,18 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
 
   const handleRepoChange = repo => {
     setSelectedRepo(repo);
-    axios.post('/api/v3/github/repos/', { repo_name: repo });
+    axios.post('/api/v3/github/repos/', {
+      repo_name: repo,
+      merge_on_approval: mergeOnApproval
+    });
+  };
+
+  const handleAutoApplyChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setMergeOnApproval(e.target.checked);
+    axios.post('/api/v3/github/repos/', {
+      repo_name: selectedRepo,
+      merge_on_approval: e.target.checked
+    });
   };
 
   const { mutateAsync: deleteMutation } = useMutation({
@@ -131,8 +148,8 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
         <LineBreak size="large" />
         <div>
           When GitHub prompts you for repository selection, please select only
-          your organization&apos;s iambic-templates repository to achieve least
-          privilege granted to the integration.
+          your organization&apos;s iambic-templates repository. This will
+          appropriately restrict the permissions of the Noq GitHub App.
         </div>
         <LineBreak size="large" />
 
@@ -153,6 +170,18 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
                 ))}
               </Select>
             </label>
+            <LineBreak size="large" />
+            <div className={styles.customCheckbox}>
+              <Checkbox
+                {...{
+                  checked: mergeOnApproval,
+                  onChange: handleAutoApplyChange
+                }}
+              />
+              <Block className="form-label">
+                Auto-apply IAMbic changes after they are approved
+              </Block>
+            </div>
             <LineBreak size="large" />
           </>
         )}

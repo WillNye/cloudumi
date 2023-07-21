@@ -49,6 +49,7 @@ class TestTenantSummary:
                 self.user_groups,
                 self.tenant_name,
                 eula_signed=True,
+                tenant_active=True,
             ),
             **extra_cookies,
         }

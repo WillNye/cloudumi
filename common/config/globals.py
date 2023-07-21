@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio.engine import create_async_engine
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm.session import sessionmaker
@@ -23,7 +24,14 @@ TENANT_STORAGE_BASE_PATH = Path(
     config.get("_global_.tenant_storage.base_path", "/data/tenant_data/")
 ).expanduser()
 
-ASYNC_PG_CONN_STR = f"postgresql+psycopg_async://{config.get('_global_.secrets.postgresql.username')}:{config.get('_global_.secrets.postgresql.password')}@{config.get('_global_.noq_db.endpoint')}:{config.get('_global_.noq_db.port')}/{config.get('_global_.noq_db.database')}"
+PG_CONN_STR_PATH = f"{config.get('_global_.secrets.postgresql.username')}:{config.get('_global_.secrets.postgresql.password')}@{config.get('_global_.noq_db.endpoint')}:{config.get('_global_.noq_db.port')}/{config.get('_global_.noq_db.database')}"
+PG_CONN_STR = f"postgresql://{PG_CONN_STR_PATH}"
+PG_ENGINE = create_engine(PG_CONN_STR)
+PG_SESSION = sessionmaker(
+    PG_ENGINE,
+    expire_on_commit=False,
+)
+ASYNC_PG_CONN_STR = f"postgresql+psycopg_async://{PG_CONN_STR_PATH}"
 ASYNC_PG_ENGINE = create_async_engine(ASYNC_PG_CONN_STR)
 ASYNC_PG_SESSION = sessionmaker(
     ASYNC_PG_ENGINE,
@@ -34,6 +42,7 @@ DEVELOPMENT_MODE = config.get("_global_.development", False)
 
 AUTH_COOKIE_NAME: str = config.get("_global_.auth.cookie.name", "noq_auth")
 
+ENVIRONMENT = config.get("_global_.environment")
 IAMBIC_REPOS_BASE_KEY = "iambic_repos"
 GITHUB_APP_URL = config.get("_global_.secrets.github_app.app_url")
 assert GITHUB_APP_URL
@@ -73,3 +82,15 @@ assert SENDGRID_FROM_ADDRESS
 
 REDIS_PASSWORD = config.get("_global_.secrets.redis.password")
 assert REDIS_PASSWORD
+
+AWS_MARKETPLACE_SUBSCRIPTION_QUEUE = config.get(
+    "_global_.integrations.aws.aws_marketplace_subscription_queue_arn"
+)
+AWS_MARTKETPLACE_PRODUCT_CODE = config.get(
+    "_global_.integrations.aws.aws_marketplace_product_code"
+)
+AWS_MARTKETPLACE_REGION = config.get("_global_.integrations.aws.aws_marketplace_region")
+if ENVIRONMENT == "prod":
+    assert AWS_MARKETPLACE_SUBSCRIPTION_QUEUE
+    assert AWS_MARTKETPLACE_PRODUCT_CODE
+    assert AWS_MARTKETPLACE_REGION

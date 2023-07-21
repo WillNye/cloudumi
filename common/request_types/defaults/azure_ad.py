@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from iambic.plugins.v0_1_0.azure_ad.group.models import AZURE_AD_GROUP_TEMPLATE_TYPE
 
 from common.iambic.config.models import TRUSTED_PROVIDER_RESOLVER_MAP
@@ -24,8 +26,6 @@ def _get_default_azure_ad_request_access_request_types(
         template_types=[
             AZURE_AD_GROUP_TEMPLATE_TYPE,
         ],
-        template_attribute="properties.members",
-        apply_attr_behavior="Append",
         created_by="Noq",
     )
 
@@ -41,7 +41,7 @@ def _get_default_azure_ad_request_access_request_types(
                     field_text="User E-Mail",
                     description="The email of the Azure AD user that requires access.",
                     allow_none=False,
-                    allow_multiple=True,
+                    allow_multiple=False,
                 )
             ],
             change_template=ChangeTypeTemplate(
@@ -51,6 +51,9 @@ def _get_default_azure_ad_request_access_request_types(
             "data_type":"user"
         }"""
             ),
+            template_attribute="properties.members",
+            apply_attr_behavior="Append",
+            provider_definition_field="Allow One",
             created_by="Noq",
         ),
         ChangeType(
@@ -64,7 +67,7 @@ def _get_default_azure_ad_request_access_request_types(
                     field_text="Group Name",
                     description="The name of the Azure AD group that requires access.",
                     allow_none=False,
-                    allow_multiple=True,
+                    allow_multiple=False,
                 )
             ],
             change_template=ChangeTypeTemplate(
@@ -74,6 +77,9 @@ def _get_default_azure_ad_request_access_request_types(
             "data_type":"group"
         }"""
             ),
+            template_attribute="properties.members",
+            apply_attr_behavior="Append",
+            provider_definition_field="Allow One",
             created_by="Noq",
         ),
     ]
@@ -93,4 +99,4 @@ async def get_default_azure_ad_request_types() -> list[RequestType]:
         field_helper_map
     )
 
-    return default_request_types
+    return [deepcopy(request_type) for request_type in default_request_types]

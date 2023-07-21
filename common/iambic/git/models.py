@@ -1,5 +1,6 @@
 import asyncio
 import os
+import shutil
 import sys
 from datetime import datetime
 from typing import Optional
@@ -12,10 +13,10 @@ from git import Actor, Repo
 from git.exc import GitCommandError
 
 from common.config import config
-from common.config.globals import TENANT_STORAGE_BASE_PATH
+from common.config.tenant_config import TenantConfig
 from common.github.models import GitHubInstall
 from common.iambic.git.utils import get_repo_access_token, list_tenant_repo_details
-from common.lib.asyncio import aio_wrapper
+from common.lib.asyncio import aio_wrapper, run_command
 from common.lib.storage import TenantFileStorageHandler
 from common.models import IambicRepoDetails, IambicTemplateChange
 from common.tenants.models import Tenant  # noqa: F401
@@ -34,6 +35,7 @@ class IambicRepo:
         request_id: str = None,
         requested_by: str = None,
         use_request_branch: bool = False,
+        file_paths_being_changed: Optional[list[str]] = None,
         remote_name: str = "origin",
     ):
         if use_request_branch:
@@ -54,10 +56,10 @@ class IambicRepo:
         self.repo = None
         self.db_tenant = None
         self._default_branch_name = None
+        self.file_paths_being_changed = file_paths_being_changed or []
         self._storage_handler = TenantFileStorageHandler(self.tenant)
-        self._tenant_storage_base_path = os.path.expanduser(
-            os.path.join(TENANT_STORAGE_BASE_PATH, f"{tenant.name}_{tenant.id}")
-        )
+        self.tenant_config = TenantConfig.get_instance(str(self.tenant.name))
+        self._tenant_storage_base_path = self.tenant_config.tenant_storage_base_path
         tenant_repo_base_path: str = os.path.join(
             self._tenant_storage_base_path, "iambic_template_repos"
         )
@@ -107,9 +109,12 @@ class IambicRepo:
             if "origin" in remote.name:
                 with remote.config_writer as cw:
                     cw.set("url", await self.get_repo_uri())
-                remote.fetch()
 
     async def clone_or_pull_git_repo(self):
+        """
+        Assumption is we will start with a blobless clone. Such that subsequent runs can use pull naturally.
+        Now if upstream break (like rewrite history), we will fallback to replace the clone.
+        """
         if os.path.exists(self.default_file_path):
             self.repo = Repo(self.default_file_path)
             await self.set_repo_auth()
@@ -122,40 +127,121 @@ class IambicRepo:
                 if "already exists and is not an empty directory" not in err.stderr:
                     raise
             self.repo.git.reset("--hard", default_branch)
-            self.repo.git.pull()
+            try:
+                self.repo.git.pull()
+            except Exception as err:
+                if "refusing to merge unrelated histories" not in err.stderr:
+                    # we have to be specific; otherwise, a transient network error
+                    # may cause us to blow away the directory.
+                    raise
+                # an upstream may have re-written history, fall back to a fresh blobless clone
+                shutil.rmtree(self.default_file_path)
+                await self._clone_blobless_repo()
         else:
-            repo = Repo.clone_from(
-                await self.get_repo_uri(),
-                self.default_file_path,
-                config="core.symlinks=false",
-            )
-            self.repo = repo
-            await self.set_repo_auth()
+            await self._clone_blobless_repo()
 
-    async def set_request_branch(self):
+    async def _clone_blobless_repo(self):
+        repo = Repo.clone_from(
+            await self.get_repo_uri(),
+            self.default_file_path,
+            config="core.symlinks=false",
+            filter="blob:none",  # also known as blobless clone
+            single_branch=True,  # minimize network operation to track HEAD
+        )
+        self.repo = repo
+        await self.set_repo_auth()
+
+    async def set_request_branch(self, reuse_branch_repo: bool = False):
         """THIS IS A DESTRUCTIVE OPERATION.
         deletes whatever is in request_file_path and sets a new worktree for the request branch in the path
         """
+        if not isinstance(self.request_file_path, str):
+            raise ValueError(
+                f"request_file_path must be a string, got {self.request_file_path}"
+            )
+        if reuse_branch_repo:
+            if os.path.exists(self.request_file_path):
+                self.repo = Repo(self.request_file_path)
+                return
         if os.path.exists(self.request_file_path):
             await aioshutil.rmtree(self.request_file_path)
 
         await aiofiles.os.makedirs(
             os.path.dirname(self.request_file_path), exist_ok=True
         )
-        try:
-            self.repo.git.worktree(
-                "add",
-                "--track",
-                f"-b{self.request_branch_name}",
+
+        if self.file_paths_being_changed:
+            # For security, we assume that self.file_paths_being_changed contains untrusted user
+            # input and is trying to run arbitrary OS commands. We need to validate that the files
+            # referenced here exist in the original repo
+            all_files = await run_command("git", "ls-files", cwd=self.repo.working_dir)
+            all_files = set(all_files.splitlines())
+
+            for file_path in self.file_paths_being_changed:
+                if file_path not in all_files:
+                    raise ValueError(
+                        f"The file {file_path} does not exist in the repository"
+                    )
+            await run_command(
+                "git",
+                "clone",
+                "--branch",
+                self.default_branch_name,
+                "--single-branch",
+                "--no-checkout",
+                "--depth=1",
+                "--no-tags",
+                "--single-branch",
+                await self.get_repo_uri(),
                 self.request_file_path,
             )
-        except GitCommandError as err:
-            # The branch already exists so create the worktree for it
-            if "already exists" not in err.stderr:
-                raise
-            self.repo.git.worktree(
-                "add", "-f", self.request_file_path, self.request_branch_name
+            await run_command(
+                "git",
+                "sparse-checkout",
+                "init",
+                "--cone",
+                "--sparse-index",
+                cwd=self.request_file_path,
             )
+            await run_command(
+                "git",
+                "sparse-checkout",
+                "set",
+                *self.file_paths_being_changed,
+                cwd=self.request_file_path,
+            )
+            await run_command("git", "checkout", cwd=self.request_file_path)
+            await run_command(
+                "git",
+                "checkout",
+                "-b",
+                self.request_branch_name,
+                cwd=self.request_file_path,
+            )
+        else:
+            try:
+                await run_command(
+                    "git",
+                    "worktree",
+                    "add",
+                    "--track",
+                    f"-b{self.request_branch_name}",
+                    self.request_file_path,
+                    cwd=self.repo.working_dir,
+                )
+            except GitCommandError as err:
+                # The branch already exists so create the worktree for it
+                if "already exists" not in err.stderr:
+                    raise
+                await run_command(
+                    "git",
+                    "worktree",
+                    "add",
+                    "-f",
+                    self.request_file_path,
+                    self.request_branch_name,
+                    cwd=self.repo.working_dir,
+                )
 
         self.repo = Repo(self.request_file_path)
         await self.set_repo_auth()
@@ -179,7 +265,7 @@ class IambicRepo:
             # So, we want to pull the latest changes before we create the worktree
             log.debug({"message": "Adding tree to repo", **log_data})
             await self.clone_or_pull_git_repo()  # Ensure we have the latest changes on main
-            await self.set_request_branch()  # Create the worktree and set self.repo
+            await self.set_request_branch()  # Create the worktree or sparse-checkout and set self.repo
 
     async def _commit_and_push_changes(
         self,
@@ -205,12 +291,24 @@ class IambicRepo:
                 await self._storage_handler.write_file(file_path, "w", file_body)
 
         if reset_branch:
-            changed_files = self.repo.git.diff(
-                "--name-only", self.default_branch_name
-            ).split("\n")
+            changed_files_raw = await run_command(
+                "git",
+                "diff",
+                "--name-only",
+                self.default_branch_name,
+                cwd=self.request_file_path,
+            )
+            changed_files = changed_files_raw.split("\n")
             for file in changed_files:
-                self.repo.git.checkout(f"origin/{self.default_branch_name}", "--", file)
-            self.repo.index.add(changed_files)
+                await run_command(
+                    "git",
+                    "checkout",
+                    f"origin/{self.default_branch_name}",
+                    "--",
+                    file,
+                    cwd=self.request_file_path,
+                )
+            await run_command("git", "add", *changed_files, cwd=self.request_file_path)
 
         await asyncio.gather(
             *[
@@ -219,41 +317,60 @@ class IambicRepo:
             ]
         )
         for template_change in template_changes:
+            files_to_change = [
+                os.path.join(self.request_file_path, template_change.file_path)
+            ]
             if template_change.template_body:
-                self.repo.index.add(
-                    [os.path.join(self.request_file_path, template_change.file_path)]
+                await run_command(
+                    "git", "add", *files_to_change, cwd=self.request_file_path
                 )
             else:
-                self.repo.git.rm(
-                    [os.path.join(self.request_file_path, template_change.file_path)]
+                await run_command(
+                    "git", "rm", *files_to_change, cwd=self.request_file_path
                 )
 
         requesting_actor = Actor("Iambic", changed_by)
-        self.repo.index.commit(
-            f"Noq Request created by: {self.requested_by}",
-            committer=requesting_actor,
-            author=requesting_actor,
+        commit_message = f"Noq Request created by: {self.requested_by}"
+        await run_command(
+            "git",
+            "-c",
+            f"user.name={requesting_actor.name}",
+            "-c",
+            f"user.email={requesting_actor.email}",
+            "commit",
+            "-m",
+            commit_message,
+            cwd=self.request_file_path,
         )
 
         if request_notes:
-            self.repo.git.notes("add", "-m", request_notes)
-        await aio_wrapper(self.repo.git.config, "pull.rebase", "false")
-        await aio_wrapper(
-            self.repo.git.push,
+            await run_command(
+                "git", "add", "-m", request_notes, cwd=self.request_file_path
+            )
+        await run_command(
+            "git", "config", "pull.rebase", "false", cwd=self.request_file_path
+        )
+        await run_command(
+            "git",
+            "push",
             "--force",
             "--set-upstream",
             self.remote_name,
             self.request_branch_name,
+            cwd=self.request_file_path,
         )
+
         if request_notes:
-            await aio_wrapper(
-                self.repo.git.push,
+            await run_command(
+                "git",
+                "push",
                 "--force",
                 "--set-upstream",
                 self.remote_name,
                 "refs/notes/commits",
+                cwd=self.request_file_path,
             )
-        log.debug({"message": "Pushed changes to remote branch", **log_data})
+        log.debug("Pushed changes to remote branch", **log_data)
         return self.request_branch_name
 
     async def create_branch(
@@ -262,10 +379,11 @@ class IambicRepo:
         requested_by: str,
         files: list[IambicTemplateChange],
         request_notes: Optional[str] = None,
+        reuse_branch_repo: bool = False,
     ) -> str:
         self.request_id = request_id
         self.requested_by = requested_by
-        await self.set_request_branch()
+        await self.set_request_branch(reuse_branch_repo=reuse_branch_repo)
         return await self._commit_and_push_changes(
             files, self.requested_by, request_notes
         )
@@ -393,7 +511,11 @@ class IambicRepo:
         requested_by: str = None,
         use_request_branch: bool = False,
         remote_name: str = "origin",
+        file_paths_being_changed: Optional[list[str]] = None,
     ):
+        if not file_paths_being_changed:
+            file_paths_being_changed = []
+        file_paths_being_changed = file_paths_being_changed
         all_repo_details = list_tenant_repo_details(tenant.name)
         repo_details = next(
             (repo for repo in all_repo_details if repo.repo_name == repo_name), None
@@ -420,6 +542,7 @@ class IambicRepo:
             request_id=request_id,
             requested_by=requested_by,
             use_request_branch=use_request_branch,
+            file_paths_being_changed=file_paths_being_changed,
         )
         await iambic_repo_instance.set_repo()
         return iambic_repo_instance

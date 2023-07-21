@@ -19,6 +19,7 @@ from common.tenants.models import Tenant
 
 class GithubRepoHandlerPost(BaseModel):
     repo_name: Optional[str]
+    merge_on_approval: Optional[bool]
 
 
 class GitHubOAuthHandler(BaseAdminHandler):
@@ -121,13 +122,13 @@ class GithubStatusHandler(BaseAdminHandler):
         if tenant_install_rel:
             self.write(
                 WebResponse(
-                    success="success", status_code=200, data={"installed": True}
+                    status="success", status_code=200, data={"installed": True}
                 ).dict(exclude_unset=True, exclude_none=True)
             )
         else:
             self.write(
                 WebResponse(
-                    success="success", status_code=200, data={"installed": False}
+                    status="success", status_code=200, data={"installed": False}
                 ).dict(exclude_unset=True, exclude_none=True)
             )
 
@@ -151,7 +152,7 @@ class GithubRepoHandler(BaseAdminHandler):
         if not github_install:
             self.write(
                 WebResponse(
-                    success="success",
+                    status="success",
                     status_code=200,
                     data={
                         "repos": [],
@@ -169,6 +170,7 @@ class GithubRepoHandler(BaseAdminHandler):
         if isinstance(iambic_repos, list):
             iambic_repos = iambic_repos[0]
         iambic_repo_name = iambic_repos.repo_name if iambic_repos else None
+        merge_on_approval = iambic_repos.merge_on_approval if iambic_repos else False
         self.set_header("Content-Type", "application/json")
         self.write(
             WebResponse(
@@ -177,6 +179,7 @@ class GithubRepoHandler(BaseAdminHandler):
                 data={
                     "repos": repo_fullnames,
                     "configured_repo": iambic_repo_name,
+                    "merge_on_approval": merge_on_approval,
                 },
             ).dict(exclude_unset=True, exclude_none=True)
         )
@@ -189,7 +192,7 @@ class GithubRepoHandler(BaseAdminHandler):
             self.set_header("Content-Type", "application/json")
             self.write(
                 WebResponse(
-                    success="failure",
+                    status="failure",
                     status_code=400,
                     message="Invalid input: " + str(e),
                 ).dict(exclude_unset=True, exclude_none=True)
@@ -216,7 +219,9 @@ class GithubRepoHandler(BaseAdminHandler):
                 )
                 return
 
-            iambic_repo = IambicRepoDetails(repo_name=body.repo_name)
+            iambic_repo = IambicRepoDetails(
+                repo_name=body.repo_name, merge_on_approval=body.merge_on_approval
+            )
             await save_iambic_repos(self.ctx.tenant, iambic_repo, self.user)
             self.repo_specified = True
 

@@ -1,3 +1,4 @@
+from enum import Enum
 from types import GenericAlias
 from typing import Dict, List, Optional, Set, Union, get_args, get_origin
 
@@ -51,6 +52,9 @@ class BaseModel(PydanticBaseModel):
         for field_name, field in self.__class__.__dict__.get("__fields__", {}).items():
             dict_key = field_name
             field_val = getattr(self, field_name)
+
+            if isinstance(field_val, Enum):
+                field_val = field_val.value
 
             if isinstance(field, ModelField):
                 if exclude_secrets and field.field_info.extra.get("is_secret", False):

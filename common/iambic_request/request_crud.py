@@ -41,6 +41,52 @@ async def list_requests(tenant_id: int, **filter_kwargs) -> list[Request]:
     return items.scalars().all()
 
 
+def compare_date_time(obj):
+    """
+    Extracts the 'created_at' attribute from the provided object and returns it.
+    The function supports objects that either have a 'created_at' attribute, or are dictionaries
+    with a 'created_at' key. If the value is a string, it will be converted to a datetime object
+    using the fromisoformat method.
+
+    Args:
+        obj (object or dict): An object that has a 'created_at' attribute, or a dictionary
+                              with a 'created_at' key.
+
+    Returns:
+        datetime.datetime: The 'created_at' value as a datetime object.
+
+    Raises:
+        ValueError: If the object does not have a 'created_at' attribute or key, or if the
+                    value of 'created_at' cannot be converted to a datetime object.
+
+    Examples:
+        obj1 = SomeClass()
+        obj1.created_at = datetime.datetime.now()
+        print(compare_date_time(obj1)) # returns the datetime value of obj1.created_at
+
+        obj2 = {"created_at": "2023-06-23T19:20:30+01:00"}
+        print(compare_date_time(obj2)) # returns datetime.datetime(2023, 6, 23, 19, 20, 30, tzinfo=datetime.timezone(datetime.timedelta(seconds=3600)))
+
+        obj3 = {"created_at": datetime.datetime.now()}
+        print(compare_date_time(obj3)) # returns the datetime value of obj3["created_at"]
+
+        obj4 = "string object"
+        print(compare_date_time(obj4)) # Raises ValueError: created_at not supported by {obj}
+    """
+    if created_at := getattr(obj, "created_at", None):
+        return created_at
+    elif type(obj) == dict and "created_at" in obj and type(obj["created_at"]) == str:
+        return datetime.datetime.fromisoformat(obj["created_at"])
+    elif (
+        type(obj) == dict
+        and "created_at" in obj
+        and type(obj["created_at"]) == datetime.datetime
+    ):
+        return obj["created_at"]
+    else:
+        raise ValueError("created_at not supported by {obj}")
+
+
 async def get_request_response(
     request: Request, request_pr, include_comments: bool = True
 ) -> dict:
@@ -51,7 +97,11 @@ async def get_request_response(
     pr_details["rejected_by"] = request.rejected_by
     pr_details["allowed_approvers"] = request.allowed_approvers
     if include_comments:
-        pr_details["comments"] = [comment.dict() for comment in request.comments]
+        comments = [comment.dict() for comment in request.comments]
+        if pr_details["comments"]:
+            comments.extend(pr_details["comments"])
+        comments.sort(key=compare_date_time)
+        pr_details["comments"] = comments
     else:
         pr_details["comments"] = []
 
@@ -169,8 +219,14 @@ async def create_request(
     slack_message_id: Optional[str] = None,
 ):
     request_id = str(uuid.uuid4())
-    request_pr = await get_iambic_pr_instance(tenant, request_id, created_by)
-
+    file_paths_being_changed = [change.file_path for change in changes]
+    request_pr = await get_iambic_pr_instance(
+        tenant,
+        request_id,
+        created_by,
+        file_paths_being_changed=file_paths_being_changed,
+        use_request_branch=False,
+    )
     request_link = (
         f"{config.get_tenant_specific_key('url', tenant.name)}/requests/{request_id}"
     )
@@ -235,7 +291,7 @@ async def update_request(
                 for updater_group in updater_groups
             )
         )
-        or request.status != "Pending"
+        or request.status not in {"Pending", "Approved"}
         or request.deleted
     ):
         raise Unauthorized("Unable to update this request")
@@ -251,6 +307,9 @@ async def update_request(
         request_notes=request_notes,
     )
 
+    if request.status == "Approved":
+        request.status = "Pending"
+        request.approved_by = []
     request.justification = justification
     request.request_notes = request_notes
     request.updated_by = updated_by
@@ -267,11 +326,12 @@ async def update_request(
     }
 
 
-async def approve_request(
+async def approve_or_apply_request(
     tenant: Tenant,
     request_id: Union[str, uuid.UUID],
     approved_by: str,
     approver_groups: list[str],
+    apply_request: bool,
 ):
     """
     Approve as bot
@@ -288,38 +348,49 @@ async def approve_request(
     Consume message
     """
     request = await get_request(tenant.id, request_id)
+    request.updated_by = approved_by
+    request.updated_at = datetime.datetime.utcnow()
 
-    if (
-        not any(
+    if request.status == "Pending":
+        not_a_valid_approver = not any(
             approver_group in request.allowed_approvers
             for approver_group in approver_groups
         )
-        or request.status != "Pending"
-        or request.deleted
-    ):
-        raise Unauthorized("Unable to approve this request")
 
-    request.status = "Running"
+        if not_a_valid_approver or request.status != "Pending" or request.deleted:
+            if not_a_valid_approver:
+                reason = "You are not authorized to approve this request."
+            elif request.status != "Pending":
+                reason = "Cannot approve a request that is not pending."
+            else:
+                reason = "This request has been deleted."
+
+            raise Unauthorized(f"Unable to approve this request. {reason}")
+
+        request.approved_by.append(approved_by)
+        request.status = "Approved" if not apply_request else "Running"
+    elif request.status != "Approved":
+        raise Unauthorized("Unable to apply a request that is not approved.")
+    else:
+        request.status = "Running"
+
     request_pr = await get_iambic_pr_instance(
         tenant, request_id, request.created_by, request.pull_request_id
     )
     await request_pr.load_pr()
 
-    if request_pr.mergeable:
-        await request_pr.approve_request(approved_by)
+    if request_pr.mergeable and apply_request:
+        await request_pr.apply_request(approved_by)
     elif request_pr.closed_at and not request_pr.merged_at:
         # The PR has already been closed (Rejected) but the status was not updated in the DB
         request.status = "Rejected"
         # TODO: Handle this
         # request.rejected_by = ?
     elif request_pr.merged_at:
-        # TODO: Handle this
         # The PR has already been merged but the status was not updated in the DB
+        request.status = "Applied"
+        # TODO: Handle this
         # request.approved_by.append(?)
-        pass
-
-    if request.status != "Rejected":
-        request.approved_by.append(approved_by)
 
     await request.write()
     response = await get_request_response(request, request_pr)

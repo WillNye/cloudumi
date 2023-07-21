@@ -16,7 +16,7 @@ from common.request_types.models import (
     RequestType,
 )
 from common.request_types.tasks import upsert_tenant_request_types
-from common.request_types.utils import list_tenant_request_types
+from common.request_types.utils import list_tenant_request_types, list_tenant_change_types, get_tenant_change_type
 from qa import TENANT_SUMMARY
 from qa.utils import generic_api_get_request
 
@@ -29,7 +29,7 @@ async def run_all_tests():
         add_new_request_type,
         add_change_field,
         add_new_change_type_to_request_type,
-        reinitialize_request_type,
+        reinitialize_change_type,
         update_change_type,
         update_request_type,
         update_change_type_template,
@@ -44,7 +44,7 @@ async def run_all_tests():
     await add_new_request_type()
     await add_change_field()
     await add_new_change_type_to_request_type()
-    await reinitialize_request_type()
+    await reinitialize_change_type()
     await update_change_type()
     await update_request_type()
     await update_change_type_template()
@@ -246,27 +246,27 @@ async def delete_request_type():
     assert updated_rt.deleted
 
 
-async def reinitialize_request_type():
+async def reinitialize_change_type():
     tenant = TENANT_SUMMARY.tenant
     await reset_request_type_tables()
 
-    tenant_request_types = await list_tenant_request_types(tenant.id)
-    init_active_count = len(tenant_request_types)
-    rt = tenant_request_types[0]
-    rt.deleted = True
-    rt.deleted_at = datetime.utcnow()
-    rt.supported_template_types = []
-    await rt.write()
+    tenant_change_types = await list_tenant_change_types(tenant.id)
+    init_active_count = len(tenant_change_types)
+    ct = random.choice(tenant_change_types)
+    ct.deleted = True
+    ct.deleted_at = datetime.utcnow()
+    ct.template_types = []
+    await ct.write()
 
-    tenant_request_types = await list_tenant_request_types(tenant.id)
-    assert len(tenant_request_types) == init_active_count - 1
+    tenant_change_types = await list_tenant_change_types(tenant.id)
+    assert len(tenant_change_types) == init_active_count - 1
 
     await upsert_tenant_request_types(tenant.name)
 
-    tenant_request_types = await list_tenant_request_types(tenant.id)
-    assert len(tenant_request_types) == init_active_count
+    tenant_change_types = await list_tenant_change_types(tenant.id)
+    assert len(tenant_change_types) == init_active_count
 
-    updated_rt = await get_request_type_by_id(rt.id)
+    updated_rt = await get_tenant_change_type(tenant.id, ct.id)
     assert not updated_rt.deleted
 
 

@@ -6,10 +6,6 @@ from sqlalchemy.orm import relationship
 
 from common.iambic.config.models import TrustedProvider
 from common.pg_core.models import Base
-from common.request_types.models import (
-    change_type_iambic_template_association,
-    change_type_iambic_template_provider_definition_association,
-)
 from common.tenants.models import Tenant  # noqa: F401
 
 
@@ -36,13 +32,6 @@ class IambicTemplate(Base):
         "IambicTemplateProviderDefinition",
         back_populates="iambic_template",
         cascade="all, delete-orphan",
-        uselist=True,
-    )
-
-    associated_change_types = relationship(
-        "ChangeType",
-        secondary=change_type_iambic_template_association,
-        back_populates="included_iambic_templates",
         uselist=True,
     )
 
@@ -121,14 +110,9 @@ class IambicTemplateProviderDefinition(Base):
     tenant_id = Column(Integer, ForeignKey("tenant.id"), nullable=False)
     iambic_template_id = Column(UUID, ForeignKey("iambic_template.id"), nullable=False)
     resource_id = Column(String, nullable=False)
+    secondary_resource_id = Column(String, nullable=True)
     tenant_provider_definition_id = Column(
         UUID, ForeignKey("tenant_provider_definition.id"), nullable=False
-    )
-    associated_change_types = relationship(
-        "ChangeType",
-        secondary=change_type_iambic_template_provider_definition_association,
-        back_populates="included_iambic_template_provider_definition",
-        uselist=True,
     )
     tenant = relationship("Tenant")
     iambic_template = relationship(
@@ -139,6 +123,10 @@ class IambicTemplateProviderDefinition(Base):
     __table_args__ = (
         Index("itpd_template_id_idx", "iambic_template_id"),
         Index("itpd_template_resource_id_idx", "iambic_template_id", "resource_id"),
+        Index("itpd_tenant_resource_idx", "tenant_id", "resource_id"),
+        Index(
+            "itpd_tenant_secondary_resource_idx", "tenant_id", "secondary_resource_id"
+        ),
         Index("itpd_provider_def_idx", "tenant_provider_definition_id"),
         Index(
             "itpd_template_and_provider_def_uix",

@@ -6,4 +6,5 @@ ujson
 asgiref
 pytz
 ruamel.yaml
+structlog
 tornado

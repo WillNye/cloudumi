@@ -1,10 +1,10 @@
 from asyncache import cached
 from cachetools import TTLCache
-from sqlalchemy import ARRAY, Column, DateTime, Integer, String, and_
+from sqlalchemy import ARRAY, Column, DateTime, Integer, String, and_, func
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import select
 
-from common.config.globals import ASYNC_PG_SESSION
+from common.config.globals import ASYNC_PG_SESSION, PG_SESSION
 from common.pg_core.models import Base, SoftDeleteMixin
 
 
@@ -84,6 +84,26 @@ class Tenant(SoftDeleteMixin, Base):
                 return await _query(session)
 
     @classmethod
+    @cached(cache=TTLCache(maxsize=1024, ttl=30))
+    def get_by_name_sync(cls, tenant_name, session=None):
+        def _query(session):
+            stmt = select(Tenant).where(
+                and_(
+                    Tenant.name == tenant_name,
+                    Tenant.deleted == False,  # noqa
+                )
+            )
+            tenant = session.execute(stmt)
+            return tenant.scalars().first()
+
+        if session:
+            return _query(session)
+
+        with PG_SESSION() as session:
+            with session.begin():
+                return _query(session)
+
+    @classmethod
     async def get_all(cls, session=None):
         async def _query(session):
             stmt = select(Tenant).where(
@@ -107,3 +127,43 @@ class Tenant(SoftDeleteMixin, Base):
             stmt = select(Tenant).filter(getattr(Tenant, attribute) == value)
             items = await session.execute(stmt)
             return items.scalars().first()
+
+    @classmethod
+    async def get_user_count_from_tenant(cls, tenant_name: str):
+        from common.users.models import User
+
+        async with ASYNC_PG_SESSION() as session:
+            stmt = (
+                select(Tenant.name, func.count(User.id).label("active_user_count"))
+                .select_from(Tenant)
+                .join(User, User.tenant_id == Tenant.id)
+                .where(
+                    and_(
+                        User.active == True,
+                        Tenant.deleted == False,
+                        Tenant.name == tenant_name,
+                    )
+                )  # noqa
+                .group_by(Tenant.name)
+            )
+
+            res = await session.execute(stmt)
+            results_unformatted = res.all()
+            return {result[0]: result[1] for result in results_unformatted}
+
+    @classmethod
+    async def get_all_with_user_count(cls):
+        from common.users.models import User
+
+        async with ASYNC_PG_SESSION() as session:
+            stmt = (
+                select(Tenant.name, func.count(User.id).label("active_user_count"))
+                .select_from(Tenant)
+                .join(User, User.tenant_id == Tenant.id)
+                .where(and_(User.active == True, Tenant.deleted == False))  # noqa
+                .group_by(Tenant.name)
+            )
+
+            res = await session.execute(stmt)
+            results_unformatted = res.all()
+            return {result[0]: result[1] for result in results_unformatted}

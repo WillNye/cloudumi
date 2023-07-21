@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import axios from 'core/Axios/Axios';
 import { Button } from 'shared/elements/Button';
@@ -14,13 +14,14 @@ import { Block } from 'shared/layout/Block';
 import { useQuery } from '@tanstack/react-query';
 import { getIambicRequest } from 'core/API/iambicRequest';
 import { Loader } from 'shared/elements/Loader';
-import { Chip } from 'shared/elements/Chip';
+import { Chip, ChipType } from 'shared/elements/Chip';
 import ChangeViewer from './components/ChangeViewer';
 
 const RequestChangeDetails = () => {
   const { requestId } = useParams<{ requestId: string }>();
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [readOnly, setReadOnly] = useState(false);
 
   const {
     refetch: refetchData,
@@ -30,6 +31,12 @@ const RequestChangeDetails = () => {
     queryFn: getIambicRequest,
     queryKey: ['getIambicRequest', requestId]
   });
+
+  useEffect(() => {
+    setReadOnly(
+      ['Applied', 'Rejected', 'Expired'].includes(requestData?.data?.status)
+    );
+  }, [requestData]);
 
   const handleComment = useCallback(async () => {
     setIsSubmitting(true);
@@ -141,6 +148,30 @@ const RequestChangeDetails = () => {
     }
   ];
 
+  const getRequestStatus = useCallback(status => {
+    switch (status) {
+      case 'Approved':
+        return 'success' as ChipType;
+      case 'Running':
+        return 'warning' as ChipType;
+      case 'Pending':
+      case 'Pending in Git':
+        return 'warning' as ChipType;
+      case 'Rejected':
+      case 'Failed':
+        return 'danger' as ChipType;
+      case 'Expired':
+        return 'warning' as ChipType;
+      default:
+        return 'dark' as ChipType;
+    }
+  }, []);
+
+  const chipClass = useMemo(
+    (): ChipType => getRequestStatus(requestData?.data?.status),
+    [getRequestStatus, requestData?.data?.status]
+  );
+
   if (isLoading) {
     return <Loader />;
   }
@@ -155,7 +186,7 @@ const RequestChangeDetails = () => {
         <h3>Request Review</h3>
         <div className={styles.subTitle}>
           <p className={styles.text}>{requestData?.data?.title}</p>
-          <Chip type="warning">{requestData?.data?.status}</Chip>
+          <Chip type={chipClass}>{requestData?.data?.status}</Chip>
         </div>
         <Table data={mainTableData} columns={mainTableColumns} border="row" />
         <LineBreak size="large" />
@@ -165,6 +196,7 @@ const RequestChangeDetails = () => {
             file={file}
             handleModifyChange={handleModifyChange}
             key={index}
+            readOnly={readOnly}
           />
         ))}
         <LineBreak size="large" />
@@ -183,13 +215,30 @@ const RequestChangeDetails = () => {
         </Button>
         <LineBreak size="large" />
         <div className={styles.actions}>
-          <Button onClick={handleReject} color="error" fullWidth size="small">
+          <Button
+            onClick={handleReject}
+            color="error"
+            disabled={readOnly}
+            fullWidth
+            size="small"
+          >
             Reject
           </Button>
-          <Button onClick={handleApprove} fullWidth size="small">
+          <Button
+            onClick={handleApprove}
+            disabled={readOnly}
+            fullWidth
+            size="small"
+          >
             Approve
           </Button>
-          <Button onClick={handleApply} color="success" fullWidth size="small">
+          <Button
+            onClick={handleApply}
+            color="success"
+            disabled={readOnly}
+            fullWidth
+            size="small"
+          >
             Apply
           </Button>
         </div>

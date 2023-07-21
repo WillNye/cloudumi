@@ -6,7 +6,8 @@ import sys
 from pathlib import Path
 
 import boto3
-from jinja2 import Environment, PackageLoader, select_autoescape
+from jinja2 import PackageLoader, select_autoescape
+from jinja2.sandbox import ImmutableSandboxedEnvironment
 
 __package__ = "terraform_config_parser"
 
@@ -16,7 +17,9 @@ else:
     root_path_arg = "UNDEFINED ROOT PATH"
 
 root_path = Path(os.getenv("CLOUDUMI_ROOT_PATH", root_path_arg))
-env = Environment(loader=PackageLoader(__package__), autoescape=select_autoescape())
+env = ImmutableSandboxedEnvironment(
+    loader=PackageLoader(__package__), autoescape=select_autoescape()
+)
 
 
 def simple_logger(msg: str):
