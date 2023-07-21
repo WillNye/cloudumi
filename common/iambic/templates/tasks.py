@@ -704,7 +704,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
         git_repo = Repo(repo_dir)
         from_sha = None
         to_sha = None
-        for commit in git_repo.iter_commits("main"):  # Correctly resolve default branch
+        for commit in git_repo.iter_commits(repo.default_branch_name):
             if commit.committed_datetime < iambic_templates_last_parsed:
                 break
 
