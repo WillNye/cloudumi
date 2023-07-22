@@ -11,6 +11,7 @@
 
 service: ExceptionReporting
 frameworkVersion: "3"
+useDotenv: true
 provider:
   name: aws
   runtime: python3.10
@@ -18,6 +19,33 @@ provider:
   region: us-east-1
 
 functions:
+  EmailDigest:
+    handler: send_digest.handler.lambda_handler
+    events:
+      - schedule: rate(1 hour)
+    environment:
+      BUCKET_NAME:
+        Ref: ExceptionReportingBucket
+      QUEUE_URL:
+        Ref: ExceptionReportingBucketQueue
+      EMAIL: "iambic-errors@noq.dev"
+      SENDGRID_SECRET:
+        Ref: SendGridApiSecret
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - "sqs:ReceiveMessage"
+          - "sqs:DeleteMessage"
+          - "sqs:GetQueueAttributes"
+        Resource:
+          - Fn::GetAtt:
+              - ExceptionReportingBucketQueue
+              - Arn
+      - Effect: "Allow"
+        Action:
+          - "secretsmanager:GetSecretValue"
+        Resource:
+          - Ref: SendGridApiSecret
   ExceptionReporting:
     handler: copy_to_s3.handler.lambda_handler
     iamRoleStatementsName: ${self:provider.stage}-ExceptionReportingRole
@@ -38,9 +66,18 @@ functions:
                   "/*",
                 ],
               ]
+      - Effect: "Allow"
+        Action:
+          - "sqs:SendMessage"
+        Resource:
+          - Fn::GetAtt:
+              - ExceptionReportingBucketQueue
+              - Arn
     environment: # Environment variables for this specific function
       BUCKET_NAME:
         Ref: ExceptionReportingBucket
+      QUEUE_URL:
+        Ref: ExceptionReportingBucketQueue
     events:
       - http:
           path: /report_exception
@@ -50,10 +87,8 @@ functions:
             maxRequestsPerSecond: 10
             maxConcurrentRequests: 10
 package:
-  exclude:
-    - ./**
-  include:
-    - ./copy_to_s3/handler.py
+  patterns:
+    - "**/*.py"
 
 plugins:
   - serverless-python-requirements
@@ -63,7 +98,7 @@ plugins:
 
 custom:
   pythonRequirements:
-    dockerizePip: non-linux
+    dockerizePip: true
   apiGatewayThrottling:
     maxRequestsPerSecond: 10
     maxConcurrentRequests: 10
@@ -81,3 +116,15 @@ resources: # AWS CloudFormation resources
       Properties:
         BucketName:
           Fn::Sub: "${self:provider.stage}-iambic-exception-reporting-bucket-${AWS::AccountId}-${AWS::Region}"
+    ExceptionReportingBucketQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName:
+          Fn::Sub: "${self:provider.stage}-iambic-exception-reporting-queue-${AWS::AccountId}-${AWS::Region}"
+    SendGridApiSecret:
+      Type: "AWS::SecretsManager::Secret"
+      Properties:
+        Name: "${self:provider.stage}-SendGridSecret"
+        Description: "SendGrid information for error reporting service"
+        SecretString:
+          Fn::Sub: '{"fromEmail": "${env:SENDGRID_FROM_EMAIL}", "username": "${env:SENDGRID_USERNAME}", "password": "${env:SENDGRID_PASSWORD}"}'

@@ -354,7 +354,15 @@ make update_aws_service_definitions_frontend
 
 ## Serverless Functions
 
-This repository contains code for serverless functions that are deployed with the [Serverless Framework](https://www.serverless.com/). One of these functions is the `ExceptionReporting` serverless function. It's a simple function that receives HTTP POST requests and copies the data from the requests to an S3 bucket. serverless makes the deployment process much easier than it would be to define everything in Terraform, and gives us a framework for possibly adding more such functions in the ufture.
+This repository contains code for serverless functions that are deployed with the [Serverless Framework](https://www.serverless.com/). One of these functions is the `ExceptionReporting` serverless function. It's a simple function that receives HTTP POST requests and copies the data from the requests to an S3 bucket, and sends a message to an SQS queue with the file it created. serverless makes the deployment process much easier than it would be to define everything in Terraform, and gives us a framework for possibly adding more such functions in the future.
+
+You will need a .env file in the same directory as serverless.yml `deploy/serverless` with the following variables:
+
+SENDGRID_PASSWORD="..."
+SENDGRID_FROM_EMAIL=notifications@noq.dev
+SENDGRID_USERNAME=apikey
+
+There's another function that is used to send hourly email digests when there are messages in the sqs queue (see `serverless.yml` for details).
 
 ### ExceptionReporting function
 
