@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "serverless-api-gateway-throttling": "^2.0.3",
+    "serverless-domain-manager": "^7.1.0",
+    "serverless-iam-roles-per-function": "^3.2.0",
+    "serverless-python-requirements": "^6.0.0"
+  }
+}
