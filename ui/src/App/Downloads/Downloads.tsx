@@ -30,6 +30,14 @@ const Downloads: FC = () => {
   const [noqDownloadTable, setNoqDownloadTable] = useState<DownloadLink[]>([]);
 
   useEffect(() => {
+    const fetchDownloadLinks = async () => {
+      const response = await axios.get<DownloadLink[]>(
+        'https://public-noq-binaries.s3.us-west-2.amazonaws.com/noq-cli/download_links/latest/download_links.json',
+        { withCredentials: false }
+      );
+      setNoqDownloadTable(response.data);
+    };
+
     const fetchData = async () => {
       const response = await axios.get<DownloadResponse>(
         '/api/v3/downloads/noq'
@@ -38,9 +46,10 @@ const Downloads: FC = () => {
 
       setNoqInstallScript(resJson.install_script);
       setNoqInstallScriptWindows(resJson.install_script_windows);
-      setNoqDownloadTable(resJson.download_links);
     };
+
     fetchData();
+    fetchDownloadLinks();
   }, []);
 
   const isWindows = navigator.userAgent.toLowerCase().indexOf('win') > -1;
@@ -58,6 +67,31 @@ const Downloads: FC = () => {
         )
       );
     }
+
+    return (
+      noqInstallScript && (
+        <div className={css.codeBlockContainer}>
+          <br />
+          <p className={css.description}>
+            Use the command below to download and install the latest version of
+            the Noq CLI. <br />
+            Alternatively, you may download the binaries directly from the links
+            further down on this page.
+          </p>
+          <CodeBlock
+            code={
+              '/bin/bash -c "$(curl -fsSL https://public-noq-binaries.s3.us-west-2.amazonaws.com/noq-cli/latest/install.sh)"'
+            }
+          />
+          <p className={css.description}>
+            If this is your first time using the Noq CLI, you will need to
+            configure it. For your convenience, you can run the below commands
+            to write your unique Noq CLI configuration.
+          </p>
+          <CodeBlock code={noqInstallScript} />
+        </div>
+      )
+    );
 
     return (
       noqInstallScript && (
