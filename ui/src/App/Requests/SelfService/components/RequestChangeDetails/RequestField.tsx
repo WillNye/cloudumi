@@ -2,8 +2,19 @@ import { Fragment } from 'react';
 import { Input } from 'shared/form/Input';
 import { Select, SelectOption } from 'shared/form/Select';
 import { TypeaheadBlock } from 'shared/form/TypeaheadBlock';
+import { ChangeTypeField } from '../../types';
 
-const RequestField = ({ field, selectedOptions, handleChange }) => {
+export type RequestFieldProps = {
+  field: ChangeTypeField;
+  selectedOptions: { [key: string]: string };
+  handleChange: (key: string, value: string) => void;
+};
+
+const RequestField: React.FC<RequestFieldProps> = ({
+  field,
+  selectedOptions,
+  handleChange
+}) => {
   if (field.field_type === 'TextBox') {
     return (
       <Input
@@ -51,7 +62,28 @@ const RequestField = ({ field, selectedOptions, handleChange }) => {
       />
     );
   }
+
+  if (field.field_type === 'TypeAheadTemplateRef') {
+    return (
+      <TypeaheadBlock
+        resultsFormatter={result => <p>{result.option_text}</p>}
+        defaultValues={[]}
+        handleOnSelectResult={value => {
+          handleChange(field.field_key, value['option_value']);
+        }}
+        endpoint={field.typeahead.endpoint}
+        queryParam={field.typeahead.query_param_key}
+        titleKey="option_text"
+      />
+    );
+  }
   return <Fragment />;
 };
+
+export type FieldType =
+  | 'TypeAheadTemplateRef'
+  | 'TypeAhead'
+  | 'TextBox'
+  | 'Choice';
 
 export default RequestField;

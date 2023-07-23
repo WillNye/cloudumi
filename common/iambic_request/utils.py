@@ -8,7 +8,11 @@ from iambic.core.models import BaseModel as IambicBaseModel
 from iambic.core.models import BaseTemplate
 from iambic.core.template_generation import templatize_resource
 from iambic.core.utils import evaluate_on_provider
-from iambic.plugins.v0_1_0.aws.iam.policy.models import AwsIamManagedPolicyTemplate
+from iambic.plugins.v0_1_0.aws.iam.policy.models import (
+    AwsIamManagedPolicyTemplate,
+    PolicyStatement,
+)
+from iambic.plugins.v0_1_0.aws.iam.role.models import AWS_IAM_ROLE_TEMPLATE_TYPE
 from iambic.plugins.v0_1_0.aws.identity_center.permission_set.models import (
     AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
 )
@@ -31,6 +35,7 @@ from common.config.globals import (
     GITHUB_APP_APPROVE_PRIVATE_PEM_1,
     GITHUB_APP_URL,
 )
+from common.config.models import ModelAdapter
 from common.iambic.config.models import (
     TRUSTED_PROVIDER_RESOLVER_MAP,
     TrustedProviderResolver,
@@ -47,6 +52,7 @@ from common.iambic_request.models import GitHubPullRequest, IambicTemplateChange
 from common.lib import noq_json as json
 from common.lib.yaml import yaml
 from common.models import (
+    HubAccount,
     IambicRepoDetails,
     SelfServiceRequestChangeType,
     SelfServiceRequestData,
@@ -131,7 +137,7 @@ def update_iambic_template_with_change(
             template_attr = preferred_typing
 
         if len(split_property_attr) > 1:
-            # Handle nested attributes like `ManagedPolicy.policy_document.policy_statement`
+            # Handle nested attributes like `ManagedPolicy.policy_document.statement`
             # TODO: Handle forked attribute. Example ManagedPolicy.policy_document can be list or object
             return update_iambic_template_with_change(
                 getattr(iambic_template_instance, attr_name),
@@ -480,17 +486,105 @@ async def maybe_extend_change_type_provider_definitions(
     return request_data
 
 
+async def maybe_add_hub_role_assume_role_policy_document(
+    tenant_name: str,
+    template_obj: Type[BaseTemplate],
+    db_change_types: list[ChangeType],
+) -> Type[BaseTemplate]:
+    """
+    Adds the hub role assume role policy document to the template
+    if the template is an IAM role and the access rules are impacted
+    if no existing policy statement exists.
+
+    args:
+        tenant_name (str): Name of the tenant
+        template_obj (Type[BaseTemplate]): Template object
+        db_change_types (list[ChangeType]): List of change types
+    returns:
+        Type[BaseTemplate]: The potentially updated Template object
+    """
+
+    hub_account: HubAccount = (
+        ModelAdapter(HubAccount).load_config("hub_account", tenant_name).model
+    )
+    hub_role_arn = hub_account.role_arn
+    impacted_template_attrs = set(
+        change_type.template_attribute for change_type in db_change_types
+    )
+
+    if template_obj.template_type != AWS_IAM_ROLE_TEMPLATE_TYPE:
+        return template_obj
+    elif "access_rules" not in impacted_template_attrs:
+        return template_obj
+
+    statement_sid = "GeneratedUserAssumeRoleViaNoq"
+    assume_role_policy_docs = template_obj.properties.assume_role_policy_document
+    set_assume_role_policy_as_list = isinstance(assume_role_policy_docs, list)
+    if not set_assume_role_policy_as_list:
+        assume_role_policy_docs = [assume_role_policy_docs]
+
+    for assume_role_policy_doc in assume_role_policy_docs:
+        add_spoke_role_policy_statement = True
+        policy_statements = assume_role_policy_doc.statement
+        if not isinstance(policy_statements, list):
+            policy_statements = [policy_statements]
+
+        if any(
+            policy_statement.sid == statement_sid
+            for policy_statement in policy_statements
+        ):
+            continue
+
+        for policy_statement in policy_statements:
+            if policy_statement.included_accounts != ["*"] and sorted(
+                policy_statement.included_accounts
+            ) != sorted(assume_role_policy_doc.included_accounts):
+                continue
+            elif bool(policy_statement.excluded_accounts):
+                continue
+            elif policy_statement.effect != "Allow":
+                continue
+            elif not all(
+                required_action in policy_statement.action
+                for required_action in {"sts:AssumeRole", "sts:TagSession"}
+            ):
+                continue
+            elif (
+                policy_statement.principal != hub_role_arn
+                and policy_statement.principal.aws != hub_role_arn
+                and hub_role_arn not in policy_statement.principal.aws
+            ):
+                continue
+
+            add_spoke_role_policy_statement = False
+            break
+
+        if add_spoke_role_policy_statement:
+            policy_statements.append(
+                PolicyStatement(
+                    effect="Allow",
+                    action=["sts:AssumeRole", "sts:TagSession"],
+                    principal=hub_role_arn,
+                    sid=statement_sid,
+                )
+            )
+            assume_role_policy_doc.statement = policy_statements
+
+    return template_obj
+
+
 async def generate_updated_iambic_template(
-    tenant_id: int, request_data: SelfServiceRequestData
+    tenant: Tenant, request_data: SelfServiceRequestData
 ) -> Type[BaseTemplate]:
     """Generates the updated iambic template for the given request
 
     Args:
-        tenant_id (int): The tenant id
+        tenant (Tenant): The db tenant instance
         request_data (SelfServiceRequestData): The request data
     Returns:
         Type[BaseTemplate]: The updated iambic template
     """
+    tenant_id = tenant.id
     if request_data.iambic_template_id:
         template = await get_template_by_id(tenant_id, request_data.iambic_template_id)
         provider_ref = TRUSTED_PROVIDER_RESOLVER_MAP[template.provider]
@@ -519,6 +613,9 @@ async def generate_updated_iambic_template(
     provider_definition_ids = set()
     for change_type in request_data.changes:
         provider_definition_ids.update(set(change_type.provider_definition_ids))
+    template_obj = await maybe_add_hub_role_assume_role_policy_document(
+        tenant.name, template_obj, db_change_types
+    )
 
     # Retrieve the given provider definitions
     async with ASYNC_PG_SESSION() as session:

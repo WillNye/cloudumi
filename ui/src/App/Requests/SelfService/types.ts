@@ -1,3 +1,8 @@
+import {
+  ChangeTypeFieldType,
+  ProviderDefinitionField
+} from 'core/API/iambicRequest';
+
 export interface RequestType {
   id: string;
   name: string;
@@ -22,7 +27,8 @@ export interface ChangeType {
 }
 
 interface Typeahead {
-  url: string;
+  url?: string;
+  endpoint: string;
   query_param_key: string;
 }
 
@@ -32,7 +38,7 @@ export interface ChangeTypeField {
   change_element: number;
   field_key: string;
   field_value: string;
-  field_type: string;
+  field_type: ChangeTypeFieldType;
   field_text: string;
   description: string;
   allow_none: boolean;
@@ -64,6 +70,7 @@ export interface ChangeTypeDetails {
   description: string;
   request_type_id: string;
   fields: ChangeTypeField[];
+  provider_definition_field?: ProviderDefinitionField;
   included_providers: ProviderDefinition[];
 }
 

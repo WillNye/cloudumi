@@ -539,21 +539,31 @@ async def delete_tenant_templates_and_definitions(
     if deleted_template_paths:
         # Get the existing template with its provider definition references
         async with ASYNC_PG_SESSION() as session:
-            async with session.begin():
-                max_elem = 25
-                for elem_offset in range(0, len(deleted_template_paths), max_elem):
-                    path_chunk = deleted_template_paths[
-                        elem_offset : elem_offset + max_elem
-                    ]
-                    stmt = delete(IambicTemplate).where(
-                        and_(
-                            IambicTemplate.tenant_id == tenant.id,
-                            IambicTemplate.repo_name == repo_name,
-                            IambicTemplate.file_path.in_(path_chunk),
-                        )
-                    )
-                    await session.execute(stmt)
-                    await session.flush()
+            stmt = (
+                select(IambicTemplate)
+                .filter(
+                    IambicTemplate.tenant_id == tenant.id,
+                    IambicTemplate.repo_name == repo_name,
+                    IambicTemplate.file_path.in_(deleted_template_paths),
+                )
+                .join(
+                    IambicTemplateContent,
+                    IambicTemplateContent.iambic_template_id == IambicTemplate.id,
+                )
+                .join(
+                    IambicTemplateProviderDefinition,
+                    IambicTemplateProviderDefinition.iambic_template_id
+                    == IambicTemplate.id,
+                )
+                .options(
+                    contains_eager(IambicTemplate.content),
+                    contains_eager(IambicTemplate.provider_definition_refs),
+                )
+            )
+            items = await session.execute(stmt)
+            deleted_templates = items.scalars().unique().all()
+
+        await bulk_delete(deleted_templates, as_query=False)
 
 
 async def full_create_tenant_templates_and_definitions(
@@ -704,7 +714,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
         git_repo = Repo(repo_dir)
         from_sha = None
         to_sha = None
-        for commit in git_repo.iter_commits("main"):  # Correctly resolve default branch
+        for commit in git_repo.iter_commits(repo.default_branch_name):
             if commit.committed_datetime < iambic_templates_last_parsed:
                 break
 
@@ -753,12 +763,9 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
         except Exception as err:
             tenant.iambic_templates_last_parsed = iambic_templates_last_parsed
             await tenant.write()
-            log.exception(
+            await log.aexception(
                 str(err),
-                {
-                    "function": f"{__name__}.{sys._getframe().f_code.co_name}",
-                    "repo": repo.repo_name,
-                    "tenant": tenant.name,
-                },
+                repo=repo.repo_name,
+                tenant=tenant.name,
             )
             return

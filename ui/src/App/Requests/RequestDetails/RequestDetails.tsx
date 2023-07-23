@@ -98,16 +98,13 @@ const RequestChangeDetails = () => {
   };
 
   const handleModifyChange = useCallback(
-    async newFile => {
+    async e => {
       setIsSubmitting(true);
       try {
         await axios.put(`/api/v4/self-service/requests/${requestId}`, {
-          files: requestData?.data.files?.map(currentFile => {
-            if (newFile.file_path === currentFile.file_path) {
-              return newFile;
-            }
-            return currentFile;
-          })
+          file_path: e.file_path,
+          template_body: e.template_body,
+          justification: requestData?.data?.justification
         });
         refetchData();
         setIsSubmitting(false);
@@ -261,7 +258,9 @@ const RequestChangeDetails = () => {
         {requestData?.data?.files.map((file, index) => (
           <ChangeViewer
             file={file}
-            handleModifyChange={handleModifyChange}
+            handleModifyChange={e => {
+              handleModifyChange(e);
+            }}
             key={index}
             readOnly={readOnly}
           />
