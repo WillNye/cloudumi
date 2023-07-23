@@ -233,7 +233,6 @@ class IambicRequestHandler(BaseHandler):
             await log.aexception(
                 "Unhandled exception while validating request", tenant=db_tenant.name
             )
-            self.set_status(500, reason=str(err))
             self.write(
                 WebResponse(
                     errors=[str(err)],
