@@ -267,10 +267,23 @@ const RequestChangeDetails = () => {
         ))}
         <LineBreak size="large" />
         {requestData?.data?.comments.map((commentData, index) => (
-          <>
-            <NoqMarkdown key={index} markdown={commentData.body} />
+          <div key={index}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <strong>{commentData.user || commentData.created_by}</strong>
+              <span style={{ color: 'grey', fontSize: '0.8rem' }}>
+                {new Date(commentData.created_at).toLocaleString()}
+              </span>
+            </div>
+            <LineBreak />
+            <NoqMarkdown markdown={commentData.body} />
             <Divider />
-          </>
+          </div>
         ))}
         <Block disableLabelPadding label="Comment" />
         <TextArea
