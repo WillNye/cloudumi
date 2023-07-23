@@ -1,0 +1,26 @@
+.blockquote {
+  margin-left: 20px;
+  position: relative;
+}
+
+.table {
+  border: 1px solid white;
+  border-collapse: collapse;
+  width: 100%;
+}
+.table .th,
+.td {
+  padding: 10px;
+  text-align: center;
+  border: 1px solid white;
+}
+
+.code {
+  background-color: #6b6565;
+  border-radius: 3px;
+  padding: 5px;
+  margin: 5px;
+  font-size: 14px;
+  font-family: monospace;
+  overflow-x: auto;
+}
