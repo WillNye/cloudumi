@@ -13,8 +13,7 @@ const CheckAccountConnection = ({
 }) => {
   const getAccountDetails = useCallback(async () => {
     const getHubSpokeAccount = isHubAccount ? getHubAccounts : getSpokeAccounts;
-    const resJson = await getHubSpokeAccount();
-    const data = resJson.data;
+    const data = await getHubSpokeAccount();
     if (data && data.count) {
       if (isHubAccount) {
         setIsConnected(true);
@@ -26,7 +25,7 @@ const CheckAccountConnection = ({
         });
       }
     }
-  }, [isHubAccount, accountName]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isHubAccount, setIsConnected, accountName]);
 
   useEffect(() => {
     const interval = setInterval(async () => {

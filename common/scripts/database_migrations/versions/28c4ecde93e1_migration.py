@@ -22,6 +22,7 @@ def upgrade() -> None:
     op.execute(
         """CREATE TYPE "RequestStatusEnum" AS ENUM('Pending', 'Pending in Git', 'Applied', 'Applying', 'Approved', 'Approving', 'Rejected', 'Expired', 'Failed');"""
     )
+    op.execute("""COMMIT;""")
     op.execute("""UPDATE request SET status = 'Approved' WHERE status = 'Running';""")
     op.execute(
         """ALTER TABLE request ALTER COLUMN status TYPE "RequestStatusEnum" USING status::text::"RequestStatusEnum";"""
@@ -35,6 +36,7 @@ def downgrade() -> None:
     op.execute(
         """CREATE TYPE "RequestStatusEnum" AS ENUM('Pending', 'Pending in Git', 'Applied', 'Approved', 'Rejected', 'Expired', 'Running', 'Failed');"""
     )
+    op.execute("""COMMIT;""")
     op.execute(
         """ALTER TABLE request ALTER COLUMN status TYPE "RequestStatusEnum" USING status::text::"RequestStatusEnum";"""
     )

@@ -29,11 +29,13 @@ async def handle_aws_resource_template_ref_request(
 ) -> list[dict[str, str]]:
     if service == "managed_policy":
         mp_defs = await list_customer_managed_policy_definitions(
-            tenant, resource_id, provider_definition_ids
+            tenant,
+            resource_id=resource_id,
+            provider_definition_ids=provider_definition_ids,
         )
         results = [
             {
-                "option_text": mp_def.secondary_resource_id.split("::policy")[1],
+                "option_text": mp_def.secondary_resource_id.split(":policy")[1],
                 "option_value": str(mp_def.iambic_template_id),
             }
             for mp_def in mp_defs
