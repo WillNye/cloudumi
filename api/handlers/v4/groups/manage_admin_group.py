@@ -5,8 +5,6 @@ import tornado.gen
 import tornado.web
 from email_validator import validate_email
 
-# from common.config import config
-# from common.groups.models import Group
 from common.handlers.base import BaseAdminHandler
 from common.lib.asyncio import aio_wrapper
 from common.lib.dictutils import get_in, set_in
@@ -14,29 +12,12 @@ from common.lib.dynamo import RestrictedDynamoHandler
 from common.lib.yaml import yaml
 from common.models import Status2, WebResponse
 
-# from common.tenants.models import Tenant
-
 
 class ManageGroupAdminHandler(BaseAdminHandler):
-    async def get(self):
-        ddb = RestrictedDynamoHandler()
-        dynamic_config = await aio_wrapper(
-            ddb.get_static_config_for_tenant_sync,
-            self.ctx.tenant,
-            return_format="dict",
-            filter_secrets=True,
-        )
-
-        return self.write(
-            WebResponse(
-                status=Status2.success,
-                status_code=200,
-                data=get_in(dynamic_config, "groups.can_admin"),
-                reason=None,
-            ).dict(exclude_unset=True, exclude_none=True)
-        )
+    """Handler for /api/v4/group_admin/?"""
 
     async def validate_groups(self):
+        """Validate and return groups"""
         data = tornado.escape.json_decode(self.request.body)
         groups: list[str] = data.get("groups")
 
@@ -56,7 +37,27 @@ class ManageGroupAdminHandler(BaseAdminHandler):
 
         return groups
 
+    async def get(self):
+        """Retrieve groups that can admin current tenant"""
+        ddb = RestrictedDynamoHandler()
+        dynamic_config = await aio_wrapper(
+            ddb.get_static_config_for_tenant_sync,
+            self.ctx.tenant,
+            return_format="dict",
+            filter_secrets=True,
+        )
+
+        return self.write(
+            WebResponse(
+                status=Status2.success,
+                status_code=200,
+                data=get_in(dynamic_config, "groups.can_admin"),
+                reason=None,
+            ).dict(exclude_unset=True, exclude_none=True)
+        )
+
     async def put(self):
+        """Add groups that can admin current tenant"""
         groups = await self.validate_groups()
 
         ddb = RestrictedDynamoHandler()
@@ -86,6 +87,7 @@ class ManageGroupAdminHandler(BaseAdminHandler):
         )
 
     async def delete(self):
+        """Remove groups that can admin current tenant"""
         groups = await self.validate_groups()
 
         ddb = RestrictedDynamoHandler()
