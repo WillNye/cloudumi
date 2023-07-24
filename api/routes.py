@@ -20,7 +20,9 @@ from api.handlers.v3.slack.install import (
 from api.handlers.v3.typeahead import UserAndGroupTypeAheadHandler
 from api.handlers.v4.auth_settings.auth_settings import AuthSettingsReader
 from api.handlers.v4.aws.roles import RolesHandlerV4
-from api.handlers.v4.groups.manage_admin_group import ManageGroupAdminHandler
+from api.handlers.v4.groups.manage_admin_group import (  # GroupsCanAdminConfigurationCrudHandler,
+    ManageGroupAdminHandler,
+)
 from api.handlers.v4.groups.manage_group_memberships import (
     ManageGroupMembershipsHandler,
 )
@@ -542,7 +544,8 @@ def make_app(jwt_validator=None):
         (r"/api/v4/self-service/typeahead/noq/users/?", NoqUserTypeAheadHandler),
         (r"/api/v4/self-service/typeahead/noq/groups/?", NoqGroupTypeAheadHandler),
         (r"/api/v4/groups/?", ManageGroupsHandler),
-        (r"/api/v4/group_admin/?", ManageGroupAdminHandler),
+        (r"/api/v4/groups_can_admin/?", ManageGroupAdminHandler),
+        # (r"/api/v4/groups_can_admin/?", GroupsCanAdminConfigurationCrudHandler),
         (r"/api/v4/list_groups/?", ManageListGroupsHandler),
         (r"/api/v4/group_memberships/?", ManageGroupMembershipsHandler),
         (r"/api/v4/users/?", ManageUsersHandler),

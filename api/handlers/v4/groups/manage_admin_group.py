@@ -5,10 +5,12 @@ import tornado.gen
 import tornado.web
 from email_validator import validate_email
 
+from api.handlers.model_handlers import ConfigurationCrudHandler
 from common.handlers.base import BaseAdminHandler
 from common.lib.asyncio import aio_wrapper
 from common.lib.dictutils import get_in, set_in
 from common.lib.dynamo import RestrictedDynamoHandler
+from common.lib.pydantic import BaseModel
 from common.lib.yaml import yaml
 from common.models import Status2, WebResponse
 
@@ -115,3 +117,12 @@ class ManageGroupAdminHandler(BaseAdminHandler):
                 status=Status2.success, status_code=201, reason=None, data={}
             ).dict(exclude_unset=True, exclude_none=True)
         )
+
+
+class GroupsCanAdminRequest(BaseModel):
+    can_admin: list[str]
+
+
+class GroupsCanAdminConfigurationCrudHandler(ConfigurationCrudHandler):
+    _model_class = GroupsCanAdminRequest
+    _config_key = "groups"
