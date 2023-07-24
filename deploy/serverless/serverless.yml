@@ -1,0 +1,130 @@
+# Test ExceptionReporting with this kind of curl:
+# curl -X POST -H "Content-Type: application/json" -d '{"error_message":"An error has occurred in the application","timestamp":"2023-07-22T15:30:45Z"}' https://anqrotdahf.execute-api.us-west-2.amazonaws.com/report_exception
+# cd deploy/serverless/serverless.yml
+# noq file -p arn:aws:iam::940552945933:role/production_administrator arn:aws:iam::940552945933:role/production_administrator -f
+# export AWS_PROFILE=arn:aws:iam::940552945933:role/production_administrator
+# export AWS_REGION=us-east-1  # A default region defined in ~/.aws/config causes serverless to be unable to find a stack that was successfully created
+# export AWS_DEFAULT_REGION=us-east-1
+# serverless deploy --stage dev
+# For prod deploy:
+# serverless deploy --stage prod
+
+service: ExceptionReporting
+frameworkVersion: "3"
+useDotenv: true
+provider:
+  name: aws
+  runtime: python3.10
+  stage: ${opt:stage, 'dev'}
+  region: us-east-1
+
+functions:
+  EmailDigest:
+    handler: send_digest.handler.lambda_handler
+    events:
+      - schedule: rate(1 hour)
+    environment:
+      BUCKET_NAME:
+        Ref: ExceptionReportingBucket
+      QUEUE_URL:
+        Ref: ExceptionReportingBucketQueue
+      EMAIL: "iambic-errors@noq.dev"
+      SENDGRID_SECRET:
+        Ref: SendGridApiSecret
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - "sqs:ReceiveMessage"
+          - "sqs:DeleteMessage"
+          - "sqs:GetQueueAttributes"
+        Resource:
+          - Fn::GetAtt:
+              - ExceptionReportingBucketQueue
+              - Arn
+      - Effect: "Allow"
+        Action:
+          - "secretsmanager:GetSecretValue"
+        Resource:
+          - Ref: SendGridApiSecret
+  ExceptionReporting:
+    handler: copy_to_s3.handler.lambda_handler
+    iamRoleStatementsName: ${self:provider.stage}-ExceptionReportingRole
+    logRetentionInDays: 365
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - "s3:PutObject"
+        Resource:
+          - Fn::Join:
+              [
+                "",
+                [
+                  "arn:aws:s3:::",
+                  {
+                    "Fn::Sub": "${self:provider.stage}-iambic-exception-reporting-bucket-${AWS::AccountId}-${AWS::Region}",
+                  },
+                  "/*",
+                ],
+              ]
+      - Effect: "Allow"
+        Action:
+          - "sqs:SendMessage"
+        Resource:
+          - Fn::GetAtt:
+              - ExceptionReportingBucketQueue
+              - Arn
+    environment: # Environment variables for this specific function
+      BUCKET_NAME:
+        Ref: ExceptionReportingBucket
+      QUEUE_URL:
+        Ref: ExceptionReportingBucketQueue
+    events:
+      - http:
+          path: /report_exception
+          method: post
+          # cors: true
+          throttling:
+            maxRequestsPerSecond: 10
+            maxConcurrentRequests: 10
+package:
+  patterns:
+    - "**/*.py"
+
+plugins:
+  - serverless-python-requirements
+  - serverless-api-gateway-throttling
+  - serverless-iam-roles-per-function
+  - serverless-domain-manager
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+  apiGatewayThrottling:
+    maxRequestsPerSecond: 10
+    maxConcurrentRequests: 10
+  customDomain:
+    domainName: error-reporting-${self:provider.stage}.iambic.org
+    certificateName: "*.iambic.org"
+    basePath: ""
+    stage: ${self:provider.stage}
+    createRoute53Record: true
+
+resources: # AWS CloudFormation resources
+  Resources:
+    ExceptionReportingBucket: # The logical ID of the S3 bucket
+      Type: "AWS::S3::Bucket"
+      Properties:
+        BucketName:
+          Fn::Sub: "${self:provider.stage}-iambic-exception-reporting-bucket-${AWS::AccountId}-${AWS::Region}"
+    ExceptionReportingBucketQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName:
+          Fn::Sub: "${self:provider.stage}-iambic-exception-reporting-queue-${AWS::AccountId}-${AWS::Region}"
+    SendGridApiSecret:
+      Type: "AWS::SecretsManager::Secret"
+      Properties:
+        Name: "${self:provider.stage}-SendGridSecret"
+        Description: "SendGrid information for error reporting service"
+        SecretString:
+          Fn::Sub: '{"fromEmail": "${env:SENDGRID_FROM_EMAIL}", "username": "${env:SENDGRID_USERNAME}", "password": "${env:SENDGRID_PASSWORD}"}'

@@ -391,3 +391,24 @@ ifndef PACKAGE_NAME
 	$(error PACKAGE_NAME is undefined)
 endif
 	pip-compile --allow-unsafe --resolver=backtracking --strip-extras --upgrade-package $(PACKAGE_NAME) --output-file requirements.lock $(shell find . -type f \( -name "requirements.in" -o -name "requirements-test.in" \) | tr '\n' ' ')
+
+.PHONY: serverless-deploy-dev
+serverless-deploy-dev:
+	@cd deploy/serverless && \
+	noq file -p arn:aws:iam::940552945933:role/production_administrator arn:aws:iam::940552945933:role/production_administrator -f && \
+	export AWS_PROFILE=arn:aws:iam::940552945933:role/production_administrator && \
+	sls create_domain --stage dev && \
+	serverless deploy --stage dev
+	@echo "To test the dev environment, run the following command:"
+	@echo "curl -X POST -H \"Content-Type: application/json\" -d '{\"error_message\":\"An error has occurred in the application\",\"timestamp\":\"2023-07-22T15:30:45Z\"}' https://error-reporting-dev.iambic.org/report_exception"
+
+
+.PHONY: serverless-deploy-prod
+serverless-deploy-prod:
+	@cd deploy/serverless && \
+	noq file -p arn:aws:iam::940552945933:role/production_administrator arn:aws:iam::940552945933:role/production_administrator -f && \
+	export AWS_PROFILE=arn:aws:iam::940552945933:role/production_administrator && \
+	sls create_domain --stage prod && \
+	serverless deploy --stage prod
+	@echo "To test the prod environment, run the following command:"
+	@echo "curl -X POST -H \"Content-Type: application/json\" -d '{\"error_message\":\"An error has occurred in the application\",\"timestamp\":\"2023-07-22T15:30:45Z\"}' https://error-reporting-prod.iambic.org/report_exception"
