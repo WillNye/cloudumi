@@ -231,7 +231,7 @@ const EditAdminGroupsModal: FC<{
         showDialog={showDialog}
         setShowDialog={setShowDialog}
         disablePadding
-        header="Edit User Details"
+        header="Edit Admin Groups"
         size="medium"
       >
         <div className={styles.content}>
