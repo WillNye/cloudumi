@@ -122,7 +122,7 @@ class ManageGroupsHandler(BaseAdminHandler):
         group_id = data.get("id")
         group_name = data.get("name")
         group_description = data.get("description")
-        group_email = data.get("email")
+        group_email = data.get("name")
 
         db_group = await Group.get_by_id(self.ctx.db_tenant, group_id)
 
