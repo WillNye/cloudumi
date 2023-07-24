@@ -268,7 +268,7 @@ const EditAdminGroupsModal: FC<{
               </>
             }
             <div className={styles.groups}>
-              <h5>User Groups</h5>
+              <h5>Admin Groups</h5>
               <Divider />
               {adminGroups.length ? (
                 <div>
