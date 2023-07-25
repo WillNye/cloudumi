@@ -5,7 +5,7 @@ import tornado.gen
 import tornado.web
 from email_validator import validate_email
 
-from api.handlers.model_handlers import ConfigurationCrudHandler
+from api.handlers.model_handlers import MultiItemsDDBConfigurationCrudHandler
 from common.handlers.base import BaseAdminHandler
 from common.lib.asyncio import aio_wrapper
 from common.lib.dictutils import get_in, set_in
@@ -122,9 +122,31 @@ class ManageGroupAdminHandler(BaseAdminHandler):
 
 
 class GroupsCanAdminRequest(BaseModel):
-    can_admin: list[str]
+    groups: list[str]
 
 
-class GroupsCanAdminConfigurationCrudHandler(ConfigurationCrudHandler):
+class GroupsCanAdminConfigurationCrudHandler(MultiItemsDDBConfigurationCrudHandler):
     _model_class = GroupsCanAdminRequest
-    _config_key = "groups"
+    _config_key = "groups.can_admin"
+    _request_list_key = "groups"
+
+    async def _validate_body(self, groups: list[str]):
+        if any([not validate_email(group) for group in groups]):
+            self.set_status(403)
+            self.write(
+                WebResponse(
+                    status=Status2.error,
+                    status_code=403,
+                    reason="Invalid email address",
+                    data={
+                        "message": f"{', '.join(compress(groups, [not validate_email(group) for group in groups]))}"
+                    },
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            raise tornado.web.Finish()
+
+    async def _validate_delete(self, **kwargs):
+        if len(kwargs["difference"]) < 1:
+            raise ValueError("You must at least have one admin group")
+
+        return True
