@@ -101,10 +101,12 @@ class ManageGroupAdminHandler(BaseAdminHandler):
         )
 
         current_groups: set[str] = set(list(get_in(dynamic_config, "groups.can_admin")))  # type: ignore
+        difference = list(current_groups.difference(groups))
 
-        set_in(
-            dynamic_config, "groups.can_admin", list(current_groups.difference(groups))
-        )
+        if len(difference) < 1:
+            raise ValueError("You must at least have one admin group")
+
+        set_in(dynamic_config, "groups.can_admin", difference)
 
         await ddb.update_static_config_for_tenant(
             yaml.dump(dynamic_config),
