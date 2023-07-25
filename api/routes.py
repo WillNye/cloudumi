@@ -20,6 +20,12 @@ from api.handlers.v3.slack.install import (
 from api.handlers.v3.typeahead import UserAndGroupTypeAheadHandler
 from api.handlers.v4.auth_settings.auth_settings import AuthSettingsReader
 from api.handlers.v4.aws.roles import RolesHandlerV4
+from api.handlers.v4.editor.request_types import (
+    ChangeTypeEditorHandler,
+    ChangeTypeFavoriteHandler,
+    ExpressAccessRequestEditorHandler,
+    ExpressAccessRequestFavoriteHandler,
+)
 from api.handlers.v4.groups.manage_group_memberships import (
     ManageGroupMembershipsHandler,
 )
@@ -45,6 +51,7 @@ from api.handlers.v4.scim.settings import ScimSettingsHandler
 from api.handlers.v4.scim.users import ScimV2UserHandler, ScimV2UsersHandler
 from api.handlers.v4.self_service.request_types import (
     SelfServiceChangeTypeHandler,
+    SelfServiceExpressAccessRequestHandler,
     SelfServiceRequestTypeHandler,
 )
 from api.handlers.v4.self_service.template_ref.aws import AWSResourceTemplateRefHandler
@@ -525,6 +532,35 @@ def make_app(jwt_validator=None):
         (
             rf"/api/v4/self-service/request-types/(?P<request_type_id>{UUID_REGEX})/change-types/(?P<change_type_id>{UUID_REGEX})",
             SelfServiceChangeTypeHandler,
+        ),
+        (
+            r"/api/v4/self-service/express-access-requests/?",
+            SelfServiceExpressAccessRequestHandler,
+        ),
+        (
+            rf"/api/v4/self-service/express-access-requests/(?P<express_access_request_id>{UUID_REGEX})/?",
+            SelfServiceExpressAccessRequestHandler,
+        ),
+        (
+            r"/api/v4/editor/express-access-requests/?",
+            ExpressAccessRequestEditorHandler,
+        ),
+        (
+            rf"/api/v4/editor/express-access-requests/(?P<express_access_request_id>{UUID_REGEX})/?",
+            ExpressAccessRequestEditorHandler,
+        ),
+        (
+            rf"/api/v4/editor/express-access-requests/(?P<express_access_request_id>{UUID_REGEX})/favorite/?",
+            ExpressAccessRequestFavoriteHandler,
+        ),
+        (r"/api/v4/editor/change-types/?", ChangeTypeEditorHandler),
+        (
+            rf"/api/v4/editor/change-types/(?P<change_type_id>{UUID_REGEX})/?",
+            ChangeTypeEditorHandler,
+        ),
+        (
+            rf"/api/v4/editor/change-types/(?P<change_type_id>{UUID_REGEX})/favorite/?",
+            ChangeTypeFavoriteHandler,
         ),
         (r"/api/v4/providers/?", IambicProviderHandler),
         (r"/api/v4/providers/definitions/?", IambicProviderDefinitionHandler),

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
     JSON,
@@ -131,6 +131,22 @@ user_favorited_express_access_request_association = Table(
     Index("ufeara_user_favorite_idx", "user_id", "express_access_request_id"),
 )
 
+iambic_template_provider_defs_express_access_request_association = Table(
+    "iambic_template_provider_defs_express_access_request_association",
+    Base.metadata,
+    Column(
+        "iambic_template_provider_definition_id",
+        UUID(as_uuid=True),
+        ForeignKey("iambic_template_provider_definition.id"),
+    ),
+    Column(
+        "express_access_request_id",
+        UUID(as_uuid=True),
+        ForeignKey("express_access_request.id"),
+        index=True,
+    ),
+)
+
 
 class TypeAheadFieldHelper(Base):
     __tablename__ = "typeahead_field_helper"
@@ -209,6 +225,9 @@ class ExpressAccessRequest(SoftDeleteMixin, Base):
         UUID(as_uuid=True), ForeignKey("change_type.id"), nullable=False
     )
     tenant_id = Column(Integer, ForeignKey("tenant.id"), nullable=False)
+    iambic_template_id = Column(
+        UUID(as_uuid=True), ForeignKey("iambic_template.id"), nullable=False
+    )
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
     field_values = Column(JSONB, nullable=False)
@@ -220,6 +239,14 @@ class ExpressAccessRequest(SoftDeleteMixin, Base):
         "User",
         secondary=user_favorited_express_access_request_association,
         back_populates="favorited_access_requests",
+    )
+    iambic_template = relationship(
+        "IambicTemplate", back_populates="express_access_requests"
+    )
+    iambic_template_provider_defs = relationship(
+        "IambicTemplateProviderDefinition",
+        secondary=iambic_template_provider_defs_express_access_request_association,
+        back_populates="associated_express_access_requests",
     )
 
     __table_args__ = (
@@ -233,8 +260,24 @@ class ExpressAccessRequest(SoftDeleteMixin, Base):
         ),
     )
 
+    def dict(self):
+        return {
+            "id": str(self.id),
+            "name": self.name,
+            "description": self.description,
+        }
+
+    def self_service_dict(self):
+        return {
+            "id": str(self.id),
+            "name": self.name,
+            "description": self.description,
+            "is_favorite": getattr(self, "is_favorite", False),
+            "is_suggested": getattr(self, "is_suggested", False),
+        }
+
     @classmethod
-    async def favorite(
+    async def update_favorite_status(
         cls, tenant_id: int, express_access_request_id: str, user: User
     ) -> "ExpressAccessRequest":
         async with ASYNC_PG_SESSION() as session:
@@ -251,31 +294,62 @@ class ExpressAccessRequest(SoftDeleteMixin, Base):
                 if not express_access_request:
                     return
 
-                express_access_request.favorited_by.append(user)
+                if user.id in [fav.id for fav in express_access_request.favorited_by]:
+                    express_access_request.favorited_by = [
+                        fav
+                        for fav in express_access_request.favorited_by
+                        if fav.id != user.id
+                    ]
+                else:
+                    express_access_request.favorited_by.append(user)
                 session.add(express_access_request)
                 await session.commit()
 
         return express_access_request
 
     @classmethod
-    async def unfavorite(
-        cls, tenant_id: int, express_access_request_id: str, user: User
-    ) -> "ExpressAccessRequest":
+    async def create(
+        cls,
+        tenant_id: int,
+        user: User,
+        name: str,
+        description: str,
+        change_type_id: str,
+        iambic_template_id: str,
+        suggest_to_all: bool,
+        provider_definition_ids: Optional[list[str]] = None,
+        field_values: Optional[dict] = None,
+    ):
+        from common.iambic.templates.models import IambicTemplateProviderDefinition
+
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
-                stmt = (
-                    select(cls)
-                    .filter(
-                        cls.id == express_access_request_id, cls.tenant_id == tenant_id
-                    )
-                    .options(selectinload(cls.favorited_by))
+                express_access_request = cls(
+                    name=name,
+                    description=description,
+                    change_type_id=change_type_id,
+                    tenant_id=tenant_id,
+                    field_values=field_values or {},
+                    iambic_template_id=iambic_template_id,
+                    suggest_to_all=suggest_to_all,
+                    created_by=user.username,
                 )
-                items = await session.execute(stmt)
-                express_access_request = items.scalars().unique().one_or_none()
-                if not express_access_request:
-                    return
+                if provider_definition_ids:
+                    stmt = select(IambicTemplateProviderDefinition).filter(
+                        IambicTemplateProviderDefinition.tenant_id == tenant_id,
+                        IambicTemplateProviderDefinition.iambic_template_id
+                        == iambic_template_id,
+                        IambicTemplateProviderDefinition.id.in_(
+                            provider_definition_ids
+                        ),
+                    )
+                    items = await session.execute(stmt)
+                    template_provider_definitions = items.scalars().unique().all()
+                    for template_pd in template_provider_definitions:
+                        express_access_request.iambic_template_provider_defs.append(
+                            template_pd
+                        )
 
-                express_access_request.favorited_by.remove(user)
                 session.add(express_access_request)
                 await session.commit()
 
@@ -350,16 +424,28 @@ class ChangeType(SoftDeleteMixin, Base):
         Index("ct_request_type_idx", "tenant_id", "request_type_id"),
     )
 
+    def dict(self):
+        return {
+            "id": str(self.id),
+            "name": self.name,
+            "description": self.description,
+            "request_type_id": str(self.request_type_id),
+            "provider_definition_field": self.provider_definition_field,
+        }
+
     def self_service_dict(self):
         response = {
             "id": str(self.id),
             "name": self.name,
             "description": self.description,
             "request_type_id": str(self.request_type_id),
-            "is_favorite": getattr(self, "is_favorite", False),
-            "is_suggested": getattr(self, "is_suggested", False),
             "provider_definition_field": self.provider_definition_field,
+            "template_types": self.template_types,
         }
+        for conditional_field in {"is_favorite", "is_suggested"}:
+            if hasattr(self, conditional_field):
+                response[conditional_field] = getattr(self, conditional_field)
+
         return response
 
     async def reinitialize(self):
@@ -374,7 +460,7 @@ class ChangeType(SoftDeleteMixin, Base):
         await self.write()
 
     @classmethod
-    async def favorite(
+    async def update_favorite_status(
         cls, tenant_id: int, change_type_id: str, user: User
     ) -> "ChangeType":
         async with ASYNC_PG_SESSION() as session:
@@ -389,29 +475,12 @@ class ChangeType(SoftDeleteMixin, Base):
                 if not change_type:
                     return
 
-                change_type.favorited_by.append(user)
-                session.add(change_type)
-                await session.commit()
-
-        return change_type
-
-    @classmethod
-    async def unfavorite(
-        cls, tenant_id: int, change_type_id: str, user: User
-    ) -> "ChangeType":
-        async with ASYNC_PG_SESSION() as session:
-            async with session.begin():
-                stmt = (
-                    select(cls)
-                    .filter(cls.id == change_type_id, cls.tenant_id == tenant_id)
-                    .options(selectinload(cls.favorited_by))
-                )
-                items = await session.execute(stmt)
-                change_type = items.scalars().unique().one_or_none()
-                if not change_type:
-                    return
-
-                change_type.favorited_by.remove(user)
+                if user.id in [fav.id for fav in change_type.favorited_by]:
+                    change_type.favorited_by = [
+                        fav for fav in change_type.favorited_by if fav.id != user.id
+                    ]
+                else:
+                    change_type.favorited_by.append(user)
                 session.add(change_type)
                 await session.commit()
 

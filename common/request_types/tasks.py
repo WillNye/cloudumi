@@ -111,7 +111,13 @@ async def upsert_tenant_request_types(tenant_name: str):
         new_request_types = []
         for request_type in default_request_types:
             request_type.tenant_id = tenant.id
-
+            for change_type in request_type.change_types:
+                change_type.template_types = [
+                    tt
+                    for tt in change_type.template_types
+                    if tt in tenant_template_types
+                ]
+            new_request_types.append(request_type)
         await bulk_add(new_request_types)
         return
 
@@ -281,7 +287,6 @@ async def upsert_tenant_request_types(tenant_name: str):
                     for tt in change_type.template_types
                     if tt in tenant_template_types
                 ]
-
             new_request_types.append(default_request_type)
 
     if new_request_types:

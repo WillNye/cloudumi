@@ -206,3 +206,12 @@ class TenantProviderDefinition(Base):
                 definition.setdefault(field_name, default_val)
 
         return provider_config.__fields__[field_attr].type_(**definition)
+
+    def self_service_dict(self):
+        return {
+            "id": str(self.id),
+            "name": self.name,
+            "provider": self.provider,
+            "sub_type": self.sub_type,
+            "definition": self.definition,
+        }

@@ -2,17 +2,20 @@ from operator import or_
 from typing import Optional
 
 from sqlalchemy import and_, cast, func, select
-from sqlalchemy.orm import contains_eager, joinedload
+from sqlalchemy.orm import contains_eager, joinedload, selectinload
 
 from common.config.globals import ASYNC_PG_SESSION
 from common.iambic.config.models import TrustedProvider
+from common.iambic.templates.models import IambicTemplateProviderDefinition
 from common.request_types.models import (
     ChangeField,
     ChangeType,
     ChangeTypeTemplate,
+    ExpressAccessRequest,
     RequestType,
     TypeAheadFieldHelper,
     user_favorited_change_type_association,
+    user_favorited_express_access_request_association,
 )
 
 
@@ -196,6 +199,86 @@ async def self_service_list_tenant_change_types(
         return change_types
 
 
+async def self_service_list_tenant_express_access_requests(
+    tenant_id: int,
+    user_id: str,
+    provider: str = None,
+    only_boosted: bool = False,
+) -> list[ExpressAccessRequest]:
+    async with ASYNC_PG_SESSION() as session:
+        stmt = (
+            select(ExpressAccessRequest)
+            .filter(
+                ExpressAccessRequest.tenant_id == tenant_id,
+                ExpressAccessRequest.deleted == False,
+            )
+            .outerjoin(
+                user_favorited_express_access_request_association,
+                and_(
+                    user_favorited_express_access_request_association.c.express_access_request_id
+                    == ExpressAccessRequest.id,
+                    user_favorited_express_access_request_association.c.user_id
+                    == user_id,
+                ),
+            )
+            .add_columns(
+                func.count(
+                    user_favorited_express_access_request_association.c.express_access_request_id
+                ).label("is_favorite")
+            )
+            .group_by(
+                ExpressAccessRequest,
+                user_favorited_express_access_request_association.c.express_access_request_id,
+            )
+        )
+
+        if provider:
+            stmt = (
+                stmt
+                .join(
+                    ChangeType,
+                    ChangeType.id == ExpressAccessRequest.change_type_id
+                )
+                .join(
+                    RequestType,
+                    RequestType.id == ChangeType.request_type_id
+                )
+                .filter(
+                    RequestType.provider == provider
+                )
+            )
+
+        if only_boosted:
+            stmt = stmt.having(
+                or_(
+                    func.count(
+                        user_favorited_express_access_request_association.c.express_access_request_id
+                    )
+                    > 0,
+                    ExpressAccessRequest.suggest_to_all == True,
+                )
+            )
+
+        stmt = stmt.order_by(
+            func.count(
+                user_favorited_express_access_request_association.c.express_access_request_id
+            ).desc(),
+            ExpressAccessRequest.suggest_to_all.desc(),
+            ExpressAccessRequest.name,
+        )
+        values = await session.execute(stmt)
+        express_access_requests = []
+        for val in values:
+            express_access_request = val[0]
+            # This is a way to future-proof the inclusion of suggestion rules
+            # e.g. suggest this change type if the user is in a certain group
+            express_access_request.is_suggested = express_access_request.suggest_to_all
+            express_access_request.is_favorite = bool(val[1])
+            express_access_requests.append(express_access_request)
+
+        return express_access_requests
+
+
 async def get_tenant_change_type(tenant_id: int, change_type_id: str) -> ChangeType:
     async with ASYNC_PG_SESSION() as session:
         stmt = select(ChangeType).filter(
@@ -222,3 +305,82 @@ async def get_tenant_change_type(tenant_id: int, change_type_id: str) -> ChangeT
         )
 
         return items.scalars().unique().one_or_none()
+
+
+async def self_service_get_tenant_express_access_request(
+    tenant_id: int, user_id: str, express_access_request_id: str
+) -> ExpressAccessRequest:
+    async with ASYNC_PG_SESSION() as session:
+        stmt = (
+            select(ExpressAccessRequest)
+            .filter(
+                ExpressAccessRequest.id == express_access_request_id,
+                ExpressAccessRequest.tenant_id == tenant_id,
+                ExpressAccessRequest.deleted == False,
+            )
+            .join(
+                ChangeType,
+                and_(
+                    ExpressAccessRequest.change_type_id == ChangeType.id,
+                    ChangeType.tenant_id == tenant_id,
+                ),
+            )
+            .options(
+                selectinload(
+                    ExpressAccessRequest.iambic_template_provider_defs
+                ).options(
+                    joinedload(
+                        IambicTemplateProviderDefinition.tenant_provider_definition
+                    )
+                ),
+                contains_eager(ExpressAccessRequest.change_type).options(
+                    joinedload(ChangeType.favorited_by),
+                    joinedload(ChangeType.change_fields).joinedload(
+                        ChangeField.typeahead
+                    ),
+                    joinedload(ChangeType.change_template),
+                ),
+            )
+        )
+        values = await session.execute(stmt)
+        express_access_request = values.scalars().unique().one_or_none()
+        if express_access_request:
+            # This is a way to future-proof the inclusion of suggestion rules
+            # e.g. suggest this change type if the user is in a certain group
+            express_access_request.change_type.is_suggested = (
+                express_access_request.suggest_to_all
+            )
+            express_access_request.change_type.is_favorite = bool(
+                [
+                    fav
+                    for fav in express_access_request.change_type.favorited_by
+                    if fav.user_id == user_id
+                ]
+            )
+
+        return express_access_request
+
+
+async def get_tenant_express_access_request(
+    tenant_id: int, express_access_request_id: str
+) -> ExpressAccessRequest:
+    async with ASYNC_PG_SESSION() as session:
+        stmt = (
+            select(ExpressAccessRequest)
+            .filter(
+                ExpressAccessRequest.id == express_access_request_id,
+                ExpressAccessRequest.tenant_id == tenant_id,
+                ExpressAccessRequest.deleted == False,
+            )
+            .options(
+                selectinload(
+                    ExpressAccessRequest.iambic_template_provider_defs
+                ).options(
+                    joinedload(
+                        IambicTemplateProviderDefinition.tenant_provider_definition
+                    )
+                ),
+            )
+        )
+        values = await session.execute(stmt)
+        return values.scalars().unique().one_or_none()

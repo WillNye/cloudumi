@@ -3560,6 +3560,61 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SelfServiceRequestChangeType"
+    CreateOrPutExpressAccessRequestData:
+      type: object
+      required:
+        - name
+        - description
+        - change_type_id
+        - iambic_template_id
+        - suggest_to_all
+      properties:
+        name:
+          type: string
+          description: The name of the express access request.
+        description:
+          type: string
+          description: A brief description of what the express access request does or who it is for.
+        change_type_id:
+          type: string
+          description: The id of the change type this express access request applies to.
+        iambic_template_id:
+          type: string
+          description: The id of the iambic template this express access request applies to.
+        suggest_to_all:
+          type: boolean
+          description: If all users should see this express access request as "Suggested"
+        field_values:
+          type: object
+          description: A dictionary used to set the values of the change type. The key is the field_key and the value is the field value. Note - field values do not need to be set.
+        provider_definition_ids:
+          type: array
+          items:
+            type: str
+    PatchExpressAccessRequestData:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the express access request.
+        description:
+          type: string
+          description: A brief description of what the express access request does or who it is for.
+        suggest_to_all:
+          type: boolean
+          description: If all users should see this express access request as "Suggested"
+    PatchChangeTypeData:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the express access request.
+        description:
+          type: string
+          description: A brief description of what the express access request does or who it is for.
+        suggest_to_all:
+          type: boolean
+          description: If all users should see this express access request as "Suggested"
     SelfServiceValidateRequestData:
       type: object
       required:

@@ -8,6 +8,7 @@ from common.iambic.config.models import TrustedProvider
 from common.pg_core.models import Base
 from common.request_types.models import (
     change_type_iambic_template_provider_definition_association,
+    iambic_template_provider_defs_express_access_request_association,
 )
 from common.tenants.models import Tenant  # noqa: F401
 
@@ -33,6 +34,12 @@ class IambicTemplate(Base):
     )
     provider_definition_refs = relationship(
         "IambicTemplateProviderDefinition",
+        back_populates="iambic_template",
+        cascade="all, delete-orphan",
+        uselist=True,
+    )
+    express_access_requests = relationship(
+        "ExpressAccessRequest",
         back_populates="iambic_template",
         cascade="all, delete-orphan",
         uselist=True,
@@ -128,6 +135,11 @@ class IambicTemplateProviderDefinition(Base):
         secondary=change_type_iambic_template_provider_definition_association,
         back_populates="included_iambic_template_provider_definition",
         uselist=True,
+    )
+    associated_express_access_requests = relationship(
+        "ExpressAccessRequest",
+        secondary=iambic_template_provider_defs_express_access_request_association,
+        back_populates="iambic_template_provider_defs",
     )
 
     __table_args__ = (
