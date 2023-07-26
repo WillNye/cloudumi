@@ -20,7 +20,7 @@ from api.handlers.v3.slack.install import (
 from api.handlers.v3.typeahead import UserAndGroupTypeAheadHandler
 from api.handlers.v4.auth_settings.auth_settings import AuthSettingsReader
 from api.handlers.v4.aws.roles import RolesHandlerV4
-from api.handlers.v4.groups.manage_admin_group import (  # GroupsCanAdminConfigurationCrudHandler,
+from api.handlers.v4.groups.manage_admin_group import (
     GroupsCanAdminConfigurationCrudHandler,
 )
 from api.handlers.v4.groups.manage_group_memberships import (

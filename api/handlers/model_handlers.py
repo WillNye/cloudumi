@@ -1,5 +1,7 @@
+import asyncio
 import uuid
 from functools import wraps
+from typing import Coroutine
 
 import sentry_sdk
 import tornado.escape
@@ -499,7 +501,6 @@ class BaseConfigurationCrudHandler(BaseHandler):
     _model_class = None
     _config_key: str
     _triggers = list()
-    check_tenant_admin = True
 
     def _validate_vars(self):
         pass
@@ -556,19 +557,22 @@ class BaseConfigurationCrudHandler(BaseHandler):
         return log_data
 
     async def _apply_triggers(self):
-        """Apply all triggers for this handler. TODO: Should be run in parallel using asyncio."""
-        for trigger in self._triggers:
-            log.info(f"Applying trigger {trigger.name}")
-            await trigger.apply_async((self.ctx.__dict__,))
+        """Apply all triggers for this handler."""
+        tasks: list[Coroutine] = [
+            trigger.apply_async((self.ctx.__dict__,)) for trigger in self._triggers
+        ]
+        await asyncio.gather(*tasks, return_exceptions=True)
 
     async def is_not_admin(self, log_data):
         """Checks if the current user is not a tenant admin."""
-        if self.check_tenant_admin and not is_tenant_admin(
+        if not is_tenant_admin(
             self.user,
             self.groups,
             self.ctx.tenant,
         ):
-            generic_error_message = f"Cannot call GET on {type(self).__name__}"
+            generic_error_message = (
+                f"Cannot call {self.request.method} on {type(self).__name__}"
+            )
             errors = ["User is not authorized to access this endpoint."]
             await handle_generic_error_response(
                 self, generic_error_message, errors, 403, "unauthorized", log_data
