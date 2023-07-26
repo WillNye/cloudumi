@@ -13,28 +13,37 @@ const SelectIdentity = () => {
     defaultValue: '',
     defaultValues: []
   });
-  const [typeaheadEndpoint, setTypeaheadEndpoint] = useState('');
   const { selfServiceRequest } = useContext(SelfServiceContext).store;
   const {
     actions: { setSelectedIdentity, setSelectedIdentityType }
   } = useContext(SelfServiceContext);
+
+  const [typeaheadEndpoint, setTypeaheadEndpoint] = useState(
+    selfServiceRequest?.identityType
+      ? `/api/v4/templates?template_type=${selfServiceRequest?.identityType}`
+      : ''
+  );
 
   const { data: identityTypes, isLoading } = useQuery({
     queryFn: getRequestTemplateTypes,
     queryKey: ['getRequestTemplateTypes', selfServiceRequest.provider]
   });
 
-  const handleIdentityTypeSelect = useCallback(identityType => {
-    setSelectedIdentityType(identityType);
-    setSelectedIdentity(null);
-    setTypeaheadEndpoint(`/api/v4/templates?template_type=${identityType}`);
-    setTypeaheadDefaults({ defaultValue: '', defaultValues: [] });
-  }, []);
+  const handleIdentityTypeSelect = useCallback(
+    identityType => {
+      setSelectedIdentityType(identityType);
+      setSelectedIdentity(null);
+      setTypeaheadEndpoint(`/api/v4/templates?template_type=${identityType}`);
+      setTypeaheadDefaults({ defaultValue: '', defaultValues: [] });
+    },
+    [setSelectedIdentity, setSelectedIdentityType]
+  );
 
   const handleTypeaheadSelect = identity => {
     setSelectedIdentity(identity);
   };
 
+  console.log(selfServiceRequest);
   return (
     <Segment isLoading={isLoading}>
       <div className={styles.container}>
