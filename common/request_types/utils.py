@@ -234,18 +234,11 @@ async def self_service_list_tenant_express_access_requests(
 
         if provider:
             stmt = (
-                stmt
-                .join(
-                    ChangeType,
-                    ChangeType.id == ExpressAccessRequest.change_type_id
+                stmt.join(
+                    ChangeType, ChangeType.id == ExpressAccessRequest.change_type_id
                 )
-                .join(
-                    RequestType,
-                    RequestType.id == ChangeType.request_type_id
-                )
-                .filter(
-                    RequestType.provider == provider
-                )
+                .join(RequestType, RequestType.id == ChangeType.request_type_id)
+                .filter(RequestType.provider == provider)
             )
 
         if only_boosted:
