@@ -291,10 +291,17 @@ class IambicRepo:
                 await self._storage_handler.write_file(file_path, "w", file_body)
 
         if reset_branch:
+            # changed_files_raw = await run_command(
+            #     "git",
+            #     "diff",
+            #     "--name-only",
+            #     self.default_branch_name,
+            #     cwd=self.request_file_path,
+            # )
             changed_files_raw = await run_command(
                 "git",
-                "diff",
-                "--name-only",
+                "status",
+                "-s",
                 self.default_branch_name,
                 cwd=self.request_file_path,
             )
@@ -415,7 +422,7 @@ class IambicRepo:
             else self.default_branch_name
         )
         remote = self.repo.remote(name=self.remote_name)
-        await aio_wrapper(remote.pull, refspec=f":{branch_name}")
+        await aio_wrapper(remote.pull, refspec=f"{branch_name}")
 
     async def get_main_sha(self, exclude_shas: list[str], until: datetime = None):
         until = until or datetime.utcnow()
