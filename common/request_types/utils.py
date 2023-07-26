@@ -139,7 +139,7 @@ async def self_service_list_tenant_change_types(
     user_id: str,
     request_type_id: str,
     template_type: str = None,
-    only_boosted: bool = False,
+    boosted_only: bool = False,
 ) -> list[ChangeType]:
     optional_filters = (
         [ChangeType.template_types.any(template_type)] if template_type else []
@@ -172,7 +172,7 @@ async def self_service_list_tenant_change_types(
             )
         )
 
-        if only_boosted:
+        if boosted_only:
             stmt = stmt.having(
                 or_(
                     func.count(user_favorited_change_type_association.c.change_type_id)
@@ -203,7 +203,7 @@ async def self_service_list_tenant_express_access_requests(
     tenant_id: int,
     user_id: str,
     provider: str = None,
-    only_boosted: bool = False,
+    boosted_only: bool = False,
 ) -> list[ExpressAccessRequest]:
     async with ASYNC_PG_SESSION() as session:
         stmt = (
@@ -241,7 +241,7 @@ async def self_service_list_tenant_express_access_requests(
                 .filter(RequestType.provider == provider)
             )
 
-        if only_boosted:
+        if boosted_only:
             stmt = stmt.having(
                 or_(
                     func.count(

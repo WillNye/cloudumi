@@ -46,15 +46,24 @@ from common.request_types.utils import (
     list_tenant_request_types,
 )
 from qa import TENANT_SUMMARY
-from qa.request_types import api_list_change_types
+from qa.request_types import api_self_service_change_types_list
 from qa.utils import generic_api_create_or_update_request, generic_api_get_request
 
 
-async def get_change_type_by_name(name: str) -> ChangeType:
+async def get_change_type_by_name(
+    name: str,
+    related_template: Optional[str] = None,
+) -> ChangeType:
     change_types = await list_tenant_change_types(
         TENANT_SUMMARY.tenant.id, summary_only=False
     )
-    return [ct for ct in change_types if ct.name == name][0]
+    if related_template:
+        return next(
+            ct
+            for ct in change_types
+            if ct.name == name and related_template in ct.template_types
+        )
+    return next(ct for ct in change_types if ct.name == name)
 
 
 async def get_template_and_provider_definition_by_template_type(
@@ -116,13 +125,7 @@ async def get_s3_permission_template_for_role_request_data() -> SelfServiceReque
     ) = await get_template_and_provider_definition_by_template_type(
         tenant, AWS_IAM_ROLE_TEMPLATE_TYPE
     )
-    request_types = await list_tenant_request_types(
-        tenant.id, "aws", summary_only=False
-    )
-    request_type = [
-        r for r in request_types if r.name == "Add permissions to identity"
-    ][0]
-    change_type = [ct for ct in request_type.change_types if ct.name == "S3"][0]
+    change_type = await get_change_type_by_name("S3", AWS_IAM_ROLE_TEMPLATE_TYPE)
     self_service_request = SelfServiceRequestData(
         id=uuid.uuid4(),
         iambic_template_id=str(template.id),
@@ -182,13 +185,7 @@ async def generate_s3_permission_template_for_managed_policy():
     ) = await get_template_and_provider_definition_by_template_type(
         tenant, AWS_MANAGED_POLICY_TEMPLATE_TYPE
     )
-    request_types = await list_tenant_request_types(
-        tenant.id, "aws", summary_only=False
-    )
-    request_type = [
-        r for r in request_types if r.name == "Add permissions to managed policy"
-    ][0]
-    change_type = [ct for ct in request_type.change_types if ct.name == "S3"][0]
+    change_type = await get_change_type_by_name("S3", AWS_MANAGED_POLICY_TEMPLATE_TYPE)
     self_service_request = SelfServiceRequestData(
         id=uuid.uuid4(),
         iambic_template_id=str(template.id),
@@ -411,16 +408,12 @@ async def generate_request_role_access_request_data(user_request: bool = True):
     ) = await get_template_and_provider_definition_by_template_type(
         tenant, AWS_IAM_ROLE_TEMPLATE_TYPE
     )
-    request_types = await list_tenant_request_types(
-        tenant.id, "aws", summary_only=False
-    )
-    request_type = [r for r in request_types if r.name == "Request access to AWS"][0]
     change_type_name = (
         "Noq User access request" if user_request else "Noq Group access request"
     )
-    change_type = [
-        ct for ct in request_type.change_types if ct.name == change_type_name
-    ][0]
+    change_type = await get_change_type_by_name(
+        change_type_name, AWS_IAM_ROLE_TEMPLATE_TYPE
+    )
     self_service_request = SelfServiceRequestData(
         id=uuid.uuid4(),
         iambic_template_id=str(template.id),
@@ -663,8 +656,8 @@ async def get_or_create_self_service_request_curated():
         r for r in request_types if r.name == "Add permissions to identity"
     ][0]
     # 4. FE Calls BE to get list of "curated" change types that already have an identity (a.k.a iambic template) specified
-    change_types = await api_list_change_types(
-        request_type.id, iambic_templates_specified=True
+    change_types = await api_self_service_change_types_list(
+        str(request_type.id), iambic_templates_specified=True
     )
     # 5. User selects curated request type, which already has an iambic template specified,
     print(change_types)
