@@ -164,7 +164,7 @@ async def generate_s3_permission_template_for_role():
     tenant = TENANT_SUMMARY.tenant
     self_service_request = await get_s3_permission_template_for_role_request_data()
     iambic_template = await generate_updated_iambic_template(
-        tenant.id, self_service_request
+        tenant, self_service_request
     )
     print(
         json.dumps(
@@ -220,7 +220,7 @@ async def generate_s3_permission_template_for_managed_policy():
         )
 
     iambic_template = await generate_updated_iambic_template(
-        tenant.id, self_service_request
+        tenant, self_service_request
     )
     print(
         json.dumps(
@@ -284,7 +284,7 @@ async def generate_permission_set_customer_policy_attachment_template():
     )
 
     iambic_template = await generate_updated_iambic_template(
-        TENANT_SUMMARY.tenant.id, self_service_request
+        TENANT_SUMMARY.tenant, self_service_request
     )
     print(
         json.dumps(
@@ -332,7 +332,7 @@ async def generate_permission_set_aws_managed_policy_attachment_template():
     )
 
     iambic_template = await generate_updated_iambic_template(
-        TENANT_SUMMARY.tenant.id, self_service_request
+        TENANT_SUMMARY.tenant, self_service_request
     )
     print(
         json.dumps(
@@ -393,7 +393,7 @@ async def generate_role_policy_attachment_template():
     )
 
     iambic_template = await generate_updated_iambic_template(
-        TENANT_SUMMARY.tenant.id, self_service_request
+        TENANT_SUMMARY.tenant, self_service_request
     )
     print(
         json.dumps(
@@ -453,7 +453,7 @@ async def generate_request_role_access_request_role_template():
     tenant = TENANT_SUMMARY.tenant
     self_service_request = await generate_request_role_access_request_data()
     iambic_template = await generate_updated_iambic_template(
-        tenant.id, self_service_request
+        tenant, self_service_request
     )
     print(
         json.dumps(

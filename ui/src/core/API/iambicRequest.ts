@@ -115,6 +115,12 @@ export type RequestStatus =
   | 'Failed'
   | 'Pending in Git';
 
+export type ChangeTypeFieldType =
+  | 'TypeAheadTemplateRef'
+  | 'TypeAhead'
+  | 'TextBox'
+  | 'Choice';
+
 export interface Request {
   id: string;
   repo_name: string;

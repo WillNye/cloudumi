@@ -16,6 +16,8 @@ import { getIambicRequest } from 'core/API/iambicRequest';
 import { Loader } from 'shared/elements/Loader';
 import { Chip, ChipType } from 'shared/elements/Chip';
 import ChangeViewer from './components/ChangeViewer';
+import { Divider } from 'shared/elements/Divider';
+import { NoqMarkdown } from 'shared/elements/Markdown/Markdown';
 
 const RequestChangeDetails = () => {
   const { requestId } = useParams<{ requestId: string }>();
@@ -265,7 +267,23 @@ const RequestChangeDetails = () => {
         ))}
         <LineBreak size="large" />
         {requestData?.data?.comments.map((commentData, index) => (
-          <div key={index}>{commentData?.body}</div>
+          <div key={index}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <strong>{commentData.user || commentData.created_by}</strong>
+              <span style={{ color: 'grey', fontSize: '0.8rem' }}>
+                {new Date(commentData.created_at).toLocaleString()}
+              </span>
+            </div>
+            <LineBreak />
+            <NoqMarkdown markdown={commentData.body} />
+            <Divider />
+          </div>
         ))}
         <Block disableLabelPadding label="Comment" />
         <TextArea

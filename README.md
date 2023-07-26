@@ -351,3 +351,47 @@ If you need to update the AWS service definitions that are specified in the fron
 ```bash
 make update_aws_service_definitions_frontend
 ```
+
+## Serverless Functions
+
+This repository contains code for serverless functions that are deployed with the [Serverless Framework](https://www.serverless.com/). One of these functions is the `ExceptionReporting` serverless function. It's a simple function that receives HTTP POST requests and copies the data from the requests to an S3 bucket, and sends a message to an SQS queue with the file it created. serverless makes the deployment process much easier than it would be to define everything in Terraform, and gives us a framework for possibly adding more such functions in the future.
+
+You will need a .env file in the same directory as serverless.yml `deploy/serverless` with the following variables:
+
+SENDGRID_PASSWORD="..."
+SENDGRID_FROM_EMAIL=notifications@noq.dev
+SENDGRID_USERNAME=apikey
+
+There's another function that is used to send hourly email digests when there are messages in the sqs queue (see `serverless.yml` for details).
+
+### ExceptionReporting function
+
+#### Functionality
+
+The `ExceptionReporting` function, when triggered, performs the following actions:
+
+- It receives HTTP POST requests at the `/report_exception` endpoint.
+- The function puts this data into an S3 bucket specified in an environment variable which is defined in deploy/serverless/serverless.yml.
+
+#### Deployment
+
+The function can be deployed in two environments: `dev` and `prod`. The configuration for each environment is defined in `serverless.yml` file.
+
+Below are the instructions for how to deploy the serverless function:
+
+##### Prerequisites
+
+- Install Serverless framework if you haven't done it yet. You can use the following command:
+
+```
+npm install -g serverless
+```
+
+##### Deploy to `dev`:
+
+1. Execute the following command: `make serverless-deploy-dev` or `make serverless-deploy-prod` from the base cloudumi directory. This will deploy the serverless function to the production account for the specified stage.
+1. After the deployment, a curl command will be printed on the console. Use this to validate the function.
+
+#### Editing the Function
+
+If you want to change the behavior of the function or add new features, you can edit the appropriate files under the `deploy/serverless` directory.

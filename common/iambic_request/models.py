@@ -222,7 +222,8 @@ class BasePullRequest(PydanticBaseModel):
             await self._merge_request(approved_by)
 
     async def remove_branch(self, pull_default: bool):
-        await self.iambic_repo.delete_branch()
+        # TODO: Delete the branch when we have a way to retrieve changes from the PR
+        # await self.iambic_repo.delete_branch()
         if pull_default:
             await self.iambic_repo.clone_or_pull_git_repo()
 
@@ -243,7 +244,8 @@ class BasePullRequest(PydanticBaseModel):
         await self.load_pr()
         await self._reject_request()
         await self._set_repo(use_request_branch=False)
-        await self.iambic_repo.delete_branch()
+        # TODO: Delete the branch when we have a way to retrieve changes from the PR
+        # await self.iambic_repo.delete_branch()
 
     async def get_request_details(self):
         if self.pull_request_id and not self.files:
@@ -407,10 +409,8 @@ class GitHubPullRequest(BasePullRequest):
         # <!--{encoded_jwt}-->
         # remember last line cannot have any newline character, the signature metadata must be on the last line
 
-        message = f"""{body}
-    ```json
-    {json.dumps(payload)}
-    ```
+        message = f"""{body}\n
+Approving user: {", ".join(payload["signee"])}\n
 <!--{encoded_jwt}-->"""
 
         await self.add_comment(message)
