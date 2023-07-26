@@ -134,15 +134,6 @@ async def create_tenant(
             }
         )
         return
-    if "_" in dev_domain:
-        request.set_status(400)
-        request.write(
-            {
-                "error": "Invalid domain",
-                "error_description": "The domain provided is invalid",
-            }
-        )
-        raise tornado.web.Finish()
     dev_domain_url = f'https://{dev_domain.replace("_", ".")}'
 
     log_data["dev_domain"] = dev_domain
@@ -559,15 +550,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
                 return
 
         # TODO: Validate domain ends in a valid suffix / or just the prefix, just get the subdomain
-        if "_" in dev_domain:
-            self.set_status(400)
-            self.write(
-                {
-                    "error": "Invalid domain",
-                    "error_description": "The domain provided is invalid",
-                }
-            )
-            raise tornado.web.Finish()
+
         dev_domain_url = f'https://{dev_domain.replace("_", ".")}'
         log_data["dev_domain"] = dev_domain
         log_data["dev_domain_url"] = dev_domain_url
