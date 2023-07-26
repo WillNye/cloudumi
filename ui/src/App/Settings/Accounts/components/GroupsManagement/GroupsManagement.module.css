@@ -11,6 +11,16 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--spacing-lg) 0;
+
+    .buttons {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      button {
+        margin-left: 3px;
+      }
+    }
   }
 
   .filter {
