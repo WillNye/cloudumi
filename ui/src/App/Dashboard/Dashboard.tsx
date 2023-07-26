@@ -27,7 +27,7 @@ export const Dashboard = () => {
     function onMount() {
       const isDoneOnboarding =
         localStorage.getItem('onboarding') === 'complete';
-      if (isHubAccountInstalled && !isDoneOnboarding) {
+      if (!isHubAccountInstalled && !isDoneOnboarding) {
         setState({ run: true });
       }
     },
