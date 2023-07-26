@@ -1,53 +1,58 @@
 import { Step } from 'react-joyride';
+import { theme } from 'shared/utils/DesignTokens';
+
+export const commonTourProps: Partial<Step> = {
+  disableBeacon: true,
+  disableOverlayClose: true,
+  hideCloseButton: true,
+  spotlightClicks: true,
+  showProgress: false,
+  showSkipButton: true,
+  placement: 'center',
+  styles: {
+    options: {
+      zIndex: 10000,
+      arrowColor: theme.colors.gray[600],
+      backgroundColor: theme.colors.gray[600],
+      primaryColor: theme.colors.blue[600],
+      textColor: theme.colors.white,
+      overlayColor: theme.colors.gray[700],
+      width: '450px'
+    },
+    buttonNext: {
+      padding: `${theme.spacings.md} ${theme.spacings.lg}`,
+      fontSize: theme.typography.sizes.sm,
+      userSelect: 'none'
+    }
+  },
+  locale: {
+    skip: <strong>SKIP</strong>,
+    last: 'Setup'
+  }
+};
 
 export const tourSteps: Step[] = [
   {
-    content: <h2>Welcome to NOQ</h2>,
-    locale: { skip: <strong aria-label="skip">S-K-I-P</strong> },
-    placement: 'center',
+    content: (
+      <p>
+        Let&apos;s create a secure environment together. Assistance is always
+        available if you need it. Let&apos;s get started!
+      </p>
+    ),
     target: 'body',
-    title: 'welcome'
-  },
-  {
-    content: <h2>Sticky elements</h2>,
-    floaterProps: {
-      disableAnimation: true
-    },
-    spotlightPadding: 20,
-    placement: 'center',
-    target: 'body'
-  },
-  {
-    content: 'These are our super awesome projects!',
-    // placement: 'bottom',
-    styles: {
-      options: {
-        width: 300
-      }
-    },
-    placement: 'center',
-    target: 'body',
-    title: 'Our projects'
+    title: 'Welcome to Noq',
+    ...commonTourProps
   },
   {
     content: (
-      <div>
-        You can render anything!
-        <br />
-        <h3>Like this H3 title</h3>
-      </div>
+      <p>
+        To get started with our NOQ, please configure your AWS and GitHub
+        settings. This essential step will ensure smooth and secure identity and
+        access management across your infrastructure.
+      </p>
     ),
-    placement: 'center',
+    title: 'Onboarding',
     target: 'body',
-    title: 'Our Mission'
-  },
-  {
-    content: (
-      <div>
-        <h3>All about us</h3>
-      </div>
-    ),
-    placement: 'center',
-    target: 'body'
+    ...commonTourProps
   }
 ];

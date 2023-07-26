@@ -1,7 +1,6 @@
 import { Icon } from '../../../../shared/elements/Icon';
 import { Tooltip } from '../../../../shared/elements/Tooltip';
 import { Link, useNavigate } from 'react-router-dom';
-import styles from './Navbar.module.css';
 import Logo from '../../../../assets/brand/mark.svg';
 import { Avatar } from '../../../../shared/elements/Avatar';
 import { Menu } from 'shared/layers/Menu';
@@ -10,90 +9,19 @@ import { Button } from '../../../../shared/elements/Button';
 import { useAuth } from 'core/Auth';
 import { LineBreak } from '../../../../shared/elements/LineBreak';
 import { Divider } from '../../../../shared/elements/Divider';
-import { useMount, useSetState } from 'react-use';
-import Joyride, {
-  ACTIONS,
-  CallBackProps,
-  EVENTS,
-  STATUS,
-  Step
-} from 'react-joyride';
-import { theme } from 'shared/utils/DesignTokens';
-
-interface State {
-  run: boolean;
-  stepIndex: number;
-  steps: Step[];
-}
-
-const commonProps: Partial<Step> = {
-  disableBeacon: true,
-  disableOverlayClose: true,
-  hideCloseButton: true,
-  hideBackButton: true,
-  placement: 'right',
-  spotlightClicks: true,
-  showProgress: false,
-  styles: {
-    options: {
-      zIndex: 10000,
-      arrowColor: theme.colors.gray[600],
-      backgroundColor: theme.colors.gray[600],
-      primaryColor: theme.colors.blue[600],
-      textColor: theme.colors.white,
-      overlayColor: theme.colors.gray[700]
-    }
-  }
-};
+import styles from './Navbar.module.css';
 
 export const Navbar = () => {
   const [open, setOpen] = useState(false);
-  const [{ run, stepIndex, steps }, setState] = useSetState<State>({
-    run: false,
-    stepIndex: 0,
-    steps: []
-  });
+
   const buttonRef = useRef(null);
 
   const { user } = useAuth();
 
   const navigate = useNavigate();
 
-  const settingsRef = useRef<HTMLAnchorElement>(null);
-
-  useMount(() => {
-    setState({
-      run: true,
-      steps: [
-        {
-          content:
-            'You can interact with your own components through the spotlight.',
-          ...commonProps,
-          target: settingsRef.current!,
-          locale: { last: 'Next' },
-          title: 'Welcome'
-        }
-      ]
-    });
-  });
-
-  const handleJoyrideCallback = () => {
-    setState({ run: false, stepIndex: 0 });
-    navigate('/settings');
-  };
-
   return (
     <aside className={styles.sidebar}>
-      <Joyride
-        callback={handleJoyrideCallback}
-        continuous
-        run={run}
-        scrollToFirstStep
-        showProgress
-        showSkipButton
-        stepIndex={stepIndex}
-        steps={steps}
-      />
       <Link to="/">
         <div className={styles.sidebarLogo}>
           <img src={Logo} alt="Logo" />
@@ -121,11 +49,7 @@ export const Navbar = () => {
             </div>
           </Tooltip>
         </Link>
-        <Link
-          to="/settings"
-          ref={settingsRef}
-          onClick={() => setState({ run: false, stepIndex: 0 })}
-        >
+        <Link to="/settings">
           <Tooltip text="Settings" alignment="right">
             <div>
               <Icon width="26px" height="26px" name="settings" />
