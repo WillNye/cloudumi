@@ -1,5 +1,4 @@
 import { Button } from 'shared/elements/Button';
-import { Card } from 'shared/layout/Card';
 import styles from './RequestsMenu.module.css';
 import { Segment } from 'shared/layout/Segment';
 import { useMemo, useState } from 'react';
@@ -9,12 +8,11 @@ import { Divider } from 'shared/elements/Divider';
 import { Table } from 'shared/elements/Table';
 import { Icon } from 'shared/elements/Icon';
 import { Link, useNavigate } from 'react-router-dom';
-import awsIcon from '../../../assets/integrations/awsIcon.svg';
-import oktaIcon from '../../../assets/integrations/oktaIcon.svg';
 import { useQuery } from '@tanstack/react-query';
 import { getAllRequests } from 'core/API/iambicRequest';
 import { DateTime } from 'luxon';
 import { useAuth } from 'core/Auth';
+import { Breadcrumbs } from 'shared/elements/Breadcrumbs';
 
 const RequestsMenu = () => {
   const [currentTab, setCurrentTab] = useState(
@@ -79,9 +77,23 @@ const RequestsMenu = () => {
   return (
     <div className={styles.wrapper}>
       <Segment>
-        <div className={styles.header}>
-          <h3>Requests</h3>
-
+        <h3>Requests</h3>
+        <LineBreak />
+        <Breadcrumbs
+          items={[
+            { name: 'Requests', url: '/requests' },
+            { name: 'Menu', url: '/requests' }
+          ]}
+        />
+        <LineBreak size="large" />
+        <div className={styles.preview}>
+          <p>
+            IAMbic is a multi-cloud IAM control plane that centralizes and
+            simplifies access management, providing a human-readable
+            representation of IAM in version control. Request access and
+            streamline your cloud permissions today.
+          </p>
+          <LineBreak />
           <div className={styles.btnActions}>
             <Button
               size="small"
@@ -91,10 +103,10 @@ const RequestsMenu = () => {
             >
               <Icon name="add" /> Create Request
             </Button>
-            <Divider orientation="vertical" />
             <Button
               size="small"
               color="secondary"
+              variant="outline"
               onClick={() => {
                 navigate('/requests/all');
               }}
@@ -104,52 +116,6 @@ const RequestsMenu = () => {
           </div>
         </div>
         <LineBreak size="large" />
-        <p>
-          IAMbic is a multi-cloud IAM control plane that centralizes and
-          simplifies access management, providing a human-readable
-          representation of IAM in version control. Request access and
-          streamline your cloud permissions today.
-        </p>
-        <LineBreak size="large" />
-        <h4>Recently Accessed Providers</h4>
-        <LineBreak />
-        <div className={styles.providers}>
-          <Card
-            variant="outlined"
-            color="secondary"
-            className={styles.card}
-            contentClassName={styles.cardContent}
-          >
-            <img className={styles.cardImg} src={awsIcon} />
-            <LineBreak />
-            <h4>AWS</h4>
-            <LineBreak size="small" />
-            <p>Amazon Web Services</p>
-            <LineBreak size="small" />
-            <Button size="small" fullWidth>
-              Continue
-            </Button>
-          </Card>
-          <Card
-            variant="outlined"
-            color="secondary"
-            className={styles.card}
-            contentClassName={styles.cardContent}
-          >
-            <img className={styles.cardImg} src={oktaIcon} />
-            <LineBreak />
-            <h4>Okta</h4>
-            <LineBreak size="small" />
-            <p>Okta</p>
-            <LineBreak size="small" />
-            <Button size="small" fullWidth>
-              Continue
-            </Button>
-          </Card>
-        </div>
-        <LineBreak />
-        <Divider />
-        <LineBreak />
         <div>
           <nav className={styles.nav}>
             <ul className={styles.navList}>
