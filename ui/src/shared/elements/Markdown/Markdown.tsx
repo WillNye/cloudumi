@@ -7,6 +7,7 @@ import styles from './Markdown.module.css';
 export const NoqMarkdown = ({ markdown }) => {
   return (
     <ReactMarkdown
+      className={styles.markdown}
       remarkPlugins={[
         // remarkBreaks,
         [remarkGfm, { singleTilde: true }],
