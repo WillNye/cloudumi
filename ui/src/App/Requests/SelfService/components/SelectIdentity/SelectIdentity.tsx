@@ -43,7 +43,6 @@ const SelectIdentity = () => {
     setSelectedIdentity(identity);
   };
 
-  console.log(selfServiceRequest);
   return (
     <Segment isLoading={isLoading}>
       <div className={styles.container}>
