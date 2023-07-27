@@ -45,6 +45,7 @@ interface TableProps<D> {
   handleOnPageChange?: (pageIndex: number) => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const Table = <T, D>({
   columns,
   data,
@@ -61,6 +62,7 @@ export const Table = <T, D>({
   pageIndex,
   noResultsComponent,
   handleOnSort,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   handleSelectRows,
   handleOnPageChange
 }: TableProps<D>) => {
