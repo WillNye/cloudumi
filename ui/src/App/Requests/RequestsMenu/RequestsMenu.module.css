@@ -5,14 +5,13 @@
   .btnActions {
     display: flex;
     align-items: center;
+    justify-content: center;
     flex-wrap: wrap;
-  }
+    width: 100%;
 
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
+    button {
+      margin: var(--spacing-md);
+    }
   }
 
   .nav {
@@ -57,33 +56,16 @@
     }
   }
 
-  .providers {
+  .preview {
     display: flex;
-    flex-direction: row;
-    flex: 1;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    align-items: center;
-  }
-
-  .card {
-    width: 220px;
-    margin: var(--spacing-sm);
-  }
-
-  .cardContent {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     flex-direction: column;
-    padding: var(--spacing-sm);
-
-    img {
-      height: 32px;
-      width: 32px;
-    }
-    p {
-      font-size: var(--font-size-sm);
-    }
+    justify-content: center;
+    align-items: center;
+    background-color: var(--gray-700);
+    padding: var(--spacing-xxl) var(--spacing-lg);
+    border-radius: var(--border-radius-md);
+    border: solid 1px var(--gray-500);
+    text-align: center;
+    line-height: 2rem;
   }
 }

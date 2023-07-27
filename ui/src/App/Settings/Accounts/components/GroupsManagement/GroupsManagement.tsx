@@ -7,9 +7,10 @@ import { DELETE_DATA_TYPE, groupsTableColumns } from '../../constants';
 import css from './GroupsManagement.module.css';
 import Delete from '../common/Delete';
 import GroupsModal from '../common/EditGroupsModal';
-import { getAllGroups } from 'core/API/settings';
+import { getAdminGroups, getAllGroups } from 'core/API/settings';
 import AddGroupModal from '../common/AddGroupModal/AddGroupModal';
 import { useQuery } from '@tanstack/react-query';
+import EditAdminGroupsModal from '../common/EditAdminGroupsModal';
 
 const GroupsManagement = () => {
   const [query, setQuery] = useState({
@@ -75,7 +76,10 @@ const GroupsManagement = () => {
     <div className={css.container}>
       <div className={css.header}>
         <div>Groups ({allGroupsData?.filtered_count})</div>
-        <AddGroupModal refreshData={callGetAllGroups} />
+        <div className={css.buttons}>
+          <EditAdminGroupsModal />
+          <AddGroupModal refreshData={callGetAllGroups} />
+        </div>
       </div>
       <div className={css.table}>
         <Table
