@@ -134,7 +134,7 @@ async def create_tenant(
             }
         )
         return
-    if "_" in dev_domain:
+    if not dev_mode and "_" in dev_domain:
         request.set_status(400)
         request.write(
             {
@@ -559,7 +559,7 @@ class TenantRegistrationHandler(TornadoRequestHandler):
                 return
 
         # TODO: Validate domain ends in a valid suffix / or just the prefix, just get the subdomain
-        if "_" in dev_domain:
+        if not dev_mode and "_" in dev_domain:
             self.set_status(400)
             self.write(
                 {
