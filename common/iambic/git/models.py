@@ -291,22 +291,22 @@ class IambicRepo:
                 await self._storage_handler.write_file(file_path, "w", file_body)
 
         if reset_branch:
-            # changed_files_raw = await run_command(
-            #     "git",
-            #     "diff",
-            #     "--name-only",
-            #     self.default_branch_name,
-            #     cwd=self.request_file_path,
-            # )
             changed_files_raw = await run_command(
                 "git",
-                "status",
-                "-s",
+                "diff",
+                "--name-only",
                 self.default_branch_name,
                 cwd=self.request_file_path,
             )
-            changed_files = changed_files_raw.split("\n")
+
+            changed_files = [file for file in changed_files_raw.split("\n") if file]
+            if not changed_files:
+                return self.request_branch_name
+
             for file in changed_files:
+                if not file:
+                    continue
+
                 await run_command(
                     "git",
                     "checkout",
