@@ -24,10 +24,10 @@ import {
 } from './constants';
 import { useQuery } from '@tanstack/react-query';
 import { useSetState } from 'react-use';
-import Joyride, { CallBackProps, Step } from 'react-joyride';
-import styles from './IntegrationSettings.module.css';
+import Joyride, { Step } from 'react-joyride';
 import { theme } from 'shared/utils/DesignTokens';
 import { useSearchParams } from 'react-router-dom';
+import styles from './IntegrationSettings.module.css';
 
 interface ITourState {
   run: boolean;

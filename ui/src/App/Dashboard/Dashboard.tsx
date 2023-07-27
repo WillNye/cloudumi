@@ -40,11 +40,11 @@ export const Dashboard = () => {
     if (status === STATUS.FINISHED) {
       navigate('/settings/integrations?onboarding=true');
       setState({ run: false });
-      localStorage.setItem('onboarding', 'complete');
+      // localStorage.setItem('onboarding', 'complete');
     }
     if (status === STATUS.SKIPPED) {
       setState({ run: false });
-      localStorage.setItem('onboarding', 'complete');
+      // localStorage.setItem('onboarding', 'complete');
     }
   };
 

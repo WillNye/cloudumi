@@ -46,7 +46,7 @@ export const tourSteps: Step[] = [
   {
     content: (
       <p>
-        To get started with our NOQ, please configure your AWS and GitHub
+        To get started with NOQ platform, please configure your AWS and GitHub
         settings. This essential step will ensure smooth and secure identity and
         access management across your infrastructure.
       </p>
