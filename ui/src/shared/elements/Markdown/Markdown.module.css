@@ -1,3 +1,21 @@
+.markdown {
+  blockquote,
+  dd,
+  dl,
+  figure,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  hr,
+  p,
+  pre {
+    margin: revert;
+  }
+}
+
 .blockquote {
   margin-left: 20px;
   position: relative;
@@ -16,7 +34,7 @@
 }
 
 .code {
-  background-color: #6b6565;
+  background-color: var(--gray-400);
   border-radius: 3px;
   padding: 5px;
   margin: 5px;

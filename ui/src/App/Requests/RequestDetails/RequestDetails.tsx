@@ -283,6 +283,7 @@ const RequestChangeDetails = () => {
             <LineBreak />
             <NoqMarkdown markdown={commentData.body} />
             <Divider />
+            <LineBreak />
           </div>
         ))}
         <Block disableLabelPadding label="Comment" />
