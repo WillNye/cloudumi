@@ -25,6 +25,8 @@ from api.handlers.v4.editor.request_types import (
     ChangeTypeFavoriteHandler,
     ExpressAccessRequestEditorHandler,
     ExpressAccessRequestFavoriteHandler,
+from api.handlers.v4.groups.manage_admin_group import (
+    GroupsCanAdminConfigurationCrudHandler,
 )
 from api.handlers.v4.groups.manage_group_memberships import (
     ManageGroupMembershipsHandler,
@@ -577,6 +579,7 @@ def make_app(jwt_validator=None):
         (r"/api/v4/self-service/typeahead/noq/users/?", NoqUserTypeAheadHandler),
         (r"/api/v4/self-service/typeahead/noq/groups/?", NoqGroupTypeAheadHandler),
         (r"/api/v4/groups/?", ManageGroupsHandler),
+        (r"/api/v4/groups_can_admin/?", GroupsCanAdminConfigurationCrudHandler),
         (r"/api/v4/list_groups/?", ManageListGroupsHandler),
         (r"/api/v4/group_memberships/?", ManageGroupMembershipsHandler),
         (r"/api/v4/users/?", ManageUsersHandler),
