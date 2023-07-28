@@ -304,33 +304,35 @@ class IambicRepo:
             elif file_body:
                 await self._storage_handler.write_file(file_path, "w", file_body)
 
-        if reset_branch:
-            changed_files_raw = await run_command(
-                "git",
-                "diff",
-                "--name-only",
-                self.default_branch_name,
-                cwd=self.request_file_path,
-            )
+        # CHECK: In some cases, these commands end up checking out the main branch,
+        # and we should pull just from request branch (noq-self-service-uuid)
+        # if reset_branch:
+        #     changed_files_raw = await run_command(
+        #         "git",
+        #         "diff",
+        #         "--name-only",
+        #         self.default_branch_name,
+        #         cwd=self.request_file_path,
+        #     )
 
-            changed_files = [file for file in changed_files_raw.split("\n") if file]
+        #     changed_files = [file for file in changed_files_raw.split("\n") if file]
 
-            if changed_files:
-                for file in changed_files:
-                    if not file:
-                        continue
+        #     if changed_files:
+        #         for file in changed_files:
+        #             if not file:
+        #                 continue
 
-                    await run_command(
-                        "git",
-                        "checkout",
-                        f"origin/{self.default_branch_name}",
-                        "--",
-                        file,
-                        cwd=self.request_file_path,
-                    )
-                await run_command(
-                    "git", "add", *changed_files, cwd=self.request_file_path
-                )
+        #             await run_command(
+        #                 "git",
+        #                 "checkout",
+        #                 f"origin/{self.default_branch_name}",
+        #                 "--",
+        #                 file,
+        #                 cwd=self.request_file_path,
+        #             )
+        #         await run_command(
+        #             "git", "add", *changed_files, cwd=self.request_file_path
+        #         )
 
         await asyncio.gather(
             *[
