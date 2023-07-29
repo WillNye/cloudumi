@@ -10,7 +10,7 @@ import aiofiles.os
 import aioshutil
 import pytz
 from git import Actor, Repo
-from git.exc import GitCommandError
+from git.exc import GitCommandError, InvalidGitRepositoryError
 
 from common.config import config
 from common.config.tenant_config import TenantConfig
@@ -246,6 +246,20 @@ class IambicRepo:
         self.repo = Repo(self.request_file_path)
         await self.set_repo_auth()
 
+    async def _set_repo(self, log_data: dict):
+        try:
+            self.repo = Repo(self.file_path)
+        except Exception as err:
+            if not isinstance(err, InvalidGitRepositoryError):
+                raise
+            # Reset the repo
+            shutil.rmtree(self.file_path)
+            # The repo is on disk but it's not a git repo so we need to clone it
+            log.debug({"message": "Cloning repo", **log_data})
+            await self.clone_or_pull_git_repo()  # Ensure we have the latest changes on main
+            await self.set_request_branch()  # Create the worktree or sparse-checkout and set self.repo
+            self.repo = Repo(self.file_path)
+
     async def set_repo(self):
         log_data = dict(
             tenant=self.tenant,
@@ -254,7 +268,7 @@ class IambicRepo:
             function=f"{__name__}.{sys._getframe().f_code.co_name}",
         )
         if os.path.exists(self.file_path):
-            self.repo = Repo(self.file_path)
+            await self._set_repo(log_data)
             await self.set_repo_auth()
         elif not os.path.exists(self.default_file_path):
             # The repo isn't on disk so we need to clone it before proceeding
@@ -290,32 +304,35 @@ class IambicRepo:
             elif file_body:
                 await self._storage_handler.write_file(file_path, "w", file_body)
 
-        if reset_branch:
-            changed_files_raw = await run_command(
-                "git",
-                "diff",
-                "--name-only",
-                self.default_branch_name,
-                cwd=self.request_file_path,
-            )
+        # CHECK: In some cases, these commands end up checking out the main branch,
+        # and we should pull just from request branch (noq-self-service-uuid)
+        # if reset_branch:
+        #     changed_files_raw = await run_command(
+        #         "git",
+        #         "diff",
+        #         "--name-only",
+        #         self.default_branch_name,
+        #         cwd=self.request_file_path,
+        #     )
 
-            changed_files = [file for file in changed_files_raw.split("\n") if file]
-            if not changed_files:
-                return self.request_branch_name
+        #     changed_files = [file for file in changed_files_raw.split("\n") if file]
 
-            for file in changed_files:
-                if not file:
-                    continue
+        #     if changed_files:
+        #         for file in changed_files:
+        #             if not file:
+        #                 continue
 
-                await run_command(
-                    "git",
-                    "checkout",
-                    f"origin/{self.default_branch_name}",
-                    "--",
-                    file,
-                    cwd=self.request_file_path,
-                )
-            await run_command("git", "add", *changed_files, cwd=self.request_file_path)
+        #             await run_command(
+        #                 "git",
+        #                 "checkout",
+        #                 f"origin/{self.default_branch_name}",
+        #                 "--",
+        #                 file,
+        #                 cwd=self.request_file_path,
+        #             )
+        #         await run_command(
+        #             "git", "add", *changed_files, cwd=self.request_file_path
+        #         )
 
         await asyncio.gather(
             *[
