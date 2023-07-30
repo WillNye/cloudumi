@@ -20,7 +20,7 @@ from common.config.globals import ASYNC_PG_SESSION, GITHUB_APP_APPROVE_PRIVATE_P
 from common.iambic.git.models import IambicRepo
 from common.lib import noq_json as json
 from common.lib.asyncio import aio_wrapper
-from common.models import IambicTemplateChange
+from common.models import IambicTemplateChange, SelfServiceRequestData
 from common.pg_core.models import Base, SoftDeleteMixin
 from common.tenants.models import Tenant  # noqa: F401
 
@@ -34,6 +34,7 @@ RequestStatus = ENUM(
     "Approving",
     "Approved",
     "Rejected",
+    "Reverted",
     "Expired",
     "Failed",
     name="RequestStatusEnum",
@@ -95,6 +96,7 @@ class BasePullRequest(PydanticBaseModel):
     closed_at: datetime = None
     pr_provider: Any = None
     pr_obj: Any = None
+    merge_commit_sha: Optional[str] = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -196,6 +198,72 @@ class BasePullRequest(PydanticBaseModel):
     async def _approve_request(self, approved_by: str):
         raise NotImplementedError
 
+    async def revert_request(self, reverted_by: str):
+        from common.iambic_request.request_crud import (
+            create_request,
+            get_template_change_for_request,
+        )
+
+        if not self.pr_obj:
+            await self.load_pr()
+        if not self.pr_obj.merged:
+            raise Exception("PR must be merged to revert")
+
+        base_iambic_repo = await IambicRepo.setup(
+            self.tenant,
+            self.iambic_repo.repo_name,
+        )
+        merge_commit = base_iambic_repo.repo.commit(self.pr_obj.merge_commit_sha)
+        parent_commit = merge_commit.parents[0]
+        default_branch_commit = base_iambic_repo.repo.commit(
+            base_iambic_repo.default_branch_name
+        )
+        diffs = merge_commit.diff(parent_commit)
+        template_changes = []
+        justification = f"Revert of Request ID: {self.request_id}"
+        for diff in diffs.iter_change_type("M"):
+            file_path = diff.a_path
+            try:
+                blob = parent_commit.tree / file_path
+                file_content_parent_commit = blob.data_stream.read()
+
+                # Get file content in default branch commit
+                blob_default_branch = default_branch_commit.tree / file_path
+                file_content_default_branch = blob_default_branch.data_stream.read()
+            except KeyError:
+                # TODO: Support reverting file creation, for example, when we create a resource and want to revert the creation
+                raise Exception(
+                    "Unable to revert request. File does not exist in parent commit."
+                )
+            if file_content_parent_commit == file_content_default_branch:
+                # No need to revert file if it is the same as the default branch
+                continue
+            request_data = SelfServiceRequestData.parse_obj(
+                {
+                    "file_path": file_path,
+                    "template_body": file_content_parent_commit,
+                    "justification": justification,
+                }
+            )
+            template_changes.append(
+                await get_template_change_for_request(self.tenant, request_data)
+            )
+        if not template_changes:
+            raise Exception("No template changes to revert")
+        response = await create_request(
+            tenant=self.tenant,
+            created_by=reverted_by,
+            justification=justification,
+            changes=template_changes,
+            request_method="WEB",
+        )
+        # TODO: A request should only be "revertable" (I should only see the revert button) if there is a diff between
+        # the parent commit shown above, and the default branch commit. If there is no diff, then the file is the same as the default
+        # and I shouldn't even see the revert button. Currently we do this check here but not in the UI.
+        print(response)
+        # TODO: Tie the reverted request to the original request so we can see it was reverted. Do not allow the user
+        # to revert after this point
+
     async def approve_request(self, approved_by: Union[str, list[str]]):
         if not self.pr_obj:
             await self.load_pr()
@@ -275,6 +343,7 @@ class BasePullRequest(PydanticBaseModel):
         request_dict = json.loads(json.dumps(super().dict(**kwargs)))
         request_dict["tenant"] = self.tenant.name
         request_dict["repo_name"] = self.iambic_repo.repo_name
+        request_dict["merge_commit_sha"] = self.merge_commit_sha
         return request_dict
 
 
@@ -339,6 +408,7 @@ class GitHubPullRequest(BasePullRequest):
 
         pr_provider = await self.get_pr_provider()
         self.pr_obj = await aio_wrapper(pr_provider.get_pull, self.pull_request_id)
+        self.merge_commit_sha = self.pr_obj.merge_commit_sha
         self.pull_request_id = self.pr_obj.number
         self.pull_request_url = self.pr_obj.html_url
         self.title = self.pr_obj.title

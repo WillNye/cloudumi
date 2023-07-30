@@ -17,6 +17,7 @@ from common.iambic_request.request_crud import (
     list_requests,
     reject_request,
     request_dict,
+    revert_request,
     run_request_validation,
     update_request,
     update_request_comment,
@@ -272,6 +273,8 @@ class IambicRequestHandler(BaseHandler):
                 )
             elif status.lower() == "rejected":
                 response = await reject_request(db_tenant, request_id, user, groups)
+            elif status.lower() == "reverted":
+                response = await revert_request(db_tenant, request_id, user, groups)
             else:
                 err = "The status must be either approved or rejected"
                 self.set_status(400, reason=err)

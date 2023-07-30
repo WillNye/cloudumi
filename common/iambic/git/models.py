@@ -133,6 +133,15 @@ class IambicRepo:
                 if "refusing to merge unrelated histories" not in err.stderr:
                     # we have to be specific; otherwise, a transient network error
                     # may cause us to blow away the directory.
+                    await log.aexception(
+                        "Git Pull failed",
+                        repo=self.repo_name,
+                        tenant=self.tenant.name,
+                        request_id=self.request_id,
+                        file_path=self.file_path,
+                        default_file_path=self.default_file_path,
+                        default_branch_name=self.default_branch_name,
+                    )
                     raise
                 # an upstream may have re-written history, fall back to a fresh blobless clone
                 shutil.rmtree(self.default_file_path)
@@ -269,7 +278,11 @@ class IambicRepo:
         )
         if os.path.exists(self.file_path):
             await self._set_repo(log_data)
-            if self.repo.active_branch.name != self.request_branch_name:
+            if (
+                self.use_request_branch
+                and self.request_id
+                and self.repo.active_branch.name != self.request_branch_name
+            ):
                 log.error(
                     "The request repo is on disk, but the active branch is not the request branch as expected. Switching branches",
                     active_branch=self.repo.active_branch.name,

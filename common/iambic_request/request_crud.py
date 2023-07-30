@@ -324,6 +324,48 @@ async def update_request(
     }
 
 
+async def revert_request(
+    tenant: Tenant,
+    request_id: Union[str, uuid.UUID],
+    approved_by: str,
+    approver_groups: list[str],
+):
+    request = await get_request(tenant.id, request_id)
+    if (
+        (
+            request.created_by != approved_by
+            and not any(
+                approver_group in request.allowed_approvers
+                for approver_group in approver_groups
+            )
+        )
+        or request.status != "Applied"
+        or request.deleted
+    ):
+        raise Unauthorized("Unable to revert this request")
+
+    request_pr = await get_iambic_pr_instance(
+        tenant, request.id, request.created_by, request.pull_request_id
+    )
+
+    await request_pr.revert_request(approved_by)
+
+    request.status = "Reverted"
+    request.approved_by = []
+    request.updated_by = approved_by
+    request.updated_at = datetime.datetime.now()
+    await request.write()
+
+    await request_pr.load_pr()
+
+    response = await get_request_response(request, request_pr)
+    del request_pr
+    return {
+        "request": request,
+        "friendly_request": response,
+    }
+
+
 async def approve_or_apply_request(
     tenant: Tenant,
     request_id: Union[str, uuid.UUID],
