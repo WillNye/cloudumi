@@ -262,13 +262,21 @@ class IambicRepo:
 
     async def set_repo(self):
         log_data = dict(
-            tenant=self.tenant,
+            tenant=self.tenant.name,
             request_id=self.request_id,
             repo=self.repo_name,
             function=f"{__name__}.{sys._getframe().f_code.co_name}",
         )
         if os.path.exists(self.file_path):
             await self._set_repo(log_data)
+            if self.repo.active_branch.name != self.request_branch_name:
+                log.error(
+                    "The request repo is on disk, but the active branch is not the request branch as expected. Switching branches",
+                    active_branch=self.repo.active_branch.name,
+                    desired_branch=self.request_branch_name,
+                    **log_data,
+                )
+                self.repo.git.checkout(self.request_branch_name)
             await self.set_repo_auth()
         elif not os.path.exists(self.default_file_path):
             # The repo isn't on disk so we need to clone it before proceeding
@@ -306,33 +314,33 @@ class IambicRepo:
 
         # CHECK: In some cases, these commands end up checking out the main branch,
         # and we should pull just from request branch (noq-self-service-uuid)
-        # if reset_branch:
-        #     changed_files_raw = await run_command(
-        #         "git",
-        #         "diff",
-        #         "--name-only",
-        #         self.default_branch_name,
-        #         cwd=self.request_file_path,
-        #     )
+        if reset_branch:
+            changed_files_raw = await run_command(
+                "git",
+                "diff",
+                "--name-only",
+                self.default_branch_name,
+                cwd=self.request_file_path,
+            )
 
-        #     changed_files = [file for file in changed_files_raw.split("\n") if file]
+            changed_files = [file for file in changed_files_raw.split("\n") if file]
 
-        #     if changed_files:
-        #         for file in changed_files:
-        #             if not file:
-        #                 continue
+            if changed_files:
+                for file in changed_files:
+                    if not file:
+                        continue
 
-        #             await run_command(
-        #                 "git",
-        #                 "checkout",
-        #                 f"origin/{self.default_branch_name}",
-        #                 "--",
-        #                 file,
-        #                 cwd=self.request_file_path,
-        #             )
-        #         await run_command(
-        #             "git", "add", *changed_files, cwd=self.request_file_path
-        #         )
+                    await run_command(
+                        "git",
+                        "checkout",
+                        f"origin/{self.default_branch_name}",
+                        "--",
+                        file,
+                        cwd=self.request_file_path,
+                    )
+                await run_command(
+                    "git", "add", *changed_files, cwd=self.request_file_path
+                )
 
         await asyncio.gather(
             *[
