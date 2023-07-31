@@ -1,16 +1,20 @@
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Column, ForeignKey, and_, column
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
+from sqlalchemy.orm.base import Mapped
 from sqlalchemy.sql import Values, select
 
 from common.config.globals import ASYNC_PG_SESSION
+from common.lib.auth import is_tenant_admin
 from common.pg_core.models import Base, SoftDeleteMixin
 from common.pg_core.utils import bulk_add, bulk_delete
 
 if TYPE_CHECKING:
     from common.groups.models import Group
+    from common.tenants.models import Tenant
     from common.users.models import User
 
 
@@ -22,6 +26,10 @@ class GroupMembership(SoftDeleteMixin, Base):
     )
     group_id = Column(
         UUID(as_uuid=True), ForeignKey("groups.id", ondelete="CASCADE"), nullable=False
+    )
+
+    group: Mapped["Group"] = relationship(
+        "Group", lazy="selectin", foreign_keys=[group_id]
     )
 
     @classmethod
@@ -140,9 +148,11 @@ class GroupMembership(SoftDeleteMixin, Base):
 
 
 async def upsert_and_remove_group_memberships(
-    users,
-    groups,
+    users: list[User],
+    groups: list[Group],
     remove_other_group_memberships: bool = True,
+    initiated_by: Optional[str] = None,
+    tenant: Optional[Tenant] = None,
 ):
     """Upsert group memberships for a list of users and groups.
     Args:
@@ -157,7 +167,18 @@ async def upsert_and_remove_group_memberships(
         if remove_other_group_memberships:
             existing_memberships = await GroupMembership.get_by_user(user)
             for membership in existing_memberships:
-                if membership.group_id not in [group.id for group in groups]:
+                # If user signs in by SSO and group is the admin group, do not remove the membership
+                # It could remove other MANUAL groups that the user is a member of
+                if initiated_by == "SSO" and is_tenant_admin(
+                    user.username, [membership.group.name], tenant.name  # type: ignore
+                ):  # type: ignore
+                    continue
+
+                membership_not_in = membership.group_id not in [
+                    group.id for group in groups
+                ]
+
+                if membership_not_in:
                     memberships_to_remove.append(membership)
         for group in groups:
             memberships.append(GroupMembership(user_id=user.id, group_id=group.id))
