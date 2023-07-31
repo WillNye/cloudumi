@@ -1,5 +1,5 @@
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Column, ForeignKey, and_, column
 from sqlalchemy.dialects.postgresql import UUID
@@ -148,11 +148,11 @@ class GroupMembership(SoftDeleteMixin, Base):
 
 
 async def upsert_and_remove_group_memberships(
-    users: list["User"],
-    groups: list["Group"],
+    users: list[User],
+    groups: list[Group],
     remove_other_group_memberships: bool = True,
-    managed_by: str = None,
-    tenant: "Tenant" = None,
+    initiated_by: Optional[str] = None,
+    tenant: Optional[Tenant] = None,
 ):
     """Upsert group memberships for a list of users and groups.
     Args:
@@ -169,7 +169,7 @@ async def upsert_and_remove_group_memberships(
             for membership in existing_memberships:
                 # If user signs in by SSO and group is the admin group, do not remove the membership
                 # It could remove other MANUAL groups that the user is a member of
-                if managed_by == "SSO" and is_tenant_admin(
+                if initiated_by == "SSO" and is_tenant_admin(
                     user.username, [membership.group.name], tenant.name  # type: ignore
                 ):  # type: ignore
                     continue
