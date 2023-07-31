@@ -632,9 +632,10 @@ def default_aws_express_access_request_setter():
             if not kwargs.get("express_access_request_id") and not any(
                 isinstance(arg, str) for arg in args
             ):
-                access_requests = await api_self_service_express_access_request_list(
-                    "aws"
-                ).get("data", [])
+                access_requests_req = (
+                    await api_self_service_express_access_request_list("aws")
+                )
+                access_requests = access_requests_req.get("data", [])
                 if not access_requests:
                     raise Exception(
                         "No AWS express access requests found. "

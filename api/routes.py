@@ -25,6 +25,7 @@ from api.handlers.v4.editor.request_types import (
     ChangeTypeFavoriteHandler,
     ExpressAccessRequestEditorHandler,
     ExpressAccessRequestFavoriteHandler,
+)
 from api.handlers.v4.groups.manage_admin_group import (
     GroupsCanAdminConfigurationCrudHandler,
 )
