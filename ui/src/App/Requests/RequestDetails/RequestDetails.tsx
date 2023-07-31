@@ -226,7 +226,9 @@ const RequestChangeDetails = () => {
       case '':
         return ``;
       default:
-        return `Can't modify a ${status.toString().toLowerCase()} request`;
+        return `Can't modify a request with status of: ${status
+          .toString()
+          .toLowerCase()}`;
     }
   }, [
     handleApply,

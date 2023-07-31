@@ -87,12 +87,6 @@ const RequestsMenu = () => {
         />
         <LineBreak size="large" />
         <div className={styles.preview}>
-          <p>
-            IAMbic is a multi-cloud IAM control plane that centralizes and
-            simplifies access management, providing a human-readable
-            representation of IAM in version control. Request access and
-            streamline your cloud permissions today.
-          </p>
           <LineBreak />
           <div className={styles.btnActions}>
             <Button
@@ -101,7 +95,7 @@ const RequestsMenu = () => {
                 navigate('/requests/create');
               }}
             >
-              <Icon name="add" /> Create Request
+              <Icon name="add" /> Create Self-Service Request
             </Button>
             <Button
               size="small"
