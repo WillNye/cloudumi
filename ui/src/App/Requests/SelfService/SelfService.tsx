@@ -105,8 +105,8 @@ const SelfService = () => {
     () =>
       currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE ||
       currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY ||
-      currentStep === SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES ||
-      currentStep === SELF_SERVICE_STEPS.SELECT_SUGGESTED_IDENTITY,
+      currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES ||
+      currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS,
     [currentStep]
   );
 
@@ -122,7 +122,7 @@ const SelfService = () => {
           SELF_SERVICE_STEPS.COMPLETION_FORM,
           // SELF_SERVICE_STEPS.SELECT_IDENTITY,
           // SELF_SERVICE_STEPS.CHANGE_TYPE,
-          SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES
+          SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES
         ].includes(currentStep)
       }),
     [currentStep]
@@ -133,15 +133,15 @@ const SelfService = () => {
     if (currentStep === SELF_SERVICE_STEPS.SELECT_PROVIDER) {
       nextStep = SELF_SERVICE_STEPS.REQUEST_TYPE;
     } else if (currentStep === SELF_SERVICE_STEPS.REQUEST_TYPE) {
-      nextStep = SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES;
+      nextStep = SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES;
     } else if (currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE) {
       nextStep = SELF_SERVICE_STEPS.COMPLETION_FORM;
     } else if (currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY) {
       nextStep = SELF_SERVICE_STEPS.CHANGE_TYPE;
-    } else if (currentStep === SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES) {
+    } else if (currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES) {
       nextStep = SELF_SERVICE_STEPS.SELECT_IDENTITY;
-    } else if (currentStep === SELF_SERVICE_STEPS.SELECT_SUGGESTED_IDENTITY) {
-      nextStep = SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES;
+    } else if (currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS) {
+      nextStep = SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES;
     }
     setStepsStack(stack => [...stack, nextStep]);
     setCurrentStep(nextStep);
@@ -158,7 +158,7 @@ const SelfService = () => {
     //   case SELF_SERVICE_STEPS.SELECT_IDENTITY:
     //     setSelectedIdentityType('');
     //     setSelectedIdentity(null);
-    //     setCurrentStep(SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES);
+    //     setCurrentStep(SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES);
     //     break;
     //   case SELF_SERVICE_STEPS.REQUEST_TYPE:
     //     setSelectedRequestType(null);
@@ -167,11 +167,11 @@ const SelfService = () => {
     //   case SELF_SERVICE_STEPS.CHANGE_TYPE:
     //     setCurrentStep(SELF_SERVICE_STEPS.REQUEST_TYPE);
     //     break;
-    //   case SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES:
+    //   case SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES:
     //     setCurrentStep(SELF_SERVICE_STEPS.REQUEST_TYPE);
     //     break;
-    //   case SELF_SERVICE_STEPS.SELECT_SUGGESTED_IDENTITY:
-    //     setCurrentStep(SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES);
+    //   case SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS:
+    //     setCurrentStep(SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES);
     //     break;
     //   case SELF_SERVICE_STEPS.COMPLETION_FORM:
     //     // setSelectedChangeType(null);
@@ -235,7 +235,7 @@ const SelfService = () => {
                 </Button>
               )}
               {canClickNext &&
-                currentStep === SELF_SERVICE_STEPS.SUGGESTED_CHANGE_TYPES && (
+                currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES && (
                   <Button
                     size="small"
                     disabled={!selfServiceRequest.requestedChanges.length}
@@ -245,8 +245,7 @@ const SelfService = () => {
                   </Button>
                 )}
               {canClickNext &&
-                currentStep ===
-                  SELF_SERVICE_STEPS.SELECT_SUGGESTED_IDENTITY && (
+                currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS && (
                   <Button
                     size="small"
                     disabled={!selfServiceRequest.identity}

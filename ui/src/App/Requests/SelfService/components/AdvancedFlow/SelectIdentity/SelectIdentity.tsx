@@ -2,7 +2,7 @@ import { useState, useContext, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Segment } from 'shared/layout/Segment';
 import { Select, SelectOption } from 'shared/form/Select';
-import SelfServiceContext from '../../SelfServiceContext';
+import SelfServiceContext from '../../../SelfServiceContext';
 import styles from './SelectIdentity.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { TypeaheadBlock } from 'shared/form/TypeaheadBlock';

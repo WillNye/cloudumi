@@ -3,7 +3,7 @@ import { Segment } from 'shared/layout/Segment';
 import styles from './SelectChangeType.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { useContext } from 'react';
-import SelfServiceContext from '../../SelfServiceContext';
+import SelfServiceContext from '../../../SelfServiceContext';
 import RequestChangeDetails from '../RequestChangeDetails';
 import { useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
@@ -15,7 +15,7 @@ import {
 import { Divider } from 'shared/elements/Divider';
 import { Input } from 'shared/form/Input';
 import { Block } from 'shared/layout/Block';
-import { ChangeType } from '../../types';
+import { ChangeType } from '../../../types';
 import { Button } from 'shared/elements/Button';
 import { Table } from 'shared/elements/Table';
 import {
@@ -27,7 +27,7 @@ import {
 import { TextArea } from 'shared/form/TextArea';
 import { Radio } from 'shared/form/Radio';
 import { Select, SelectOption } from 'shared/form/Select';
-import { EXPIRATION_TYPE, SELF_SERVICE_STEPS } from '../../constants';
+import { EXPIRATION_TYPE, SELF_SERVICE_STEPS } from '../../../constants';
 
 const SelectChangeType = () => {
   const [selectedChangeType, setSelectedChangeType] =

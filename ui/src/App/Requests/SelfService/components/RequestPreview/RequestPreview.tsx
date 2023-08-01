@@ -1,7 +1,7 @@
 import { LineBreak } from 'shared/elements/LineBreak';
 import { Button } from 'shared/elements/Button';
 import { useCallback, useEffect, useContext, useState, useMemo } from 'react';
-import styles from './CompletionForm.module.css';
+import styles from './RequestPreview.module.css';
 import SelfServiceContext from '../../SelfServiceContext';
 import { SubmittableRequest, TemplatePreview } from '../../types';
 import axios from 'core/Axios/Axios';
@@ -13,7 +13,7 @@ import { Icon } from 'shared/elements/Icon';
 import { extractErrorMessage } from 'core/API/utils';
 import errorImg from '../../../../../assets/illustrations/empty.svg';
 
-const CompletionForm = () => {
+const RequestPreview = () => {
   const [createdRequest, setCreatedRequest] = useState(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submittableRequest, setSubmittableRequest] =
@@ -131,4 +131,4 @@ const CompletionForm = () => {
   );
 };
 
-export default CompletionForm;
+export default RequestPreview;
