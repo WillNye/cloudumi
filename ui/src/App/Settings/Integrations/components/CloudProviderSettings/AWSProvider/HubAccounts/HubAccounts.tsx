@@ -12,6 +12,7 @@ import Joyride, { Step } from 'react-joyride';
 import { theme } from 'shared/utils/DesignTokens';
 import { useSetState } from 'react-use';
 import styles from '../AWSProvider.module.css';
+import { useSearchParams } from 'react-router-dom';
 
 interface ITourState {
   run: boolean;
@@ -28,53 +29,19 @@ const HubAccounts = ({ aws, isLoading, refetch, hubAccounts }) => {
   const newHubBtnRef = useRef();
   const proceedBtnbRef = useRef();
 
-  // useEffect(() => {
-  //   if (newHubBtnRef?.current) {
-  //     setState({
-  //       run: true,
-  //       steps: [
-  //         {
-  //           target: newHubBtnRef.current,
-  //           content: (
-  //             <p>
-  //               Please click on the &apos;Configure&apos; button to set up your
-  //               AWS settings and add a new hub role to connect to AWS.
-  //             </p>
-  //           ),
-  //           title: 'Setup AWS',
-  //           placement: 'left',
-  //           disableBeacon: true,
-  //           disableOverlayClose: true,
-  //           hideCloseButton: true,
-  //           hideFooter: true,
-  //           spotlightClicks: true,
-  //           styles: {
-  //             options: {
-  //               zIndex: 10000,
-  //               arrowColor: theme.colors.gray[600],
-  //               backgroundColor: theme.colors.gray[600],
-  //               primaryColor: theme.colors.blue[600],
-  //               textColor: theme.colors.white,
-  //               overlayColor: theme.colors.gray[700],
-  //               width: '450px'
-  //             }
-  //           }
-  //         },
-  //       ]
-  //     });
-  //   }
-  //   return () => setState({ run: false });
-  // }, [newHubBtnRef, setState]);
-
-  console.log('=========================', proceedBtnbRef);
+  const [searchParams] = useSearchParams();
+  const showTour = useMemo(
+    () => Boolean(searchParams.get('onboarding')),
+    [searchParams]
+  );
 
   useEffect(() => {
-    if (proceedBtnbRef?.current) {
+    if (newHubBtnRef?.current && showTour) {
       setState({
         run: true,
         steps: [
           {
-            target: proceedBtnbRef.current,
+            target: newHubBtnRef.current,
             content: (
               <p>
                 Please click on the &apos;Configure&apos; button to set up your
@@ -104,7 +71,7 @@ const HubAccounts = ({ aws, isLoading, refetch, hubAccounts }) => {
       });
     }
     return () => setState({ run: false });
-  }, [proceedBtnbRef, setState]);
+  }, [newHubBtnRef, setState, showTour]);
 
   const { mutateAsync: deleteHubAccountMutation } = useMutation({
     mutationFn: (awsOrganization: HubAccount) =>
@@ -136,7 +103,6 @@ const HubAccounts = ({ aws, isLoading, refetch, hubAccounts }) => {
         hideCloseButton
         run={run}
         hideBackButton
-        // continuous
         steps={steps}
         disableScrolling
         styles={{
@@ -158,7 +124,10 @@ const HubAccounts = ({ aws, isLoading, refetch, hubAccounts }) => {
             {!tableRows.length && (
               <Button
                 size="small"
-                onClick={() => setShowDialog(true)}
+                onClick={() => {
+                  setShowDialog(true);
+                  setState({ run: false });
+                }}
                 ref={newHubBtnRef}
               >
                 New

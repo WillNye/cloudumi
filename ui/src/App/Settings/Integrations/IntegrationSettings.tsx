@@ -144,7 +144,11 @@ const IntegrationSettings = () => {
             title="Configure AWS"
             icon={awsIcon}
             buttonText="Configure"
-            link="/settings/integrations/aws"
+            link={
+              showTour
+                ? '/settings/integrations/aws?onboarding=true'
+                : '/settings/integrations/aws'
+            }
             ref={awsConfigRef}
           />
           {/* <IntegrationCard
