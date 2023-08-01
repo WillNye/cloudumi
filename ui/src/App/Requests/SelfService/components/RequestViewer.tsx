@@ -17,7 +17,7 @@ export const STEP_COMPONENTS = {
   [SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS]: ExpressChangeDetails,
   [SELF_SERVICE_STEPS.SELECT_IDENTITY]: SelectIdentity,
   [SELF_SERVICE_STEPS.CHANGE_TYPE]: SelectChangeType,
-  [SELF_SERVICE_STEPS.COMPLETION_FORM]: RequestPreview
+  [SELF_SERVICE_STEPS.REQUEST_PREVIEW]: RequestPreview
 };
 
 const RequestViewer = () => {

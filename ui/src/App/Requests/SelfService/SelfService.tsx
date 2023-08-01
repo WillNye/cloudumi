@@ -119,7 +119,7 @@ const SelfService = () => {
     () =>
       classNames(styles.wrapper, {
         [styles.fullWidth]: [
-          SELF_SERVICE_STEPS.COMPLETION_FORM,
+          SELF_SERVICE_STEPS.REQUEST_PREVIEW,
           // SELF_SERVICE_STEPS.SELECT_IDENTITY,
           // SELF_SERVICE_STEPS.CHANGE_TYPE,
           SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES
@@ -135,7 +135,7 @@ const SelfService = () => {
     } else if (currentStep === SELF_SERVICE_STEPS.REQUEST_TYPE) {
       nextStep = SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES;
     } else if (currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE) {
-      nextStep = SELF_SERVICE_STEPS.COMPLETION_FORM;
+      nextStep = SELF_SERVICE_STEPS.REQUEST_PREVIEW;
     } else if (currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY) {
       nextStep = SELF_SERVICE_STEPS.CHANGE_TYPE;
     } else if (currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES) {
@@ -173,11 +173,11 @@ const SelfService = () => {
     //   case SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS:
     //     setCurrentStep(SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES);
     //     break;
-    //   case SELF_SERVICE_STEPS.COMPLETION_FORM:
+    //   case SELF_SERVICE_STEPS.REQUEST_PREVIEW:
     //     // setSelectedChangeType(null);
     //     setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
     //     break;
-    //   // case SELF_SERVICE_STEPS.COMPLETION_FORM:
+    //   // case SELF_SERVICE_STEPS.REQUEST_PREVIEW:
     //   //   setSelectedChangeType(null);
     //   //   setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
     //   //   break;
