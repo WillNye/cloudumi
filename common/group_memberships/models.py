@@ -148,11 +148,11 @@ class GroupMembership(SoftDeleteMixin, Base):
 
 
 async def upsert_and_remove_group_memberships(
-    users: list[User],
-    groups: list[Group],
+    users: list["User"],
+    groups: list["Group"],
     remove_other_group_memberships: bool = True,
     initiated_by: Optional[str] = None,
-    tenant: Optional[Tenant] = None,
+    tenant: Optional["Tenant"] = None,
 ):
     """Upsert group memberships for a list of users and groups.
     Args:
