@@ -6,6 +6,8 @@ import { User } from './types';
 import { getUserDetails } from 'core/API/auth';
 import { Loader } from 'shared/elements/Loader';
 import { useAxiosInterceptors } from './hooks';
+import { useQuery } from '@tanstack/react-query';
+// import { ErrorFallback } from 'shared/elements/ErrorFallback';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isUserLoggedIn } from './utils';
 import { getGithubInstallationStatus } from 'core/API/integrations';
@@ -14,6 +16,8 @@ import { getHubAccounts } from 'core/API/awsConfig';
 export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [invalidTenant, setInvalidTenant] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [internalServerError, setInternalServerError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const isResetPasswordRoute = useMatch('/login/password-reset');
