@@ -1,6 +1,12 @@
 import React, { Dispatch } from 'react';
 import { EXPIRATION_TYPE, SELF_SERVICE_STEPS } from './constants';
-import { ChangeTypeDetails, IRequest, RequestType, Identity } from './types';
+import {
+  ChangeTypeDetails,
+  IRequest,
+  RequestType,
+  Identity,
+  ChangeType
+} from './types';
 
 export interface ISelfServiceContext {
   actions: {
@@ -16,6 +22,7 @@ export interface ISelfServiceContext {
     setDateValue: Dispatch<string>;
     setTimeValue: Dispatch<string>;
     addChange: (change: ChangeTypeDetails) => void;
+    addChangeType: (change: ChangeType) => void;
     resetChanges: Dispatch<void>;
     removeChange: (index: number) => void;
     setSelfServiceRequest: Dispatch<IRequest>;

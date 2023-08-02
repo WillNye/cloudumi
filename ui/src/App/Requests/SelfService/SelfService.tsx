@@ -1,7 +1,12 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
+  ADVANCED_MODE_NEXT_STEP_MAP,
+  ADVANCED_MODE_PREVIOUS_STEP_MAP,
   DEFAULT_REQUEST,
   EXPIRATION_TYPE,
+  EXPRESS_MODE_NEXT_STEP_MAP,
+  EXPRESS_MODE_PREVIOUS_STEP_MAP,
+  REQUEST_FLOW_MODE,
   SELF_SERVICE_STEPS
 } from './constants';
 import RequestViewer from './components/RequestViewer';
@@ -9,19 +14,22 @@ import SelfServiceContext from './SelfServiceContext';
 import { Button } from 'shared/elements/Button';
 
 import styles from './SelfService.module.css';
-import { ChangeTypeDetails, IRequest, Identity, RequestType } from './types';
+import {
+  ChangeType,
+  ChangeTypeDetails,
+  IRequest,
+  Identity,
+  RequestType
+} from './types';
 import { Divider } from 'shared/elements/Divider';
 import { DateTime } from 'luxon';
 import classNames from 'classnames';
 
-// eslint-disable-next-line complexity
 const SelfService = () => {
-  const [stepsStack, setStepsStack] = useState([
-    SELF_SERVICE_STEPS.SELECT_PROVIDER
-  ]);
   const [currentStep, setCurrentStep] = useState(
     SELF_SERVICE_STEPS.SELECT_PROVIDER
   );
+  const [currentMode, setMode] = useState(REQUEST_FLOW_MODE.EXPRESS_MODE);
   const [expirationType, setExpirationType] = useState(EXPIRATION_TYPE.NEVER);
   const [relativeValue, setRelativeValue] = useState('4');
   const [relativeUnit, setRelativeUnit] = useState('hours');
@@ -32,61 +40,47 @@ const SelfService = () => {
   const [selfServiceRequest, setSelfServiceRequest] =
     useState<IRequest>(DEFAULT_REQUEST);
 
-  const setJustification = (justification: string) => {
-    setSelfServiceRequest(prev => {
-      const newRequest = { ...prev, justification };
-      return newRequest;
-    });
-  };
+  const setJustification = useCallback((justification: string) => {
+    setSelfServiceRequest(prev => ({ ...prev, justification }));
+  }, []);
 
-  const setSelectedProvider = (provider: string) => {
-    setSelfServiceRequest(prev => {
-      const newRequest = { ...prev, provider };
-      return newRequest;
-    });
-  };
+  const setSelectedProvider = useCallback((provider: string) => {
+    setSelfServiceRequest(prev => ({ ...prev, provider }));
+  }, []);
 
-  const setSelectedIdentityType = (identityType: string) => {
-    setSelfServiceRequest(prev => {
-      const newRequest = { ...prev, identityType };
-      return newRequest;
-    });
-  };
+  const setSelectedIdentityType = useCallback((identityType: string) => {
+    setSelfServiceRequest(prev => ({ ...prev, identityType }));
+  }, []);
 
-  const setSelectedIdentity = (identity: Identity) => {
-    setSelfServiceRequest(prev => {
-      const newRequest = { ...prev, identity };
-      return newRequest;
-    });
-  };
+  const setSelectedIdentity = useCallback((identity: Identity) => {
+    setSelfServiceRequest(prev => ({ ...prev, identity }));
+  }, []);
 
-  const setSelectedRequestType = (requestType: RequestType) => {
-    setSelfServiceRequest(prev => {
-      const newRequest = { ...prev, requestType };
-      return newRequest;
-    });
-  };
+  const setSelectedRequestType = useCallback((requestType: RequestType) => {
+    setSelfServiceRequest(prev => ({ ...prev, requestType }));
+  }, []);
 
-  const addChange = (change: ChangeTypeDetails) => {
+  const addChange = useCallback((change: ChangeTypeDetails) => {
     setSelfServiceRequest(prev => {
       const requestedChanges = [...prev.requestedChanges, change];
       const newRequest = { ...prev, requestedChanges };
       return newRequest;
     });
-  };
+  }, []);
 
-  const resetChanges = () => {
-    setSelfServiceRequest(prev => {
-      const newRequest = { ...prev, requestedChanges: [] };
-      return newRequest;
-    });
-  };
+  const addChangeType = useCallback((changeType: ChangeType) => {
+    setSelfServiceRequest(prev => ({ ...prev, changeType }));
+  }, []);
 
-  const setExpirationDate = (date: string | null) => {
+  const resetChanges = useCallback(() => {
+    setSelfServiceRequest(prev => ({ ...prev, requestedChanges: [] }));
+  }, []);
+
+  const setExpirationDate = useCallback((date: string | null) => {
     setSelfServiceRequest(prev => ({ ...prev, expirationDate: date }));
-  };
+  }, []);
 
-  const removeChange = index => {
+  const removeChange = useCallback(index => {
     setSelfServiceRequest(prev => {
       const requestedChanges = prev.requestedChanges.filter(
         (_, i) => i !== index
@@ -94,7 +88,7 @@ const SelfService = () => {
       const newRequest = { ...prev, requestedChanges };
       return newRequest;
     });
-  };
+  }, []);
 
   const canClickBack = useMemo(
     () => currentStep !== SELF_SERVICE_STEPS.SELECT_PROVIDER,
@@ -121,7 +115,7 @@ const SelfService = () => {
         [styles.fullWidth]: [
           SELF_SERVICE_STEPS.REQUEST_PREVIEW,
           // SELF_SERVICE_STEPS.SELECT_IDENTITY,
-          // SELF_SERVICE_STEPS.CHANGE_TYPE,
+          SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS,
           SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES
         ].includes(currentStep)
       }),
@@ -129,62 +123,20 @@ const SelfService = () => {
   );
 
   const handleNext = useCallback(() => {
-    let nextStep = SELF_SERVICE_STEPS.SELECT_PROVIDER;
-    if (currentStep === SELF_SERVICE_STEPS.SELECT_PROVIDER) {
-      nextStep = SELF_SERVICE_STEPS.REQUEST_TYPE;
-    } else if (currentStep === SELF_SERVICE_STEPS.REQUEST_TYPE) {
-      nextStep = SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES;
-    } else if (currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE) {
-      nextStep = SELF_SERVICE_STEPS.REQUEST_PREVIEW;
-    } else if (currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY) {
-      nextStep = SELF_SERVICE_STEPS.CHANGE_TYPE;
-    } else if (currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES) {
-      nextStep = SELF_SERVICE_STEPS.SELECT_IDENTITY;
-    } else if (currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS) {
-      nextStep = SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES;
+    if (currentMode === REQUEST_FLOW_MODE.EXPRESS_MODE) {
+      setCurrentStep(EXPRESS_MODE_NEXT_STEP_MAP[currentStep]);
+    } else {
+      setCurrentStep(ADVANCED_MODE_NEXT_STEP_MAP[currentStep]);
     }
-    setStepsStack(stack => [...stack, nextStep]);
-    setCurrentStep(nextStep);
-  }, [currentStep]);
+  }, [currentStep, currentMode]);
 
   const handleBack = useCallback(() => {
-    let newStack = [...stepsStack];
-    newStack.pop();
-    let lastStep = newStack[newStack.length - 1];
-    setStepsStack(newStack);
-    setCurrentStep(lastStep);
-
-    // switch (currentStep) {
-    //   case SELF_SERVICE_STEPS.SELECT_IDENTITY:
-    //     setSelectedIdentityType('');
-    //     setSelectedIdentity(null);
-    //     setCurrentStep(SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES);
-    //     break;
-    //   case SELF_SERVICE_STEPS.REQUEST_TYPE:
-    //     setSelectedRequestType(null);
-    //     setCurrentStep(SELF_SERVICE_STEPS.SELECT_PROVIDER);
-    //     break;
-    //   case SELF_SERVICE_STEPS.CHANGE_TYPE:
-    //     setCurrentStep(SELF_SERVICE_STEPS.REQUEST_TYPE);
-    //     break;
-    //   case SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES:
-    //     setCurrentStep(SELF_SERVICE_STEPS.REQUEST_TYPE);
-    //     break;
-    //   case SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS:
-    //     setCurrentStep(SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES);
-    //     break;
-    //   case SELF_SERVICE_STEPS.REQUEST_PREVIEW:
-    //     // setSelectedChangeType(null);
-    //     setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
-    //     break;
-    //   // case SELF_SERVICE_STEPS.REQUEST_PREVIEW:
-    //   //   setSelectedChangeType(null);
-    //   //   setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
-    //   //   break;
-    //   default:
-    //     break;
-    // }
-  }, [stepsStack]);
+    if (currentMode === REQUEST_FLOW_MODE.EXPRESS_MODE) {
+      setCurrentStep(EXPRESS_MODE_PREVIOUS_STEP_MAP[currentStep]);
+    } else {
+      setCurrentStep(ADVANCED_MODE_PREVIOUS_STEP_MAP[currentStep]);
+    }
+  }, [currentMode, currentStep]);
 
   return (
     <SelfServiceContext.Provider
@@ -207,6 +159,7 @@ const SelfService = () => {
           setJustification,
           setSelfServiceRequest,
           addChange,
+          addChangeType,
           removeChange,
           resetChanges,
           setExpirationType,
@@ -238,7 +191,7 @@ const SelfService = () => {
                 currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES && (
                   <Button
                     size="small"
-                    disabled={!selfServiceRequest.requestedChanges.length}
+                    disabled={!selfServiceRequest.changeType}
                     onClick={handleNext}
                   >
                     Next
@@ -248,7 +201,7 @@ const SelfService = () => {
                 currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS && (
                   <Button
                     size="small"
-                    disabled={!selfServiceRequest.identity}
+                    disabled={!selfServiceRequest.requestedChanges}
                     onClick={handleNext}
                   >
                     Next

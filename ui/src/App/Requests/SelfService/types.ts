@@ -201,3 +201,7 @@ export interface FilesEntity {
   template_body: string;
   previous_body: string;
 }
+
+export interface SelectedOptions {
+  [key: string]: string;
+}

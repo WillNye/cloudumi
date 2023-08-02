@@ -30,7 +30,7 @@
   }
 
   &.default {
-    --card-background: transparent;
+    --card-background: var(--gray-800);
     --card-color: var(--gray-100);
   }
 

@@ -154,19 +154,6 @@ const SelectChangeType = () => {
         header: 'Description',
         accessorKey: 'description'
       },
-      // {
-      //   header: 'Field Changes',
-      //   accessorKey: 'fields',
-      //   Cell: ({ value }) => (
-      //     <ul>
-      //       {value.map(field => (
-      //         <li key={field.field_key}>
-      //           {field.field_key}: {field.value}
-      //         </li>
-      //       ))}
-      //     </ul>
-      //   )
-      // },
       {
         header: 'Actions',
         accessorFn: (_data, index: number) => {

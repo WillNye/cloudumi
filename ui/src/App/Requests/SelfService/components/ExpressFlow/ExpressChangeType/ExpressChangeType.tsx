@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Segment } from 'shared/layout/Segment';
 import styles from './ExpressChangeType.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
@@ -6,7 +6,7 @@ import { useContext } from 'react';
 import SelfServiceContext from '../../../SelfServiceContext';
 import { useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import { getChangeRequestType } from 'core/API/iambicRequest';
+import { getExpressAccessRequests } from 'core/API/iambicRequest';
 import { ChangeType } from '../../../types';
 import { SELF_SERVICE_STEPS } from '../../../constants';
 import { Card } from 'shared/layout/Card';
@@ -14,29 +14,15 @@ import { Card } from 'shared/layout/Card';
 const ExpressChangeType = () => {
   const [, setSelectedChangeType] = useState<ChangeType | null>(null);
   const {
-    actions: { setCurrentStep, addChange, resetChanges },
+    actions: { setCurrentStep, addChangeType, resetChanges },
     store: { selfServiceRequest }
   } = useContext(SelfServiceContext);
 
   const [selectedCard, setSelectedCard] = useState(null);
 
-  const selectedRequestType = useMemo(
-    () => selfServiceRequest.requestType,
-    [selfServiceRequest]
-  );
-
-  const [suggestedChangeTypes, setSuggestedChangeTypes] = useState<
-    ChangeType[]
-  >([]);
-
   const { data: changeTypes, isLoading } = useQuery({
-    queryFn: getChangeRequestType,
-    queryKey: [
-      'getChangeRequestType',
-      selectedRequestType?.id,
-      'iambic_templates_specified',
-      'true'
-    ],
+    queryFn: getExpressAccessRequests,
+    queryKey: ['getExpressAccessRequests', selfServiceRequest.provider],
     onError: (error: AxiosError) => {
       // const errorRes = error?.response;
       // const errorMsg = extractErrorMessage(errorRes?.data);
@@ -44,35 +30,30 @@ const ExpressChangeType = () => {
     }
   });
 
-  const handleCardClick = changeType => {
-    if (selectedCard?.id === changeType?.id) {
-      setSelectedChangeType(null);
-      setSelectedCard(null);
-      resetChanges();
-    } else {
-      setSelectedChangeType;
-      setSelectedCard(changeType);
-      // TODO: We have a changeType that could be incomplete
-      // We need to call addChange but may need to ask the user for
-      // more info
-    }
-  };
-
-  useEffect(() => {
-    if (changeTypes) {
-      console.log('HERE', changeTypes);
-      setSuggestedChangeTypes(changeTypes?.data);
-    }
-  }, [changeTypes]);
+  const handleCardClick = useCallback(
+    changeType => {
+      if (selectedCard?.id === changeType?.id) {
+        setSelectedChangeType(null);
+        setSelectedCard(null);
+        resetChanges();
+      } else {
+        setSelectedChangeType;
+        setSelectedCard(changeType);
+        addChangeType(changeType);
+        // TODO: We have a changeType that could be incomplete
+        // We need to call addChange but may need to ask the user for
+        // more info
+      }
+    },
+    [addChangeType, resetChanges, selectedCard?.id]
+  );
 
   return (
     <Segment isLoading={isLoading}>
       <div className={styles.container}>
-        <h3>What Permissions would you like?</h3>
-        <LineBreak />
-        <p className={styles.subText}>
-          Please select from the provided template suggestions
-        </p>
+        <h3>Request Help Wizard</h3>
+        <LineBreak size="small" />
+        <p className={styles.subText}>What do you need to access?</p>
         <LineBreak />
         <div className={styles.search}>
           Can&apos;t find what you&apos;re looking for?{' '}
@@ -89,11 +70,11 @@ const ExpressChangeType = () => {
         </div>
         <LineBreak />
         <div className={styles.cardContainer}>
-          {suggestedChangeTypes.map(changeType => (
+          {changeTypes?.data.map(changeType => (
             <Card
               variant="outlined"
               color={
-                selectedCard?.id === changeType?.id ? 'primary' : 'secondary'
+                selectedCard?.id === changeType?.id ? 'primary' : 'default'
               }
               className={styles.card}
               key={changeType.id}

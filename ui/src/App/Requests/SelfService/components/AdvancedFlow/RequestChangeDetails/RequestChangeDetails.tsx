@@ -6,16 +6,12 @@ import SelfServiceContext from '../../../SelfServiceContext';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { Block } from 'shared/layout/Block';
 import RequestField from './RequestField';
-import { ChangeType, ChangeTypeDetails } from '../../../types';
+import { ChangeType, ChangeTypeDetails, SelectedOptions } from '../../../types';
 import { useQuery } from '@tanstack/react-query';
 import { getRequestChangeDetails } from 'core/API/iambicRequest';
 import { Segment } from 'shared/layout/Segment';
 import { Select, SelectOption } from 'shared/form/Select';
 import { ProviderDefinition } from '../../../types';
-
-interface SelectedOptions {
-  [key: string]: string;
-}
 
 type RequestChangeDetailsProps = {
   selectedChangeType: ChangeType;

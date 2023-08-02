@@ -85,7 +85,7 @@ export const getExpressAccessRequests = async ({ queryKey }) => {
 
 export const getExpressAccessChangeType = async ({ queryKey }) => {
   const [_, express_access_request_id] = queryKey;
-  const url = `${V4_API_URL}/self-service/express-access-requests/${express_access_request_id}`;
+  const url = `${V4_API_URL}/self-service/express-access-requests/${express_access_request_id}/`;
   const response = await axios.get(url);
   return response.data;
 };

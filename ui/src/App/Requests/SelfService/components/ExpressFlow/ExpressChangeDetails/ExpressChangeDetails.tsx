@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Segment } from 'shared/layout/Segment';
 import styles from './ExpressChangeDetails.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
@@ -6,28 +6,25 @@ import { useContext } from 'react';
 import SelfServiceContext from '../../../SelfServiceContext';
 import { useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import { getChangeRequestType } from 'core/API/iambicRequest';
-import { ChangeType, Identity } from '../../../types';
+import { getExpressAccessChangeType } from 'core/API/iambicRequest';
+import { ChangeType, Identity, SelectedOptions } from '../../../types';
 import { SELF_SERVICE_STEPS } from '../../../constants';
 import { Card } from 'shared/layout/Card';
 import { Search } from 'shared/form/Search';
 import { Button } from 'shared/elements/Button';
 import { Link } from 'react-router-dom';
+import RequestField from '../../AdvancedFlow/RequestChangeDetails/RequestField';
+import { Block } from 'shared/layout/Block';
 
 const ExpressChangeDetails = () => {
+  const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>({});
+
   const {
-    actions: { setCurrentStep, setSelectedIdentity, setSelectedIdentityType }
+    actions: { addChange, setSelectedIdentity, setSelectedIdentityType }
   } = useContext(SelfServiceContext);
   const {
     store: { selfServiceRequest }
   } = useContext(SelfServiceContext);
-
-  const selectedRequestType = useMemo(
-    () => selfServiceRequest.requestType,
-    [selfServiceRequest]
-  );
-
-  const [suggestedIdentity, setSuggestedIdentities] = useState<Identity[]>([]);
 
   const [selectedCard, setSelectedCard] = useState(null);
 
@@ -43,28 +40,49 @@ const ExpressChangeDetails = () => {
     }
   };
 
-  // Temp remove:
-  const isLoading = false;
+  const { data: changeTypeDetailsData, isLoading } = useQuery({
+    queryFn: getExpressAccessChangeType,
+    queryKey: [
+      'getExpressAccessChangeType',
+      selfServiceRequest?.changeType?.id
+    ],
+    onError: (error: AxiosError) => {
+      // const errorRes = error?.response;
+      // const errorMsg = extractErrorMessage(errorRes?.data);
+      // setErrorMessage(errorMsg || 'An error occurred fetching resource');
+    }
+  });
 
-  // const { data: identities, isLoading } = useQuery({
-  //   queryFn: getIdentities,
-  //   queryKey: [
-  //     'getIdentities',
-  //     'true'
-  //   ],
-  //   onError: (error: AxiosError) => {
-  //     // const errorRes = error?.response;
-  //     // const errorMsg = extractErrorMessage(errorRes?.data);
-  //     // setErrorMessage(errorMsg || 'An error occurred fetching resource');
-  //   }
-  // });
+  const changeTypeDetails = useMemo(
+    () => changeTypeDetailsData?.data?.change_type,
+    [changeTypeDetailsData]
+  );
 
-  // useEffect(() => {
-  //   if (changeTypes) {
-  //     console.log('HERE', changeTypes);
-  //     setSuggestedChangeTypes(changeTypes?.data.concat(SUGGESTED_CHANGES));
-  //   }
-  // }, [changeTypes]);
+  const handleChange = (fieldKey: string, value: string) => {
+    setSelectedOptions(prev => ({ ...prev, [fieldKey]: value }));
+  };
+
+  const handleSubmit = useCallback(
+    e => {
+      e.preventDefault();
+      if (!changeTypeDetails) {
+        return;
+      }
+      addChange({
+        id: changeTypeDetails.id,
+        name: changeTypeDetails.name,
+        description: changeTypeDetails.description,
+        request_type_id: changeTypeDetails.request_type_id,
+        fields: changeTypeDetails.fields.map(field => ({
+          ...field,
+          value: selectedOptions[field.field_key]
+        })),
+        included_providers: []
+      });
+      setSelectedOptions({});
+    },
+    [addChange, changeTypeDetails, selectedOptions]
+  );
 
   return (
     <Segment isLoading={isLoading}>
@@ -75,21 +93,29 @@ const ExpressChangeDetails = () => {
           Please select one of the suggested identities below
         </p>
         <LineBreak />
-        <div className={styles.search}>
-          Can&apos;t find what you&apos;re looking for?{' '}
-          <a
-            href="#"
-            onClick={e => {
-              e.preventDefault();
-              setCurrentStep(SELF_SERVICE_STEPS.SELECT_IDENTITY);
-            }}
-          >
-            click here
-          </a>{' '}
-          to customize your request
-        </div>
-        <LineBreak />
-        <div className={styles.cardContainer}>{/* TODO */}</div>
+        <Segment isLoading={isLoading} disablePadding>
+          <form onSubmit={handleSubmit}>
+            {changeTypeDetails?.fields?.map(field => (
+              <div key={field.id}>
+                <Block
+                  disableLabelPadding
+                  key={field.field_key}
+                  label={field.field_text}
+                  required={!field.allow_none}
+                ></Block>
+                <RequestField
+                  selectedOptions={selectedOptions}
+                  handleChange={handleChange}
+                  field={field}
+                />
+                <LineBreak />
+              </div>
+            ))}
+            <Button type="submit" size="small" disabled={!changeTypeDetails}>
+              Add Change
+            </Button>
+          </form>
+        </Segment>
       </div>
     </Segment>
   );

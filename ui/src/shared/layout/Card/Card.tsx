@@ -37,11 +37,7 @@ export const Card: FC<CardProps & { ref?: Ref<HTMLDivElement> }> = forwardRef(
         className={classNames(className, css.card, {
           [css.disablePadding]: disablePadding,
           [css.outlined]: variant === 'outlined',
-          [css.default]: color === 'default',
-          [css.danger]: color === 'danger',
-          [css.secondary]: color === 'secondary',
-          [css.primary]: color === 'primary',
-          [css.warning]: color === 'warning',
+          [css[color]]: color,
           [css.clickable]: clickable
         })}
       >
