@@ -12,8 +12,8 @@ import css from './ResourcesTable.module.css';
 const defaultSortField = {
   sortingColumn: {
     id: 'id',
-    sortingField: 'template_type',
-    header: 'template_type',
+    sortingField: 'iambic_template.template_type',
+    header: 'iambic_template.template_type',
     minWidth: 180
   },
   sortingDescending: false
@@ -38,7 +38,7 @@ const ResourcesTable = () => {
   });
 
   const tableRows = useMemo(() => {
-    return (resourcesData?.data || []).map(item => {
+    return (resourcesData?.data?.data || []).map(item => {
       const strippedPath = item.file_path.replace(/\.yaml$/, '');
       const provider = item.provider.toLowerCase();
       const repoName = item.repo_name.toLowerCase();
@@ -124,25 +124,25 @@ const ResourcesTable = () => {
             filteringOptions={[]}
             filteringProperties={[
               {
-                key: 'template_type',
+                key: 'iambic_template.template_type',
                 operators: ['=', '!=', ':', '!:'],
                 propertyLabel: 'Template Type',
                 groupValuesLabel: 'Template Type values'
               },
               {
-                key: 'identifier',
+                key: 'resource_id',
                 operators: ['=', '!=', ':', '!:'],
-                propertyLabel: 'Identifier',
-                groupValuesLabel: 'Identifier values'
+                propertyLabel: 'Resource ID',
+                groupValuesLabel: 'Resource ID values'
               },
               {
-                key: 'repository_name',
+                key: 'iambic_template.repo_name',
                 operators: ['=', '!=', ':', '!:'],
                 propertyLabel: 'Repository Name',
                 groupValuesLabel: 'Repository Name values'
               },
               {
-                key: 'file_path',
+                key: 'iambic_template.file_path',
                 operators: ['=', '!=', ':', '!:'],
                 propertyLabel: 'File Path',
                 groupValuesLabel: 'File Path values'
@@ -157,7 +157,7 @@ const ResourcesTable = () => {
             border="row"
             isLoading={isLoading}
             totalCount={
-              resourcesData?.filteredCount || query.pagination.pageSize
+              resourcesData?.data?.filtered_count || query.pagination.pageSize
             }
             pageSize={query.pagination.pageSize}
             pageIndex={query.pagination.currentPageIndex}

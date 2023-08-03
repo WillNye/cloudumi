@@ -1,10 +1,10 @@
 import { PropertyFilter, PropertyFilterProps } from '@noqdev/cloudscape';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import MoreActions from '../common/MoreActions';
 import { Table } from 'shared/elements/Table';
-import { allRolesColumns } from '../EligibleRoles/constants';
+import { allRolesColumns } from '../../constants';
 
 import { ROLE_PROPERTY_SEARCH_FILTER } from 'App/Access/constants';
 import css from './AllRoles.module.css';
@@ -20,13 +20,13 @@ const AllRoles = () => {
   const [query, setQuery] = useState({
     pagination: {
       currentPageIndex: 1,
-      pageSize: 30
+      pageSize: 15
     },
     sorting: {
       sortingColumn: {
         id: 'id',
-        sortingField: 'account_name',
-        header: 'Account Name',
+        sortingField: 'iambic_template.template_type',
+        header: 'iambic_template.template_type',
         minWidth: 180
       },
       sortingDescending: false
@@ -51,22 +51,31 @@ const AllRoles = () => {
   }, [filter]);
 
   const tableRows = useMemo(() => {
-    return (allRolesData?.data || []).map(item => {
-      const arn = item.arn.match(/\[(.+?)\]\((.+?)\)/)[1];
+    return (allRolesData?.data?.data || []).map(item => {
+      const strippedPath = item.file_path.replace(/\.yaml$/, '');
+      const provider = item.provider.toLowerCase();
+      const repoName = item.repo_name.toLowerCase();
       return {
         ...item,
-        // roleName: <Link to={`/resources/edit/${arn}`}>{arn}</Link>,
-        roleName: <div>{arn}</div>,
-        name: (
-          <div>
-            <div>{item.account_name}</div>
-            <div className={css.tableSecondaryText}>{item.account_id}</div>
-          </div>
+        file_path: (
+          <Link to={`/resources/${provider}/${repoName}${strippedPath}`}>
+            {item.file_path}
+          </Link>
         ),
         moreActions: <MoreActions role={item} />
       };
     });
   }, [allRolesData]);
+
+  const handleOnPageChange = useCallback((newPageIndex: number) => {
+    setQuery(query => ({
+      ...query,
+      pagination: {
+        ...query.pagination,
+        currentPageIndex: newPageIndex
+      }
+    }));
+  }, []);
 
   return (
     <>
@@ -110,22 +119,22 @@ const AllRoles = () => {
             filteringOptions={[]}
             filteringProperties={[
               {
-                key: 'account_name',
+                key: 'resource_id',
                 operators: ['=', '!=', ':', '!:'],
-                propertyLabel: 'Account Name',
-                groupValuesLabel: 'Account Name values'
+                propertyLabel: 'Resource ID',
+                groupValuesLabel: 'Resource ID values'
               },
               {
-                key: 'account_id',
+                key: 'iambic_template.repo_name',
                 operators: ['=', '!=', ':', '!:'],
-                propertyLabel: 'Account ID',
-                groupValuesLabel: 'Account ID values'
+                propertyLabel: 'Repository Name',
+                groupValuesLabel: 'Repository Name values'
               },
               {
-                key: 'role_name',
+                key: 'iambic_template.file_path',
                 operators: ['=', '!=', ':', '!:'],
-                propertyLabel: 'Role Name',
-                groupValuesLabel: 'Role Name values'
+                propertyLabel: 'File Path',
+                groupValuesLabel: 'File Path values'
               }
             ]}
           />
@@ -136,6 +145,13 @@ const AllRoles = () => {
             columns={allRolesColumns}
             border="row"
             isLoading={isLoading}
+            totalCount={
+              allRolesData?.data?.filtered_count || query.pagination.pageSize
+            }
+            pageSize={query.pagination.pageSize}
+            pageIndex={query.pagination.currentPageIndex}
+            handleOnPageChange={handleOnPageChange}
+            showPagination
           />
         </div>
       </div>

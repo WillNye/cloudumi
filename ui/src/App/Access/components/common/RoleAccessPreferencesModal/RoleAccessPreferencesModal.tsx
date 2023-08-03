@@ -4,9 +4,11 @@ import { Button } from 'shared/elements/Button';
 import { Select, SelectOption } from 'shared/form/Select';
 import { AWS_REGIONS, AWS_SERVICES_SIMPLE } from 'core/API/constants';
 import { LineBreak } from 'shared/elements/LineBreak';
+import { Segment } from 'shared/layout/Segment';
+import { Block } from 'shared/layout/Block';
 
 interface RoleAccessPreferencesModalProps {
-  role: { arn: string; inactive_tra: boolean };
+  role: { secondary_resource_id: string };
   showDialog: boolean;
   setShowDialog: Dispatch<boolean>;
 }
@@ -16,7 +18,8 @@ const RoleAccessPreferencesModal: FC<RoleAccessPreferencesModalProps> = ({
   showDialog,
   setShowDialog
 }) => {
-  const localStorageRoleSettings = 'access-settings|' + role.arn;
+  const localStorageRoleSettings =
+    'access-settings|' + role.secondary_resource_id;
   const storedPreferences = JSON.parse(
     localStorage.getItem(localStorageRoleSettings) || '{}'
   );
@@ -35,49 +38,43 @@ const RoleAccessPreferencesModal: FC<RoleAccessPreferencesModalProps> = ({
     <Dialog
       showDialog={showDialog}
       setShowDialog={setShowDialog}
-      header={''}
+      header="Role Preferences"
       size="medium"
       showCloseIcon
     >
-      <div>
-        <h4>User Preferences for {role.arn}</h4>
+      <Segment>
+        <Block disableLabelPadding label="Default Region" />
+        <Select
+          id="region"
+          name={region}
+          value={region}
+          onChange={value => setRegion(value)}
+        >
+          {AWS_REGIONS.map(region => (
+            <SelectOption key={service} value={region}>
+              {region}
+            </SelectOption>
+          ))}
+        </Select>
         <LineBreak />
-        <label>
-          Default Region:
-          <Select
-            id="region"
-            name={region}
-            value={region}
-            onChange={value => setRegion(value)}
-          >
-            {AWS_REGIONS.map(region => (
-              <SelectOption key={service} value={region}>
-                {region}
-              </SelectOption>
-            ))}
-          </Select>
-        </label>
+        <Block disableLabelPadding label="Default Service" />
+        <Select
+          id="service"
+          name={service}
+          value={service}
+          onChange={value => setService(value)}
+        >
+          {AWS_SERVICES_SIMPLE.map(service => (
+            <SelectOption key={service} value={service}>
+              {service}
+            </SelectOption>
+          ))}
+        </Select>
         <LineBreak />
-        <label>
-          Default Service:
-          <Select
-            id="service"
-            name={service}
-            value={service}
-            onChange={value => setService(value)}
-          >
-            {AWS_SERVICES_SIMPLE.map(service => (
-              <SelectOption key={service} value={service}>
-                {service}
-              </SelectOption>
-            ))}
-          </Select>
-        </label>
-      </div>
-      <LineBreak />
-      <Button onClick={handleSave} color="secondary" fullWidth>
-        Save
-      </Button>
+        <Button size="small" onClick={handleSave} fullWidth>
+          Save
+        </Button>
+      </Segment>
     </Dialog>
   );
 };

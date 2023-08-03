@@ -7,7 +7,7 @@ import RoleAccessPreferencesModal from '../RoleAccessPreferencesModal/RoleAccess
 import styles from './MoreActions.module.css';
 
 interface MoreActionsProps {
-  role: { arn: string; inactive_tra: boolean };
+  role: { secondary_resource_id: string };
 }
 
 const MoreActions: FC<MoreActionsProps> = ({ role }) => {
@@ -35,12 +35,6 @@ const MoreActions: FC<MoreActionsProps> = ({ role }) => {
           >
             Preferences
           </Button>
-          {/* <Button variant="text" color="secondary" size="small" fullWidth>
-            Add Permissions
-          </Button>
-          <Button variant="text" color="secondary" size="small" fullWidth>
-            View Details
-          </Button> */}
         </div>
       </Menu>
       {role && showPreferences && (
