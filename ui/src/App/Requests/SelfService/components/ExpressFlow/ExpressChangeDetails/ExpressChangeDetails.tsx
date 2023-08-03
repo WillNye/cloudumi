@@ -13,8 +13,9 @@ import { Card } from 'shared/layout/Card';
 import { Search } from 'shared/form/Search';
 import { Button } from 'shared/elements/Button';
 import { Link } from 'react-router-dom';
-import RequestField from '../../AdvancedFlow/RequestChangeDetails/RequestField';
+import RequestField from '../../common/RequestField';
 import { Block } from 'shared/layout/Block';
+import RequestExpiration from '../../common/RequestExpiration';
 
 const ExpressChangeDetails = () => {
   const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>({});
@@ -114,6 +115,7 @@ const ExpressChangeDetails = () => {
             <Button type="submit" size="small" disabled={!changeTypeDetails}>
               Add Change
             </Button>
+            <RequestExpiration />
           </form>
         </Segment>
       </div>

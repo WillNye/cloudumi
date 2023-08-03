@@ -2,7 +2,7 @@ import { Fragment } from 'react';
 import { Input } from 'shared/form/Input';
 import { Select, SelectOption } from 'shared/form/Select';
 import { TypeaheadBlock } from 'shared/form/TypeaheadBlock';
-import { ChangeTypeField } from '../../../types';
+import { ChangeTypeField } from '../../types';
 
 export type RequestFieldProps = {
   field: ChangeTypeField;

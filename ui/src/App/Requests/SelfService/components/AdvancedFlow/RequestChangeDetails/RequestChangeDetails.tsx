@@ -5,7 +5,7 @@ import { AxiosError } from 'axios';
 import SelfServiceContext from '../../../SelfServiceContext';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { Block } from 'shared/layout/Block';
-import RequestField from './RequestField';
+import RequestField from '../../common/RequestField';
 import { ChangeType, ChangeTypeDetails, SelectedOptions } from '../../../types';
 import { useQuery } from '@tanstack/react-query';
 import { getRequestChangeDetails } from 'core/API/iambicRequest';
