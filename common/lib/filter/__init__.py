@@ -2,7 +2,7 @@ import math
 from enum import Enum
 from typing import Any, Optional, Type
 
-from sqlalchemy import and_, func, or_
+from sqlalchemy import String, and_, cast, func, or_
 from sqlalchemy.sql import select
 
 from common.config.globals import ASYNC_PG_SESSION
@@ -187,23 +187,43 @@ def get_table_field_from_string(Table, field: str):
 
 
 async def get_query_conditions(Table, token, conditions):
-    if isinstance(token.propertyKey, str):
-        filter_key = getattr(Table, token.propertyKey)
+    if token.propertyKey is not None:
+        if isinstance(token.propertyKey, str):
+            filter_key = getattr(Table, token.propertyKey)
+        else:
+            filter_key = token.propertyKey
     else:
-        filter_key = token.propertyKey
+        filter_key = None
 
-    if token.operator == FilterOperator.equals:
-        conditions.append(filter_key == token.value)
-    elif token.operator == FilterOperator.not_equals:
-        conditions.append(filter_key != token.value)
-    elif token.operator == FilterOperator.contains:
-        conditions.append(filter_key.ilike(f"%{token.value}%"))
-    elif token.operator == FilterOperator.does_not_contain:
-        conditions.append(filter_key.notilike(f"%{token.value}%"))
-    elif token.operator == FilterOperator.greater_than:
-        conditions.append(filter_key > token.value)
-    elif token.operator == FilterOperator.less_than:
-        conditions.append(filter_key < token.value)
+    if filter_key:
+        if token.operator == FilterOperator.equals:
+            conditions.append(filter_key == token.value)
+        elif token.operator == FilterOperator.not_equals:
+            conditions.append(filter_key != token.value)
+        elif token.operator == FilterOperator.contains:
+            conditions.append(filter_key.ilike(f"%{token.value}%"))
+        elif token.operator == FilterOperator.does_not_contain:
+            conditions.append(filter_key.notilike(f"%{token.value}%"))
+        elif token.operator == FilterOperator.greater_than:
+            conditions.append(filter_key > token.value)
+        elif token.operator == FilterOperator.less_than:
+            conditions.append(filter_key < token.value)
+    else:  # general search in all columns
+        if token.operator in {FilterOperator.contains, FilterOperator.does_not_contain}:
+            search_condition = or_(
+                *[
+                    cast(getattr(Table, col.name), String).ilike(f"%{token.value}%")
+                    for col in Table.__table__.columns
+                ]
+            )
+            if token.operator == FilterOperator.does_not_contain:
+                search_condition = ~search_condition
+            conditions.append(search_condition)
+        else:
+            raise ValueError(
+                "Only 'contains' and 'does_not_contain' operations are supported for general search"
+            )
+
     return conditions
 
 
@@ -226,7 +246,9 @@ async def filter_data_with_sqlalchemy(
                 if filter.operation == FilterOperation._and:
                     for token in filter.tokens:
                         try:
-                            token.propertyKey = get_table_field_from_string(Table, token.propertyKey)
+                            token.propertyKey = get_table_field_from_string(
+                                Table, token.propertyKey
+                            )
                         except AttributeError:
                             return []
                         conditions = await get_query_conditions(
@@ -236,7 +258,9 @@ async def filter_data_with_sqlalchemy(
                 elif filter.operation == FilterOperation._or:
                     for token in filter.tokens:
                         try:
-                            token.propertyKey = get_table_field_from_string(Table, token.propertyKey)
+                            token.propertyKey = get_table_field_from_string(
+                                Table, token.propertyKey
+                            )
                         except AttributeError:
                             return []
                         conditions = await get_query_conditions(
@@ -284,7 +308,9 @@ async def enrich_sqlalchemy_stmt_with_filter_obj(
     if filter and filter.tokens:
         for token in filter.tokens:
             try:
-                token.propertyKey = get_table_field_from_string(sql_model, token.propertyKey)
+                token.propertyKey = get_table_field_from_string(
+                    sql_model, token.propertyKey
+                )
             except AttributeError:
                 return []
             conditions = await get_query_conditions(sql_model, token, conditions)
