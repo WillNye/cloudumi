@@ -58,7 +58,7 @@ const AllRoles = () => {
       return {
         ...item,
         file_path: (
-          <Link to={`/resources/${provider}/${repoName}${strippedPath}`}>
+          <Link to={`/resources/iambic/${repoName}/${strippedPath}`}>
             {item.file_path}
           </Link>
         ),
