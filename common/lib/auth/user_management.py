@@ -40,7 +40,12 @@ async def maybe_create_users_groups_in_database(
         )
         all_groups = res.get("all_groups")
         new_groups = res.get("new_groups")
-        await upsert_and_remove_group_memberships([db_user], all_groups)
+        await upsert_and_remove_group_memberships(
+            [db_user],
+            all_groups,
+            initiated_by=managed_by,
+            tenant=db_tenant,
+        )
     if new_groups:
         from common.celery_tasks.celery_tasks import app as celery_app
 
