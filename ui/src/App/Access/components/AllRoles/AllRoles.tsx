@@ -119,6 +119,12 @@ const AllRoles = () => {
             filteringOptions={[]}
             filteringProperties={[
               {
+                key: 'secondary_resource_id',
+                operators: ['=', '!=', ':', '!:'],
+                propertyLabel: 'Role ARN',
+                groupValuesLabel: 'Role ARN values'
+              },
+              {
                 key: 'iambic_template.resource_id',
                 operators: ['=', '!=', ':', '!:'],
                 propertyLabel: 'Resource ID',
