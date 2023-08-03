@@ -1,6 +1,12 @@
 import { SortingState } from '@tanstack/react-table';
 
-const nestedFields = ['repo_name', 'file_path', 'template_type', 'provider'];
+const nestedFields = [
+  'resource_id',
+  'repo_name',
+  'file_path',
+  'template_type',
+  'provider'
+];
 
 const getFieldKey = (name: string) => {
   if (nestedFields.includes(name)) {
