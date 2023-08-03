@@ -174,37 +174,16 @@ async def get_relationship_tables(Table) -> list[str]:
     return relationship_tables
 
 
-async def get_dynamic_objects_from_filter_tokens(Table, token):
-    """
-    This function get_dynamic_objects_from_filter_tokens takes in a Table and a token and returns the token with updated values if necessary.
+def get_table_field_from_string(Table, field: str):
+    nested_fields = str(field).split(".")
+    if len(nested_fields) > 1:
+        field = getattr(Table, nested_fields[0]).entity.class_
+        if len(nested_fields) > 2:
+            for sub_key in nested_fields[1:-1]:
+                field = getattr(field, sub_key).entity.class_
+        field = getattr(field, nested_fields[-1])
 
-    It's a necessary evil because of the way the `filter_data_with_sqlalchemy` gets into meta programming to build filters.
-    We have to resolve the relationship objects and since all pointers are lazily loaded, we have to actually import the
-    relevant model to get the object.
-
-    The function first retrieves related tables from the input Table using the get_relationship_tables function. Then, it splits the
-    value of the token's propertyKey into separate components and processes them accordingly. If the components contain more than one item,
-    the function attempts to import the relevant module and table based on the first component. If a matching module and table are found,
-    the token's propertyKey and value are updated accordingly.
-
-    If the token's value could not be found in the related table, an AttributeError will be raised.
-
-    :param Table: The input Table object.
-    :type Table: object
-    :param token: The input token object.
-    :type token: object
-    :return: The updated token object.
-    :rtype: object
-    """
-    propertyKey_tokens = str(token.propertyKey).split(".")
-    if len(propertyKey_tokens) > 1:
-        # Remember the join needs to happen somewhere still
-        token.propertyKey = getattr(Table, propertyKey_tokens[0]).entity.class_
-        if len(propertyKey_tokens) > 2:
-            for sub_key in propertyKey_tokens[1:-1]:
-                token.propertyKey = getattr(token.propertyKey, sub_key).entity.class_
-        token.propertyKey = getattr(token.propertyKey, propertyKey_tokens[-1])
-    return token
+    return field
 
 
 async def get_query_conditions(Table, token, conditions):
@@ -247,9 +226,7 @@ async def filter_data_with_sqlalchemy(
                 if filter.operation == FilterOperation._and:
                     for token in filter.tokens:
                         try:
-                            token = await get_dynamic_objects_from_filter_tokens(
-                                Table, token
-                            )
+                            token.propertyKey = get_table_field_from_string(Table, token.propertyKey)
                         except AttributeError:
                             return []
                         conditions = await get_query_conditions(
@@ -259,9 +236,7 @@ async def filter_data_with_sqlalchemy(
                 elif filter.operation == FilterOperation._or:
                     for token in filter.tokens:
                         try:
-                            token = await get_dynamic_objects_from_filter_tokens(
-                                Table, token
-                            )
+                            token.propertyKey = get_table_field_from_string(Table, token.propertyKey)
                         except AttributeError:
                             return []
                         conditions = await get_query_conditions(
@@ -309,10 +284,9 @@ async def enrich_sqlalchemy_stmt_with_filter_obj(
     if filter and filter.tokens:
         for token in filter.tokens:
             try:
-                token = await get_dynamic_objects_from_filter_tokens(sql_model, token)
+                token.propertyKey = get_table_field_from_string(sql_model, token.propertyKey)
             except AttributeError:
-                raise
-                # return []
+                return []
             conditions = await get_query_conditions(sql_model, token, conditions)
 
         if conditions and filter.operation == FilterOperation._and:
@@ -323,16 +297,17 @@ async def enrich_sqlalchemy_stmt_with_filter_obj(
             raise AttributeError(f"Unsupported filter operation: {filter.operation}")
 
     if sorting and sorting.sortingColumn:
+        sort_field = get_table_field_from_string(
+            sql_model, sorting.sortingColumn.sortingField
+        )
         sql_stmt = sql_stmt.order_by(
-            getattr(sql_model, sorting.sortingColumn.sortingField).desc()
-            if sorting.sortingDescending
-            else getattr(sql_model, sorting.sortingColumn.sortingField).asc()
+            sort_field.desc() if sorting.sortingDescending else sort_field.asc()
         )
 
     if pagination and pagination.pageSize and pagination.currentPageIndex:
-        sql_stmt = sql_stmt.offset(
+        sql_stmt = sql_stmt.limit(pagination.pageSize).offset(
             (pagination.currentPageIndex - 1) * pagination.pageSize
-        ).limit(pagination.pageSize)
+        )
 
     return sql_stmt
 
@@ -340,8 +315,11 @@ async def enrich_sqlalchemy_stmt_with_filter_obj(
 async def generate_paginated_response(sql_stmt):
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
-            filtered_count_query = sql_stmt.with_only_columns(func.count()).order_by(
-                None
+            filtered_count_query = (
+                sql_stmt.with_only_columns(func.count())
+                .order_by(None)
+                .offset(None)
+                .limit(None)
             )
             filtered_count = await session.execute(filtered_count_query)
             filtered_count = filtered_count.scalar()
