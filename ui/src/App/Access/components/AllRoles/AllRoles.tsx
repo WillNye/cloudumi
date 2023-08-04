@@ -6,7 +6,7 @@ import MoreActions from '../common/MoreActions';
 import { Table } from 'shared/elements/Table';
 import { allRolesColumns } from '../../constants';
 
-import { ROLE_PROPERTY_SEARCH_FILTER } from 'App/Access/constants';
+import { IAMBIC_ROLE_PROPERTY_SEARCH_FILTER } from 'App/Access/constants';
 import css from './AllRoles.module.css';
 import { useQuery } from '@tanstack/react-query';
 import { getAllRoles } from 'core/API/roles';
@@ -87,7 +87,7 @@ const AllRoles = () => {
             i18nStrings={{
               filteringAriaLabel: 'your choice',
               dismissAriaLabel: 'Dismiss',
-              filteringPlaceholder: ROLE_PROPERTY_SEARCH_FILTER,
+              filteringPlaceholder: IAMBIC_ROLE_PROPERTY_SEARCH_FILTER,
               groupValuesText: 'Values',
               groupPropertiesText: 'Properties',
               operatorsText: 'Operators',
@@ -120,8 +120,8 @@ const AllRoles = () => {
               {
                 key: 'secondary_resource_id',
                 operators: ['=', '!=', ':', '!:'],
-                propertyLabel: 'Resource ID',
-                groupValuesLabel: 'Resource ID values'
+                propertyLabel: 'Resource ARN',
+                groupValuesLabel: 'Resource ARN values'
               },
               {
                 key: 'iambic_template.repo_name',

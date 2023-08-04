@@ -8,6 +8,9 @@ export enum ROLES_TABS {
 export const ROLE_PROPERTY_SEARCH_FILTER =
   'Filter Roles by Account Name, Account ID or Role Name';
 
+export const IAMBIC_ROLE_PROPERTY_SEARCH_FILTER =
+  'Filter Roles by Resource ARN, Repository Name or File path';
+
 export const AWS_SIGN_OUT_URL =
   'https://signin.aws.amazon.com/oauth?Action=logout';
 
@@ -44,8 +47,8 @@ export const allRolesColumns: ColumnDef<any, any>[] = [
     accessorKey: 'template_type'
   },
   {
-    header: 'Resource ID',
-    accessorKey: 'resource_id'
+    header: 'Resource ARN',
+    accessorKey: 'secondary_resource_id'
   },
   {
     header: 'Repository Name',
