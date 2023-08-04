@@ -130,10 +130,10 @@ const ResourcesTable = () => {
                 groupValuesLabel: 'Template Type values'
               },
               {
-                key: 'iambic_template.resource_id',
+                key: 'secondary_resource_id',
                 operators: ['=', '!=', ':', '!:'],
-                propertyLabel: 'Resource ID',
-                groupValuesLabel: 'Resource ID values'
+                propertyLabel: 'Resource ARN',
+                groupValuesLabel: 'Resource ARN values'
               },
               {
                 key: 'iambic_template.repo_name',

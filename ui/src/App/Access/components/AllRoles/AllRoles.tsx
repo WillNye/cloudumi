@@ -53,7 +53,6 @@ const AllRoles = () => {
   const tableRows = useMemo(() => {
     return (allRolesData?.data?.data || []).map(item => {
       const strippedPath = item.file_path.replace(/\.yaml$/, '');
-      const provider = item.provider.toLowerCase();
       const repoName = item.repo_name.toLowerCase();
       return {
         ...item,
@@ -120,12 +119,6 @@ const AllRoles = () => {
             filteringProperties={[
               {
                 key: 'secondary_resource_id',
-                operators: ['=', '!=', ':', '!:'],
-                propertyLabel: 'Role ARN',
-                groupValuesLabel: 'Role ARN values'
-              },
-              {
-                key: 'iambic_template.resource_id',
                 operators: ['=', '!=', ':', '!:'],
                 propertyLabel: 'Resource ID',
                 groupValuesLabel: 'Resource ID values'

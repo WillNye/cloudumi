@@ -1,7 +1,7 @@
 import { SortingState } from '@tanstack/react-table';
 
 const nestedFields = [
-  'resource_id',
+  'secondary_resource_id',
   'repo_name',
   'file_path',
   'template_type',
