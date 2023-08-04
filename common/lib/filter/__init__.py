@@ -308,9 +308,10 @@ async def enrich_sqlalchemy_stmt_with_filter_obj(
     if filter and filter.tokens:
         for token in filter.tokens:
             try:
-                token.propertyKey = get_table_field_from_string(
-                    sql_model, token.propertyKey
-                )
+                if token.propertyKey:
+                    token.propertyKey = get_table_field_from_string(
+                        sql_model, token.propertyKey
+                    )
             except AttributeError:
                 return []
             conditions = await get_query_conditions(sql_model, token, conditions)
