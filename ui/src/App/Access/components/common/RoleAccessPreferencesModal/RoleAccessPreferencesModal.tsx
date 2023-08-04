@@ -8,7 +8,7 @@ import { Segment } from 'shared/layout/Segment';
 import { Block } from 'shared/layout/Block';
 
 interface RoleAccessPreferencesModalProps {
-  role: { secondary_resource_id: string };
+  role: { arn: string; secondary_resource_id: string };
   showDialog: boolean;
   setShowDialog: Dispatch<boolean>;
 }
@@ -18,8 +18,7 @@ const RoleAccessPreferencesModal: FC<RoleAccessPreferencesModalProps> = ({
   showDialog,
   setShowDialog
 }) => {
-  const localStorageRoleSettings =
-    'access-settings|' + role.secondary_resource_id;
+  const localStorageRoleSettings = 'access-settings|' + role?.arn;
   const storedPreferences = JSON.parse(
     localStorage.getItem(localStorageRoleSettings) || '{}'
   );
