@@ -176,14 +176,14 @@ async def get_relationship_tables(Table) -> list[str]:
 
 def get_table_field_from_string(Table, field: str):
     nested_fields = str(field).split(".")
-    if len(nested_fields) > 1:
-        field = getattr(Table, nested_fields[0]).entity.class_
-        if len(nested_fields) > 2:
-            for sub_key in nested_fields[1:-1]:
-                field = getattr(field, sub_key).entity.class_
-        field = getattr(field, nested_fields[-1])
+    if len(nested_fields) == 1:
+        return getattr(Table, field)
 
-    return field
+    field = getattr(Table, nested_fields[0]).entity.class_
+    if len(nested_fields) > 2:
+        for sub_key in nested_fields[1:-1]:
+            field = getattr(field, sub_key).entity.class_
+    return getattr(field, nested_fields[-1])
 
 
 async def get_query_conditions(Table, token, conditions):
