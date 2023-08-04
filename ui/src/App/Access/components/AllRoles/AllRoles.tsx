@@ -10,6 +10,17 @@ import { IAMBIC_ROLE_PROPERTY_SEARCH_FILTER } from 'App/Access/constants';
 import css from './AllRoles.module.css';
 import { useQuery } from '@tanstack/react-query';
 import { getAllRoles } from 'core/API/roles';
+import { extractSortValue } from 'core/utils/helpers';
+
+const defaultSortField = {
+  sortingColumn: {
+    id: 'id',
+    sortingField: 'iambic_template.template_type',
+    header: 'iambic_template.template_type',
+    minWidth: 180
+  },
+  sortingDescending: false
+};
 
 const AllRoles = () => {
   const [filter, setFilter] = useState<PropertyFilterProps.Query>({
@@ -22,15 +33,7 @@ const AllRoles = () => {
       currentPageIndex: 1,
       pageSize: 15
     },
-    sorting: {
-      sortingColumn: {
-        id: 'id',
-        sortingField: 'iambic_template.template_type',
-        header: 'iambic_template.template_type',
-        minWidth: 180
-      },
-      sortingDescending: false
-    },
+    sorting: extractSortValue(defaultSortField),
     filtering: filter
   });
 
@@ -73,6 +76,14 @@ const AllRoles = () => {
         ...query.pagination,
         currentPageIndex: newPageIndex
       }
+    }));
+  }, []);
+
+  const handleOnSort = useCallback(value => {
+    const sortValue = extractSortValue(defaultSortField, value);
+    setQuery(query => ({
+      ...query,
+      sorting: sortValue
     }));
   }, []);
 
@@ -150,7 +161,9 @@ const AllRoles = () => {
             pageSize={query.pagination.pageSize}
             pageIndex={query.pagination.currentPageIndex}
             handleOnPageChange={handleOnPageChange}
+            handleOnSort={handleOnSort}
             showPagination
+            enableSorting
           />
         </div>
       </div>
