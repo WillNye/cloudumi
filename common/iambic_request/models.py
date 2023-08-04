@@ -97,6 +97,8 @@ class BasePullRequest(PydanticBaseModel):
     pr_provider: Any = None
     pr_obj: Any = None
     merge_commit_sha: Optional[str] = None
+    review_state: Optional[str] = None
+    approved_by: Optional[list[str]] = []
 
     class Config:
         arbitrary_types_allowed = True
@@ -213,6 +215,8 @@ class BasePullRequest(PydanticBaseModel):
             self.tenant,
             self.iambic_repo.repo_name,
         )
+        # Ensure we have the latest refs
+        await base_iambic_repo.clone_or_pull_git_repo()
         merge_commit = base_iambic_repo.repo.commit(self.pr_obj.merge_commit_sha)
         parent_commit = merge_commit.parents[0]
         default_branch_commit = base_iambic_repo.repo.commit(
@@ -416,6 +420,20 @@ class GitHubPullRequest(BasePullRequest):
         self.mergeable = self.pr_obj.mergeable
         self.merged_at = self.pr_obj.merged_at
         self.closed_at = self.pr_obj.closed_at
+        self.approved_by = []
+        reviews = await aio_wrapper(self.pr_obj.get_reviews)
+        if not reviews:
+            reviews = []
+        self.review_state = "PENDING_REVIEW"
+        for review in reviews:
+            if review.state == "CHANGES_REQUESTED":
+                self.review_state = "CHANGES_REQUESTED"
+                break
+            elif review.state == "APPROVED":
+                self.review_state = "APPROVED"
+                reviewer = review.user.login
+                if "[bot]" not in reviewer:
+                    self.approved_by.append(review.user.login)
 
         self.comments = []
         for comments in await asyncio.gather(
@@ -661,6 +679,29 @@ class Request(SoftDeleteMixin, Base):
                 session.add(self)
                 await session.commit()
             return True
+
+    async def maybe_update_request(self, request_pr):
+        if request_pr.review_state == "APPROVED" and self.status in [
+            "Pending",
+            "Pending in Git",
+            "Applying",
+            "Approving",
+            "Rejected",
+        ]:
+            self.status = "Approved"
+            if request_pr.approved_by:
+                self.approved_by = list(set(request_pr.approved_by + self.approved_by))
+            await self.write()
+
+        # Change status to Applied if PR is merged and status is not Expired or Reverted
+        if (
+            self.status != "Applied"
+            and request_pr.merged_at
+            and self.status not in ["Expired", "Reverted"]
+        ):
+            self.status = "Applied"
+            await self.write()
+        return self
 
 
 class RevertRequestReference(Base):

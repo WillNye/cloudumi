@@ -93,6 +93,7 @@ def compare_date_time(obj):
 
 async def get_request_response(request: Request, request_pr) -> dict:
     pr_details = await request_pr.get_request_details()
+    request = await request.maybe_update_request(request_pr)
     pr_details["justification"] = request.justification
     pr_details["status"] = request.status
     pr_details["approved_by"] = request.approved_by
