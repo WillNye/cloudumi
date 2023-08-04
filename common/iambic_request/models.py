@@ -13,7 +13,7 @@ from pydantic import BaseModel as PydanticBaseModel
 from pydantic.fields import Any
 from sqlalchemy import Column, ForeignKey, Index, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY, ENUM, UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import exc, relationship
 
 from common.config import config
 from common.config.globals import ASYNC_PG_SESSION, GITHUB_APP_APPROVE_PRIVATE_PEM_1
@@ -257,12 +257,12 @@ class BasePullRequest(PydanticBaseModel):
             changes=template_changes,
             request_method="WEB",
         )
-        # TODO: A request should only be "revertable" (I should only see the revert button) if there is a diff between
-        # the parent commit shown above, and the default branch commit. If there is no diff, then the file is the same as the default
-        # and I shouldn't even see the revert button. Currently we do this check here but not in the UI.
-        print(response)
-        # TODO: Tie the reverted request to the original request so we can see it was reverted. Do not allow the user
-        # to revert after this point
+        revert_request_reference = RevertRequestReference(
+            target_request_id=self.request_id,
+            revert_request_id=response["request"].id,
+        )
+        await revert_request_reference.write()
+        return response
 
     async def approve_request(self, approved_by: Union[str, list[str]]):
         if not self.pr_obj:
@@ -572,6 +572,19 @@ class Request(SoftDeleteMixin, Base):
         order_by="RequestComment.created_at",
     )
 
+    as_target_request = relationship(
+        "RevertRequestReference",
+        back_populates="target_request",
+        foreign_keys="RevertRequestReference.target_request_id",
+        cascade="all, delete-orphan",
+    )
+    as_revert_request = relationship(
+        "RevertRequestReference",
+        back_populates="revert_request",
+        foreign_keys="RevertRequestReference.revert_request_id",
+        cascade="all, delete-orphan",
+    )
+
     __table_args__ = (
         Index("request_tenant_created_at_idx", "tenant_id", "deleted", "created_at"),
         Index(
@@ -611,6 +624,23 @@ class Request(SoftDeleteMixin, Base):
             "created_at": self.created_at.timestamp(),
             "created_by": self.created_by,
         }
+
+        for reference_request in {"target_request", "revert_request"}:
+            try:
+                if reference_obj := getattr(self, f"as_{reference_request}"):
+                    if reference_request == "revert_request":
+                        reference_attr = "target_request"
+                    else:
+                        reference_attr = "revert_request"
+                    reference_request_obj = getattr(reference_obj[0], reference_attr)
+                    response[reference_attr] = {
+                        "id": str(reference_request_obj.id),
+                        "pull_request_url": reference_request_obj.pull_request_url,
+                        "justification": reference_request_obj.justification,
+                    }
+            except exc.DetachedInstanceError:
+                continue
+
         for conditional_key in (
             "approved_by",
             "rejected_by",
@@ -619,6 +649,8 @@ class Request(SoftDeleteMixin, Base):
             "updated_by",
         ):
             if val := getattr(self, conditional_key):
+                if isinstance(val, datetime):
+                    val = val.timestamp()
                 response[conditional_key] = val
 
         return response
@@ -629,6 +661,25 @@ class Request(SoftDeleteMixin, Base):
                 session.add(self)
                 await session.commit()
             return True
+
+
+class RevertRequestReference(Base):
+    __tablename__ = "revert_request_reference"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    target_request_id = Column(
+        UUID(as_uuid=True), ForeignKey("request.id"), unique=True, nullable=False
+    )
+    revert_request_id = Column(
+        UUID(as_uuid=True), ForeignKey("request.id"), unique=True, nullable=False
+    )
+
+    target_request = relationship(
+        "Request", foreign_keys=target_request_id, back_populates="as_target_request"
+    )
+    revert_request = relationship(
+        "Request", foreign_keys=revert_request_id, back_populates="as_revert_request"
+    )
 
 
 class RequestComment(SoftDeleteMixin, Base):

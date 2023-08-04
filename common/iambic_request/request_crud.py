@@ -2,10 +2,9 @@ import datetime
 import uuid
 from typing import Optional, Union
 
-from sqlalchemy import and_
 from sqlalchemy import func as sql_func
 from sqlalchemy import select, update
-from sqlalchemy.orm import contains_eager
+from sqlalchemy.orm import contains_eager, joinedload
 
 from common import IambicTemplate, IambicTemplateContent
 from common.config import config
@@ -13,7 +12,12 @@ from common.config.globals import ASYNC_PG_SESSION
 from common.exceptions.exceptions import NoMatchingRequest, Unauthorized
 from common.iambic.config.models import TRUSTED_PROVIDER_RESOLVER_MAP
 from common.iambic.templates.utils import get_template_by_id
-from common.iambic_request.models import IambicTemplateChange, Request, RequestComment
+from common.iambic_request.models import (
+    IambicTemplateChange,
+    Request,
+    RequestComment,
+    RevertRequestReference,
+)
 from common.iambic_request.utils import (
     generate_updated_iambic_template,
     get_allowed_approvers,
@@ -87,23 +91,14 @@ def compare_date_time(obj):
         raise ValueError("created_at not supported by {obj}")
 
 
-async def get_request_response(
-    request: Request, request_pr, include_comments: bool = True
-) -> dict:
+async def get_request_response(request: Request, request_pr) -> dict:
     pr_details = await request_pr.get_request_details()
     pr_details["justification"] = request.justification
     pr_details["status"] = request.status
     pr_details["approved_by"] = request.approved_by
     pr_details["rejected_by"] = request.rejected_by
     pr_details["allowed_approvers"] = request.allowed_approvers
-    if include_comments:
-        comments = [comment.dict() for comment in request.comments]
-        if pr_details["comments"]:
-            comments.extend(pr_details["comments"])
-        comments.sort(key=compare_date_time)
-        pr_details["comments"] = comments
-    else:
-        pr_details["comments"] = []
+    pr_details.update(request.dict())
 
     return json.loads(json.dumps(pr_details))
 
@@ -115,14 +110,14 @@ async def get_request(tenant_id: int, request_id: Union[str, uuid.UUID]) -> Requ
                 select(Request)
                 .filter(Request.id == request_id)
                 .filter(Request.tenant_id == tenant_id)
-                .outerjoin(
-                    RequestComment,
-                    and_(
-                        RequestComment.request_id == Request.id,
-                        RequestComment.deleted == False,  # noqa: E712
+                .options(
+                    joinedload(Request.as_revert_request).options(
+                        joinedload(RevertRequestReference.target_request)
+                    ),
+                    joinedload(Request.as_target_request).options(
+                        joinedload(RevertRequestReference.revert_request)
                     ),
                 )
-                .options(contains_eager(Request.comments))
             )
 
             items = await session.execute(stmt)
@@ -263,7 +258,7 @@ async def create_request(
     )
     await request.write()
 
-    response = await get_request_response(request, request_pr, False)
+    response = await get_request_response(request, request_pr)
     del request_pr
     return {
         "request": request,
@@ -360,10 +355,7 @@ async def revert_request(
 
     response = await get_request_response(request, request_pr)
     del request_pr
-    return {
-        "request": request,
-        "friendly_request": response,
-    }
+    return response
 
 
 async def approve_or_apply_request(
