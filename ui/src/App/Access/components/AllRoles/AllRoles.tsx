@@ -63,8 +63,7 @@ const AllRoles = () => {
           <Link to={`/resources/iambic/${repoName}/${strippedPath}`}>
             {item.file_path}
           </Link>
-        ),
-        moreActions: <MoreActions role={item} />
+        )
       };
     });
   }, [allRolesData]);

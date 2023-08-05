@@ -7,7 +7,7 @@ import RoleAccessPreferencesModal from '../RoleAccessPreferencesModal/RoleAccess
 import styles from './MoreActions.module.css';
 
 interface MoreActionsProps {
-  role: { secondary_resource_id: string };
+  role: { arn: string; secondary_resource_id: string };
 }
 
 const MoreActions: FC<MoreActionsProps> = ({ role }) => {
