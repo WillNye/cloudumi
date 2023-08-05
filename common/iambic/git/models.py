@@ -133,6 +133,15 @@ class IambicRepo:
                 if "refusing to merge unrelated histories" not in err.stderr:
                     # we have to be specific; otherwise, a transient network error
                     # may cause us to blow away the directory.
+                    await log.aexception(
+                        "Git Pull failed",
+                        repo=self.repo_name,
+                        tenant=self.tenant.name,
+                        request_id=self.request_id,
+                        file_path=self.file_path,
+                        default_file_path=self.default_file_path,
+                        default_branch_name=self.default_branch_name,
+                    )
                     raise
                 # an upstream may have re-written history, fall back to a fresh blobless clone
                 shutil.rmtree(self.default_file_path)

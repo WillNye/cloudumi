@@ -1,5 +1,5 @@
 import { PropertyFilterProps } from '@noqdev/cloudscape';
-import { SUPPORTED_FILTER_KEYS } from './constants';
+import { SUPPORTED_FILTER_KEYS } from '../../constants';
 
 export const getSearchParams = (): PropertyFilterProps.Token[] => {
   const searchParams = new URLSearchParams(window.location.search);

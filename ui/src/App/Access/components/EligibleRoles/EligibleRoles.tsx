@@ -4,7 +4,7 @@ import RoleCredentialSummary from '../common/RoleCredentialSummary';
 
 import MoreActions from '../common/MoreActions';
 import { Table } from 'shared/elements/Table';
-import { eligibleRolesColumns } from './constants';
+import { eligibleRolesColumns } from '../../constants';
 
 import { ROLE_PROPERTY_SEARCH_FILTER } from 'App/Access/constants';
 import AWSSignIn from '../common/AWSSignIn';
