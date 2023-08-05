@@ -35,7 +35,7 @@ export const tourSteps: Step[] = [
   {
     content: (
       <p>
-        Let&apos;s create a secure environment together. Assistance is always
+        Let&apos;s set up a secure environment together. Assistance is always
         available if you need it. Let&apos;s get started!
       </p>
     ),
