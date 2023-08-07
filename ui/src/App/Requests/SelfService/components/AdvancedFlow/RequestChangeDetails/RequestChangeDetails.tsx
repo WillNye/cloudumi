@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext, useMemo } from 'react';
+import { useEffect, useState, useContext, useMemo, useCallback } from 'react';
 import { Button } from 'shared/elements/Button';
 import { AxiosError } from 'axios';
 
@@ -70,21 +70,24 @@ const RequestChangeDetails = ({
     }
   });
 
-  const handleSubmit = e => {
-    e.preventDefault();
-    addChange({
-      id: changeTypeDetails.id,
-      name: changeTypeDetails.name,
-      description: changeTypeDetails.description,
-      request_type_id: changeTypeDetails.request_type_id,
-      fields: changeTypeDetails.fields.map(field => ({
-        ...field,
-        value: selectedOptions[field.field_key]
-      })),
-      included_providers: includedProviders
-    });
-    setSelectedOptions({});
-  };
+  const handleSubmit = useCallback(
+    e => {
+      e.preventDefault();
+      addChange({
+        id: changeTypeDetails.id,
+        name: changeTypeDetails.name,
+        description: changeTypeDetails.description,
+        request_type_id: changeTypeDetails.request_type_id,
+        fields: changeTypeDetails.fields.map(field => ({
+          ...field,
+          value: selectedOptions[field.field_key]
+        })),
+        included_providers: includedProviders
+      });
+      setSelectedOptions({});
+    },
+    [addChange, changeTypeDetails, includedProviders, selectedOptions]
+  );
 
   const accountNamesValue = useMemo(() => {
     // on multiple selects, the value is an array of strings

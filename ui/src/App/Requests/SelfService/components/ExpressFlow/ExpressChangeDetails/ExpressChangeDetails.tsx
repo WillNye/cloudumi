@@ -8,14 +8,12 @@ import { useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { getExpressAccessChangeType } from 'core/API/iambicRequest';
 import { ChangeType, Identity, SelectedOptions } from '../../../types';
-import { SELF_SERVICE_STEPS } from '../../../constants';
-import { Card } from 'shared/layout/Card';
-import { Search } from 'shared/form/Search';
 import { Button } from 'shared/elements/Button';
 import { Link } from 'react-router-dom';
 import RequestField from '../../common/RequestField';
 import { Block } from 'shared/layout/Block';
 import RequestExpiration from '../../common/RequestExpiration';
+import useGetProviderDefinitions from 'App/Requests/SelfService/hooks/useGetProviderDefinitions';
 
 const ExpressChangeDetails = () => {
   const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>({});
@@ -27,26 +25,15 @@ const ExpressChangeDetails = () => {
     store: { selfServiceRequest }
   } = useContext(SelfServiceContext);
 
-  const [selectedCard, setSelectedCard] = useState(null);
-
-  const handleCardClick = identity => {
-    if (selectedCard === identity.resource_id) {
-      setSelectedIdentity(null);
-      setSelectedCard(null);
-      setSelectedIdentityType(null);
-    } else {
-      setSelectedIdentityType(identity.template_type);
-      setSelectedIdentity(identity);
-      setSelectedCard(identity.resource_id);
-    }
-  };
-
   const { data: changeTypeDetailsData, isLoading } = useQuery({
     queryFn: getExpressAccessChangeType,
     queryKey: [
       'getExpressAccessChangeType',
-      selfServiceRequest?.changeType?.id
+      selfServiceRequest?.identityType?.id
     ],
+    onSuccess: res => {
+      // setSelectedIdentity(res?.data);
+    },
     onError: (error: AxiosError) => {
       // const errorRes = error?.response;
       // const errorMsg = extractErrorMessage(errorRes?.data);
@@ -58,6 +45,11 @@ const ExpressChangeDetails = () => {
     () => changeTypeDetailsData?.data?.change_type,
     [changeTypeDetailsData]
   );
+
+  const { providerDefinitions } = useGetProviderDefinitions({
+    provider: selfServiceRequest.provider,
+    template_id: changeTypeDetailsData?.data?.iambic_template_id ?? null
+  });
 
   const handleChange = (fieldKey: string, value: string) => {
     setSelectedOptions(prev => ({ ...prev, [fieldKey]: value }));
@@ -78,11 +70,13 @@ const ExpressChangeDetails = () => {
           ...field,
           value: selectedOptions[field.field_key]
         })),
-        included_providers: []
+        included_providers: changeTypeDetails?.data?.length
+          ? [providerDefinitions?.data[0]]
+          : []
       });
       setSelectedOptions({});
     },
-    [addChange, changeTypeDetails, selectedOptions]
+    [addChange, changeTypeDetails, selectedOptions, providerDefinitions]
   );
 
   return (

@@ -7,14 +7,17 @@ import SelfServiceContext from '../../../SelfServiceContext';
 import { useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { getExpressAccessRequests } from 'core/API/iambicRequest';
-import { ChangeType } from '../../../types';
-import { SELF_SERVICE_STEPS } from '../../../constants';
+import { REQUEST_FLOW_MODE, SELF_SERVICE_STEPS } from '../../../constants';
 import { Card } from 'shared/layout/Card';
 
 const ExpressChangeType = () => {
-  const [, setSelectedChangeType] = useState<ChangeType | null>(null);
   const {
-    actions: { setCurrentStep, addChangeType, resetChanges },
+    actions: {
+      setCurrentStep,
+      setSelectedIdentityType,
+      resetChanges,
+      setCurrentMode
+    },
     store: { selfServiceRequest }
   } = useContext(SelfServiceContext);
 
@@ -33,19 +36,19 @@ const ExpressChangeType = () => {
   const handleCardClick = useCallback(
     changeType => {
       if (selectedCard?.id === changeType?.id) {
-        setSelectedChangeType(null);
+        setSelectedIdentityType(null);
         setSelectedCard(null);
         resetChanges();
       } else {
-        setSelectedChangeType;
+        setSelectedIdentityType(changeType);
         setSelectedCard(changeType);
-        addChangeType(changeType);
+        console.log('============================', changeType);
         // TODO: We have a changeType that could be incomplete
         // We need to call addChange but may need to ask the user for
         // more info
       }
     },
-    [addChangeType, resetChanges, selectedCard?.id]
+    [resetChanges, selectedCard?.id, setSelectedIdentityType]
   );
 
   return (
@@ -61,7 +64,8 @@ const ExpressChangeType = () => {
             href="#"
             onClick={e => {
               e.preventDefault();
-              setCurrentStep(SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS);
+              setCurrentStep(SELF_SERVICE_STEPS.SELECT_IDENTITY);
+              setCurrentMode(REQUEST_FLOW_MODE.ADVANCED_MODE);
             }}
           >
             click here

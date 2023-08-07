@@ -29,7 +29,9 @@ const SelfService = () => {
   const [currentStep, setCurrentStep] = useState(
     SELF_SERVICE_STEPS.SELECT_PROVIDER
   );
-  const [currentMode, setMode] = useState(REQUEST_FLOW_MODE.EXPRESS_MODE);
+  const [currentMode, setCurrentMode] = useState(
+    REQUEST_FLOW_MODE.EXPRESS_MODE
+  );
   const [expirationType, setExpirationType] = useState(EXPIRATION_TYPE.NEVER);
   const [relativeValue, setRelativeValue] = useState('4');
   const [relativeUnit, setRelativeUnit] = useState('hours');
@@ -115,12 +117,14 @@ const SelfService = () => {
         [styles.fullWidth]: [
           SELF_SERVICE_STEPS.REQUEST_PREVIEW,
           // SELF_SERVICE_STEPS.SELECT_IDENTITY,
-          SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS,
+          // SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS,
           SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES
         ].includes(currentStep)
       }),
     [currentStep]
   );
+
+  console.log(selfServiceRequest, '++++++++++++++testing------------');
 
   const handleNext = useCallback(() => {
     if (currentMode === REQUEST_FLOW_MODE.EXPRESS_MODE) {
@@ -167,6 +171,7 @@ const SelfService = () => {
           setRelativeUnit,
           setDateValue,
           setTimeValue,
+          setCurrentMode,
           setExpirationDate,
           handleNext
         }
@@ -191,7 +196,8 @@ const SelfService = () => {
                 currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES && (
                   <Button
                     size="small"
-                    disabled={!selfServiceRequest.changeType}
+                    // disabled={!selfServiceRequest.changeType}
+                    disabled={!selfServiceRequest.identityType}
                     onClick={handleNext}
                   >
                     Next

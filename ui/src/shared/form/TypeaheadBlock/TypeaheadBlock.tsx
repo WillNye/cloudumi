@@ -158,7 +158,7 @@ export const TypeaheadBlock = ({
   );
 
   const inputValue = useMemo(() => {
-    return value;
+    return value ?? '';
   }, [value]);
 
   const selectedValueLabels = useMemo(

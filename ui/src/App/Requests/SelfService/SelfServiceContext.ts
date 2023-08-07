@@ -1,5 +1,9 @@
 import React, { Dispatch } from 'react';
-import { EXPIRATION_TYPE, SELF_SERVICE_STEPS } from './constants';
+import {
+  EXPIRATION_TYPE,
+  REQUEST_FLOW_MODE,
+  SELF_SERVICE_STEPS
+} from './constants';
 import {
   ChangeTypeDetails,
   IRequest,
@@ -11,6 +15,7 @@ import {
 export interface ISelfServiceContext {
   actions: {
     setCurrentStep: Dispatch<SELF_SERVICE_STEPS>;
+    setCurrentMode: Dispatch<REQUEST_FLOW_MODE>;
     setSelectedProvider: Dispatch<string>;
     setSelectedIdentityType: Dispatch<string>;
     setSelectedIdentity: Dispatch<Identity>;

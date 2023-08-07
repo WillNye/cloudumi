@@ -15,6 +15,7 @@ import { Block } from 'shared/layout/Block';
 import { ChangeType } from '../../../types';
 import { Select as CloudScapeSelect } from '@noqdev/cloudscape';
 import RequestExpiration from '../../common/RequestExpiration';
+import useGetProviderDefinitions from 'App/Requests/SelfService/hooks/useGetProviderDefinitions';
 
 const SelectChangeType = () => {
   const [selectedChangeType, setSelectedChangeType] =
@@ -24,22 +25,11 @@ const SelectChangeType = () => {
     store: { selfServiceRequest }
   } = useContext(SelfServiceContext);
 
-  const { data: providerDefinition, isLoading: loadingDefinitions } = useQuery({
-    queryFn: getProviderDefinitions,
-    queryKey: [
-      'getProviderDefinitions',
-      {
-        provider: selfServiceRequest?.provider,
-        template_id: selfServiceRequest?.identity
-          ? selfServiceRequest.identity?.id
-          : null
-      }
-    ],
-    onError: (error: AxiosError) => {
-      // const errorRes = error?.response;
-      // const errorMsg = extractErrorMessage(errorRes?.data);
-      // setErrorMessage(errorMsg || 'An error occurred fetching resource');
-    }
+  const { providerDefinitions } = useGetProviderDefinitions({
+    provider: selfServiceRequest.provider,
+    template_id: selfServiceRequest?.identity
+      ? selfServiceRequest.identity?.id
+      : null
   });
 
   const selectedRequestType = useMemo(
@@ -106,7 +96,7 @@ const SelectChangeType = () => {
             {selectedChangeType && (
               <RequestChangeDetails
                 selectedChangeType={selectedChangeType}
-                providerDefinition={providerDefinition?.data || []}
+                providerDefinition={providerDefinitions?.data || []}
               />
             )}
             <RequestExpiration />
