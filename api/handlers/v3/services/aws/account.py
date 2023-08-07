@@ -27,6 +27,8 @@ class OrgAccountConfigurationCrudHandler(MultiItemConfigurationCrudHandler):
         await super(OrgAccountConfigurationCrudHandler, self)._create(data)
 
         tenant = self.ctx.tenant
+
+        # TODO: Race Condition if task was executed, we need to retrieve the latest version
         celery_app.send_task(
             "common.celery_tasks.celery_tasks.cache_organization_structure",
             kwargs={"tenant": tenant},
