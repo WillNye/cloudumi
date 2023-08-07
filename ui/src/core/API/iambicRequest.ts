@@ -109,6 +109,7 @@ export type RequestStatus =
   | 'Expired'
   | 'Running'
   | 'Failed'
+  | 'Applied'
   | 'Pending in Git';
 
 export type ChangeTypeFieldType =

@@ -1,5 +1,12 @@
+import cloneDeep from 'lodash/cloneDeep';
 import axios from '../Axios';
-import { V1_API_URL, V2_API_URL, V4_API_URL } from './constants';
+import { V1_API_URL, V4_API_URL } from './constants';
+
+const roleFilterToken = {
+  propertyKey: 'iambic_template.template_type',
+  operator: ':',
+  value: 'NOQ::AWS::IAM::Role'
+};
 
 export const getEligibleRoles = async ({ queryKey }) => {
   const [_, query] = queryKey;
@@ -8,9 +15,12 @@ export const getEligibleRoles = async ({ queryKey }) => {
   return response.data;
 };
 
-export const getAllRoles = async () => {
-  const url = `${V2_API_URL}/policies?markdown=true&filters=%7B%22technology%22%3A%22AWS%3A%3AIAM%3A%3ARole%22%7D`;
-  const response = await axios.get(url);
+export const getAllRoles = async ({ queryKey }) => {
+  const [_, query] = queryKey;
+  const newQuery = cloneDeep(query);
+  newQuery.filtering.tokens.push(roleFilterToken);
+  const url = `${V4_API_URL}/resources/datatable/`;
+  const response = await axios.post(url, newQuery);
   return response.data;
 };
 

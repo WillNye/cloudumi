@@ -13,14 +13,14 @@ from pydantic import BaseModel as PydanticBaseModel
 from pydantic.fields import Any
 from sqlalchemy import Column, ForeignKey, Index, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY, ENUM, UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import exc, relationship
 
 from common.config import config
 from common.config.globals import ASYNC_PG_SESSION, GITHUB_APP_APPROVE_PRIVATE_PEM_1
 from common.iambic.git.models import IambicRepo
 from common.lib import noq_json as json
 from common.lib.asyncio import aio_wrapper
-from common.models import IambicTemplateChange
+from common.models import IambicTemplateChange, SelfServiceRequestData
 from common.pg_core.models import Base, SoftDeleteMixin
 from common.tenants.models import Tenant  # noqa: F401
 
@@ -34,6 +34,7 @@ RequestStatus = ENUM(
     "Approving",
     "Approved",
     "Rejected",
+    "Reverted",
     "Expired",
     "Failed",
     name="RequestStatusEnum",
@@ -95,6 +96,9 @@ class BasePullRequest(PydanticBaseModel):
     closed_at: datetime = None
     pr_provider: Any = None
     pr_obj: Any = None
+    merge_commit_sha: Optional[str] = None
+    review_state: Optional[str] = None
+    approved_by: Optional[list[str]] = []
 
     class Config:
         arbitrary_types_allowed = True
@@ -196,6 +200,74 @@ class BasePullRequest(PydanticBaseModel):
     async def _approve_request(self, approved_by: str):
         raise NotImplementedError
 
+    async def revert_request(self, reverted_by: str):
+        from common.iambic_request.request_crud import (
+            create_request,
+            get_template_change_for_request,
+        )
+
+        if not self.pr_obj:
+            await self.load_pr()
+        if not self.pr_obj.merged:
+            raise Exception("PR must be merged to revert")
+
+        base_iambic_repo = await IambicRepo.setup(
+            self.tenant,
+            self.iambic_repo.repo_name,
+        )
+        # Ensure we have the latest refs
+        await base_iambic_repo.clone_or_pull_git_repo()
+        merge_commit = base_iambic_repo.repo.commit(self.pr_obj.merge_commit_sha)
+        parent_commit = merge_commit.parents[0]
+        default_branch_commit = base_iambic_repo.repo.commit(
+            base_iambic_repo.default_branch_name
+        )
+        diffs = merge_commit.diff(parent_commit)
+        template_changes = []
+        justification = f"Revert of Request ID: {self.request_id}"
+        for diff in diffs.iter_change_type("M"):
+            file_path = diff.a_path
+            try:
+                blob = parent_commit.tree / file_path
+                file_content_parent_commit = blob.data_stream.read()
+
+                # Get file content in default branch commit
+                blob_default_branch = default_branch_commit.tree / file_path
+                file_content_default_branch = blob_default_branch.data_stream.read()
+            except KeyError:
+                # TODO: Support reverting file creation, for example, when we create a resource and want to revert the creation
+                raise Exception(
+                    "Unable to revert request. File does not exist in parent commit."
+                )
+            if file_content_parent_commit == file_content_default_branch:
+                # No need to revert file if it is the same as the default branch
+                continue
+            request_data = SelfServiceRequestData.parse_obj(
+                {
+                    "file_path": file_path,
+                    "template_body": file_content_parent_commit,
+                    "justification": justification,
+                }
+            )
+            template_changes.append(
+                await get_template_change_for_request(self.tenant, request_data)
+            )
+        if not template_changes:
+            raise Exception("No template changes to revert")
+        response = await create_request(
+            tenant=self.tenant,
+            created_by=reverted_by,
+            justification=justification,
+            changes=template_changes,
+            request_method="WEB",
+        )
+        revert_request_reference = RevertRequestReference(
+            target_request_id=self.request_id,
+            revert_request_id=response["request"].id,
+        )
+        await revert_request_reference.write()
+        return response
+
     async def approve_request(self, approved_by: Union[str, list[str]]):
         if not self.pr_obj:
             await self.load_pr()
@@ -275,6 +347,7 @@ class BasePullRequest(PydanticBaseModel):
         request_dict = json.loads(json.dumps(super().dict(**kwargs)))
         request_dict["tenant"] = self.tenant.name
         request_dict["repo_name"] = self.iambic_repo.repo_name
+        request_dict["merge_commit_sha"] = self.merge_commit_sha
         return request_dict
 
 
@@ -339,6 +412,7 @@ class GitHubPullRequest(BasePullRequest):
 
         pr_provider = await self.get_pr_provider()
         self.pr_obj = await aio_wrapper(pr_provider.get_pull, self.pull_request_id)
+        self.merge_commit_sha = self.pr_obj.merge_commit_sha
         self.pull_request_id = self.pr_obj.number
         self.pull_request_url = self.pr_obj.html_url
         self.title = self.pr_obj.title
@@ -346,6 +420,20 @@ class GitHubPullRequest(BasePullRequest):
         self.mergeable = self.pr_obj.mergeable
         self.merged_at = self.pr_obj.merged_at
         self.closed_at = self.pr_obj.closed_at
+        self.approved_by = []
+        reviews = await aio_wrapper(self.pr_obj.get_reviews)
+        if not reviews:
+            reviews = []
+        self.review_state = "PENDING_REVIEW"
+        for review in reviews:
+            if review.state == "CHANGES_REQUESTED":
+                self.review_state = "CHANGES_REQUESTED"
+                break
+            elif review.state == "APPROVED":
+                self.review_state = "APPROVED"
+                reviewer = review.user.login
+                if "[bot]" not in reviewer:
+                    self.approved_by.append(review.user.login)
 
         self.comments = []
         for comments in await asyncio.gather(
@@ -502,6 +590,19 @@ class Request(SoftDeleteMixin, Base):
         order_by="RequestComment.created_at",
     )
 
+    as_target_request = relationship(
+        "RevertRequestReference",
+        back_populates="target_request",
+        foreign_keys="RevertRequestReference.target_request_id",
+        cascade="all, delete-orphan",
+    )
+    as_revert_request = relationship(
+        "RevertRequestReference",
+        back_populates="revert_request",
+        foreign_keys="RevertRequestReference.revert_request_id",
+        cascade="all, delete-orphan",
+    )
+
     __table_args__ = (
         Index("request_tenant_created_at_idx", "tenant_id", "deleted", "created_at"),
         Index(
@@ -541,6 +642,23 @@ class Request(SoftDeleteMixin, Base):
             "created_at": self.created_at.timestamp(),
             "created_by": self.created_by,
         }
+
+        for reference_request in {"target_request", "revert_request"}:
+            try:
+                if reference_obj := getattr(self, f"as_{reference_request}"):
+                    if reference_request == "revert_request":
+                        reference_attr = "target_request"
+                    else:
+                        reference_attr = "revert_request"
+                    reference_request_obj = getattr(reference_obj[0], reference_attr)
+                    response[reference_attr] = {
+                        "id": str(reference_request_obj.id),
+                        "pull_request_url": reference_request_obj.pull_request_url,
+                        "justification": reference_request_obj.justification,
+                    }
+            except exc.DetachedInstanceError:
+                continue
+
         for conditional_key in (
             "approved_by",
             "rejected_by",
@@ -549,6 +667,8 @@ class Request(SoftDeleteMixin, Base):
             "updated_by",
         ):
             if val := getattr(self, conditional_key):
+                if isinstance(val, datetime):
+                    val = val.timestamp()
                 response[conditional_key] = val
 
         return response
@@ -559,6 +679,48 @@ class Request(SoftDeleteMixin, Base):
                 session.add(self)
                 await session.commit()
             return True
+
+    async def maybe_update_request(self, request_pr):
+        if request_pr.review_state == "APPROVED" and self.status in [
+            "Pending",
+            "Pending in Git",
+            "Applying",
+            "Approving",
+            "Rejected",
+        ]:
+            self.status = "Approved"
+            if request_pr.approved_by:
+                self.approved_by = list(set(request_pr.approved_by + self.approved_by))
+            await self.write()
+
+        # Change status to Applied if PR is merged and status is not Expired or Reverted
+        if (
+            self.status != "Applied"
+            and request_pr.merged_at
+            and self.status not in ["Expired", "Reverted"]
+        ):
+            self.status = "Applied"
+            await self.write()
+        return self
+
+
+class RevertRequestReference(Base):
+    __tablename__ = "revert_request_reference"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    target_request_id = Column(
+        UUID(as_uuid=True), ForeignKey("request.id"), unique=True, nullable=False
+    )
+    revert_request_id = Column(
+        UUID(as_uuid=True), ForeignKey("request.id"), unique=True, nullable=False
+    )
+
+    target_request = relationship(
+        "Request", foreign_keys=target_request_id, back_populates="as_target_request"
+    )
+    revert_request = relationship(
+        "Request", foreign_keys=revert_request_id, back_populates="as_revert_request"
+    )
 
 
 class RequestComment(SoftDeleteMixin, Base):

@@ -4,7 +4,6 @@ import { Segment } from 'shared/layout/Segment';
 import { useMemo, useState } from 'react';
 import { REQUESTS_SECTIONS, myRequestsColumns } from './constants';
 import { LineBreak } from 'shared/elements/LineBreak';
-import { Divider } from 'shared/elements/Divider';
 import { Table } from 'shared/elements/Table';
 import { Icon } from 'shared/elements/Icon';
 import { Link, useNavigate } from 'react-router-dom';
@@ -85,7 +84,7 @@ const RequestsMenu = () => {
             { name: 'Menu', url: '/requests' }
           ]}
         />
-        <LineBreak size="large" />
+        <LineBreak />
         <div className={styles.preview}>
           <LineBreak />
           <div className={styles.btnActions}>

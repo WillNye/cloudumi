@@ -37,8 +37,6 @@ const configureYAMLSchema = async (
 ) => {
   const modelUri = Uri.parse('inmemory://model/main.yaml');
   // const monaco = editorInstance.getModel().getMode()._worker(monaco);
-  console.log(editorInstance);
-  console.log(monaco);
 
   const schemaUri = Uri.parse(
     'https://docs.iambic.org/schemas/v1/aws_iam_role_template.json'

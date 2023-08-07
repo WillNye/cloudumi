@@ -178,21 +178,19 @@ const GithubIntegrationModal: FC<GithubIntegrationModalProps> = ({
 
         {isGithubConnected && (
           <>
-            <label>
-              Select Repository:
-              <Select
-                id="repo"
-                name={selectedRepo}
-                value={selectedRepo}
-                onChange={handleRepoChange}
-              >
-                {repos.map(repo => (
-                  <SelectOption key={repo} value={repo}>
-                    {repo}
-                  </SelectOption>
-                ))}
-              </Select>
-            </label>
+            <Block label="Select Repository" disableLabelPadding />
+            <Select
+              id="repo"
+              name={selectedRepo}
+              value={selectedRepo}
+              onChange={handleRepoChange}
+            >
+              {repos.map(repo => (
+                <SelectOption key={repo} value={repo}>
+                  {repo}
+                </SelectOption>
+              ))}
+            </Select>
             <LineBreak size="large" />
             <div className={styles.customCheckbox}>
               <Checkbox
