@@ -200,6 +200,9 @@ export const SpokeAccountModal = ({ defaultValues, aws }) => {
     );
   }
 
+  const ACCOUNT_A = <strong style={{ fontWeight: 'bold' }}>*account_a*</strong>;
+  const ACCOUNT_B = <strong style={{ fontWeight: 'bold' }}>*account_b*</strong>;
+
   return (
     <Segment>
       {isIneligible ? (
@@ -218,20 +221,24 @@ export const SpokeAccountModal = ({ defaultValues, aws }) => {
         </>
       ) : (
         <>
-          <p style={{ textAlign: 'center' }}>
+          <p style={{ textAlign: 'center', lineHeight: '1.8em' }}>
             Your spoke accounts are all of the AWS accounts that you want to use
-            Noq in. We will help you create spoke roles on these accounts. Noq
-            will access these roles by first assuming your central
-            (&quot;hub&quot;) account role and then assuming the spoke role in
-            the target account. For example, assume that a customer has
-            configured Noq&apos;s central role on *account_a*. They&apos;ve
-            configured spoke roles on *account_a* and *account_b* (Yes, the
-            central account must also have a spoke role if you want Noq to work
-            on it). If Noq needs to write a policy to an IAM role on
-            *account_b*, it will assume the central role on *account_a* with an
-            external ID that is unique to your organization, and then it will
-            assume the spoke role on *account_b*. It will write the IAM policy
-            from the spoke role on *account_b*.
+            Noq in. <br />
+            We will help you create spoke roles on these accounts. Noq will
+            access these roles by first assuming your central (&quot;hub&quot;)
+            account role and then assuming the spoke role in the target account.
+            For example, assume that a customer has configured Noq&apos;s
+            central role on {ACCOUNT_A}. They&apos;ve configured spoke roles on{' '}
+            {ACCOUNT_A} and {ACCOUNT_B} {''}
+            <br />
+            (Yes, the central account must also have a spoke role if you want
+            Noq to work on it).
+            <br />
+            If Noq needs to write a policy to an IAM role on {ACCOUNT_B}, it
+            will assume the central role on {ACCOUNT_A} with an external ID that
+            is unique to your organization, and then it will assume the spoke
+            role on {ACCOUNT_B}. It will write the IAM policy from the spoke
+            role on {ACCOUNT_B}.
           </p>
           <LineBreak />
           <Button onClick={handleClick} fullWidth>
