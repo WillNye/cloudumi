@@ -1,7 +1,6 @@
 import { Icon } from '../../../../shared/elements/Icon';
 import { Tooltip } from '../../../../shared/elements/Tooltip';
 import { Link, useNavigate } from 'react-router-dom';
-import styles from './Navbar.module.css';
 import Logo from '../../../../assets/brand/mark.svg';
 import { Avatar } from '../../../../shared/elements/Avatar';
 import { Menu } from 'shared/layers/Menu';
@@ -10,9 +9,11 @@ import { Button } from '../../../../shared/elements/Button';
 import { useAuth } from 'core/Auth';
 import { LineBreak } from '../../../../shared/elements/LineBreak';
 import { Divider } from '../../../../shared/elements/Divider';
+import styles from './Navbar.module.css';
 
 export const Navbar = () => {
   const [open, setOpen] = useState(false);
+
   const buttonRef = useRef(null);
 
   const { user } = useAuth();

@@ -2,7 +2,7 @@ import math
 from enum import Enum
 from typing import Any, Optional, Type
 
-from sqlalchemy import and_, func, or_
+from sqlalchemy import String, and_, cast, func, or_
 from sqlalchemy.sql import select
 
 from common.config.globals import ASYNC_PG_SESSION
@@ -174,93 +174,56 @@ async def get_relationship_tables(Table) -> list[str]:
     return relationship_tables
 
 
-async def get_dynamic_objects_from_filter_tokens(Table, token):
-    """
-    This function get_dynamic_objects_from_filter_tokens takes in a Table and a token and returns the token with updated values if necessary.
+def get_table_field_from_string(Table, field: str):
+    nested_fields = str(field).split(".")
+    if len(nested_fields) == 1:
+        return getattr(Table, field)
 
-    It's a necessary evil because of the way the `filter_data_with_sqlalchemy` gets into meta programming to build filters.
-    We have to resolve the relationship objects and since all pointers are lazily loaded, we have to actually import the
-    relevant model to get the object.
-
-    The function first retrieves related tables from the input Table using the get_relationship_tables function. Then, it splits the
-    value of the token's propertyKey into separate components and processes them accordingly. If the components contain more than one item,
-    the function attempts to import the relevant module and table based on the first component. If a matching module and table are found,
-    the token's propertyKey and value are updated accordingly.
-
-    If the token's value could not be found in the related table, an AttributeError will be raised.
-
-    :param Table: The input Table object.
-    :type Table: object
-    :param token: The input token object.
-    :type token: object
-    :return: The updated token object.
-    :rtype: object
-    """
-    original_token_value = token.value
-    rel_tables = await get_relationship_tables(Table)
-    propertyKey_tokens = str(token.propertyKey).split(".")
-    if len(propertyKey_tokens) > 1:
-        import importlib
-
-        rel_name_wo_ess = propertyKey_tokens[0].lower()
-        rel_name_w_ess = (propertyKey_tokens[0] + "s").lower()
-        value_attribute = propertyKey_tokens[1]
-        if rel_name_w_ess in rel_tables or rel_name_wo_ess in rel_tables:
-            try:
-                propertyKeyModule = importlib.import_module(
-                    f"common.{rel_name_wo_ess}.models"
-                )
-            except ImportError:
-                try:
-                    propertyKeyModule = importlib.import_module(
-                        f"common.{rel_name_w_ess}.models"
-                    )
-                except ImportError:
-                    raise
-            try:
-                propertyKeyTable = getattr(
-                    propertyKeyModule, rel_name_wo_ess.capitalize()
-                )
-            except AttributeError:
-                try:
-                    propertyKeyTable = getattr(
-                        propertyKeyModule, rel_name_w_ess.capitalize()
-                    )
-                except AttributeError:
-                    raise
-            if rel_name_w_ess in rel_tables:
-                token.propertyKey = rel_name_w_ess
-            elif rel_name_wo_ess in rel_tables:
-                token.propertyKey = rel_name_wo_ess
-            else:
-                raise AttributeError(
-                    f"Could not find {rel_name_w_ess} or {rel_name_wo_ess} in relationships: {rel_tables}"
-                )
-            token.value = await propertyKeyTable.get_by_attr(
-                value_attribute, token.value
-            )
-            if token.value is None:
-                raise AttributeError(
-                    f"Could not find {value_attribute} with value {original_token_value} in {propertyKeyTable}"
-                )
-    return token
+    field = getattr(Table, nested_fields[0]).entity.class_
+    if len(nested_fields) > 2:
+        for sub_key in nested_fields[1:-1]:
+            field = getattr(field, sub_key).entity.class_
+    return getattr(field, nested_fields[-1])
 
 
 async def get_query_conditions(Table, token, conditions):
-    if token.operator == FilterOperator.equals:
-        conditions.append(getattr(Table, token.propertyKey) == token.value)
-    elif token.operator == FilterOperator.not_equals:
-        conditions.append(getattr(Table, token.propertyKey) != token.value)
-    elif token.operator == FilterOperator.contains:
-        conditions.append(getattr(Table, token.propertyKey).ilike(f"%{token.value}%"))
-    elif token.operator == FilterOperator.does_not_contain:
-        conditions.append(
-            getattr(Table, token.propertyKey).notilike(f"%{token.value}%")
-        )
-    elif token.operator == FilterOperator.greater_than:
-        conditions.append(getattr(Table, token.propertyKey) > token.value)
-    elif token.operator == FilterOperator.less_than:
-        conditions.append(getattr(Table, token.propertyKey) < token.value)
+    if token.propertyKey is not None:
+        if isinstance(token.propertyKey, str):
+            filter_key = getattr(Table, token.propertyKey)
+        else:
+            filter_key = token.propertyKey
+    else:
+        filter_key = None
+
+    if filter_key:
+        if token.operator == FilterOperator.equals:
+            conditions.append(filter_key == token.value)
+        elif token.operator == FilterOperator.not_equals:
+            conditions.append(filter_key != token.value)
+        elif token.operator == FilterOperator.contains:
+            conditions.append(filter_key.ilike(f"%{token.value}%"))
+        elif token.operator == FilterOperator.does_not_contain:
+            conditions.append(filter_key.notilike(f"%{token.value}%"))
+        elif token.operator == FilterOperator.greater_than:
+            conditions.append(filter_key > token.value)
+        elif token.operator == FilterOperator.less_than:
+            conditions.append(filter_key < token.value)
+    else:  # general search in all columns
+        if token.operator in {FilterOperator.contains, FilterOperator.does_not_contain}:
+            search_condition = or_(
+                *[
+                    cast(getattr(Table, col.name), String).ilike(f"%{token.value}%")
+                    for col in Table.__table__.columns
+                ]
+            )
+            if token.operator == FilterOperator.does_not_contain:
+                search_condition = ~search_condition
+            conditions.append(search_condition)
+        else:
+            raise ValueError(
+                "Only 'contains' and 'does_not_contain' operations are supported for general search"
+            )
+
     return conditions
 
 
@@ -283,8 +246,8 @@ async def filter_data_with_sqlalchemy(
                 if filter.operation == FilterOperation._and:
                     for token in filter.tokens:
                         try:
-                            token = await get_dynamic_objects_from_filter_tokens(
-                                Table, token
+                            token.propertyKey = get_table_field_from_string(
+                                Table, token.propertyKey
                             )
                         except AttributeError:
                             return []
@@ -295,8 +258,8 @@ async def filter_data_with_sqlalchemy(
                 elif filter.operation == FilterOperation._or:
                     for token in filter.tokens:
                         try:
-                            token = await get_dynamic_objects_from_filter_tokens(
-                                Table, token
+                            token.propertyKey = get_table_field_from_string(
+                                Table, token.propertyKey
                             )
                         except AttributeError:
                             return []
@@ -335,18 +298,20 @@ async def filter_data_with_sqlalchemy(
 
 
 async def enrich_sqlalchemy_stmt_with_filter_obj(
-    filter_obj, sql_model: Type[Base], sql_stmt: select
+    filter_obj: FilterModel, sql_model: Type[Base], sql_stmt: select
 ) -> select:
-    options = FilterModel.parse_obj(filter_obj)
-    filter = options.filtering
-    sorting = options.sorting
-    pagination = options.pagination
+    filter = filter_obj.filtering
+    sorting = filter_obj.sorting
+    pagination = filter_obj.pagination
     conditions = []
 
     if filter and filter.tokens:
         for token in filter.tokens:
             try:
-                token = await get_dynamic_objects_from_filter_tokens(sql_model, token)
+                if token.propertyKey:
+                    token.propertyKey = get_table_field_from_string(
+                        sql_model, token.propertyKey
+                    )
             except AttributeError:
                 return []
             conditions = await get_query_conditions(sql_model, token, conditions)
@@ -359,15 +324,39 @@ async def enrich_sqlalchemy_stmt_with_filter_obj(
             raise AttributeError(f"Unsupported filter operation: {filter.operation}")
 
     if sorting and sorting.sortingColumn:
+        sort_field = get_table_field_from_string(
+            sql_model, sorting.sortingColumn.sortingField
+        )
         sql_stmt = sql_stmt.order_by(
-            getattr(sql_model, sorting.sortingColumn.sortingField).desc()
-            if sorting.sortingDescending
-            else getattr(sql_model, sorting.sortingColumn.sortingField).asc()
+            sort_field.desc() if sorting.sortingDescending else sort_field.asc()
         )
 
     if pagination and pagination.pageSize and pagination.currentPageIndex:
-        sql_stmt = sql_stmt.offset(
+        sql_stmt = sql_stmt.limit(pagination.pageSize).offset(
             (pagination.currentPageIndex - 1) * pagination.pageSize
-        ).limit(pagination.pageSize)
+        )
 
     return sql_stmt
+
+
+async def generate_paginated_response(sql_stmt):
+    async with ASYNC_PG_SESSION() as session:
+        async with session.begin():
+            filtered_count_query = (
+                sql_stmt.with_only_columns(func.count())
+                .order_by(None)
+                .offset(None)
+                .limit(None)
+            )
+            filtered_count = await session.execute(filtered_count_query)
+            filtered_count = filtered_count.scalar()
+            pages = math.ceil(filtered_count / sql_stmt._limit)
+
+            res = await session.execute(sql_stmt)
+            return PaginatedQueryResponse(
+                filtered_count=filtered_count,
+                pages=pages,
+                page_size=sql_stmt._limit,
+                current_page_index=sql_stmt._offset,
+                data=res.unique().scalars().all(),
+            )

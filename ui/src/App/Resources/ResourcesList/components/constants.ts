@@ -4,8 +4,8 @@ export const resourcesColumns = [
     accessorKey: 'template_type'
   },
   {
-    header: 'identifier',
-    accessorKey: 'identifier'
+    header: 'Resource ARN',
+    accessorKey: 'secondary_resource_id'
   },
   {
     header: 'Repository Name',
@@ -17,7 +17,8 @@ export const resourcesColumns = [
     width: '50px'
   },
   {
-    accessorKey: 'Provider',
+    header: 'Provider',
+    accessorKey: 'provider',
     width: '50px'
   }
 ];

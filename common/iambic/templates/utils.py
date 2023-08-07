@@ -5,7 +5,7 @@ from iambic.plugins.v0_1_0.aws.models import AWSAccount
 from jinja2 import BaseLoader
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 from sqlalchemy import or_, select
-from sqlalchemy.orm import contains_eager
+from sqlalchemy.orm import contains_eager, joinedload
 
 from common.config.globals import ASYNC_PG_SESSION
 from common.iambic.config.models import TenantProviderDefinition
@@ -13,6 +13,12 @@ from common.iambic.templates.models import (
     IambicTemplate,
     IambicTemplateContent,
     IambicTemplateProviderDefinition,
+)
+from common.lib.filter import (
+    FilterModel,
+    PaginatedQueryResponse,
+    enrich_sqlalchemy_stmt_with_filter_obj,
+    generate_paginated_response,
 )
 
 
@@ -109,6 +115,28 @@ async def list_tenant_templates(
 
         items = await session.execute(stmt)
         return items.scalars().unique().all()
+
+
+async def tenant_templates_datatable(
+    tenant_id: int, filter_obj: FilterModel
+) -> PaginatedQueryResponse:
+    stmt = (
+        select(IambicTemplateProviderDefinition)
+        .filter(IambicTemplate.tenant_id == tenant_id)
+        .join(
+            IambicTemplate,
+            IambicTemplateProviderDefinition.iambic_template_id == IambicTemplate.id,
+        )
+        .options(
+            joinedload(IambicTemplateProviderDefinition.tenant_provider_definition),
+            joinedload(IambicTemplateProviderDefinition.iambic_template),
+        )
+    )
+    return await generate_paginated_response(
+        await enrich_sqlalchemy_stmt_with_filter_obj(
+            filter_obj, IambicTemplateProviderDefinition, stmt
+        )
+    )
 
 
 def get_template_str_value_for_provider_definition(

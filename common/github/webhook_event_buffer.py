@@ -146,7 +146,7 @@ async def github_event_handler(
         log.info(
             {
                 **log_data,
-                "message": f"out-of-band changes have triggered by {login}",
+                "message": f"out-of-band changes have been triggered by {login}",
                 "repo_name": repo_name,
                 "pr_number": pr_number,
             }

@@ -1,5 +1,3 @@
-# import itertools
-
 from typing import Optional
 
 import tornado.web
@@ -7,11 +5,10 @@ from pydantic import BaseModel
 from pydantic.fields import Field
 
 from common.config import config
-from common.config.tenant_config import TenantConfig
 from common.handlers.base import BaseHandler
-from common.lib.cache import retrieve_json_data_from_redis_or_s3
-from common.lib.filter import filter_data
-from common.models import DataTableResponse
+from common.iambic.templates.utils import tenant_templates_datatable
+from common.lib.filter import FilterModel, PaginatedQueryResponse
+from common.models import WebResponse
 
 log = config.get_logger(__name__)
 
@@ -39,29 +36,45 @@ class ResourcesDataTableHandler(BaseHandler):
         """
         POST /api/v4/resources/datatable/
         """
-        tenant = self.ctx.tenant
-        tenant_config = TenantConfig.get_instance(tenant)
-        body = tornado.escape.json_decode(self.request.body or "{}")
-
-        redis_key = tenant_config.iambic_templates_redis_key
-        template_dicts = await retrieve_json_data_from_redis_or_s3(
-            redis_key=redis_key,
-            tenant=tenant,
-            default=[],
-        )
-        if not template_dicts:
-            from common.celery_tasks.celery_tasks import (
-                sync_iambic_templates_for_tenant,
+        data = tornado.escape.json_decode(self.request.body)
+        tenant = self.ctx.db_tenant
+        try:
+            query_response: PaginatedQueryResponse = await tenant_templates_datatable(
+                tenant.id, FilterModel.parse_obj(data)
             )
+        except Exception as exc:
+            errors = [str(exc)]
+            await log.aexception(
+                "Unhandled exception in IambicRequestDataTableHandler.post",
+                tenant=tenant.name,
+                data=data,
+            )
+            self.write(
+                WebResponse(
+                    errors=errors,
+                    status_code=500,
+                    count=len(errors),
+                ).dict(exclude_unset=True, exclude_none=True)
+            )
+            # reason is in the response header and cannot contain newline
+            self.set_status(500, reason="GenericException")
+            raise tornado.web.Finish()
 
-            sync_iambic_templates_for_tenant.apply_async((tenant,))
-        filtered_templates: DataTableResponse = await filter_data(
-            template_dicts, body, model=ResourceDataTableModel
+        query_response.data = [
+            dict(
+                repo_name=provider_template.iambic_template.repo_name,
+                file_path=provider_template.iambic_template.file_path,
+                template_type=provider_template.iambic_template.template_type,
+                resource_id=provider_template.resource_id,
+                secondary_resource_id=provider_template.secondary_resource_id,
+                provider=provider_template.iambic_template.provider,
+            )
+            for provider_template in query_response.data
+        ]
+        self.write(
+            WebResponse(
+                success="success",
+                status_code=200,
+                data=query_response.dict(exclude_unset=True, exclude_none=True),
+            ).dict(exclude_unset=True, exclude_none=True)
         )
-        for template_dict in filtered_templates:
-            if "file_path" in template_dict:
-                template_dict["file_path"] = template_dict.pop(
-                    "repo_relative_file_path", ""
-                )
-        self.write(filtered_templates.dict())
-        await self.finish()

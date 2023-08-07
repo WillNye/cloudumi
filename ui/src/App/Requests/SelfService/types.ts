@@ -147,6 +147,7 @@ export type RequestStatus =
   | 'Rejected'
   | 'Expired'
   | 'Running'
+  | 'Applied'
   | 'Failed'
   | 'Pending in Git';
 
