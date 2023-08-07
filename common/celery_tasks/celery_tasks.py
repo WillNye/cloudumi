@@ -2387,7 +2387,7 @@ def cache_organization_structure_for_all_tenants() -> dict[str, Any]:
 
 
 @app.task(soft_time_limit=1800, **default_celery_task_kwargs)
-def cache_organization_structure(tenant=None) -> dict[str, Any]:
+def cache_organization_structure(tenant=None, force=False) -> dict[str, Any]:
     if not tenant:
         raise Exception("`tenant` must be passed to this task.")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -2402,7 +2402,8 @@ def cache_organization_structure(tenant=None) -> dict[str, Any]:
     log_data["orgs_accounts_added"] = list(orgs_accounts_added)
     # Onboard spoke accounts if enabled for org
     log_data["accounts_onboarded"] = async_to_sync(onboard_new_accounts_from_orgs)(
-        tenant
+        tenant,
+        force,
     )
     # Sync account names if enabled in org
     log_data["account_names_synced"] = async_to_sync(sync_account_names_from_orgs)(
@@ -2540,9 +2541,9 @@ def cache_self_service_typeahead_task(tenant=None) -> dict[str, Any]:
 
 
 @app.task(soft_time_limit=1800, **default_celery_task_kwargs)
-def trigger_credential_mapping_refresh_from_role_changes_for_all_tenants() -> dict[
-    str, Any
-]:
+def trigger_credential_mapping_refresh_from_role_changes_for_all_tenants() -> (
+    dict[str, Any]
+):
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenants = asyncio.run(
         TenantDetails.get_cached_all_active_tenant_names_for_cluster()

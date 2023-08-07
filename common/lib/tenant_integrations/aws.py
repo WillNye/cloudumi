@@ -697,7 +697,7 @@ async def handle_tenant_integration_queue(
                 request_type = body.get("RequestType")
                 response_url = body.get("ResponseURL")
                 resource_properties = body.get("ResourceProperties", {})
-                tenant = resource_properties.get("Host")
+                tenant: str = resource_properties.get("Host")  # type: ignore
                 external_id = resource_properties.get("ExternalId")
                 physical_resource_id = external_id
                 stack_id = body.get("StackId")
@@ -852,50 +852,7 @@ async def handle_tenant_integration_queue(
                 # Ensure it is written to Redis. trigger refresh job in worker
 
                 account_id_for_role = body["ResourceProperties"]["AWSAccountId"]
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_iam_resources_for_account",
-                    args=[account_id_for_role],
-                    kwargs={"tenant": tenant},
-                )
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_s3_buckets_for_account",
-                    args=[account_id_for_role],
-                    kwargs={"tenant": tenant},
-                )
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_sns_topics_for_account",
-                    args=[account_id_for_role],
-                    kwargs={"tenant": tenant},
-                )
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_sqs_queues_for_account",
-                    args=[account_id_for_role],
-                    kwargs={"tenant": tenant},
-                )
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_managed_policies_for_account",
-                    args=[account_id_for_role],
-                    kwargs={"tenant": tenant},
-                )
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_resources_from_aws_config_for_account",
-                    args=[account_id_for_role],
-                    kwargs={"tenant": tenant},
-                )
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_self_service_typeahead_task",
-                    kwargs={"tenant": tenant},
-                    countdown=120,
-                )
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_organization_structure",
-                    kwargs={"tenant": tenant},
-                )
-                celery_app.send_task(
-                    "common.celery_tasks.celery_tasks.cache_scps_across_organizations",
-                    kwargs={"tenant": tenant},
-                    countdown=120,
-                )
+                _handle_tenant_cache_tasks(celery_app, tenant, [account_id_for_role])
 
             except Exception:
                 raise
@@ -913,3 +870,62 @@ async def handle_tenant_integration_queue(
         )
         messages = messages_awaitable.get("Messages", [])
     return {"message": "Successfully processed all messages", "num_events": num_events}
+
+
+def _handle_tenant_cache_tasks(
+    celery_app, tenant: str, account_ids: list[str] = [], **kwargs
+):
+    skip_cache_organization_structure = kwargs.get(
+        "skip_cache_organization_structure", False
+    )
+
+    if account_ids:
+        for account_id_for_role in account_ids:
+            celery_app.send_task(
+                "common.celery_tasks.celery_tasks.cache_iam_resources_for_account",
+                args=[account_id_for_role],
+                kwargs={"tenant": tenant},
+            )
+            celery_app.send_task(
+                "common.celery_tasks.celery_tasks.cache_s3_buckets_for_account",
+                args=[account_id_for_role],
+                kwargs={"tenant": tenant},
+            )
+            celery_app.send_task(
+                "common.celery_tasks.celery_tasks.cache_sns_topics_for_account",
+                args=[account_id_for_role],
+                kwargs={"tenant": tenant},
+            )
+            celery_app.send_task(
+                "common.celery_tasks.celery_tasks.cache_sqs_queues_for_account",
+                args=[account_id_for_role],
+                kwargs={"tenant": tenant},
+            )
+            celery_app.send_task(
+                "common.celery_tasks.celery_tasks.cache_managed_policies_for_account",
+                args=[account_id_for_role],
+                kwargs={"tenant": tenant},
+            )
+            celery_app.send_task(
+                "common.celery_tasks.celery_tasks.cache_resources_from_aws_config_for_account",
+                args=[account_id_for_role],
+                kwargs={"tenant": tenant},
+            )
+
+    celery_app.send_task(
+        "common.celery_tasks.celery_tasks.cache_self_service_typeahead_task",
+        kwargs={"tenant": tenant},
+        countdown=120,
+    )
+
+    celery_app.send_task(
+        "common.celery_tasks.celery_tasks.cache_scps_across_organizations",
+        kwargs={"tenant": tenant},
+        countdown=120,
+    )
+
+    if not skip_cache_organization_structure:
+        celery_app.send_task(
+            "common.celery_tasks.celery_tasks.cache_organization_structure",
+            kwargs={"tenant": tenant},
+        )
