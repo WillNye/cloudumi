@@ -5,10 +5,12 @@ from typing import Any, Dict, Optional, Set, Tuple
 
 import sentry_sdk
 from botocore.exceptions import ClientError
+from cachetools import TTLCache
 
 from common.config import config, models
 from common.config.models import ModelAdapter
 from common.config.tenant_config import TenantConfig
+from common.core.async_cached import noq_cached
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.account_indexers.aws_organizations import retrieve_org_structure
@@ -25,6 +27,7 @@ from common.models import HubAccount, OrgAccount, SpokeAccount
 log = config.get_logger(__name__)
 
 
+@noq_cached(cache=TTLCache(maxsize=1024, ttl=120))
 def get_organizations_client(
     tenant: str, account_id: str, assume_role: str, read_only: bool = True
 ):
@@ -197,15 +200,17 @@ async def onboard_new_accounts_from_orgs(tenant: str, force: bool = False) -> li
                     log.error(
                         "Account can't be onboarded",
                         code=err.response.get("Error").get("Code"),
-                        account=account_id,
+                        **log_data,
                     )
                     new_accounts_excluded.append(aws_account)
                     continue
 
+                account_name = aws_account.get("Name", account_id)
+                log_data["account_name"] = account_name
                 # Save new SpokeAccount
                 spoke_account = SpokeAccount(
                     name=spoke_role_name,
-                    account_name=aws_account.get("Name"),
+                    account_name=account_name,
                     account_id=account_id,
                     role_arn=spoke_role_arn,
                     external_id=external_id,
@@ -217,6 +222,11 @@ async def onboard_new_accounts_from_orgs(tenant: str, force: bool = False) -> li
                     viewers=[],
                     delegate_admin_to_owner=False,
                     restrict_viewers_of_account_resources=False,
+                )
+
+                log.info(
+                    "Account successfully onboarded",
+                    **log_data,
                 )
 
                 await models.ModelAdapter(

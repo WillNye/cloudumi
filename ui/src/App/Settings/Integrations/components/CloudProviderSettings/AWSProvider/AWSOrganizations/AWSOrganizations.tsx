@@ -14,6 +14,7 @@ import {
   AWS_ORGANIZATION_DELETE_MESSAGE
 } from './constants';
 import { AWSOrganization } from './types';
+import RefreshAccountsModal from '../RefreshAccountsModal/RefreshAccountsModal';
 
 const AWSOrganizations = ({ forceOnboardAccounts }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -22,6 +23,7 @@ const AWSOrganizations = ({ forceOnboardAccounts }) => {
     []
   );
   const [defaultData, setDefaultData] = useState<AWSOrganization>(null);
+  const [showRefreshModal, setShowRefreshModal] = useState(false);
 
   const { refetch, isLoading } = useQuery({
     queryFn: getAWSOrganizations,
@@ -99,10 +101,13 @@ const AWSOrganizations = ({ forceOnboardAccounts }) => {
           {accountsNotOnboarded && (
             <Button
               style={{ marginRight: 'auto' }}
-              // icon="refresh"
-              onClick={() => forceOnboardAccounts()}
+              icon="refresh"
+              onClick={() => {
+                forceOnboardAccounts();
+                setShowRefreshModal(true);
+              }}
             >
-              Force Onboard Accounts
+              Refresh Accounts from AWS Organizations
             </Button>
           )}
           <Button icon="refresh" onClick={() => refetch()}></Button>
@@ -110,6 +115,10 @@ const AWSOrganizations = ({ forceOnboardAccounts }) => {
             New
           </Button>
         </div>
+        <RefreshAccountsModal
+          show={showRefreshModal}
+          onClose={() => setShowRefreshModal(false)}
+        />
         <Table
           columns={AWSOrganizationCoulumns}
           data={tableRows}

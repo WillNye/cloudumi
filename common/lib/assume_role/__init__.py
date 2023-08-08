@@ -418,7 +418,6 @@ def boto3_cached_conn(
             "Tenant hasn't configured central role for Noq."
         )
 
-    log.debug({**log_data, "message": "Retrieving boto3 client in tenant account"})
     key = (
         tenant,
         account_number,
@@ -447,7 +446,7 @@ def boto3_cached_conn(
         )
         if retval:
             return retval
-
+    log.debug({**log_data, "message": "Retrieving boto3 client in tenant account"})
     sts = None
     session = get_session_for_tenant(tenant)
     sts_args = {}

@@ -2401,14 +2401,14 @@ def cache_organization_structure(tenant=None, force=False) -> dict[str, Any]:
     orgs_accounts_added = async_to_sync(autodiscover_aws_org_accounts)(tenant)
     log_data["orgs_accounts_added"] = list(orgs_accounts_added)
     # Onboard spoke accounts if enabled for org
-    log_data["accounts_onboarded"] = async_to_sync(onboard_new_accounts_from_orgs)(
+    accounts_onboarded = async_to_sync(onboard_new_accounts_from_orgs)(
         tenant,
         force,
     )
+    log_data["accounts_onboarded"] = [x.name for x in accounts_onboarded]
     # Sync account names if enabled in org
-    log_data["account_names_synced"] = async_to_sync(sync_account_names_from_orgs)(
-        tenant
-    )
+    accounts_synced = async_to_sync(sync_account_names_from_orgs)(tenant)
+    log_data["account_names_synced"] = [x.name for x in accounts_synced]
 
     try:
         org_structure = async_to_sync(cache_org_structure)(tenant)
