@@ -12,12 +12,7 @@ import { Card } from 'shared/layout/Card';
 
 const ExpressChangeType = () => {
   const {
-    actions: {
-      setCurrentStep,
-      setSelectedIdentityType,
-      resetChanges,
-      setCurrentMode
-    },
+    actions: { setCurrentStep, addChangeType, resetChanges, setCurrentMode },
     store: { selfServiceRequest }
   } = useContext(SelfServiceContext);
 
@@ -36,19 +31,18 @@ const ExpressChangeType = () => {
   const handleCardClick = useCallback(
     changeType => {
       if (selectedCard?.id === changeType?.id) {
-        setSelectedIdentityType(null);
+        addChangeType(null);
         setSelectedCard(null);
         resetChanges();
       } else {
-        setSelectedIdentityType(changeType);
+        addChangeType(changeType);
         setSelectedCard(changeType);
-        console.log('============================', changeType);
         // TODO: We have a changeType that could be incomplete
         // We need to call addChange but may need to ask the user for
         // more info
       }
     },
-    [resetChanges, selectedCard?.id, setSelectedIdentityType]
+    [resetChanges, selectedCard?.id, addChangeType]
   );
 
   return (

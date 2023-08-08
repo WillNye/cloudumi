@@ -34,8 +34,12 @@ export const TypeaheadBlock = ({
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState([]);
   const [selectedValues, setSelectedValues] = useState(defaultValues ?? []);
-  const [value, setValue] = useState(defaultValue ?? '');
+  const [value, setValue] = useState(defaultValue || '');
   const [error, setError] = useState(null);
+
+  const inputValue = useMemo(() => {
+    return value;
+  }, [value]);
 
   const fetchData = async query => {
     setIsLoading(true);
@@ -156,10 +160,6 @@ export const TypeaheadBlock = ({
     },
     [debouncedSearchFilter, handleOnChange]
   );
-
-  const inputValue = useMemo(() => {
-    return value ?? '';
-  }, [value]);
 
   const selectedValueLabels = useMemo(
     () =>

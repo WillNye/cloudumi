@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Segment } from 'shared/layout/Segment';
 import styles from './ExpressChangeDetails.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
@@ -7,19 +7,22 @@ import SelfServiceContext from '../../../SelfServiceContext';
 import { useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { getExpressAccessChangeType } from 'core/API/iambicRequest';
-import { ChangeType, Identity, SelectedOptions } from '../../../types';
+import { ProviderDefinition, SelectedOptions } from '../../../types';
 import { Button } from 'shared/elements/Button';
-import { Link } from 'react-router-dom';
 import RequestField from '../../common/RequestField';
 import { Block } from 'shared/layout/Block';
 import RequestExpiration from '../../common/RequestExpiration';
 import useGetProviderDefinitions from 'App/Requests/SelfService/hooks/useGetProviderDefinitions';
+import IncludedAccounts from '../../common/IncludedAccounts';
 
 const ExpressChangeDetails = () => {
   const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>({});
+  const [includedProviders, setIncludedProviders] = useState<
+    ProviderDefinition[]
+  >([]);
 
   const {
-    actions: { addChange, setSelectedIdentity, setSelectedIdentityType }
+    actions: { addChange }
   } = useContext(SelfServiceContext);
   const {
     store: { selfServiceRequest }
@@ -29,7 +32,7 @@ const ExpressChangeDetails = () => {
     queryFn: getExpressAccessChangeType,
     queryKey: [
       'getExpressAccessChangeType',
-      selfServiceRequest?.identityType?.id
+      selfServiceRequest?.changeType?.id
     ],
     onSuccess: res => {
       // setSelectedIdentity(res?.data);
@@ -46,7 +49,7 @@ const ExpressChangeDetails = () => {
     [changeTypeDetailsData]
   );
 
-  const { providerDefinitions } = useGetProviderDefinitions({
+  const { providerDefinition } = useGetProviderDefinitions({
     provider: selfServiceRequest.provider,
     template_id: changeTypeDetailsData?.data?.iambic_template_id ?? null
   });
@@ -70,13 +73,11 @@ const ExpressChangeDetails = () => {
           ...field,
           value: selectedOptions[field.field_key]
         })),
-        included_providers: changeTypeDetails?.data?.length
-          ? [providerDefinitions?.data[0]]
-          : []
+        included_providers: includedProviders
       });
       setSelectedOptions({});
     },
-    [addChange, changeTypeDetails, selectedOptions, providerDefinitions]
+    [addChange, changeTypeDetails, selectedOptions, includedProviders]
   );
 
   return (
@@ -102,6 +103,13 @@ const ExpressChangeDetails = () => {
                   selectedOptions={selectedOptions}
                   handleChange={handleChange}
                   field={field}
+                />
+                <LineBreak />
+                <IncludedAccounts
+                  includedProviders={includedProviders}
+                  changeTypeDetails={changeTypeDetails}
+                  setIncludedProviders={setIncludedProviders}
+                  providerDefinition={providerDefinition}
                 />
                 <LineBreak />
               </div>

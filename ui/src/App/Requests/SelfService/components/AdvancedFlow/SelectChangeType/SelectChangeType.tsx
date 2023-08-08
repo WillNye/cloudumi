@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Segment } from 'shared/layout/Segment';
 import styles from './SelectChangeType.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
@@ -7,10 +7,7 @@ import SelfServiceContext from '../../../SelfServiceContext';
 import RequestChangeDetails from '../RequestChangeDetails';
 import { useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import {
-  getChangeRequestType,
-  getProviderDefinitions
-} from 'core/API/iambicRequest';
+import { getChangeRequestType } from 'core/API/iambicRequest';
 import { Block } from 'shared/layout/Block';
 import { ChangeType } from '../../../types';
 import { Select as CloudScapeSelect } from '@noqdev/cloudscape';
@@ -25,7 +22,7 @@ const SelectChangeType = () => {
     store: { selfServiceRequest }
   } = useContext(SelfServiceContext);
 
-  const { providerDefinitions } = useGetProviderDefinitions({
+  const { providerDefinition } = useGetProviderDefinitions({
     provider: selfServiceRequest.provider,
     template_id: selfServiceRequest?.identity
       ? selfServiceRequest.identity?.id
@@ -96,7 +93,7 @@ const SelectChangeType = () => {
             {selectedChangeType && (
               <RequestChangeDetails
                 selectedChangeType={selectedChangeType}
-                providerDefinition={providerDefinitions?.data || []}
+                providerDefinition={providerDefinition?.data || []}
               />
             )}
             <RequestExpiration />

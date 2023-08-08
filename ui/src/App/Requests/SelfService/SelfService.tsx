@@ -196,8 +196,7 @@ const SelfService = () => {
                 currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES && (
                   <Button
                     size="small"
-                    // disabled={!selfServiceRequest.changeType}
-                    disabled={!selfServiceRequest.identityType}
+                    disabled={!selfServiceRequest.changeType}
                     onClick={handleNext}
                   >
                     Next

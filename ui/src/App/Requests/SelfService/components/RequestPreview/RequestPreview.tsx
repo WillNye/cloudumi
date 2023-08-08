@@ -1,6 +1,6 @@
 import { LineBreak } from 'shared/elements/LineBreak';
 import { Button } from 'shared/elements/Button';
-import { useCallback, useEffect, useContext, useState, useMemo } from 'react';
+import { useCallback, useEffect, useContext, useState } from 'react';
 import styles from './RequestPreview.module.css';
 import SelfServiceContext from '../../SelfServiceContext';
 import { SubmittableRequest, TemplatePreview } from '../../types';
