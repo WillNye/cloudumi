@@ -2,8 +2,12 @@ import HubAccounts from './HubAccounts';
 import SpokeAccounts from './SpokeAccounts';
 import AWSOrganizations from './AWSOrganizations';
 import { Segment } from 'shared/layout/Segment';
-import { useState } from 'react';
-import { awsIntegrations, getHubAccounts } from 'core/API/awsConfig';
+import { useCallback, useState } from 'react';
+import {
+  awsIntegrations,
+  forceOnboarding,
+  getHubAccounts
+} from 'core/API/awsConfig';
 import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
 import { useQuery } from '@tanstack/react-query';
@@ -48,6 +52,10 @@ const AWSProvider = () => {
     }
   });
 
+  const forceOnboardAccounts = useCallback(async () => {
+    await forceOnboarding();
+  }, []);
+
   return (
     <div className={styles.aws}>
       <Segment isLoading={isLoading} disablePadding>
@@ -58,7 +66,7 @@ const AWSProvider = () => {
           hubAccounts={hubAccounts}
         />
         <SpokeAccounts aws={data} hubAccounts={hubAccounts} />
-        <AWSOrganizations />
+        <AWSOrganizations forceOnboardAccounts={forceOnboardAccounts} />
       </Segment>
     </div>
   );

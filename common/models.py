@@ -953,6 +953,9 @@ class OrgAccount(BaseModel):
     accounts_excluded_from_automatic_onboard: Optional[List[str]] = Field(
         [], description="Accounts that can not or should not be automatically onboarded"
     )
+    last_updated_accounts_excluded_automatic_onboard: Optional[str] = Field(
+        None, description="Timestamp of when the account was added"
+    )
     sync_account_names: Optional[bool] = Field(
         True, description="Automatically Sync Account Names from this Org"
     )

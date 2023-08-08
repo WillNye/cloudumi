@@ -1,27 +1,29 @@
+import { useQuery } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
+import { deleteAWSOrganization, getAWSOrganizations } from 'core/API/awsConfig';
+import { extractErrorMessage } from 'core/API/utils';
+import { useCallback, useMemo, useState } from 'react';
+import { Button } from 'shared/elements/Button';
 import { Table } from 'shared/elements/Table';
+import { Dialog } from 'shared/layers/Dialog';
+import styles from '../AWSProvider.module.css';
+import DeleteModal from '../DeleteModal';
+import { AWSOrganizationModal } from './AWSOrganizationModal';
 import {
   AWSOrganizationCoulumns,
   AWS_ORGANIZATION_DELETE_MESSAGE
 } from './constants';
-import { useCallback, useMemo, useState } from 'react';
-import { AxiosError } from 'axios';
-import { extractErrorMessage } from 'core/API/utils';
 import { AWSOrganization } from './types';
-import { deleteAWSOrganization, getAWSOrganizations } from 'core/API/awsConfig';
-import { Button } from 'shared/elements/Button';
-import { Dialog } from 'shared/layers/Dialog';
-import { AWSOrganizationModal } from './AWSOrganizationModal';
-import DeleteModal from '../DeleteModal';
-import styles from '../AWSProvider.module.css';
-import { useQuery } from '@tanstack/react-query';
+import RefreshAccountsModal from '../RefreshAccountsModal/RefreshAccountsModal';
 
-const AWSOrganizations = () => {
+const AWSOrganizations = ({ forceOnboardAccounts }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [awsOrganizations, setAWSOrganizations] = useState<AWSOrganization[]>(
     []
   );
   const [defaultData, setDefaultData] = useState<AWSOrganization>(null);
+  const [showRefreshModal, setShowRefreshModal] = useState(false);
 
   const { refetch, isLoading } = useQuery({
     queryFn: getAWSOrganizations,
@@ -85,16 +87,38 @@ const AWSOrganizations = () => {
     openEditOrganizationModal
   ]);
 
+  const accountsNotOnboarded = useMemo(() => {
+    return awsOrganizations.map(
+      item => item.accounts_excluded_from_automatic_onboard
+    );
+  }, [awsOrganizations]);
+
   return (
     <div className={styles.section}>
       <h3 className={styles.header}>AWS Organizations</h3>
       <div className={styles.content}>
         <div className={styles.headerActions}>
+          {accountsNotOnboarded && (
+            <Button
+              style={{ marginRight: 'auto' }}
+              icon="refresh"
+              onClick={() => {
+                forceOnboardAccounts();
+                setShowRefreshModal(true);
+              }}
+            >
+              Refresh Accounts from AWS Organizations
+            </Button>
+          )}
           <Button icon="refresh" onClick={() => refetch()}></Button>
           <Button size="small" onClick={openNewOrganizationModal}>
             New
           </Button>
         </div>
+        <RefreshAccountsModal
+          show={showRefreshModal}
+          onClose={() => setShowRefreshModal(false)}
+        />
         <Table
           columns={AWSOrganizationCoulumns}
           data={tableRows}

@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from aws_error_utils import errors
 
+from common.aws.organizations.utils import get_organizations_client
 from common.config import config
 from common.config.models import ModelAdapter
 from common.lib.assume_role import boto3_cached_conn
@@ -71,18 +72,10 @@ def _get_management_account_organizations_client(
         session_name="noq_get_managed_org_client",
     )
 
-    org_client = boto3_cached_conn(
-        "organizations",
-        config.tenant,
-        None,
-        account_number=config.account_id,
+    org_client = get_organizations_client(
+        tenant=config.tenant,
+        account_id=config.account_id,
         assume_role=cross_account_role_name,
-        region=config.region,
-        sts_client_kwargs=dict(
-            region_name=config.region,
-            endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-        ),
-        session_name="noq_get_managed_org_client",
     )
 
     if management_account_id == sts_client.get_caller_identity()["Account"]:
@@ -212,18 +205,11 @@ def initialize_organization_data(config: common.Config, scp_file_content: str) -
         .with_query({"account_id": config.account_id})
         .first.name
     )
-    org_client = boto3_cached_conn(
-        "organizations",
-        config.tenant,
-        None,
-        account_number=config.account_id,
+
+    org_client = get_organizations_client(
+        tenant=config.tenant,
+        account_id=config.account_id,
         assume_role=cross_account_role_name,
-        region=config.region,
-        sts_client_kwargs=dict(
-            region_name=config.region,
-            endpoint_url=f"https://sts.{config.region}.amazonaws.com",
-        ),
-        session_name="noq_aws_organizations",
     )
 
     config.management_account_id = _get_management_account_id(org_client)

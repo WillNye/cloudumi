@@ -1,5 +1,5 @@
 import axios from '../Axios';
-import { V3_API_URL } from './constants';
+import { V3_API_URL, V4_API_URL } from './constants';
 
 export const generateAWSLoginLink = async ({ queryKey }) => {
   const [_, accountName] = queryKey;
@@ -59,5 +59,11 @@ export const deleteAWSOrganization = data => {
 export const awsIntegrations = async () => {
   const url = `${V3_API_URL}/integrations/aws`;
   const response = await axios.get(url);
+  return response.data;
+};
+
+export const forceOnboarding = async () => {
+  const url = `${V4_API_URL}/services/aws/account/org`;
+  const response = await axios.put(url);
   return response.data;
 };
