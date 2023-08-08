@@ -1,21 +1,17 @@
-import { useEffect, useState, useContext, useMemo } from 'react';
+import { useEffect, useState, useContext, useMemo, useCallback } from 'react';
 import { Button } from 'shared/elements/Button';
 import { AxiosError } from 'axios';
 
-import SelfServiceContext from '../../SelfServiceContext';
+import SelfServiceContext from '../../../SelfServiceContext';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { Block } from 'shared/layout/Block';
-import RequestField from './RequestField';
-import { ChangeType, ChangeTypeDetails } from '../../types';
+import RequestField from '../../common/RequestField';
+import { ChangeType, ChangeTypeDetails, SelectedOptions } from '../../../types';
 import { useQuery } from '@tanstack/react-query';
 import { getRequestChangeDetails } from 'core/API/iambicRequest';
 import { Segment } from 'shared/layout/Segment';
 import { Select, SelectOption } from 'shared/form/Select';
-import { ProviderDefinition } from '../../types';
-
-interface SelectedOptions {
-  [key: string]: string;
-}
+import { ProviderDefinition } from '../../../types';
 
 type RequestChangeDetailsProps = {
   selectedChangeType: ChangeType;
@@ -74,21 +70,24 @@ const RequestChangeDetails = ({
     }
   });
 
-  const handleSubmit = e => {
-    e.preventDefault();
-    addChange({
-      id: changeTypeDetails.id,
-      name: changeTypeDetails.name,
-      description: changeTypeDetails.description,
-      request_type_id: changeTypeDetails.request_type_id,
-      fields: changeTypeDetails.fields.map(field => ({
-        ...field,
-        value: selectedOptions[field.field_key]
-      })),
-      included_providers: includedProviders
-    });
-    setSelectedOptions({});
-  };
+  const handleSubmit = useCallback(
+    e => {
+      e.preventDefault();
+      addChange({
+        id: changeTypeDetails.id,
+        name: changeTypeDetails.name,
+        description: changeTypeDetails.description,
+        request_type_id: changeTypeDetails.request_type_id,
+        fields: changeTypeDetails.fields.map(field => ({
+          ...field,
+          value: selectedOptions[field.field_key]
+        })),
+        included_providers: includedProviders
+      });
+      setSelectedOptions({});
+    },
+    [addChange, changeTypeDetails, includedProviders, selectedOptions]
+  );
 
   const accountNamesValue = useMemo(() => {
     // on multiple selects, the value is an array of strings

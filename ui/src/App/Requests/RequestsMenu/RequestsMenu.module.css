@@ -62,7 +62,7 @@
     justify-content: center;
     align-items: center;
     background-color: var(--gray-700);
-    padding: var(--spacing-xxl) var(--spacing-lg);
+    padding: var(--spacing-lg) var(--spacing-lg);
     border-radius: var(--border-radius-md);
     border: solid 1px var(--gray-500);
     text-align: center;

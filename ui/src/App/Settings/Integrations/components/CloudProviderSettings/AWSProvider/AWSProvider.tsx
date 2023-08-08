@@ -1,7 +1,6 @@
 import HubAccounts from './HubAccounts';
 import SpokeAccounts from './SpokeAccounts';
 import AWSOrganizations from './AWSOrganizations';
-import styles from './AWSProvider.module.css';
 import { Segment } from 'shared/layout/Segment';
 import { useState } from 'react';
 import { awsIntegrations, getHubAccounts } from 'core/API/awsConfig';
@@ -9,6 +8,7 @@ import { AxiosError } from 'axios';
 import { extractErrorMessage } from 'core/API/utils';
 import { useQuery } from '@tanstack/react-query';
 import { HubAccount } from './HubAccounts/types';
+import styles from './AWSProvider.module.css';
 
 const AWSProvider = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

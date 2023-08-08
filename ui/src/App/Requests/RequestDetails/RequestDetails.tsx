@@ -97,6 +97,20 @@ const RequestChangeDetails = () => {
     }
   };
 
+  const handleRevert = async () => {
+    setIsSubmitting(true);
+    try {
+      await axios.patch(`/api/v4/self-service/requests/${requestId}`, {
+        status: 'reverted'
+      });
+      refetchData();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleModifyChange = useCallback(
     async e => {
       setIsSubmitting(true);
@@ -163,6 +177,8 @@ const RequestChangeDetails = () => {
         return 'danger' as ChipType;
       case 'Expired':
         return 'warning' as ChipType;
+      case 'Applied':
+        return 'success' as ChipType;
       default:
         return 'dark' as ChipType;
     }
@@ -210,6 +226,18 @@ const RequestChangeDetails = () => {
       </Button>
     );
 
+    const revertButton = (
+      <Button
+        onClick={handleRevert}
+        color="error"
+        disabled={!readOnly}
+        fullWidth
+        size="small"
+      >
+        Revert
+      </Button>
+    );
+
     switch (status) {
       case 'Approved':
         return (
@@ -223,15 +251,20 @@ const RequestChangeDetails = () => {
             {rejectButton} {approveButton}
           </>
         );
+      case 'Applied':
+        return <>{revertButton}</>;
       case '':
         return ``;
       default:
-        return `Can't modify a ${status.toString().toLowerCase()} request`;
+        return `Can't modify a request with status of: ${status
+          .toString()
+          .toLowerCase()}`;
     }
   }, [
     handleApply,
     handleApprove,
     handleReject,
+    handleRevert,
     readOnly,
     requestData?.data?.status
   ]);

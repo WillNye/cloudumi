@@ -1,5 +1,5 @@
 import styles from './NoResult.module.css';
-import noResultsImg from '../../../../../assets/illustrations/empty.svg';
+import noResultsImg from '../../../../../../assets/illustrations/empty.svg';
 import { LineBreak } from 'shared/elements/LineBreak';
 
 type NoResultsProps = {

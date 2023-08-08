@@ -1,5 +1,5 @@
 import { Segment } from 'shared/layout/Segment';
-import RequestCard from '../RequestCard';
+import RequestCard from '../common/RequestCard';
 
 import styles from './SelectRequestType.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
@@ -10,7 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getRequestType } from 'core/API/iambicRequest';
 import { AxiosError } from 'axios';
 import { getRequestTypeIcon } from './utils';
-import NoResults from '../NoResults/NoResults';
+import NoResults from '../common/NoResults/NoResults';
 
 const SelectRequestType = () => {
   const { selfServiceRequest } = useContext(SelfServiceContext).store;

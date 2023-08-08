@@ -1,8 +1,3 @@
-import {
-  ChangeTypeFieldType,
-  ProviderDefinitionField
-} from 'core/API/iambicRequest';
-
 export interface RequestType {
   id: string;
   name: string;
@@ -111,4 +106,103 @@ export interface TemplatePreviewRequestData {
 export interface TemplatePreview {
   current_template_body: string;
   request_data: TemplatePreviewRequestData;
+}
+
+export type ChangeTypeItem = {
+  id: string;
+  name: string;
+  description: string;
+  request_type_id: string;
+  provider_definition_field?: ProviderDefinitionField;
+  fields: {
+    id: string;
+    change_type_id: string;
+    change_element: number;
+    field_key: string;
+    field_type: string;
+    field_text: string;
+    description: string;
+    allow_none: boolean;
+    allow_multiple: boolean;
+    options?: string[];
+    typeahead: {
+      endpoint: string;
+      query_param_key: string;
+    };
+    default_value?: any;
+    max_char?: number;
+    validation_regex?: string;
+  };
+  included_providers?: any[];
+};
+
+export type ProviderDefinitionField =
+  | 'Allow Multiple'
+  | 'Allow One'
+  | 'Allow None';
+
+export type RequestStatus =
+  | 'Pending'
+  | 'Approved'
+  | 'Rejected'
+  | 'Expired'
+  | 'Running'
+  | 'Applied'
+  | 'Failed'
+  | 'Pending in Git';
+
+export type ChangeTypeFieldType =
+  | 'TypeAheadTemplateRef'
+  | 'TypeAhead'
+  | 'TextBox'
+  | 'Choice';
+
+export interface Request {
+  id: string;
+  repo_name: string;
+  pull_request_id: number;
+  status: RequestStatus;
+  allowed_approvers?: string[] | null;
+  created_at: number;
+  created_by: string;
+  pull_request_url: string;
+  updated_at: string;
+}
+
+export interface RequestItem {
+  pull_request_id: number;
+  pull_request_url: string;
+  request_id: string;
+  requested_by: string;
+  title: string;
+  description: string;
+  comments?: any[];
+  files?: FilesEntity[];
+  mergeable: boolean;
+  merge_on_approval: boolean;
+  merged_at?: null;
+  closed_at?: null;
+  tenant: string;
+  repo_name: string;
+  justification?: null;
+  status: RequestStatus;
+  approved_by?: any[];
+  rejected_by?: any;
+  requested_at?: string;
+  updated_at?: string;
+  id: string;
+  allowed_approvers?: string[] | null;
+  created_at: number;
+  created_by: string;
+}
+export interface FilesEntity {
+  file_path: string;
+  status: string;
+  additions: number;
+  template_body: string;
+  previous_body: string;
+}
+
+export interface SelectedOptions {
+  [key: string]: string;
 }
