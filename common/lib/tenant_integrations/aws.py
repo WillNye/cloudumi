@@ -875,6 +875,7 @@ async def handle_tenant_integration_queue(
 def _handle_tenant_cache_tasks(
     celery_app, tenant: str, account_ids: list[str] = [], **kwargs
 ):
+    """Handle tenant cache tasks"""
     skip_cache_organization_structure = kwargs.get(
         "skip_cache_organization_structure", False
     )

@@ -73,6 +73,16 @@ async def get_org_structure(tenant, force_sync=False) -> Dict[str, Any]:
     return org_structure
 
 
+def _get_spoke_account(tenant, account_id) -> SpokeAccount:
+    spoke_accounts = ModelAdapter(SpokeAccount).load_config("spoke_accounts", tenant)
+    return spoke_accounts.with_query({"account_id": account_id}).first
+
+
+def _get_spoke_account_role(tenant, account_id) -> str:
+    spoke_account = _get_spoke_account(tenant, account_id)
+    return spoke_account.name if spoke_account else "NoqSpokeRole"
+
+
 def _get_accounts_from_org(
     org_struc,
     org_id: Optional[str] = None,
@@ -97,7 +107,7 @@ def _get_accounts_from_org(
 
 
 def _get_accounts(
-    child_accounts: list[str] | set[str],
+    child_accounts: list[dict],
     current_accounts_excluded: list[str],
     last_update: Optional[str],
     force: bool,
@@ -108,13 +118,13 @@ def _get_accounts(
 
     date = datetime.strptime(last_update, "%Y-%m-%dT%H:%M:%SZ")
 
-    # CHECK EXPIRATION
-    if not force and (date + timedelta(hours=1) > datetime.utcnow()):
+    # if expire or force, force the update
+    if force or (date + timedelta(hours=1) < datetime.utcnow()):
         return []
 
     expired_accounts = []
     for account_id in current_accounts_excluded or []:
-        if account_id in child_accounts:
+        if account_id in list(map(lambda acc: acc.get("Id"), child_accounts)):
             expired_accounts.append(account_id)
     return expired_accounts
 
@@ -140,9 +150,9 @@ async def onboard_new_accounts_from_orgs(tenant: str, force: bool = False) -> li
             continue
         try:
             child_accounts = _get_accounts_from_org(org_struc, org_account.org_id)
-            spoke_role_name: str = spoke_accounts.with_query(
-                {"account_id": org_account.account_id}
-            ).first.name
+            spoke_role_name: str = _get_spoke_account_role(
+                tenant, org_account.account_id
+            )
 
             hub_sts_client = boto3_cached_conn(
                 "sts",
@@ -160,7 +170,9 @@ async def onboard_new_accounts_from_orgs(tenant: str, force: bool = False) -> li
             )
 
             if current_excluded_accounts:
-                new_accounts_excluded.append(*current_excluded_accounts)
+                new_accounts_excluded = (
+                    new_accounts_excluded + current_excluded_accounts
+                )
 
             for aws_account in child_accounts:
                 account_id = aws_account.get("Id")
@@ -202,7 +214,7 @@ async def onboard_new_accounts_from_orgs(tenant: str, force: bool = False) -> li
                 # Save new SpokeAccount
                 spoke_account = SpokeAccount(
                     name=spoke_role_name,
-                    account_name=aws_account.get("Name").account_name,
+                    account_name=aws_account.get("Name"),
                     account_id=account_id,
                     role_arn=spoke_role_arn,
                     external_id=external_id,
@@ -234,14 +246,14 @@ async def onboard_new_accounts_from_orgs(tenant: str, force: bool = False) -> li
             sentry_sdk.capture_exception()
 
         if new_accounts_excluded:
-            org_account.accounts_excluded_from_automatic_onboard = [
-                nac.get("Id") for nac in new_accounts_excluded
-            ]
+            # Update the org account with the new accounts excluded from onboard
+            org_account.accounts_excluded_from_automatic_onboard = list(
+                set([nac.get("Id") for nac in new_accounts_excluded])
+            )
             org_account.last_updated_accounts_excluded_automatic_onboard = (
                 datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
             )
 
-            # Update the org account with the new accounts excluded from auto onboard
             await ModelAdapter(
                 OrgAccount, "accounts_excluded_from_automatic_onboard"
             ).load_config("org_accounts", tenant).from_model(
@@ -251,7 +263,7 @@ async def onboard_new_accounts_from_orgs(tenant: str, force: bool = False) -> li
             ).store_item_in_list()
 
     if new_accounts_onboarded:
-        # TODO: Call handle_tenant_integration_queue for tenant (skip those are already called)
+        # Update the tenant cache for the new accounts
         from common.celery_tasks.celery_tasks import app as celery_app
 
         _handle_tenant_cache_tasks(
