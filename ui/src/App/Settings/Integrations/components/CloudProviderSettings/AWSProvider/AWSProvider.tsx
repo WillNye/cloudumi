@@ -6,7 +6,6 @@ import { useCallback, useState } from 'react';
 import {
   awsIntegrations,
   forceOnboarding,
-  getAccountsNotOnboarded,
   getHubAccounts
 } from 'core/API/awsConfig';
 import { AxiosError } from 'axios';

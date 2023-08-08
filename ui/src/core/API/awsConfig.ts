@@ -62,12 +62,6 @@ export const awsIntegrations = async () => {
   return response.data;
 };
 
-export const getAccountsNotOnboarded = async () => {
-  const url = `${V4_API_URL}/services/aws/account/org`;
-  const response = await axios.get(url);
-  return response.data;
-};
-
 export const forceOnboarding = async () => {
   const url = `${V4_API_URL}/services/aws/account/org`;
   const response = await axios.put(url);
