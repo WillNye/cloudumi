@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Segment } from 'shared/layout/Segment';
 import styles from './ExpressChangeDetails.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
@@ -22,7 +22,7 @@ const ExpressChangeDetails = () => {
   >([]);
 
   const {
-    actions: { addChange }
+    actions: { addChange, setExpressTemplateId }
   } = useContext(SelfServiceContext);
   const {
     store: { selfServiceRequest }
@@ -43,6 +43,17 @@ const ExpressChangeDetails = () => {
       // setErrorMessage(errorMsg || 'An error occurred fetching resource');
     }
   });
+
+  useEffect(
+    function onChangeDetailsUpdate() {
+      if (changeTypeDetailsData) {
+        setExpressTemplateId(
+          changeTypeDetailsData?.data?.iambic_template_id ?? null
+        );
+      }
+    },
+    [changeTypeDetailsData]
+  );
 
   const changeTypeDetails = useMemo(
     () => changeTypeDetailsData?.data?.change_type,

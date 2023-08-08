@@ -34,7 +34,6 @@ const RequestPreview = () => {
       setIsLoading(true);
       const convertedRequest = convertToSubmittableRequest(selfServiceRequest);
       setSubmittableRequest(convertedRequest);
-      console.log(convertedRequest, '--------request--------');
 
       axios
         .post('/api/v4/self-service/requests/validate', convertedRequest)

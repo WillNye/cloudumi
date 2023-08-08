@@ -55,6 +55,7 @@ export const DEFAULT_REQUEST: IRequest = {
   identity: null,
   expirationDate: '',
   justification: '',
+  express_template_id: '',
   requestedChanges: []
 };
 

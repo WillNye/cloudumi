@@ -5,18 +5,18 @@ import styles from './SelectRequestType.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { useContext } from 'react';
 import SelfServiceContext from '../../SelfServiceContext';
-import { SELF_SERVICE_STEPS } from '../../constants';
 import { useQuery } from '@tanstack/react-query';
 import { getRequestType } from 'core/API/iambicRequest';
 import { AxiosError } from 'axios';
 import { getRequestTypeIcon } from './utils';
-import NoResults from '../common/NoResults/NoResults';
+import NoResults from '../common/NoResults';
+import { REQUEST_FLOW_MODE } from '../../constants';
 
 const SelectRequestType = () => {
   const { selfServiceRequest } = useContext(SelfServiceContext).store;
 
   const {
-    actions: { setCurrentStep, setSelectedRequestType, handleNext }
+    actions: { setSelectedRequestType, handleNext, setCurrentMode }
   } = useContext(SelfServiceContext);
 
   const { data: requestTypes, isLoading } = useQuery({
@@ -45,8 +45,11 @@ const SelectRequestType = () => {
                 icon={getRequestTypeIcon(requestType.name)}
                 description={requestType.description}
                 onClick={() => {
+                  const mode = requestType.express_request_support
+                    ? REQUEST_FLOW_MODE.EXPRESS_MODE
+                    : REQUEST_FLOW_MODE.ADVANCED_MODE;
                   setSelectedRequestType(requestType);
-                  handleNext();
+                  handleNext(mode);
                 }}
               />
             ))

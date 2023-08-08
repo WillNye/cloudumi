@@ -32,7 +32,8 @@ export interface ISelfServiceContext {
     removeChange: (index: number) => void;
     setSelfServiceRequest: Dispatch<IRequest>;
     setExpirationDate: Dispatch<string | null>;
-    handleNext: Dispatch<void>;
+    handleNext: (mode?: REQUEST_FLOW_MODE) => void;
+    setExpressTemplateId: Dispatch<string>;
   };
   store: {
     currentStep: SELF_SERVICE_STEPS;

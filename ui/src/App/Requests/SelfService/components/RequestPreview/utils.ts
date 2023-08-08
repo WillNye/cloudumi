@@ -21,11 +21,9 @@ export const convertToSubmittableRequest = (
     };
   });
 
-  console.log('++++++++++++++++++++++++++', request, '+++++++++++++++++');
-
   return {
     iambic_template_id:
-      '0f4deceb-a24a-4497-8b80-0a9c466c13fc' || request.identity?.id || '',
+      request.express_template_id || request.identity?.id || '',
     file_path: null,
     justification: request.justification || '',
     template_body: null,

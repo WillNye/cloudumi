@@ -78,6 +78,13 @@ const SelfService = () => {
     setSelfServiceRequest(prev => ({ ...prev, requestedChanges: [] }));
   }, []);
 
+  const setExpressTemplateId = useCallback(template_id => {
+    setSelfServiceRequest(prev => ({
+      ...prev,
+      express_template_id: template_id
+    }));
+  }, []);
+
   const setExpirationDate = useCallback((date: string | null) => {
     setSelfServiceRequest(prev => ({ ...prev, expirationDate: date }));
   }, []);
@@ -99,10 +106,12 @@ const SelfService = () => {
 
   const canClickNext = useMemo(
     () =>
-      currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE ||
-      currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY ||
-      currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES ||
-      currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS,
+      [
+        SELF_SERVICE_STEPS.CHANGE_TYPE,
+        SELF_SERVICE_STEPS.SELECT_IDENTITY,
+        SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES,
+        SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS
+      ].includes(currentStep),
     [currentStep]
   );
 
@@ -124,15 +133,20 @@ const SelfService = () => {
     [currentStep]
   );
 
-  console.log(selfServiceRequest, '++++++++++++++testing------------');
-
-  const handleNext = useCallback(() => {
-    if (currentMode === REQUEST_FLOW_MODE.EXPRESS_MODE) {
-      setCurrentStep(EXPRESS_MODE_NEXT_STEP_MAP[currentStep]);
-    } else {
-      setCurrentStep(ADVANCED_MODE_NEXT_STEP_MAP[currentStep]);
-    }
-  }, [currentStep, currentMode]);
+  const handleNext = useCallback(
+    (newMode?: REQUEST_FLOW_MODE) => {
+      const mode = newMode || currentMode;
+      if (mode === REQUEST_FLOW_MODE.EXPRESS_MODE) {
+        setCurrentStep(EXPRESS_MODE_NEXT_STEP_MAP[currentStep]);
+      } else {
+        setCurrentStep(ADVANCED_MODE_NEXT_STEP_MAP[currentStep]);
+      }
+      if (newMode) {
+        setCurrentMode(newMode);
+      }
+    },
+    [currentStep, currentMode]
+  );
 
   const handleBack = useCallback(() => {
     if (currentMode === REQUEST_FLOW_MODE.EXPRESS_MODE) {
@@ -162,6 +176,7 @@ const SelfService = () => {
           setSelectedRequestType,
           setJustification,
           setSelfServiceRequest,
+          setExpressTemplateId,
           addChange,
           addChangeType,
           removeChange,
@@ -192,50 +207,52 @@ const SelfService = () => {
                   Back
                 </Button>
               )}
-              {canClickNext &&
-                currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES && (
-                  <Button
-                    size="small"
-                    disabled={!selfServiceRequest.changeType}
-                    onClick={handleNext}
-                  >
-                    Next
-                  </Button>
-                )}
-              {canClickNext &&
-                currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS && (
-                  <Button
-                    size="small"
-                    disabled={!selfServiceRequest.requestedChanges}
-                    onClick={handleNext}
-                  >
-                    Next
-                  </Button>
-                )}
-              {canClickNext && currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE && (
-                <Button
-                  size="small"
-                  disabled={
-                    !(
-                      selfServiceRequest.requestedChanges.length &&
-                      selfServiceRequest.justification
-                    )
-                  }
-                  onClick={handleNext}
-                >
-                  Next
-                </Button>
+              {canClickNext && (
+                <>
+                  {currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES && (
+                    <Button
+                      size="small"
+                      disabled={!selfServiceRequest.changeType}
+                      onClick={() => handleNext()}
+                    >
+                      Next
+                    </Button>
+                  )}
+                  {currentStep ===
+                    SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS && (
+                    <Button
+                      size="small"
+                      disabled={!selfServiceRequest.requestedChanges}
+                      onClick={() => handleNext()}
+                    >
+                      Next
+                    </Button>
+                  )}
+                  {currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE && (
+                    <Button
+                      size="small"
+                      disabled={
+                        !(
+                          selfServiceRequest.requestedChanges.length &&
+                          selfServiceRequest.justification
+                        )
+                      }
+                      onClick={() => handleNext()}
+                    >
+                      Next
+                    </Button>
+                  )}
+                  {currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY && (
+                    <Button
+                      size="small"
+                      disabled={!selfServiceRequest.identity}
+                      onClick={() => handleNext()}
+                    >
+                      Next
+                    </Button>
+                  )}
+                </>
               )}
-              {canClickNext &&
-                currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY && (
-                  <Button
-                    size="small"
-                    disabled={!selfServiceRequest.identity}
-                    onClick={handleNext}
-                  >
-                    Next
-                  </Button>
-                )}
             </div>
           </div>
         )}

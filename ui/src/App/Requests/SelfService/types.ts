@@ -4,6 +4,7 @@ export interface RequestType {
   description: string;
   provider: string;
   supported_template_types: string[];
+  express_request_support: boolean;
 }
 
 export interface Identity {
@@ -78,6 +79,7 @@ export interface IRequest {
   requestedChanges: ChangeTypeDetails[] | [];
   justification: string | null;
   expirationDate: string | null;
+  express_template_id: string | null;
 }
 
 export interface SubmittableRequest {
