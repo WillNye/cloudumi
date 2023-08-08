@@ -239,7 +239,12 @@ async def onboard_new_accounts_from_orgs(tenant: str, force: bool = False) -> li
         if new_accounts_excluded:
             # Update the org account with the new accounts excluded from onboard
             org_account.accounts_excluded_from_automatic_onboard = list(
-                set([nac.get("Id") for nac in new_accounts_excluded])
+                set(
+                    [
+                        nac if isinstance(nac, str) else nac.get("Id")
+                        for nac in new_accounts_excluded
+                    ]
+                )
             )
             org_account.last_updated_accounts_excluded_automatic_onboard = (
                 datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
