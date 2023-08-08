@@ -5,6 +5,8 @@ from typing import Any
 import pytz
 
 from common.config import config
+from common.config.models import ModelAdapter
+from common.models import SpokeAccount
 from common.tenants.models import Tenant
 
 
@@ -281,3 +283,13 @@ class TenantConfigBase:
     @property
     def aws_s3_buckets_redis_key(self):
         return f"{self.tenant}_S3_BUCKETS"
+
+    def get_spoke_account(self, account_id) -> SpokeAccount:
+        spoke_accounts = ModelAdapter(SpokeAccount).load_config(
+            "spoke_accounts", self.tenant
+        )
+        return spoke_accounts.with_query({"account_id": account_id}).first
+
+    def get_spoke_role(self, account_id) -> str:
+        spoke_account = self.get_spoke_account(account_id)
+        return spoke_account.name if spoke_account else "NoqSpokeRole"

@@ -8,6 +8,7 @@ from botocore.exceptions import ClientError
 
 from common.config import config, models
 from common.config.models import ModelAdapter
+from common.config.tenant_config import TenantConfig
 from common.exceptions.exceptions import MissingConfigurationValue
 from common.lib.account_indexers import get_account_id_to_name_mapping
 from common.lib.account_indexers.aws_organizations import retrieve_org_structure
@@ -73,16 +74,6 @@ async def get_org_structure(tenant, force_sync=False) -> Dict[str, Any]:
     return org_structure
 
 
-def _get_spoke_account(tenant, account_id) -> SpokeAccount:
-    spoke_accounts = ModelAdapter(SpokeAccount).load_config("spoke_accounts", tenant)
-    return spoke_accounts.with_query({"account_id": account_id}).first
-
-
-def _get_spoke_account_role(tenant, account_id) -> str:
-    spoke_account = _get_spoke_account(tenant, account_id)
-    return spoke_account.name if spoke_account else "NoqSpokeRole"
-
-
 def _get_accounts_from_org(
     org_struc,
     org_id: Optional[str] = None,
@@ -116,10 +107,10 @@ def _get_accounts(
     if not last_update:
         return []
 
-    date = datetime.strptime(last_update, "%Y-%m-%dT%H:%M:%SZ")
+    last_update_dt = datetime.strptime(last_update, "%Y-%m-%dT%H:%M:%SZ")
 
     # if expire or force, force the update
-    if force or (date + timedelta(hours=1) < datetime.utcnow()):
+    if force or (last_update_dt + timedelta(hours=1) < datetime.utcnow()):
         return []
 
     expired_accounts = []
@@ -143,6 +134,8 @@ async def onboard_new_accounts_from_orgs(tenant: str, force: bool = False) -> li
         models.ModelAdapter(HubAccount).load_config("hub_account", tenant).model
     )
 
+    db_tenant = TenantConfig.get_instance(tenant)
+
     for org_account in org_accounts:
         if not force and (
             not org_account.automatically_onboard_accounts or not org_account.role_names
@@ -150,9 +143,7 @@ async def onboard_new_accounts_from_orgs(tenant: str, force: bool = False) -> li
             continue
         try:
             child_accounts = _get_accounts_from_org(org_struc, org_account.org_id)
-            spoke_role_name: str = _get_spoke_account_role(
-                tenant, org_account.account_id
-            )
+            spoke_role_name: str = db_tenant.get_spoke_role(org_account.account_id)
 
             hub_sts_client = boto3_cached_conn(
                 "sts",
