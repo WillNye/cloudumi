@@ -380,6 +380,7 @@ def _get_default_aws_request_permission_request_types(
         description="I need permissions to a cloud resource for myself, an Application, or a Managed Policy.",
         provider=aws_provider_resolver.provider,
         created_by="Noq",
+        express_request_support=True,
     )
     add_permission_to_identity_request.change_types = deepcopy(permission_changes)
     for elem, change_type in enumerate(add_permission_to_identity_request.change_types):
@@ -548,6 +549,7 @@ def _get_default_aws_request_access_request_types(
         description="I do not have the AWS credentials to do my job.",
         provider=aws_provider_resolver.provider,
         created_by="Noq",
+        express_request_support=False,
     )
     access_to_aws_request.change_types = [
         ChangeType(

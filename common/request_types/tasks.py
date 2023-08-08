@@ -135,6 +135,7 @@ async def upsert_tenant_request_types(tenant_name: str):
 
             for attr in [
                 "description",
+                "express_request_support",
             ]:
                 if getattr(request_type, attr) != getattr(default_request_type, attr):
                     setattr(request_type, attr, getattr(default_request_type, attr))

@@ -24,6 +24,7 @@ def _get_default_azure_ad_request_access_request_types(
         description="Request access to an Azure AD Group for 1 or more users or groups",
         provider=azure_ad_provider_resolver.provider,
         created_by="Noq",
+        express_request_support=False,
     )
 
     access_to_group_request.change_types = [

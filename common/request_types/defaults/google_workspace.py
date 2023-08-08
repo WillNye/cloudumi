@@ -26,6 +26,7 @@ def _get_default_google_workspace_request_access_request_types(
         description="Request access to a Google Workspace Group for 1 or more users or groups",
         provider=google_workspace_provider_resolver.provider,
         created_by="Noq",
+        express_request_support=False,
     )
 
     access_to_group_request.change_types = [

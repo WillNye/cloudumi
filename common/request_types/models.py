@@ -175,6 +175,7 @@ class RequestType(SoftDeleteMixin, Base):
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
     provider = Column(TrustedProvider, nullable=False)
+    express_request_support = Column(Boolean, nullable=True, default=False)
 
     tenant = relationship("Tenant")
     change_types = relationship(
@@ -195,6 +196,7 @@ class RequestType(SoftDeleteMixin, Base):
             "name": self.name,
             "description": self.description,
             "provider": self.provider,
+            "express_request_support": self.express_request_support,
         }
         return response
 
