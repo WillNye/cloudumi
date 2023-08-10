@@ -16,7 +16,7 @@ const SelectRequestType = () => {
   const { selfServiceRequest } = useContext(SelfServiceContext).store;
 
   const {
-    actions: { setSelectedRequestType, handleNext, setCurrentMode }
+    actions: { setSelectedRequestType, handleNext }
   } = useContext(SelfServiceContext);
 
   const { data: requestTypes, isLoading } = useQuery({

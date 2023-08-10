@@ -24,6 +24,7 @@ import {
 import { Divider } from 'shared/elements/Divider';
 import { DateTime } from 'luxon';
 import classNames from 'classnames';
+import SidePanel from './components/SidePanel';
 
 const SelfService = () => {
   const [currentStep, setCurrentStep] = useState(
@@ -120,15 +121,21 @@ const SelfService = () => {
     [canClickNext, canClickBack]
   );
 
+  const hideSidePanel = useMemo(
+    () =>
+      [
+        SELF_SERVICE_STEPS.SELECT_PROVIDER,
+        SELF_SERVICE_STEPS.REQUEST_PREVIEW
+      ].includes(currentStep),
+    [currentStep]
+  );
+
   const wrapperClasses = useMemo(
     () =>
       classNames(styles.wrapper, {
-        [styles.fullWidth]: [
-          SELF_SERVICE_STEPS.REQUEST_PREVIEW,
-          // SELF_SERVICE_STEPS.SELECT_IDENTITY,
-          // SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS,
-          SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES
-        ].includes(currentStep)
+        [styles.defaultWidth]: [SELF_SERVICE_STEPS.SELECT_PROVIDER].includes(
+          currentStep
+        )
       }),
     [currentStep]
   );
@@ -136,11 +143,13 @@ const SelfService = () => {
   const handleNext = useCallback(
     (newMode?: REQUEST_FLOW_MODE) => {
       const mode = newMode || currentMode;
-      if (mode === REQUEST_FLOW_MODE.EXPRESS_MODE) {
-        setCurrentStep(EXPRESS_MODE_NEXT_STEP_MAP[currentStep]);
-      } else {
-        setCurrentStep(ADVANCED_MODE_NEXT_STEP_MAP[currentStep]);
-      }
+      const stepMapper =
+        mode === REQUEST_FLOW_MODE.EXPRESS_MODE
+          ? EXPRESS_MODE_NEXT_STEP_MAP
+          : ADVANCED_MODE_NEXT_STEP_MAP;
+      const newCurrentStep = stepMapper[currentStep];
+      setCurrentStep(newCurrentStep);
+
       if (newMode) {
         setCurrentMode(newMode);
       }
@@ -149,10 +158,15 @@ const SelfService = () => {
   );
 
   const handleBack = useCallback(() => {
-    if (currentMode === REQUEST_FLOW_MODE.EXPRESS_MODE) {
-      setCurrentStep(EXPRESS_MODE_PREVIOUS_STEP_MAP[currentStep]);
-    } else {
-      setCurrentStep(ADVANCED_MODE_PREVIOUS_STEP_MAP[currentStep]);
+    const stepMapper =
+      currentMode === REQUEST_FLOW_MODE.EXPRESS_MODE
+        ? EXPRESS_MODE_PREVIOUS_STEP_MAP
+        : ADVANCED_MODE_PREVIOUS_STEP_MAP;
+    const newCurrentStep = stepMapper[currentStep];
+    setCurrentStep(newCurrentStep);
+
+    if (newCurrentStep === SELF_SERVICE_STEPS.SELECT_PROVIDER) {
+      setSelfServiceRequest(DEFAULT_REQUEST);
     }
   }, [currentMode, currentStep]);
 
@@ -196,6 +210,7 @@ const SelfService = () => {
         <div className={styles.content}>
           <div className={wrapperClasses}>
             <RequestViewer />
+            {!hideSidePanel && <SidePanel />}
           </div>
         </div>
         {showFooter && (

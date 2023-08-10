@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Segment } from 'shared/layout/Segment';
 import styles from './ExpressChangeType.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
@@ -9,6 +9,8 @@ import { AxiosError } from 'axios';
 import { getExpressAccessRequests } from 'core/API/iambicRequest';
 import { REQUEST_FLOW_MODE, SELF_SERVICE_STEPS } from '../../../constants';
 import { Card } from 'shared/layout/Card';
+import NoResults from '../../common/NoResults';
+import { Button } from 'shared/elements/Button';
 
 const ExpressChangeType = () => {
   const {
@@ -28,6 +30,11 @@ const ExpressChangeType = () => {
     }
   });
 
+  const showChangeTypes = useMemo(
+    () => Boolean(changeTypes?.data?.length),
+    [changeTypes]
+  );
+
   const handleCardClick = useCallback(
     changeType => {
       if (selectedCard?.id === changeType?.id) {
@@ -37,9 +44,6 @@ const ExpressChangeType = () => {
       } else {
         addChangeType(changeType);
         setSelectedCard(changeType);
-        // TODO: We have a changeType that could be incomplete
-        // We need to call addChange but may need to ask the user for
-        // more info
       }
     },
     [resetChanges, selectedCard?.id, addChangeType]
@@ -67,23 +71,48 @@ const ExpressChangeType = () => {
           to customize your request
         </div>
         <LineBreak />
-        <div className={styles.cardContainer}>
-          {changeTypes?.data.map(changeType => (
-            <Card
-              variant="outlined"
-              color={
-                selectedCard?.id === changeType?.id ? 'primary' : 'default'
+        {!isLoading &&
+          (showChangeTypes ? (
+            <div className={styles.cardContainer}>
+              {changeTypes?.data.map(changeType => (
+                <Card
+                  variant="outlined"
+                  color={
+                    selectedCard?.id === changeType?.id ? 'primary' : 'default'
+                  }
+                  className={styles.card}
+                  key={changeType.id}
+                  onClick={() => handleCardClick(changeType)}
+                  clickable
+                  header={changeType.name}
+                >
+                  <p>{changeType.description}</p>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <NoResults
+              title="No Choices Found"
+              description={
+                <div>
+                  <p>
+                    No Express change types have been created for this request
+                    type
+                  </p>
+                  <LineBreak />
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      setCurrentStep(SELF_SERVICE_STEPS.SELECT_IDENTITY);
+                      setCurrentMode(REQUEST_FLOW_MODE.ADVANCED_MODE);
+                    }}
+                  >
+                    Create custom request
+                  </Button>
+                </div>
               }
-              className={styles.card}
-              key={changeType.id}
-              onClick={() => handleCardClick(changeType)}
-              clickable
-              header={changeType.name}
-            >
-              <p>{changeType.description}</p>
-            </Card>
+            />
           ))}
-        </div>
       </div>
     </Segment>
   );
