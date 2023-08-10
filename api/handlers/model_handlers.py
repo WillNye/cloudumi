@@ -60,6 +60,7 @@ class ConfigurationCrudHandler(BaseHandler):
     async def get(self):
         tenant = self.ctx.tenant
         self.__validate_class_vars()
+        self.set_header("Content-Type", "application/json")
 
         log_data = {
             "function": f"{type(self).__name__}.{__name__}",
@@ -114,12 +115,12 @@ class ConfigurationCrudHandler(BaseHandler):
         for trigger in self._triggers:
             log.info(f"Applying trigger {trigger.name}")
             trigger.apply_async((self.ctx.__dict__,))
-
         self.write(res.json(exclude_unset=True, exclude_none=True))
 
     async def post(self):
         self.__validate_class_vars()
         tenant = self.ctx.tenant
+        self.set_header("Content-Type", "application/json")
 
         log_data = {
             "function": f"{type(self).__name__}.{__name__}",
@@ -176,6 +177,7 @@ class ConfigurationCrudHandler(BaseHandler):
     async def delete(self):
         self.__validate_class_vars()
         tenant = self.ctx.tenant
+        self.set_header("Content-Type", "application/json")
 
         log_data = {
             "function": f"{type(self).__name__}.{__name__}",
@@ -274,6 +276,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
 
     async def get(self):
         tenant = self.ctx.tenant
+        self.set_header("Content-Type", "application/json")
         self.__validate_class_vars()
 
         log_data = {
@@ -318,6 +321,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
     async def post(self):
         self.__validate_class_vars()
         tenant = self.ctx.tenant
+        self.set_header("Content-Type", "application/json")
 
         log_data = {
             "function": f"{type(self).__name__}.{__name__}",
@@ -390,6 +394,7 @@ class MultiItemConfigurationCrudHandler(BaseHandler):
     async def delete(self):
         self.__validate_class_vars()
         tenant = self.ctx.tenant
+        self.set_header("Content-Type", "application/json")
 
         log_data = {
             "function": f"{type(self).__name__}.{__name__}",
@@ -583,6 +588,7 @@ class BaseConfigurationCrudHandler(BaseHandler):
     @handle_request
     async def get(self):
         get_data = await self._retrieve()
+        self.set_header("Content-Type", "application/json")
 
         # hub_account_data is a special structure, so we unroll it
         res = WebResponse(
@@ -603,6 +609,7 @@ class BaseConfigurationCrudHandler(BaseHandler):
     async def post(self):
         data = await self._get_body_data()
         result = await self._create(data)
+        self.set_header("Content-Type", "application/json")
 
         res = WebResponse(
             status=Status2.success,
@@ -617,6 +624,7 @@ class BaseConfigurationCrudHandler(BaseHandler):
     @handle_request
     async def put(self):
         data = await self._get_body_data()
+        self.set_header("Content-Type", "application/json")
 
         await self._update(data)
 
@@ -633,6 +641,7 @@ class BaseConfigurationCrudHandler(BaseHandler):
     @handle_request
     async def delete(self):
         data = await self._get_body_data()
+        self.set_header("Content-Type", "application/json")
 
         try:
             deleted = await self._delete(data)

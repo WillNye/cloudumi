@@ -63,6 +63,7 @@ from api.handlers.v4.self_service.type_ahead.noq import (
     NoqGroupTypeAheadHandler,
     NoqUserTypeAheadHandler,
 )
+from api.handlers.v4.services.aws.account import OrgAccountBackgroundTasksHandler
 from api.handlers.v4.users.login import LoginHandler, MfaHandler
 from api.handlers.v4.users.manage_users import (
     ManageListUsersHandler,
@@ -358,6 +359,10 @@ def make_app(jwt_validator=None):
         (
             r"/api/v3/services/aws/account/org/?",
             OrgAccountConfigurationCrudHandler,
+        ),
+        (
+            r"/api/v4/services/aws/account/org/?",
+            OrgAccountBackgroundTasksHandler,
         ),
         (
             r"/api/v3/services/aws/(?P<_access_type>role-access|tra-access)/credential-brokering",

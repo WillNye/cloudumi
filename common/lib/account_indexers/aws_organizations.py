@@ -7,7 +7,7 @@ from botocore.exceptions import ClientError
 from common.config import config
 from common.config.models import ModelAdapter
 from common.exceptions.exceptions import MissingConfigurationValue
-from common.lib.assume_role import ConsoleMeCloudAux, boto3_cached_conn
+from common.lib.assume_role import ConsoleMeCloudAux
 from common.lib.asyncio import aio_wrapper
 from common.lib.aws.aws_paginate import aws_paginated
 from common.models import (
@@ -29,6 +29,7 @@ async def retrieve_accounts_from_aws_organizations(tenant) -> CloudAccountModelA
     :param: null
     :return: CloudAccountModelArray
     """
+    from common.aws.organizations.utils import get_organizations_client
 
     cloud_accounts = []
     for organization in (
@@ -53,15 +54,12 @@ async def retrieve_accounts_from_aws_organizations(tenant) -> CloudAccountModelA
                 "Unable to sync accounts from "
                 "AWS Organizations"
             )
-        client = await aio_wrapper(
-            boto3_cached_conn,
-            "organizations",
+        client = get_organizations_client(
             tenant,
-            None,
-            account_number=organization.account_id,
-            assume_role=role_to_assume,
-            session_name="noq_organizations_sync",
+            organization.account_id,
+            role_to_assume,
         )
+
         paginator = await aio_wrapper(client.get_paginator, "list_accounts")
         page_iterator = await aio_wrapper(paginator.paginate)
         accounts = []

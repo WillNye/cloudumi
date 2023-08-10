@@ -3090,6 +3090,10 @@ components:
           items:
             type: string
           default: []
+        last_updated_accounts_excluded_automatic_onboard:
+          type: string
+          default: null
+          description: Timestamp of when the account was added
         sync_account_names:
           type: boolean
           description: Automatically Sync Account Names from this Org
