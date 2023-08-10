@@ -51,14 +51,12 @@ def get_services_permissions() -> dict[dict[list[str]]]:
     return service_permissions
 
 
-def _get_default_aws_request_permission_request_types(
-    field_helper_map: dict[str:TypeAheadFieldHelper],
-) -> RequestType:
-    # Formatted like this to catch all RDS variants
+def get_supported_permission_change_types(field_helper_map, identity_service: str):
+
     permission_changes = [
         ChangeType(
             name="RDS",
-            description="Request permissions to an RDS resource.",
+            description=f"Request permissions to an RDS resource for a {identity_service}.",
             change_fields=[
                 ChangeField(
                     change_element=0,
@@ -109,7 +107,7 @@ def _get_default_aws_request_permission_request_types(
         ),
         ChangeType(
             name="S3",
-            description="Add S3 permissions",
+            description=f"Add S3 permissions for a {identity_service}.",
             change_fields=[
                 ChangeField(
                     change_element=0,
@@ -186,7 +184,7 @@ def _get_default_aws_request_permission_request_types(
         ),
         ChangeType(
             name="SQS",
-            description="Request permissions for consuming and publishing to an SQS queue.",
+            description=f"Request permissions for consuming and publishing to an SQS queue for a {identity_service}.",
             change_fields=[
                 ChangeField(
                     change_element=0,
@@ -254,7 +252,7 @@ def _get_default_aws_request_permission_request_types(
         ),
         ChangeType(
             name="SNS",
-            description="Request permissions for publishing and subscribing to an SNS topic.",
+            description=f"Request permissions to allow a {identity_service} to publishing and subscribing to an SNS topic.",
             change_fields=[
                 ChangeField(
                     change_element=0,
@@ -335,7 +333,7 @@ def _get_default_aws_request_permission_request_types(
         permission_changes.append(
             ChangeType(
                 name=service_name,
-                description=f"Request permissions to a {service_name} resource.",
+                description=f"Request permissions to a {service_name} resource for a {identity_service}.",
                 change_fields=[
                     ChangeField(
                         change_element=0,
@@ -375,14 +373,26 @@ def _get_default_aws_request_permission_request_types(
             )
         )
 
+    return permission_changes
+
+
+def _get_default_aws_request_permission_request_types(
+    field_helper_map: dict[str:TypeAheadFieldHelper],
+) -> RequestType:
+    # Formatted like this to catch all RDS variants
+
     add_permission_to_identity_request = RequestType(
         name="I need cloud permissions.",
-        description="I need permissions to a cloud resource for myself, an Application, or a Managed Policy.",
+        description="I need permissions to a cloud resource for myself, or an Application.",
         provider=aws_provider_resolver.provider,
         created_by="Noq",
         express_request_support=False,
     )
-    add_permission_to_identity_request.change_types = deepcopy(permission_changes)
+    add_permission_to_identity_request.change_types = (
+        get_supported_permission_change_types(
+            field_helper_map, "service application, or myself (IAM User)"
+        )
+    )
     for elem, change_type in enumerate(add_permission_to_identity_request.change_types):
         change_type.template_attribute = "properties.inline_policies"
         change_type.apply_attr_behavior = "Append"
@@ -414,7 +424,9 @@ def _get_default_aws_request_permission_request_types(
             elem
         ].change_template.template = template
 
-    permission_set_change_types = deepcopy(permission_changes)
+    permission_set_change_types = get_supported_permission_change_types(
+        field_helper_map, "SSO Permission Set"
+    )
     for elem, change_type in enumerate(permission_set_change_types):
         change_type.supported_template_types = [
             AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE
@@ -425,7 +437,9 @@ def _get_default_aws_request_permission_request_types(
         permission_set_change_types[elem] = change_type
     add_permission_to_identity_request.change_types.extend(permission_set_change_types)
 
-    mp_change_types = deepcopy(permission_changes)
+    mp_change_types = get_supported_permission_change_types(
+        field_helper_map, "Managed Policy"
+    )
     for elem, change_type in enumerate(mp_change_types):
         change_type.supported_template_types = [AWS_MANAGED_POLICY_TEMPLATE_TYPE]
         change_type.template_attribute = "properties.policy_document.statement"
