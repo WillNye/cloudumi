@@ -52,7 +52,7 @@ const ExpressChangeDetails = () => {
         );
       }
     },
-    [changeTypeDetailsData]
+    [changeTypeDetailsData, setExpressTemplateId]
   );
 
   const changeTypeDetails = useMemo(
@@ -120,7 +120,7 @@ const ExpressChangeDetails = () => {
                   includedProviders={includedProviders}
                   changeTypeDetails={changeTypeDetails}
                   setIncludedProviders={setIncludedProviders}
-                  providerDefinition={providerDefinition}
+                  providerDefinition={providerDefinition?.data || []}
                 />
                 <LineBreak />
               </div>

@@ -41,11 +41,11 @@ const IncludedAccounts = ({
     // refer to accountNamesValue for explanation of value
     let selectedProviders = [];
     if (Array.isArray(value)) {
-      selectedProviders = providerDefinition?.data?.filter(provider =>
+      selectedProviders = providerDefinition?.filter(provider =>
         value.includes(provider.definition.account_name)
       );
     } else {
-      selectedProviders = providerDefinition?.data?.filter(
+      selectedProviders = providerDefinition?.filter(
         provider => value == provider.definition.account_name
       );
     }
@@ -72,7 +72,7 @@ const IncludedAccounts = ({
               onChange={handleOnChangeAccountName}
               closeOnSelect={providerDefinitionFields === 'single'}
             >
-              {providerDefinition?.data?.map(def => (
+              {providerDefinition?.map(def => (
                 <SelectOption key={def.id} value={def.definition.account_name}>
                   {def.definition.account_name}
                 </SelectOption>
