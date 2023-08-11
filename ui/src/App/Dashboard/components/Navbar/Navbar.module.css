@@ -19,14 +19,40 @@
 }
 
 .sidebarNav a {
-  margin: 10px 0px;
+  margin: 15px 0px;
   path {
-    stroke: var(--gray-200);
+    svg {
+      path {
+        fill: var(--gray-800);
+      }
+
+      polygon {
+        fill: var(--gray-800);
+      }
+    }
+  }
+
+  .isActive {
+    svg {
+      path {
+        fill: var(--body-color);
+      }
+
+      polygon {
+        fill: var(--body-color);
+      }
+    }
   }
 
   &:hover {
-    path {
-      stroke: var(--body-color);
+    svg {
+      path {
+        fill: var(--gray-100);
+      }
+
+      polygon {
+        fill: var(--gray-100);
+      }
     }
   }
 }

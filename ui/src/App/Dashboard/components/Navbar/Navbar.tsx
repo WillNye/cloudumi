@@ -1,6 +1,6 @@
 import { Icon } from '../../../../shared/elements/Icon';
 import { Tooltip } from '../../../../shared/elements/Tooltip';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Logo from '../../../../assets/brand/mark.svg';
 import { Avatar } from '../../../../shared/elements/Avatar';
 import { Menu } from 'shared/layers/Menu';
@@ -10,15 +10,16 @@ import { useAuth } from 'core/Auth';
 import { LineBreak } from '../../../../shared/elements/LineBreak';
 import { Divider } from '../../../../shared/elements/Divider';
 import styles from './Navbar.module.css';
+import classNames from 'classnames';
 
 export const Navbar = () => {
   const [open, setOpen] = useState(false);
 
   const buttonRef = useRef(null);
 
-  const { user } = useAuth();
-
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const { user } = useAuth();
 
   return (
     <aside className={styles.sidebar}>
@@ -30,35 +31,54 @@ export const Navbar = () => {
       <nav className={styles.sidebarNav}>
         <Link to="/">
           <Tooltip text="Access" alignment="right">
-            <div>
-              <Icon name="lock" width="26px" height="26px" />
+            <div
+              className={classNames({ [styles.isActive]: pathname === '/' })}
+            >
+              <Icon name="access" width="26px" height="26px" />
             </div>
           </Tooltip>
         </Link>
         <Link to="/resources">
           <Tooltip text="Resources" alignment="right">
-            <div>
+            <div
+              className={classNames({
+                [styles.isActive]: (pathname || '').startsWith('/resources')
+              })}
+            >
               <Icon width="26px" height="26px" name="resource" />
             </div>
           </Tooltip>
         </Link>
         <Link to="/requests">
           <Tooltip text="Requests" alignment="right">
-            <div>
-              <Icon width="26px" height="26px" name="pointer" />
+            <div
+              className={classNames({
+                [styles.isActive]: (pathname || '').startsWith('/requests')
+              })}
+            >
+              <Icon width="26px" height="26px" name="requests" />
             </div>
           </Tooltip>
         </Link>
+        <Divider />
         <Link to="/settings">
           <Tooltip text="Settings" alignment="right">
-            <div>
+            <div
+              className={classNames({
+                [styles.isActive]: (pathname || '').startsWith('/settings')
+              })}
+            >
               <Icon width="26px" height="26px" name="settings" />
             </div>
           </Tooltip>
         </Link>
         <Link to="/downloads">
           <Tooltip text="Downloads" alignment="right">
-            <div>
+            <div
+              className={classNames({
+                [styles.isActive]: (pathname || '').startsWith('/downloads')
+              })}
+            >
               <Icon width="26px" height="26px" name="download" />
             </div>
           </Tooltip>
