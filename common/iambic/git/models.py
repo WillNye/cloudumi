@@ -316,9 +316,42 @@ class IambicRepo:
             function=f"{__name__}.{sys._getframe().f_code.co_name}",
         )
 
+        def body_supports_template_url(body) -> bool:
+            lines = body.split("\n")
+            for line in lines:
+                if line.startswith("template_schema_url:"):
+                    return True
+            return False
+
+        def new_body_without_template_url(body) -> str:
+            lines = body.split("\n")
+            new_lines = []
+            for line in lines:
+                if not line.startswith("template_schema_url:"):
+                    new_lines.append(line)
+            return "\n".join(new_lines)
+
         async def _apply_template_change(change: IambicTemplateChange):
             file_path = os.path.join(self.request_file_path, change.file_path)
             file_body = change.template_body
+
+            # this is here to handle a iambic forward/backward compatibility problem
+            # saas is the writer. it is likely using a different version of iambic-core
+            # compared to the tenant self-hosted version of iambic-core.
+            # iambic-core 0.33 or lower does not allow any new fields. we have a tenant
+            # have a previous version of iambic-core. we currently haven't defined a
+            # flexible interface to decide how to generate a particular version of
+            # iambic-template. So we have to do a logic specific step here to not ever
+            # generate the recently added field "template_schema_url".
+            if await self._storage_handler.tenant_file_exists(file_path):
+                old_file_body = await self._storage_handler.read_file(file_path, "r")
+                if not body_supports_template_url(old_file_body):
+                    # existing body don't have template_url, we better remove the pending new_body
+                    file_body = new_body_without_template_url(file_body)
+            else:
+                # we don't have the previous file, erk on the conservative side not generate
+                # template_schema_url
+                file_body = new_body_without_template_url(file_body)
 
             if not file_body and os.path.exists(file_path):
                 await aiofiles.os.remove(file_path)
