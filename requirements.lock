@@ -354,7 +354,7 @@ flask-cors==3.0.10
     # via locust
 flatdict==4.0.1
     # via okta
-flower==1.2.0
+flower==2.0.0
     # via -r ./common/celery_tasks/requirements.in
 fonttools==4.39.4
     # via weasyprint
