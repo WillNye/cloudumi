@@ -244,7 +244,7 @@ coverage==7.2.7
     #   -r ./api/util/requirements-test.in
     #   -r ./common/util/requirements-test.in
     #   pytest-cov
-cryptography==41.0.1
+cryptography==41.0.3
     # via
     #   -r ./api/requirements.in
     #   -r ./common/util/requirements.in
