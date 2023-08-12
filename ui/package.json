@@ -124,6 +124,7 @@
     "**/glob-parent": "^5.1.2",
     "**/trim": "^0.0.3",
     "**/webpack": "^5.76.0",
-    "**/tough-cookie": "^4.1.3"
+    "**/tough-cookie": "^4.1.3",
+    "**/semver": "^7.5.2"
   }
 }
