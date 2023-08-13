@@ -10,6 +10,7 @@ export interface RequestType {
 export interface Identity {
   id: string;
   resource_id: string;
+  resource_friendly_name: string;
   resource_type: string;
   template_type: string;
   provider: string;
@@ -116,6 +117,7 @@ export type ChangeTypeItem = {
   description: string;
   request_type_id: string;
   provider_definition_field?: ProviderDefinitionField;
+  template_types: string[];
   fields: {
     id: string;
     change_type_id: string;

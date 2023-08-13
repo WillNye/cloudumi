@@ -589,9 +589,11 @@ async def run_request_validation(
         if db_iambic_template := items.scalars().one_or_none():
             provider_ref = TRUSTED_PROVIDER_RESOLVER_MAP[db_iambic_template.provider]
             template_cls = provider_ref.template_map[db_iambic_template.template_type]
+            template_content = db_iambic_template.content.content
+            template_content.pop("file_path", None)
             current_template_obj = template_cls(
                 file_path=db_iambic_template.file_path,
-                **db_iambic_template.content.content,
+                **template_content,
             )
             current_template_body = current_template_obj.get_body(exclude_unset=False)
 

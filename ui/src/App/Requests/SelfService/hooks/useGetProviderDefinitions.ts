@@ -2,14 +2,19 @@ import { useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { getProviderDefinitions } from 'core/API/iambicRequest';
 
-const useGetProviderDefinitions = ({ provider, template_id }) => {
+const useGetProviderDefinitions = ({
+  provider,
+  template_id,
+  template_type
+}) => {
   const { data: providerDefinition, isLoading: loadingDefinitions } = useQuery({
     queryFn: getProviderDefinitions,
     queryKey: [
       'getProviderDefinitions',
       {
         provider,
-        template_id
+        template_id,
+        template_type
       }
     ],
     onError: (error: AxiosError) => {

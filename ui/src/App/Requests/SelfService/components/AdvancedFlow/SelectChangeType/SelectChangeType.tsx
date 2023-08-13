@@ -24,6 +24,7 @@ const SelectChangeType = () => {
 
   const { providerDefinition } = useGetProviderDefinitions({
     provider: selfServiceRequest.provider,
+    template_type: selfServiceRequest?.identityType,
     template_id: selfServiceRequest?.identity
       ? selfServiceRequest.identity?.id
       : null
@@ -35,12 +36,15 @@ const SelectChangeType = () => {
   );
 
   const { data: changeTypes, isLoading } = useQuery({
+    queryKey: [
+      'getChangeRequestType',
+      selectedRequestType?.id,
+      false,
+      selfServiceRequest?.identityType
+    ],
     queryFn: getChangeRequestType,
-    queryKey: ['getChangeRequestType', selectedRequestType?.id],
     onError: (error: AxiosError) => {
-      // const errorRes = error?.response;
-      // const errorMsg = extractErrorMessage(errorRes?.data);
-      // setErrorMessage(errorMsg || 'An error occurred fetching resource');
+      // Handle the error...
     }
   });
 

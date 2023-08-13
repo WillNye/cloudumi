@@ -24,6 +24,7 @@ class IambicTemplate(Base):
     provider = Column(TrustedProvider, nullable=False)
     resource_type = Column(String, nullable=False)
     resource_id = Column(String, nullable=False)
+    friendly_name = Column(String, nullable=True)
 
     tenant = relationship("Tenant")
     content = relationship(

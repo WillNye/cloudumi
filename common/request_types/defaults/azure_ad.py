@@ -16,7 +16,7 @@ azure_ad_provider_resolver = TRUSTED_PROVIDER_RESOLVER_MAP["azure_ad"]
 
 
 def _get_default_azure_ad_request_access_request_types(
-    field_helper_map: dict[str:TypeAheadFieldHelper],
+    field_helper_map: dict[str, TypeAheadFieldHelper],
 ) -> list[RequestType]:
 
     access_to_group_request = RequestType(

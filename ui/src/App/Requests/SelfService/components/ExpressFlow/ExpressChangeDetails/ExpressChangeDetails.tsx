@@ -62,7 +62,8 @@ const ExpressChangeDetails = () => {
 
   const { providerDefinition } = useGetProviderDefinitions({
     provider: selfServiceRequest.provider,
-    template_id: changeTypeDetailsData?.data?.iambic_template_id ?? null
+    template_id: changeTypeDetailsData?.data?.iambic_template_id ?? null,
+    template_type: selfServiceRequest?.identityType
   });
 
   const handleChange = (fieldKey: string, value: string) => {

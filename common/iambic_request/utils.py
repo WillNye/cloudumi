@@ -378,6 +378,17 @@ async def render_change_type_template(
     )
 
 
+def should_merge(template1: dict, template2: dict) -> bool:
+    """Helper function to determine if two templates should be merged"""
+    template1_sorted = {
+        k: sorted(v) if isinstance(v, list) else v for k, v in template1.items()
+    }
+    template2_sorted = {
+        k: sorted(v) if isinstance(v, list) else v for k, v in template2.items()
+    }
+    return not DeepDiff(template1_sorted, template2_sorted, ignore_order=True)
+
+
 async def templatize_and_merge_rendered_change_types(
     provider_definition_map: dict[str, TenantProviderDefinition],
     request_change_types: list[EnrichedChangeType],
@@ -403,23 +414,18 @@ async def templatize_and_merge_rendered_change_types(
             )
             exploded_change_type_map[change_type.change_type_id].append(exploded_ct)
 
-    for exploded_change_types in exploded_change_type_map.values():
-        # Attempt to merge the change types if they are the same on the boundary of change type
-        for exploded_change_type in exploded_change_types:
-            append_to_merged = True
-            for merged_change_type in merged_change_types:
-                if not DeepDiff(
-                    exploded_change_type.rendered_template,
-                    merged_change_type.rendered_template,
-                    ignore_order=True,
-                ):
-                    merged_change_type.provider_definition_ids.extend(
-                        exploded_change_type.provider_definition_ids
-                    )
-                    append_to_merged = False
-                    break
-            if append_to_merged:
-                merged_change_types.append(exploded_change_type)
+    for exploded_change_type in exploded_change_type_map.values():
+        # Check if exploded_change_type should be merged with any of the existing merged_change_types
+        for merged in merged_change_types:
+            if should_merge(
+                exploded_change_type.rendered_template, merged.rendered_template
+            ):
+                merged.provider_definition_ids.extend(
+                    exploded_change_type.provider_definition_ids
+                )
+                break
+        else:  # This is executed if the for loop exhausts without hitting a break (i.e., no merge was done)
+            merged_change_types.append(exploded_change_type)
 
     return merged_change_types
 
@@ -589,9 +595,9 @@ async def generate_updated_iambic_template(
         template = await get_template_by_id(tenant_id, request_data.iambic_template_id)
         provider_ref = TRUSTED_PROVIDER_RESOLVER_MAP[template.provider]
         template_cls = provider_ref.template_map[template.template_type]
-        template_obj = template_cls(
-            file_path=template.file_path, **template.content.content
-        )
+        template_content = template.content.content
+        template_content.pop("file_path", None)
+        template_obj = template_cls(file_path=template.file_path, **template_content)
     else:
         # TODO: Add support for a create template request/change type
         raise NotImplementedError
@@ -607,9 +613,9 @@ async def generate_updated_iambic_template(
     iambic_template_ref_map = await get_referenced_templates_map(
         tenant_id, request_data.changes, db_change_type_map
     )
-    request_data = await maybe_extend_change_type_provider_definitions(
-        tenant_id, request_data, template_obj, provider_ref
-    )
+    # request_data = await maybe_extend_change_type_provider_definitions(
+    #     tenant_id, request_data, template_obj, provider_ref
+    # )
     provider_definition_ids = set()
     for change_type in request_data.changes:
         provider_definition_ids.update(set(change_type.provider_definition_ids))

@@ -11,18 +11,20 @@ export const getProviders = async () => {
 
 export const getProviderDefinitions = async ({ queryKey }) => {
   const [_, query] = queryKey;
-  const url = `${V4_API_URL}/providers/definitions?provider=${query.provider}&iambic_template_id=${query.template_id}`;
+  const url = `${V4_API_URL}/providers/definitions?provider=${query.provider}&iambic_template_id=${query.template_id}&template_type=${query.template_type}`;
   const response = await axios.get(url);
   return response.data;
 };
 
-export const getChangeRequestType = async ({
-  queryKey,
-  iambic_templates_specified = false
-}) => {
-  const [_, id] = queryKey;
-  // eslint-disable-next-line max-len
-  const url = `${V4_API_URL}/self-service/request-types/${id}/change-types/?iambic_templates_specified=${iambic_templates_specified}`;
+export const getChangeRequestType = async ({ queryKey }) => {
+  const [_, id, iambic_templates_specified, template_type] = queryKey;
+
+  let url = `${V4_API_URL}/self-service/request-types/${id}/change-types/?iambic_templates_specified=${iambic_templates_specified}`;
+
+  if (template_type !== null) {
+    url += `&template_type=${template_type}`;
+  }
+
   const response = await axios.get<{ data: ChangeTypeItem[] }>(url);
   return response.data;
 };

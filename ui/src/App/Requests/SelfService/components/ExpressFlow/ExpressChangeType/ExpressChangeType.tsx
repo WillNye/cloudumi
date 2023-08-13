@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Segment } from 'shared/layout/Segment';
 import styles from './ExpressChangeType.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
@@ -34,6 +34,13 @@ const ExpressChangeType = () => {
     () => Boolean(changeTypes?.data?.length),
     [changeTypes]
   );
+
+  useEffect(() => {
+    if (!isLoading && !showChangeTypes) {
+      setCurrentStep(SELF_SERVICE_STEPS.SELECT_IDENTITY);
+      setCurrentMode(REQUEST_FLOW_MODE.ADVANCED_MODE);
+    }
+  }, [isLoading, showChangeTypes, setCurrentStep, setCurrentMode]);
 
   const handleCardClick = useCallback(
     changeType => {
