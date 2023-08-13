@@ -3,7 +3,6 @@ from collections import defaultdict
 from typing import Optional, Type, get_origin
 
 from cryptography.hazmat.primitives import serialization
-from deepdiff import DeepDiff
 from iambic.core.models import BaseModel as IambicBaseModel
 from iambic.core.models import BaseTemplate
 from iambic.core.template_generation import templatize_resource
@@ -378,22 +377,51 @@ async def render_change_type_template(
     )
 
 
-def should_merge(template1: dict, template2: dict) -> bool:
-    """Helper function to determine if two templates should be merged"""
-    template1_sorted = {
-        k: sorted(v) if isinstance(v, list) else v for k, v in template1.items()
-    }
-    template2_sorted = {
-        k: sorted(v) if isinstance(v, list) else v for k, v in template2.items()
-    }
-    return not DeepDiff(template1_sorted, template2_sorted, ignore_order=True)
+def generate_key(template: dict) -> str:
+    def ordered(obj):
+        if isinstance(obj, dict):
+            return sorted((k, ordered(v)) for k, v in obj.items())
+        if isinstance(obj, list):
+            return sorted(ordered(x) for x in obj)
+        else:
+            return obj
+
+    return json.dumps(ordered(template))
+
+
+def merge_enriched_change_types(change_types: list) -> EnrichedChangeType:
+    # Start with the first change type as a representative
+    representative = change_types[0].copy(deep=True)
+
+    # Merge provider_definition_ids
+    for ect in change_types[1:]:
+        representative.provider_definition_ids.extend(ect.provider_definition_ids)
+
+    # Remove duplicates
+    representative.provider_definition_ids = list(
+        set(representative.provider_definition_ids)
+    )
+
+    # Merge rendered_template values
+    for ect in change_types[1:]:
+        for key, value in ect.rendered_template.items():
+            if key in representative.rendered_template:
+                # Merge values and remove duplicates
+                representative.rendered_template[key] = list(
+                    set(representative.rendered_template[key] + value)
+                )
+            else:
+                representative.rendered_template[key] = value
+
+    return representative
 
 
 async def templatize_and_merge_rendered_change_types(
     provider_definition_map: dict[str, TenantProviderDefinition],
     request_change_types: list[EnrichedChangeType],
 ) -> list[EnrichedChangeType]:
-    """Templatizes and merges the rendered change type templates
+    """
+    Templatizes and merges the rendered change type templates
 
     Args:
         provider_definition_map (dict[str, TenantProviderDefinition]): Map of provider definitions
@@ -401,32 +429,27 @@ async def templatize_and_merge_rendered_change_types(
     Returns:
         list[EnrichedChangeType]: List of templatized and merged change types
     """
-    exploded_change_type_map = defaultdict(list[EnrichedChangeType])
-    merged_change_types: list[EnrichedChangeType] = []
+
+    # Group by template directly
+    grouped_by_template = defaultdict(list)
+
     for change_type in request_change_types:
         for tpd in change_type.provider_definition_ids:
             exploded_ct = EnrichedChangeType(**change_type.dict())
             exploded_ct.provider_definition_ids = [tpd]
-            # Render the template for each provider definition
-            # Ensures that the drift created by across provider defs is captured
             exploded_ct.rendered_template = templatize_resource(
                 provider_definition_map[tpd], change_type.rendered_template
             )
-            exploded_change_type_map[change_type.change_type_id].append(exploded_ct)
+            key = generate_key(exploded_ct.rendered_template)
+            grouped_by_template[key].append(exploded_ct)
 
-    for exploded_change_type in exploded_change_type_map.values():
-        # Check if exploded_change_type should be merged with any of the existing merged_change_types
-        for merged in merged_change_types:
-            if should_merge(
-                exploded_change_type.rendered_template, merged.rendered_template
-            ):
-                merged.provider_definition_ids.extend(
-                    exploded_change_type.provider_definition_ids
-                )
-                break
-        else:  # This is executed if the for loop exhausts without hitting a break (i.e., no merge was done)
-            merged_change_types.append(exploded_change_type)
+    merged_change_types = []
 
+    for group in grouped_by_template.values():
+        merged_change_types.append(merge_enriched_change_types(group))
+
+    # TODO: For similar changes to a template for multiple accounts, I believe
+    # this should be returning a single change type
     return merged_change_types
 
 
