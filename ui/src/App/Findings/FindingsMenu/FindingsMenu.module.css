@@ -1,0 +1,22 @@
+.findings {
+  .unusedItems {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-sm);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+
+  .cleanupProcess {
+    display: flex;
+    flex-wrap: wrap;
+    /* grid-template-columns: repeat(auto-fill, max(450px, 1fr)); */
+    /* gap: var(--spacing-sm); */
+    /* list-style: none; */
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+}
