@@ -1,0 +1,36 @@
+.lineChart {
+  position: relative;
+  width: 100%;
+  min-width: 450px;
+  border: 1px solid var(--gray-500);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg) var(--spacing-md) var(--spacing-md)
+    var(--spacing-md);
+  margin: var(--spacing-md);
+  background-color: var(--gray-900);
+
+  .wrapper {
+    height: 350px;
+  }
+
+  .title {
+    margin-left: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+  }
+
+  .description {
+    color: var(--green-600);
+    margin-left: var(--spacing-lg);
+  }
+
+  .select {
+    position: absolute;
+    right: 50px;
+    background: var(--gray-700);
+    color: var(--gray-100);
+    border: 1px solid var(--gray-500);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-md);
+    outline: none;
+  }
+}

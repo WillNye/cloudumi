@@ -14,7 +14,8 @@ let previousDismissedValue = 10;
 
 export const lineMockData = [
   {
-    id: 'Unused actions',
+    id: 'unused_actions',
+    label: 'Unused actions',
     data: Array.from({ length: 12 }, (_, i) => {
       const value = generateDataPoint(previousUnusedValue, 'down');
       previousUnusedValue = value;
@@ -28,7 +29,8 @@ export const lineMockData = [
     }).reverse()
   },
   {
-    id: 'Dismissed actions',
+    id: 'dismissed_actions',
+    label: 'Dismissed actions',
     data: Array.from({ length: 12 }, (_, i) => {
       const value = generateDataPoint(previousDismissedValue, 'up');
       previousDismissedValue = value;

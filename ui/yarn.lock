@@ -2177,7 +2177,7 @@
     lodash "^4.17.21"
     prop-types "^15.7.2"
 
-"@nivo/core@0.83.0":
+"@nivo/core@0.83.0", "@nivo/core@^0.83.0":
   version "0.83.0"
   resolved "https://registry.yarnpkg.com/@nivo/core/-/core-0.83.0.tgz#d69a7516b5274b6664ca0fa89f1873e749698c1b"
   integrity sha512-I9fjZAbIPz41JA2WP8Avsud/xk0iiM1nWUzcvZBDebBGFDB5Y1lrldUt9l5kvOeMth3Qj/1lVFTiJxQuojxH4Q==
