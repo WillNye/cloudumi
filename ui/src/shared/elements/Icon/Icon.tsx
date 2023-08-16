@@ -1,4 +1,4 @@
-import React, { Suspense, useMemo } from 'react';
+import React, { Fragment, Suspense, useMemo } from 'react';
 import styles from './Icon.module.css';
 import classNames from 'classnames';
 
@@ -58,7 +58,7 @@ export const Icon: React.FC<IconProps> = ({
   }, [size, width, height]);
 
   if (!SVGIcon) {
-    return <span></span>;
+    return <Fragment />;
   }
 
   return (
