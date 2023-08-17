@@ -399,7 +399,9 @@ async def templatize_and_merge_rendered_change_types(
             # Render the template for each provider definition
             # Ensures that the drift created by across provider defs is captured
             exploded_ct.rendered_template = templatize_resource(
-                provider_definition_map[tpd], change_type.rendered_template
+                provider_definition_map[tpd],
+                change_type.rendered_template,
+                substitute_variables=False,
             )
             exploded_change_type_map[change_type.change_type_id].append(exploded_ct)
 
