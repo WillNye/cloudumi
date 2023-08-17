@@ -190,10 +190,7 @@ describe('Tenant registration and login', () => {
       cy.get('[data-cy="continue-button"]').should('not.be.disabled').click();
 
       cy.contains('Role Access').should('be.visible');
-      cy.contains('AWS Console Sign-In').should('be.visible');
-      cy.get(
-        'input[placeholder="Filter Roles by Account Name, Account ID or Role Name"]'
-      ).should('be.visible');
+      cy.contains('Welcome to Noq').should('be.visible');
     });
   });
 });
