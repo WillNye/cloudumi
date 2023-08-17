@@ -381,7 +381,7 @@ class User(SoftDeleteMixin, Base):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 stmt = select(User).where(
-                    User.tenant == tenant, User.deleted == False  # noqa
+                    and_(User.tenant == tenant, User.deleted == False)  # noqa
                 )
                 stmt = create_filter_from_url_params(stmt, page, count, **filters)
                 if get_groups:
