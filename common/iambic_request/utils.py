@@ -438,7 +438,9 @@ async def templatize_and_merge_rendered_change_types(
             exploded_ct = EnrichedChangeType(**change_type.dict())
             exploded_ct.provider_definition_ids = [tpd]
             exploded_ct.rendered_template = templatize_resource(
-                provider_definition_map[tpd], change_type.rendered_template
+                provider_definition_map[tpd],
+                change_type.rendered_template,
+                substitute_variables=False,
             )
             key = generate_key(exploded_ct.rendered_template)
             grouped_by_template[key].append(exploded_ct)
@@ -593,7 +595,7 @@ async def maybe_add_hub_role_assume_role_policy_document(
                 PolicyStatement(
                     effect="Allow",
                     action=["sts:AssumeRole", "sts:TagSession"],
-                    principal=hub_role_arn,
+                    principal={"aws": hub_role_arn},
                     sid=statement_sid,
                 )
             )

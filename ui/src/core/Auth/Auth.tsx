@@ -16,6 +16,7 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [invalidTenant, setInvalidTenant] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   const isResetPasswordRoute = useMatch('/login/password-reset');
 
@@ -57,13 +58,19 @@ export const Auth: FC<PropsWithChildren> = ({ children }) => {
 
   const { data: hubAccount } = useQuery({
     queryFn: getHubAccounts,
-    queryKey: ['getHubAccounts']
+    queryKey: ['getHubAccounts'],
+    onSuccess: () => {
+      setNeedsOnboarding(true);
+    }
   });
 
-  const isHubAccountInstalled = useMemo(
-    () => Boolean(hubAccount?.count),
-    [hubAccount?.count]
-  );
+  const isHubAccountInstalled = useMemo(() => {
+    if (needsOnboarding) {
+      return Boolean(hubAccount?.count);
+    }
+    return true;
+  }, [hubAccount?.count, needsOnboarding]);
+
   const isGithubInstalled = useMemo(
     () => Boolean(githubData?.data?.installed),
     [githubData?.data]
