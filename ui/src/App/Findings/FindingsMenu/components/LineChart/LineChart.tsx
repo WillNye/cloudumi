@@ -1,8 +1,7 @@
 import { ResponsiveLine } from '@nivo/line';
-import { lineMockData } from './constants';
 import styles from './LineChart.module.css';
 
-const LineChart = () => {
+const LineChart = ({ data, description, title }) => {
   return (
     <div className={styles.lineChart}>
       <select className={styles.select} defaultValue="all-time">
@@ -11,13 +10,11 @@ const LineChart = () => {
         <option value="last-quarter">Last Quarter</option>
         <option value="last-year">Last Year</option>
       </select>
-      <h3 className={styles.title}>Unused Cloud Actions</h3>
-      <p className={styles.description}>
-        85% less from when you first started using Noq
-      </p>
+      <h3 className={styles.title}>{title}</h3>
+      <p className={styles.description}>{description}</p>
       <div className={styles.wrapper}>
         <ResponsiveLine
-          data={lineMockData}
+          data={data}
           margin={{ top: 50, right: 50, bottom: 50, left: 50 }}
           xScale={{ type: 'point' }}
           yScale={{

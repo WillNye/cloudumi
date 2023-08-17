@@ -4,23 +4,33 @@ import DonutChart from './components/DonutChart';
 import LineChart from './components/LineChart';
 import SectionHeader from 'shared/elements/SectionHeader';
 import { LineBreak } from 'shared/elements/LineBreak';
+import { cleanupProgressMetricsData, unusedMetricsData } from './mockData';
 
 const FindingsMenu = () => {
   return (
     <Segment>
-      <h4>Findings</h4>
-      <LineBreak />
       <div className={styles.findings}>
+        <div className={styles.header}>
+          <h3>Findings</h3>
+          <div className={styles.lastScan}>Last scan: 07/22/2023 6:45PM</div>
+        </div>
         <SectionHeader
           className={styles.sectionHeader}
           title="CURRENT STATE OF UNUSED ITEMS"
           size="small"
         />
         <div className={styles.unusedItems}>
-          <DonutChart />
-          <DonutChart />
-          <DonutChart />
-          <DonutChart />
+          {unusedMetricsData.map(
+            ({ data, title, labelDescription, labelTitle }, index) => (
+              <DonutChart
+                key={index}
+                data={data}
+                title={title}
+                labelDescription={labelDescription}
+                labelTitle={labelTitle}
+              />
+            )
+          )}
         </div>
         <LineBreak />
         <SectionHeader
@@ -29,8 +39,23 @@ const FindingsMenu = () => {
           size="small"
         />
         <div className={styles.cleanupProcess}>
-          <LineChart />
-          <LineChart />
+          <div className={styles.infoCard}>
+            Noq has removed
+            <p className={styles.highlight}> 540 </p>
+            or 5% of all identities since start of usage
+          </div>
+          <div className={styles.lineCharts}>
+            {cleanupProgressMetricsData.map(
+              ({ title, description, data }, index) => (
+                <LineChart
+                  key={index}
+                  data={data}
+                  title={title}
+                  description={description}
+                />
+              )
+            )}
+          </div>
         </div>
       </div>
     </Segment>
