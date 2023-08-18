@@ -44,7 +44,7 @@ class TrustedProviderResolver:
         return str(provider_config)
 
     @property
-    def template_classes(self):
+    def template_classes(self) -> list[type[BaseTemplate]]:
         return self.iambic_plugin.templates
 
     @property
