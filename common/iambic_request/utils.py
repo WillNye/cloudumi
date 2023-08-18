@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from collections import defaultdict
-from typing import Optional, Type, get_origin
+from typing import TYPE_CHECKING, Optional, Type, get_origin
 
 from cryptography.hazmat.primitives import serialization
 from deepdiff import DeepDiff
@@ -58,6 +60,9 @@ from common.models import (
     SelfServiceRequestData,
 )
 from common.request_types.utils import list_tenant_change_types
+
+if TYPE_CHECKING:
+    from common.iambic.templates.models import IambicTemplate
 
 
 class EnrichedChangeType(SelfServiceRequestChangeType):
@@ -577,7 +582,6 @@ async def maybe_extend_change_type_provider_definitions(
     template_obj: Type[BaseTemplate],
     provider_ref: TrustedProviderResolver,
 ):
-
     is_permission_set = (
         template_obj.template_type == AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE
     )
@@ -731,7 +735,9 @@ async def generate_updated_iambic_template(
     Returns:
         Type[BaseTemplate]: The updated iambic template
     """
-    tenant_id = tenant.id
+    tenant_id: int = tenant.id  # type: ignore
+    request_data_changes = request_data.changes or []
+
     if request_data.iambic_template_id:
         template = await get_template_by_id(tenant_id, request_data.iambic_template_id)
         provider_ref = TRUSTED_PROVIDER_RESOLVER_MAP[template.provider]
@@ -747,24 +753,72 @@ async def generate_updated_iambic_template(
 
     db_change_types = await list_tenant_change_types(
         tenant_id,
-        change_type_ids=[ct.change_type_id for ct in request_data.changes],
+        change_type_ids=[ct.change_type_id for ct in request_data_changes],
         summary_only=False,
     )
     db_change_type_map = {str(ct.id): ct for ct in db_change_types}
     iambic_template_ref_map = await get_referenced_templates_map(
-        tenant_id, request_data.changes, db_change_type_map
+        tenant_id, request_data_changes, db_change_type_map
     )
     request_data = await maybe_extend_change_type_provider_definitions(
         tenant_id, request_data, template_obj, provider_ref
     )
     provider_definition_ids = set()
-    for change_type in request_data.changes:
+    for change_type in request_data_changes:
         provider_definition_ids.update(set(change_type.provider_definition_ids))
     template_obj = await maybe_add_hub_role_assume_role_policy_document(
         tenant.name, template_obj, db_change_types
     )
 
-    # Retrieve the given provider definitions
+    provider_definitions = await get_provider_definitions(
+        tenant_id, provider_definition_ids
+    )
+
+    # Render and merge the change type templates for the request
+    provider_definition_map = {str(pd.id): pd for pd in provider_definitions}
+    enriched_change_types = await get_enriched_change_types(
+        request_data,
+        db_change_type_map,
+        iambic_template_ref_map,
+        provider_definition_map,
+    )
+    merged_change_types = await templatize_and_merge_rendered_change_types(
+        provider_definition_map, enriched_change_types
+    )
+
+    template_pd_count = await get_template_pd_count(template, provider_ref)
+
+    # Merge the change types into the template
+    for change_type in merged_change_types:
+        if request_data.expires_at:
+            change_type.rendered_template["expires_at"] = request_data.expires_at
+
+        db_change_type = db_change_type_map[change_type.change_type_id]
+
+        if (
+            provider_ref.included_providers_attribute
+            and db_change_type.provider_definition_field != "Allow None"  # type: ignore
+        ):
+            if template_pd_count > len(change_type.provider_definition_ids):
+                change_type.rendered_template[
+                    provider_ref.included_providers_attribute
+                ] = [
+                    provider_definition_map[pd_id].preferred_identifier
+                    for pd_id in change_type.provider_definition_ids
+                ]
+
+        update_iambic_template_with_change(
+            template_obj,
+            db_change_type.template_attribute,  # type: ignore
+            change_type.rendered_template,
+            db_change_type.apply_attr_behavior,  # type: ignore
+        )
+
+    return template_obj
+
+
+async def get_provider_definitions(tenant_id: int, provider_definition_ids: set[str]):
+    """Returns the provider definitions for the given tenant"""
     async with ASYNC_PG_SESSION() as session:
         stmt = select(TenantProviderDefinition).filter(
             TenantProviderDefinition.tenant_id == tenant_id,
@@ -776,9 +830,39 @@ async def generate_updated_iambic_template(
             raise AssertionError(
                 f"Invalid provider definition ids provided: {missing_ids}"
             )
+    return provider_definitions
 
-    # Render and merge the change type templates for the request
-    provider_definition_map = {str(pd.id): pd for pd in provider_definitions}
+
+async def get_template_pd_count(
+    template: IambicTemplate,
+    provider_ref: TrustedProviderResolver,
+) -> int:
+    """Returns the number of provider definitions associated with the given template"""
+    if not provider_ref.included_providers_attribute:
+        return 0
+
+    # Get template provider def count
+    async with ASYNC_PG_SESSION() as session:
+        stmt = (
+            select(sql_func.count())
+            .select_from(IambicTemplateProviderDefinition)
+            .filter(IambicTemplateProviderDefinition.iambic_template_id == template.id)
+        )
+        template_pd_count = (await session.execute(stmt)).scalar()
+    return template_pd_count
+
+
+async def get_enriched_change_types(
+    request_data: SelfServiceRequestData,
+    db_change_type_map: dict[str, ChangeType],
+    iambic_template_ref_map: dict[str, Type[BaseTemplate]],
+    provider_definition_map: dict[str, TenantProviderDefinition],
+) -> list[EnrichedChangeType]:
+    """Renders the change type templates for the given self-service request"""
+
+    if not request_data.changes:
+        return []
+
     tasks = []
     for change_type in request_data.changes:
         for pd_id in change_type.provider_definition_ids:
@@ -791,49 +875,7 @@ async def generate_updated_iambic_template(
                 )
             )
     enriched_change_types = await asyncio.gather(*tasks)
-    merged_change_types = await templatize_and_merge_rendered_change_types(
-        provider_definition_map, enriched_change_types
-    )
-
-    if provider_ref.included_providers_attribute:
-        # Get template provider def count
-        async with ASYNC_PG_SESSION() as session:
-            stmt = (
-                select(sql_func.count())
-                .select_from(IambicTemplateProviderDefinition)
-                .filter(
-                    IambicTemplateProviderDefinition.iambic_template_id == template.id
-                )
-            )
-            template_pd_count = (await session.execute(stmt)).scalar()
-
-    # Merge the change types into the template
-    for change_type in merged_change_types:
-        if request_data.expires_at:
-            change_type.rendered_template["expires_at"] = request_data.expires_at
-
-        db_change_type = db_change_type_map[change_type.change_type_id]
-
-        if (
-            provider_ref.included_providers_attribute
-            and db_change_type.provider_definition_field != "Allow None"
-        ):
-            if template_pd_count > len(change_type.provider_definition_ids):
-                change_type.rendered_template[
-                    provider_ref.included_providers_attribute
-                ] = [
-                    provider_definition_map[pd_id].preferred_identifier
-                    for pd_id in change_type.provider_definition_ids
-                ]
-
-        update_iambic_template_with_change(
-            template_obj,
-            db_change_type.template_attribute,
-            change_type.rendered_template,
-            db_change_type.apply_attr_behavior,
-        )
-
-    return template_obj
+    return enriched_change_types
 
 
 async def get_allowed_approvers(
