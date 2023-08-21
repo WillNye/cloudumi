@@ -445,8 +445,20 @@ async def templatize_and_merge_rendered_change_types(
     Returns:
         list[EnrichedChangeType]: List of templatized and merged change types
     """
+    exploded_change_type_map = _get_templatized_change_types(
+        provider_definition_map, request_change_types
+    )
+
+    return _get_merged_change_types(exploded_change_type_map)
+
+
+def _get_templatized_change_types(
+    provider_definition_map: dict[str, TenantProviderDefinition],
+    request_change_types: list[EnrichedChangeType],
+) -> dict[str, list[EnrichedChangeType]]:
+    """Get templates for each change type and provider definition"""
     exploded_change_type_map = defaultdict(list[EnrichedChangeType])
-    merged_change_types: list[EnrichedChangeType] = []
+
     for change_type in request_change_types:
         for tpd in change_type.provider_definition_ids:
             exploded_ct = EnrichedChangeType(**change_type.dict())
@@ -458,18 +470,34 @@ async def templatize_and_merge_rendered_change_types(
             )
             exploded_change_type_map[change_type.change_type_id].append(exploded_ct)
 
+    return exploded_change_type_map
+
+
+def _get_merged_change_types(
+    exploded_change_type_map: dict[str, list[EnrichedChangeType]]
+):
+    """Group change types by change type's rendered template"""
+
+    # definitive change types, merged with same rendered template
+    merged_change_types: list[EnrichedChangeType] = []
     for exploded_change_types in exploded_change_type_map.values():
         # Attempt to merge the change types if they are the same on the boundary of change type
         for exploded_change_type in exploded_change_types:
             append_to_merged = True
             for merged_change_type in merged_change_types:
+                # if rendered template is the same, and provider definition ids is not included yet.
                 if not DeepDiff(
                     exploded_change_type.rendered_template,
                     merged_change_type.rendered_template,
                     ignore_order=True,
                 ):
-                    merged_change_type.provider_definition_ids.extend(
-                        exploded_change_type.provider_definition_ids
+                    merged_change_type.provider_definition_ids = list(
+                        set(
+                            [
+                                *merged_change_type.provider_definition_ids,
+                                *exploded_change_type.provider_definition_ids,
+                            ]
+                        )
                     )
                     append_to_merged = False
                     break
@@ -477,103 +505,6 @@ async def templatize_and_merge_rendered_change_types(
                 merged_change_types.append(exploded_change_type)
 
     return merged_change_types
-
-
-# async def templatize_and_merge_rendered_change_types(
-#     provider_definition_map: dict[str, TenantProviderDefinition],
-#     request_change_types: list[EnrichedChangeType],
-# ) -> list[EnrichedChangeType]:
-#     """Templatizes and merges the rendered change type templates
-#     Args:
-#         provider_definition_map (dict[str, TenantProviderDefinition]): Map of provider definitions
-#         request_change_types (list[EnrichedChangeType]): List of change types as part of the request
-#     Returns:
-#         list[EnrichedChangeType]: List of templatized and merged change types
-#     """
-#     exploded_change_type_map = defaultdict(list[EnrichedChangeType])
-#     merged_change_types: list[EnrichedChangeType] = []
-#     for change_type in request_change_types:
-#         for tpd in change_type.provider_definition_ids:
-#             exploded_ct = EnrichedChangeType(**change_type.dict())
-#             exploded_ct.provider_definition_ids = [tpd]
-#             # Render the template for each provider definition
-#             # Ensures that the drift created by across provider defs is captured
-#             exploded_ct.rendered_template = templatize_resource(
-#                 provider_definition_map[tpd], change_type.rendered_template
-#             )
-#             exploded_change_type_map[change_type.change_type_id].append(exploded_ct)
-
-#     # for exploded_change_type in exploded_change_type_map.values():
-#     #     # Check if exploded_change_type should be merged with any of the existing merged_change_types
-#     #     for merged in merged_change_types:
-#     #         if should_merge(
-#     #             exploded_change_type.rendered_template, merged.rendered_template
-#     #         ):
-#     #             merged.provider_definition_ids.extend(
-#     #                 exploded_change_type.provider_definition_ids
-#     #             )
-#     #             break
-#     #     else:  # This is executed if the for loop exhausts without hitting a break (i.e., no merge was done)
-#     #         merged_change_types.append(exploded_change_type)
-
-#     for exploded_change_types in exploded_change_type_map.values():
-#         # Attempt to merge the change types if they are the same on the boundary of change type
-#         for exploded_change_type in exploded_change_types:
-#             append_to_merged = True
-#             for merged_change_type in merged_change_types:
-#                 if not DeepDiff(
-#                     exploded_change_type.rendered_template,
-#                     merged_change_type.rendered_template,
-#                     ignore_order=True,
-#                 ):
-#                     merged_change_type.provider_definition_ids.extend(
-#                         exploded_change_type.provider_definition_ids
-#                     )
-#                     append_to_merged = False
-#                     break
-#             if append_to_merged:
-#                 merged_change_types.append(exploded_change_type)
-
-#     return merged_change_types
-
-
-# async def templatize_and_merge_rendered_change_types(
-#     provider_definition_map: dict[str, TenantProviderDefinition],
-#     request_change_types: list[EnrichedChangeType],
-# ) -> list[EnrichedChangeType]:
-#     """
-#     Templatizes and merges the rendered change type templates
-
-#     Args:
-#         provider_definition_map (dict[str, TenantProviderDefinition]): Map of provider definitions
-#         request_change_types (list[EnrichedChangeType]): List of change types as part of the request
-#     Returns:
-#         list[EnrichedChangeType]: List of templatized and merged change types
-#     """
-
-#     # Group by template directly
-#     grouped_by_template = defaultdict(list)
-
-#     for change_type in request_change_types:
-#         for tpd in change_type.provider_definition_ids:
-#             exploded_ct = EnrichedChangeType(**change_type.dict())
-#             exploded_ct.provider_definition_ids = [tpd]
-#             exploded_ct.rendered_template = templatize_resource(
-#                 provider_definition_map[tpd],
-#                 change_type.rendered_template,
-#                 substitute_variables=False,
-#             )
-#             key = generate_key(exploded_ct.rendered_template)
-#             grouped_by_template[key].append(exploded_ct)
-
-#     merged_change_types = []
-
-#     for group in grouped_by_template.values():
-#         merged_change_types.append(merge_enriched_change_types(group))
-
-#     # TODO: For similar changes to a template for multiple accounts, I believe
-#     # this should be returning a single change type
-#     return merged_change_types
 
 
 async def maybe_extend_change_type_provider_definitions(
