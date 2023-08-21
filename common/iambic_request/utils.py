@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from collections import defaultdict
 from typing import TYPE_CHECKING, Optional, Type, get_origin
+from uuid import uuid4
 
 from cryptography.hazmat.primitives import serialization
 from deepdiff import DeepDiff
@@ -15,9 +16,10 @@ from iambic.plugins.v0_1_0.aws.iam.policy.models import (
     PolicyStatement,
 )
 from iambic.plugins.v0_1_0.aws.iam.role.models import AWS_IAM_ROLE_TEMPLATE_TYPE
-from iambic.plugins.v0_1_0.aws.identity_center.permission_set.models import (
-    AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
-)
+
+# from iambic.plugins.v0_1_0.aws.identity_center.permission_set.models import (
+#     AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE,
+# )
 from jinja2 import BaseLoader
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 from regex import regex
@@ -67,6 +69,7 @@ if TYPE_CHECKING:
 
 class EnrichedChangeType(SelfServiceRequestChangeType):
     rendered_template: dict
+    identifier: str
 
 
 async def get_referenced_templates_map(
@@ -333,6 +336,7 @@ async def render_change_type_template(
     provider_definition: TenantProviderDefinition,
     iambic_template_ref_map: dict[str, Type[BaseTemplate]],
     request_change_type: SelfServiceRequestChangeType,
+    identifier: str,
 ) -> EnrichedChangeType:
     """Renders change type template rendered using jinja2 with the provided parameters
 
@@ -380,6 +384,7 @@ async def render_change_type_template(
     return EnrichedChangeType(
         **request_change_type.dict(),
         rendered_template=json.loads(str(rtemplate.render(form=template_attrs))),
+        identifier=identifier,
     )
 
 
@@ -459,6 +464,8 @@ def _get_templatized_change_types(
     """Get templates for each change type and provider definition"""
     exploded_change_type_map = defaultdict(list[EnrichedChangeType])
 
+    # at this point, all change types should only have one provider definition
+    # because they are exploded by provider definition
     for change_type in request_change_types:
         for tpd in change_type.provider_definition_ids:
             exploded_ct = EnrichedChangeType(**change_type.dict())
@@ -466,9 +473,12 @@ def _get_templatized_change_types(
             # Render the template for each provider definition
             # Ensures that the drift created by across provider defs is captured
             exploded_ct.rendered_template = templatize_resource(
-                provider_definition_map[tpd], change_type.rendered_template
+                provider_definition_map[tpd],
+                change_type.rendered_template,
+                substitute_variables=False,
             )
-            exploded_change_type_map[change_type.change_type_id].append(exploded_ct)
+            # exploded change types group by change type identifier, which is related to the request
+            exploded_change_type_map[change_type.identifier].append(exploded_ct)
 
     return exploded_change_type_map
 
@@ -476,33 +486,54 @@ def _get_templatized_change_types(
 def _get_merged_change_types(
     exploded_change_type_map: dict[str, list[EnrichedChangeType]]
 ):
-    """Group change types by change type's rendered template"""
+    """Group change types by change type's rendered template
+
+    Args:
+        exploded_change_type_map (dict[str, list[EnrichedChangeType]]): Map of exploded change types, grouped by change type identifier, related to the request
+    """
 
     # definitive change types, merged with same rendered template
     merged_change_types: list[EnrichedChangeType] = []
+
     for exploded_change_types in exploded_change_type_map.values():
         # Attempt to merge the change types if they are the same on the boundary of change type
+        merged_change_type = None
         for exploded_change_type in exploded_change_types:
-            append_to_merged = True
-            for merged_change_type in merged_change_types:
-                # if rendered template is the same, and provider definition ids is not included yet.
-                if not DeepDiff(
-                    exploded_change_type.rendered_template,
-                    merged_change_type.rendered_template,
-                    ignore_order=True,
-                ):
-                    merged_change_type.provider_definition_ids = list(
-                        set(
-                            [
-                                *merged_change_type.provider_definition_ids,
-                                *exploded_change_type.provider_definition_ids,
-                            ]
-                        )
-                    )
-                    append_to_merged = False
-                    break
-            if append_to_merged:
-                merged_change_types.append(exploded_change_type)
+            if not merged_change_type:
+                merged_change_type = exploded_change_type
+                merged_change_types.append(merged_change_type)
+                continue
+
+            merged_change_type.provider_definition_ids = list(
+                set(
+                    [
+                        *merged_change_type.provider_definition_ids,
+                        *exploded_change_type.provider_definition_ids,
+                    ]
+                )
+            )
+
+        # TODO: do we need to use DeepDiff?
+        # append_to_merged = True
+        # for merged_change_type in merged_change_types:
+        #     # if rendered template is the same, and provider definition ids is not included yet.
+        #     if not DeepDiff(
+        #         exploded_change_type.rendered_template,
+        #         merged_change_type.rendered_template,
+        #         ignore_order=True,
+        #     ):
+        #         merged_change_type.provider_definition_ids = list(
+        #             set(
+        #                 [
+        #                     *merged_change_type.provider_definition_ids,
+        #                     *exploded_change_type.provider_definition_ids,
+        #                 ]
+        #             )
+        #         )
+        #         append_to_merged = False
+        #         break
+        # if append_to_merged:
+        #     merged_change_types.append(exploded_change_type)
 
     return merged_change_types
 
@@ -513,36 +544,19 @@ async def maybe_extend_change_type_provider_definitions(
     template_obj: Type[BaseTemplate],
     provider_ref: TrustedProviderResolver,
 ):
-    is_permission_set = (
-        template_obj.template_type == AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE
-    )
     additional_provider_def = None
-    if is_permission_set:
-        tenant_aws_orgs = await list_tenant_provider_definitions(
-            tenant_id, provider="aws", sub_type="organizations"
-        )
-        if template_obj.included_orgs and template_obj.included_orgs[0] != "*":
-            org_id = template_obj.included_orgs[0]
-            tenant_org = next(
-                (org for org in tenant_aws_orgs if org.definition["org_id"] == org_id),
-                None,
-            )
-            if not tenant_org:
-                raise AssertionError(
-                    f"Organization {org_id} is not defined for this tenant"
-                )
-        else:
-            assert (
-                len(tenant_aws_orgs) == 1
-            ), "Please contact your administrator. An AWS Org must be defined as part of this request."
-            tenant_org = tenant_aws_orgs[0]
+    # TODO: add a use case when this is needed
+    # is_permission_set = (
+    #     template_obj.template_type == AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE
+    # )
 
-        account_id = tenant_org.definition["org_account_id"]
-        provider_def = await list_tenant_provider_definitions(
-            tenant_id, provider="aws", name=account_id
-        )
-        additional_provider_def = provider_def[0]
-    elif any(
+    # if is_permission_set:
+    #     tenant_org = await _get_tenant_org(tenant_id, template_obj)
+    #     provider_def = await _get_account_from_org(tenant_id, tenant_org)
+    #     additional_provider_def = provider_def
+    # elif
+    # TODO: add comment explaining in what case this is true.
+    if any(
         not bool(change_type.provider_definition_ids)
         for change_type in request_data.changes
     ):
@@ -566,6 +580,46 @@ async def maybe_extend_change_type_provider_definitions(
             )
 
     return request_data
+
+
+async def _get_tenant_org(
+    tenant_id: int,
+    template_obj: Type[BaseTemplate],
+) -> TenantProviderDefinition:
+    tenant_aws_orgs = await list_tenant_provider_definitions(
+        tenant_id, provider="aws", sub_type="organizations"
+    )
+    if template_obj.included_orgs and template_obj.included_orgs[0] != "*":
+        org_id = template_obj.included_orgs[0]
+        tenant_org = next(
+            (org for org in tenant_aws_orgs if org.definition["org_id"] == org_id),
+            None,
+        )
+        if not tenant_org:
+            raise AssertionError(
+                f"Organization {org_id} is not defined for this tenant"
+            )
+    else:
+        assert (
+            len(tenant_aws_orgs) == 1
+        ), "Please contact your administrator. An AWS Org must be defined as part of this request."
+        tenant_org = tenant_aws_orgs[0]
+
+    return tenant_org
+
+
+async def _get_account_from_org(
+    tenant_id: int,
+    tenant_org: TenantProviderDefinition,
+) -> TenantProviderDefinition:
+    account_id = tenant_org.definition["org_account_id"]
+    provider_def = await list_tenant_provider_definitions(
+        tenant_id,
+        provider="aws",
+        name=account_id,
+    )
+
+    return provider_def[0]
 
 
 async def maybe_add_hub_role_assume_role_policy_document(
@@ -669,18 +723,14 @@ async def generate_updated_iambic_template(
     tenant_id: int = tenant.id  # type: ignore
     request_data_changes = request_data.changes or []
 
-    if request_data.iambic_template_id:
-        template = await get_template_by_id(tenant_id, request_data.iambic_template_id)
-        provider_ref = TRUSTED_PROVIDER_RESOLVER_MAP[template.provider]
-        template_cls = provider_ref.template_map[template.template_type]
-        template_content = template.content.content
-        template_content.pop("file_path", None)
-        template_obj = template_cls(file_path=template.file_path, **template_content)
-    else:
+    if not request_data.iambic_template_id:
         # TODO: Add support for a create template request/change type
         raise NotImplementedError
 
+    template = await get_template_by_id(tenant_id, request_data.iambic_template_id)
+    provider_ref = TRUSTED_PROVIDER_RESOLVER_MAP[template.provider]
     # TODO support resolving for create types
+    template_obj = build_template(template, provider_ref)
 
     db_change_types = await list_tenant_change_types(
         tenant_id,
@@ -695,8 +745,10 @@ async def generate_updated_iambic_template(
         tenant_id, request_data, template_obj, provider_ref
     )
     provider_definition_ids = set()
+
     for change_type in request_data_changes:
         provider_definition_ids.update(set(change_type.provider_definition_ids))
+
     template_obj = await maybe_add_hub_role_assume_role_policy_document(
         tenant.name, template_obj, db_change_types
     )
@@ -707,19 +759,17 @@ async def generate_updated_iambic_template(
 
     # Render and merge the change type templates for the request
     provider_definition_map = {str(pd.id): pd for pd in provider_definitions}
-    enriched_change_types = await get_enriched_change_types(
+    merged_change_types = await explode_templatize_merge_change_types(
         request_data,
         db_change_type_map,
         iambic_template_ref_map,
         provider_definition_map,
     )
-    merged_change_types = await templatize_and_merge_rendered_change_types(
-        provider_definition_map, enriched_change_types
-    )
 
     template_pd_count = await get_template_pd_count(template, provider_ref)
 
     # Merge the change types into the template
+    # TODO: move to a function (?)
     for change_type in merged_change_types:
         if request_data.expires_at:
             change_type.rendered_template["expires_at"] = request_data.expires_at
@@ -745,6 +795,36 @@ async def generate_updated_iambic_template(
             db_change_type.apply_attr_behavior,  # type: ignore
         )
 
+    return template_obj
+
+
+async def explode_templatize_merge_change_types(
+    request_data: SelfServiceRequestData,
+    db_change_type_map: dict[str, ChangeType],
+    iambic_template_ref_map: dict[str, Type[BaseTemplate]],
+    provider_definition_map: dict[str, TenantProviderDefinition],
+) -> list[EnrichedChangeType]:
+    """Explodes each change type by its provider definitions, renders the change type template, and merge it back together"""
+    enriched_change_types = await get_enriched_change_types_exploded(
+        request_data,
+        db_change_type_map,
+        iambic_template_ref_map,
+        provider_definition_map,
+    )
+
+    exploded_change_type_map = _get_templatized_change_types(
+        provider_definition_map, enriched_change_types
+    )
+
+    return _get_merged_change_types(exploded_change_type_map)
+
+
+def build_template(template: IambicTemplate, provider_ref: TrustedProviderResolver):
+    """Builds the template object from the template db model"""
+    template_cls = provider_ref.template_map[template.template_type]  # type: ignore
+    template_content = template.content.content
+    template_content.pop("file_path", None)
+    template_obj = template_cls(file_path=template.file_path, **template_content)
     return template_obj
 
 
@@ -783,7 +863,7 @@ async def get_template_pd_count(
     return template_pd_count
 
 
-async def get_enriched_change_types(
+async def get_enriched_change_types_exploded(
     request_data: SelfServiceRequestData,
     db_change_type_map: dict[str, ChangeType],
     iambic_template_ref_map: dict[str, Type[BaseTemplate]],
@@ -796,6 +876,7 @@ async def get_enriched_change_types(
 
     tasks = []
     for change_type in request_data.changes:
+        identifier = str(uuid4())
         for pd_id in change_type.provider_definition_ids:
             tasks.append(
                 render_change_type_template(
@@ -803,6 +884,7 @@ async def get_enriched_change_types(
                     provider_definition_map[pd_id],
                     iambic_template_ref_map,
                     change_type,
+                    identifier,
                 )
             )
     enriched_change_types = await asyncio.gather(*tasks)
