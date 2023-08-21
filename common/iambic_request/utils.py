@@ -438,6 +438,7 @@ def should_merge(template1: dict, template2: dict) -> bool:
     return not DeepDiff(template1_sorted, template2_sorted, ignore_order=True)
 
 
+# TODO: remove this function
 async def templatize_and_merge_rendered_change_types(
     provider_definition_map: dict[str, TenantProviderDefinition],
     request_change_types: list[EnrichedChangeType],
