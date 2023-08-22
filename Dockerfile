@@ -13,6 +13,7 @@ ENV BUILD_PATH=./frontend/build
 ENV DISABLE_ESLINT_PLUGIN=true
 ENV VIRTUAL_ENV=/app/env
 ENV NODE_OPTIONS=--openssl-legacy-provider
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN mkdir /app
 WORKDIR /app
