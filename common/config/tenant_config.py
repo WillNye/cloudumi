@@ -1,6 +1,6 @@
 import datetime
 import os
-from typing import Any
+from typing import Any, Optional
 
 import pytz
 
@@ -9,6 +9,8 @@ from common.config.models import ModelAdapter
 from common.models import SpokeAccount
 from common.tenants.models import Tenant
 
+log = config.get_logger(__name__)
+
 
 class TenantConfig:
     """Singleton factory for per-tenant config objects."""
@@ -16,9 +18,13 @@ class TenantConfig:
     _instances: dict = {}
 
     @classmethod
-    def get_instance(cls, tenant: str) -> "TenantConfigBase":
+    def get_instance(cls, tenant: str) -> Optional["TenantConfigBase"]:
         if tenant not in cls._instances:
-            cls._instances[tenant] = TenantConfigBase(tenant)
+            try:
+                cls._instances[tenant] = TenantConfigBase(tenant)
+            except AttributeError:
+                log.error("Tenant not found", tenant=tenant)
+                return None
         return cls._instances[tenant]
 
 
