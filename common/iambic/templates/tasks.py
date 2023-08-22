@@ -129,6 +129,7 @@ async def create_tenant_templates_and_definitions(
         )
         # Friendly name to display on the frontend for group and app templates, since
         # the names aren't unique and the ID is not user friendly
+        # TODO: duplicated logic
         if iambic_template.template_type in [
             OKTA_GROUP_TEMPLATE_TYPE,
             OKTA_APP_TEMPLATE_TYPE,
@@ -325,6 +326,7 @@ async def update_tenant_template(
 
     if not iambic_template.friendly_name:
         iambic_template.friendly_name = iambic_template.resource_id
+        # TODO: duplicated logic
         if iambic_template.template_type in [
             OKTA_GROUP_TEMPLATE_TYPE,
             OKTA_APP_TEMPLATE_TYPE,
