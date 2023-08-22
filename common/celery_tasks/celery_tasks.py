@@ -2388,6 +2388,8 @@ def cache_organization_structure_for_all_tenants() -> dict[str, Any]:
 
 @app.task(soft_time_limit=1800, **default_celery_task_kwargs)
 def cache_organization_structure(tenant=None, force=False) -> dict[str, Any]:
+    from common.config.tenant_config import TenantConfig
+
     if not tenant:
         raise Exception("`tenant` must be passed to this task.")
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
@@ -2396,6 +2398,12 @@ def cache_organization_structure(tenant=None, force=False) -> dict[str, Any]:
         "function": function,
         "tenant": tenant,
     }
+
+    db_tenant = TenantConfig.get_instance(tenant)
+
+    if not db_tenant:
+        log.error("Unable to retrieve tenant details", **log_data)
+        return []
 
     # Loop through all accounts and add organizations if enabled
     orgs_accounts_added = async_to_sync(autodiscover_aws_org_accounts)(tenant)
