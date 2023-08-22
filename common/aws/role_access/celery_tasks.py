@@ -111,7 +111,7 @@ async def sync_identity_roles(
 async def sync_role_access(
     tenant: Tenant, iambic_config_interface: IambicConfigInterface
 ):
-    log_data = {"tenant_name": tenant.name}
+    log_data = {"tenant": tenant.name}
     iambic_templates = await iambic_config_interface.load_templates(
         await iambic_config_interface.gather_templates(
             template_type=AWS_IAM_ROLE_TEMPLATE_TYPE
@@ -280,7 +280,7 @@ async def sync_role_access(
 
 async def sync_all_iambic_data_for_tenant(tenant_name: str):
     fnc = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenant = await Tenant.get_by_name(tenant_name)
+    tenant = await Tenant.get_by_name_nocache(tenant_name)
     if not tenant:
         log.warning(
             {

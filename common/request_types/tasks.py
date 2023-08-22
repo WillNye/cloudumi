@@ -45,7 +45,7 @@ async def upsert_tenant_request_types(tenant_name: str):
             change fields
             change type templates
     """
-    tenant = await Tenant.get_by_name(tenant_name)
+    tenant = await Tenant.get_by_name_nocache(tenant_name)
     if not tenant:
         return
     updated_at = datetime.utcnow()

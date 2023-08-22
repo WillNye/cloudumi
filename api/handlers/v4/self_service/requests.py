@@ -44,7 +44,7 @@ class IambicRequestValidationHandler(BaseHandler):
             await log.aexception(
                 "Unhandled exception while validating request",
                 error=str(err),
-                tenant_name=db_tenant.name,
+                tenant=db_tenant.name,
             )
             self.write(
                 WebResponse(
@@ -59,7 +59,7 @@ class IambicRequestValidationHandler(BaseHandler):
             await log.aexception(
                 "Unhandled exception while validating user self service request",
                 error=str(err),
-                tenant_name=db_tenant.name,
+                tenant=db_tenant.name,
             )
             self.write(
                 WebResponse(
@@ -161,7 +161,7 @@ class IambicRequestHandler(BaseHandler):
             await log.aexception(
                 "Unhandled exception while creating user self service request",
                 error=traceback_string,
-                tenant_name=db_tenant.name,
+                tenant=db_tenant.name,
             )
             self.write(
                 WebResponse(
@@ -339,7 +339,7 @@ class IambicRequestCommentHandler(BaseHandler):
         except Exception:
             await log.aerror(
                 "Error parsing request body",
-                tenant_name=db_tenant.name,
+                tenant=db_tenant.name,
                 request_body=self.request.body,
                 exc_info=True,
             )

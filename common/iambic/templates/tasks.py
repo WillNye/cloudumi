@@ -643,7 +643,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
     Args:
         tenant_name (str): The name of the tenant.
     """
-    tenant = await Tenant.get_by_name(tenant_name)
+    tenant = await Tenant.get_by_name_nocache(tenant_name)
     if not tenant:
         log.error("Not a valid tenant", tenant=tenant_name)
         return

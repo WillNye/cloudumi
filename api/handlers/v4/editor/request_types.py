@@ -71,7 +71,7 @@ class ExpressAccessRequestEditorHandler(BaseAdminHandler):
             await log.aexception(
                 "Unhandled exception while creating express access request",
                 error=traceback_string,
-                tenant_name=db_tenant.name,
+                tenant=db_tenant.name,
             )
             self.write(
                 WebResponse(
@@ -154,7 +154,7 @@ class ExpressAccessRequestEditorHandler(BaseAdminHandler):
             await log.aexception(
                 "Unhandled exception while updating express access request",
                 error=traceback_string,
-                tenant_name=db_tenant.name,
+                tenant=db_tenant.name,
                 express_access_request_id=express_access_request_id,
             )
             self.write(
@@ -232,7 +232,7 @@ class ExpressAccessRequestFavoriteHandler(BaseHandler):
             await log.aexception(
                 "Unhandled exception while updating user favorite status for express access request",
                 error=traceback_string,
-                tenant_name=db_tenant.name,
+                tenant=db_tenant.name,
                 express_access_request_id=express_access_request_id,
                 username=db_user.username,
             )
@@ -348,7 +348,7 @@ class ChangeTypeEditorHandler(BaseAdminHandler):
             await log.aexception(
                 "Unhandled exception while patching change type",
                 error=traceback_string,
-                tenant_name=db_tenant.name,
+                tenant=db_tenant.name,
                 change_type_id=change_type_id,
             )
             self.write(
@@ -425,7 +425,7 @@ class ChangeTypeFavoriteHandler(BaseHandler):
             await log.aexception(
                 "Unhandled exception while updating user favorite status for change type",
                 error=traceback_string,
-                tenant_name=db_tenant.name,
+                tenant=db_tenant.name,
                 username=db_user.username,
                 change_type_id=change_type_id,
             )
