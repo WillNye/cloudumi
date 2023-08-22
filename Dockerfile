@@ -61,8 +61,11 @@ RUN npm install yarn -g && \
     yarn --cwd ui
 
 # Clean Up
-RUN apt-get clean && \
+RUN apt-get update && \
+    apt-get clean && \
+    apt-get update && \
     apt-get -y autoremove && \
+    apt-get update && \
     apt-get dist-upgrade -y
 
 # Install AWS CLI
