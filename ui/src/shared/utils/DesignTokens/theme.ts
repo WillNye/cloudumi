@@ -191,7 +191,7 @@ export const theme: DesignTokens = {
     select: {
       'select-input-border-radius': borders.radius.lg,
       'select-input-background': themeColors.gray['900'],
-      'select-input-border': `solid 2px ${themeColors.gray['300']}`,
+      'select-input-border': `solid 2px ${themeColors.gray['500']}`,
       'select-input-color': themeColors.white,
       'select-input-spacing': `${spacings.sm} ${spacings.md}`,
       'select-input-error': themeColors.red['100'],
@@ -200,7 +200,7 @@ export const theme: DesignTokens = {
       'select-input-icon-color': themeColors.gray['100'],
 
       'select-menu-background': themeColors.gray['700'],
-      'select-menu-border': `solid 2px ${themeColors.gray['300']}`,
+      'select-menu-border': `solid 1px ${themeColors.gray['300']}`,
       'select-menu-border-radius': `${borders.radius.lg}`,
       'select-menu-item-color': themeColors.white,
       'select-menu-group-color': themeColors.gray['100'],

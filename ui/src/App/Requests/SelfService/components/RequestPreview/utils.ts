@@ -22,7 +22,8 @@ export const convertToSubmittableRequest = (
   });
 
   return {
-    iambic_template_id: request.identity?.id || '',
+    iambic_template_id:
+      request.express_template_id || request.identity?.id || '',
     file_path: null,
     justification: request.justification || '',
     template_body: null,

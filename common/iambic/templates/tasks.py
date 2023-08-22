@@ -8,6 +8,8 @@ from typing import Optional, Type, Union
 import pytz
 from git import Repo
 from iambic.core.models import BaseTemplate as IambicBaseTemplate
+from iambic.plugins.v0_1_0.okta.app.models import OKTA_APP_TEMPLATE_TYPE
+from iambic.plugins.v0_1_0.okta.group.models import OKTA_GROUP_TEMPLATE_TYPE
 from sqlalchemy import and_, cast, delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import contains_eager
@@ -123,7 +125,17 @@ async def create_tenant_templates_and_definitions(
             provider=provider,
             resource_type=raw_iambic_template.resource_type,
             resource_id=raw_iambic_template.resource_id,
+            friendly_name=raw_iambic_template.resource_id,
         )
+        # Friendly name to display on the frontend for group and app templates, since
+        # the names aren't unique and the ID is not user friendly
+        # TODO: duplicated logic
+        if iambic_template.template_type in [
+            OKTA_GROUP_TEMPLATE_TYPE,
+            OKTA_APP_TEMPLATE_TYPE,
+        ]:
+            iambic_template.friendly_name = raw_iambic_template.properties.name
+
         iambic_templates.append(iambic_template)
 
         # Create a new IambicTemplateContent instance and append to list
@@ -310,6 +322,16 @@ async def update_tenant_template(
         file_path = file_path[1:]
     if iambic_template.file_path != file_path:
         iambic_template.file_path = file_path
+        await iambic_template.write()
+
+    if not iambic_template.friendly_name:
+        iambic_template.friendly_name = iambic_template.resource_id
+        # TODO: duplicated logic
+        if iambic_template.template_type in [
+            OKTA_GROUP_TEMPLATE_TYPE,
+            OKTA_APP_TEMPLATE_TYPE,
+        ]:
+            iambic_template.friendly_name = raw_iambic_template.properties.name
         await iambic_template.write()
 
     async with ASYNC_PG_SESSION() as session:
@@ -623,7 +645,7 @@ async def sync_tenant_templates_and_definitions(tenant_name: str):
     Args:
         tenant_name (str): The name of the tenant.
     """
-    tenant = await Tenant.get_by_name(tenant_name)
+    tenant = await Tenant.get_by_name_nocache(tenant_name)
     if not tenant:
         log.error("Not a valid tenant", tenant=tenant_name)
         return

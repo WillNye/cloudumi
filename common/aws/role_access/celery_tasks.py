@@ -111,15 +111,19 @@ async def sync_identity_roles(
 async def sync_role_access(
     tenant: Tenant, iambic_config_interface: IambicConfigInterface
 ):
+    log_data = {"tenant": tenant.name}
     iambic_templates = await iambic_config_interface.load_templates(
         await iambic_config_interface.gather_templates(
             template_type=AWS_IAM_ROLE_TEMPLATE_TYPE
         ),
     )
     users = await __get_users(tenant)
+    log_data["num_users"] = len(users)
     groups = await __get_groups(tenant)
+    log_data["num_groups"] = len(groups)
     iambic_config = await iambic_config_interface.get_iambic_config()
     all_aws_identity_roles = await AwsIdentityRole.get_all(tenant)
+    log_data["num_identity_roles"] = len(all_aws_identity_roles)
     existing_role_access_response = await AWSRoleAccess.list(tenant)
     existing_user_role_access_map = defaultdict(dict)
     existing_group_role_access_map = defaultdict(dict)
@@ -258,7 +262,7 @@ async def sync_role_access(
                                 "tenant": tenant.name,
                             }
                         )
-
+        log_data["num_upserts"] = len(upserts)
         if upserts:
             await AWSRoleAccess.bulk_create(tenant, upserts)
 
@@ -268,13 +272,15 @@ async def sync_role_access(
     for _, group_role_access_map in existing_group_role_access_map.items():
         deleted_access.extend(list(group_role_access_map.values()))
 
+    log_data["num_deleted_access"] = len(deleted_access)
     if deleted_access:
         await bulk_delete(deleted_access)
+    log.debug("sync_role_access results", **log_data)
 
 
 async def sync_all_iambic_data_for_tenant(tenant_name: str):
     fnc = f"{__name__}.{sys._getframe().f_code.co_name}"
-    tenant = await Tenant.get_by_name(tenant_name)
+    tenant = await Tenant.get_by_name_nocache(tenant_name)
     if not tenant:
         log.warning(
             {

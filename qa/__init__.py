@@ -9,6 +9,7 @@ class TestTenantSummary:
     tenant_name: Optional[str]
     tenant_url: Optional[str]
     username: Optional[str]
+    user: Optional[any]
     user_groups: Optional[list[str]]
     cookies: Optional[dict[str, str]]
 
@@ -37,10 +38,12 @@ class TestTenantSummary:
         from common.config import config  # noqa: F401,E402
         from common.lib.jwt import generate_jwt_token
         from common.tenants.models import Tenant
+        from common.users.models import User
 
         self.tenant = await Tenant.get_by_name(tenant_name)
         self.tenant_name = tenant_name
         self.tenant_url = tenant_url.replace("/api", "")
+        self.user = await User.get_by_username(self.tenant, username)
         self.username = username
         self.user_groups = user_groups or ["engineering@noq.dev"]
         self.cookies = {

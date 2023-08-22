@@ -39,11 +39,13 @@ class IambicTemplateHandler(BaseHandler):
                     tpd.resource_id for tpd in item.provider_definition_refs
                 )
                 for resource_id in resource_ids:
+                    resource_friendly_name = item.friendly_name or resource_id
                     data.append(
                         {
                             "id": item.id,
                             "resource_id": resource_id,
                             "resource_type": item.resource_type,
+                            "resource_friendly_name": resource_friendly_name,
                             "template_type": item.template_type,
                             "provider": item.provider,
                         }

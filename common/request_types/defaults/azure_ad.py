@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from iambic.plugins.v0_1_0.azure_ad.group.models import AZURE_AD_GROUP_TEMPLATE_TYPE
 
 from common.iambic.config.models import TRUSTED_PROVIDER_RESOLVER_MAP
@@ -14,17 +16,15 @@ azure_ad_provider_resolver = TRUSTED_PROVIDER_RESOLVER_MAP["azure_ad"]
 
 
 def _get_default_azure_ad_request_access_request_types(
-    field_helper_map: dict[str:TypeAheadFieldHelper],
+    field_helper_map: dict[str, TypeAheadFieldHelper],
 ) -> list[RequestType]:
 
     access_to_group_request = RequestType(
         name="Request access to Azure AD Group",
         description="Request access to an Azure AD Group for 1 or more users or groups",
         provider=azure_ad_provider_resolver.provider,
-        template_types=[
-            AZURE_AD_GROUP_TEMPLATE_TYPE,
-        ],
         created_by="Noq",
+        express_request_support=False,
     )
 
     access_to_group_request.change_types = [
@@ -52,6 +52,9 @@ def _get_default_azure_ad_request_access_request_types(
             template_attribute="properties.members",
             apply_attr_behavior="Append",
             provider_definition_field="Allow One",
+            supported_template_types=[
+                AZURE_AD_GROUP_TEMPLATE_TYPE,
+            ],
             created_by="Noq",
         ),
         ChangeType(
@@ -78,6 +81,9 @@ def _get_default_azure_ad_request_access_request_types(
             template_attribute="properties.members",
             apply_attr_behavior="Append",
             provider_definition_field="Allow One",
+            supported_template_types=[
+                AZURE_AD_GROUP_TEMPLATE_TYPE,
+            ],
             created_by="Noq",
         ),
     ]
@@ -97,4 +103,4 @@ async def get_default_azure_ad_request_types() -> list[RequestType]:
         field_helper_map
     )
 
-    return default_request_types
+    return [deepcopy(request_type) for request_type in default_request_types]

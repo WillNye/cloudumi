@@ -44,7 +44,7 @@ def generic_api_create_or_update_request(
     http_method: str, endpoint: str, **kwargs
 ) -> dict:
     # Handles POST, PUT, PATCH
-    response = getattr(requests, http_method)(
+    response = getattr(requests, http_method.lower())(
         urljoin(TENANT_SUMMARY.tenant_url, sanitize_endpoint(endpoint)),
         cookies=TENANT_SUMMARY.cookies,
         json=kwargs,

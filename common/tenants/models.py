@@ -101,6 +101,25 @@ class Tenant(SoftDeleteMixin, Base):
                 return await _query(session)
 
     @classmethod
+    async def get_by_name_nocache(cls, tenant_name, session=None):
+        async def _query(session):
+            stmt = select(Tenant).where(
+                and_(
+                    Tenant.name == tenant_name,
+                    Tenant.deleted == False,  # noqa
+                )
+            )
+            tenant = await session.execute(stmt)
+            return tenant.scalars().first()
+
+        if session:
+            return await _query(session)
+
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                return await _query(session)
+
+    @classmethod
     @cached(cache=TTLCache(maxsize=1024, ttl=30))
     def get_by_name_sync(cls, tenant_name, session=None):
         def _query(session):

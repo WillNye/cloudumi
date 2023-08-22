@@ -28,6 +28,7 @@ from common.request_types.models import (  # noqa: F401,E402
     ChangeField,
     ChangeType,
     ChangeTypeTemplate,
+    ExpressAccessRequest,
     RequestType,
     TypeAheadFieldHelper,
 )

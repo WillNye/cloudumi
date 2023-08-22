@@ -1,15 +1,32 @@
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import JSON, Boolean, Column, ForeignKey, Index, Integer, String, update
-from sqlalchemy.dialects.postgresql import ARRAY, ENUM, UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    select,
+    update,
+)
+from sqlalchemy.dialects.postgresql import ARRAY, ENUM, JSONB, UUID
+from sqlalchemy.orm import relationship, selectinload
+from sqlalchemy.sql.schema import Table
 
 from common.config import config
 from common.config.globals import ASYNC_PG_SESSION
 from common.iambic.config.models import TrustedProvider
 from common.pg_core.models import Base, SoftDeleteMixin
 from common.tenants.models import Tenant  # noqa: F401
+
+if TYPE_CHECKING:
+    from common.users.models import User
+else:
+    User = object
 
 log = config.get_logger(__name__)
 
@@ -65,6 +82,72 @@ Replace:
 """
 
 
+change_type_group_association = Table(
+    "change_type_group_association",
+    Base.metadata,
+    Column("change_type_id", UUID(as_uuid=True), ForeignKey("change_type.id")),
+    Column("group_id", UUID(as_uuid=True), ForeignKey("groups.id")),
+)
+
+change_type_user_association = Table(
+    "change_type_user_association",
+    Base.metadata,
+    Column("change_type_id", UUID(as_uuid=True), ForeignKey("change_type.id")),
+    Column("user_id", UUID(as_uuid=True), ForeignKey("users.id")),
+)
+
+change_type_iambic_template_provider_definition_association = Table(
+    "change_type_iambic_template_provider_definition_association",
+    Base.metadata,
+    Column("change_type_id", UUID(as_uuid=True), ForeignKey("change_type.id")),
+    Column(
+        "iambic_template_provider_definition_id",
+        UUID(as_uuid=True),
+        ForeignKey("iambic_template_provider_definition.id"),
+    ),
+)
+
+user_favorited_change_type_association = Table(
+    "user_favorited_change_type_association",
+    Base.metadata,
+    Column("user_id", UUID(as_uuid=True), ForeignKey("users.id")),
+    Column(
+        "change_type_id",
+        UUID(as_uuid=True),
+        ForeignKey("change_type.id"),
+    ),
+    Index("ufcta_user_favorite_idx", "user_id", "change_type_id"),
+)
+
+user_favorited_express_access_request_association = Table(
+    "user_favorited_express_access_request_association",
+    Base.metadata,
+    Column("user_id", UUID(as_uuid=True), ForeignKey("users.id")),
+    Column(
+        "express_access_request_id",
+        UUID(as_uuid=True),
+        ForeignKey("express_access_request.id"),
+    ),
+    Index("ufeara_user_favorite_idx", "user_id", "express_access_request_id"),
+)
+
+iambic_template_provider_defs_express_access_request_association = Table(
+    "iambic_template_provider_defs_express_access_request_association",
+    Base.metadata,
+    Column(
+        "iambic_template_provider_definition_id",
+        UUID(as_uuid=True),
+        ForeignKey("iambic_template_provider_definition.id"),
+    ),
+    Column(
+        "express_access_request_id",
+        UUID(as_uuid=True),
+        ForeignKey("express_access_request.id"),
+        index=True,
+    ),
+)
+
+
 class TypeAheadFieldHelper(Base):
     __tablename__ = "typeahead_field_helper"
 
@@ -92,12 +175,7 @@ class RequestType(SoftDeleteMixin, Base):
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
     provider = Column(TrustedProvider, nullable=False)
-    # This is the full list of templates types that are supported by this request type
-    supported_template_types = Column(ARRAY(String), nullable=False)
-    # This is the subset that are actually available to the tenant.
-    # For example, if SSO isn't set up.
-    # Permission sets are supported for the request type but not for the tenant until SSO is configured.
-    template_types = Column(ARRAY(String), nullable=False)
+    express_request_support = Column(Boolean, nullable=True, default=False)
 
     tenant = relationship("Tenant")
     change_types = relationship(
@@ -118,7 +196,7 @@ class RequestType(SoftDeleteMixin, Base):
             "name": self.name,
             "description": self.description,
             "provider": self.provider,
-            "supported_template_types": self.supported_template_types,
+            "express_request_support": self.express_request_support,
         }
         return response
 
@@ -136,26 +214,148 @@ class RequestType(SoftDeleteMixin, Base):
             session.add(self)
             await session.commit()
 
-    async def reinitialize(self):
-        """Un-Delete the request type and all change types associated with it.
 
-        This can happen when the tenant had no supported template types but now they do.
-        """
+class ExpressAccessRequest(SoftDeleteMixin, Base):
+    """
+    This is essentially a pre-populated permission request change type
+    """
+
+    __tablename__ = "express_access_request"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    change_type_id = Column(
+        UUID(as_uuid=True), ForeignKey("change_type.id"), nullable=False
+    )
+    tenant_id = Column(Integer, ForeignKey("tenant.id"), nullable=False)
+    iambic_template_id = Column(
+        UUID(as_uuid=True), ForeignKey("iambic_template.id"), nullable=False
+    )
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    field_values = Column(JSONB, nullable=False)
+    suggest_to_all = Column(Boolean, default=False)
+
+    tenant = relationship("Tenant")
+    change_type = relationship("ChangeType")
+    favorited_by = relationship(
+        "User",
+        secondary=user_favorited_express_access_request_association,
+        back_populates="favorited_access_requests",
+    )
+    iambic_template = relationship(
+        "IambicTemplate", back_populates="express_access_requests"
+    )
+    iambic_template_provider_defs = relationship(
+        "IambicTemplateProviderDefinition",
+        secondary=iambic_template_provider_defs_express_access_request_association,
+        back_populates="associated_express_access_requests",
+    )
+
+    __table_args__ = (
+        Index("ear_change_type_idx", "tenant_id", "change_type_id"),
+        Index(
+            "ear_suggest_to_all_idx",
+            "tenant_id",
+            "suggest_to_all",
+            "name",
+            "change_type_id",
+        ),
+    )
+
+    def dict(self):
+        return {
+            "id": str(self.id),
+            "name": self.name,
+            "description": self.description,
+        }
+
+    def self_service_dict(self):
+        return {
+            "id": str(self.id),
+            "name": self.name,
+            "description": self.description,
+            "is_favorite": getattr(self, "is_favorite", False),
+            "is_suggested": getattr(self, "is_suggested", False),
+        }
+
+    @classmethod
+    async def update_favorite_status(
+        cls, tenant_id: int, express_access_request_id: str, user: User
+    ) -> "ExpressAccessRequest":
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = (
+                    select(cls)
+                    .filter(
+                        cls.id == express_access_request_id, cls.tenant_id == tenant_id
+                    )
+                    .options(selectinload(cls.favorited_by))
+                )
+                items = await session.execute(stmt)
+                express_access_request = items.scalars().unique().one_or_none()
+                if not express_access_request:
+                    return
+
+                if user.id in [fav.id for fav in express_access_request.favorited_by]:
+                    express_access_request.favorited_by = [
+                        fav
+                        for fav in express_access_request.favorited_by
+                        if fav.id != user.id
+                    ]
+                else:
+                    express_access_request.favorited_by.append(user)
+                session.add(express_access_request)
+                await session.commit()
+
+        return express_access_request
+
+    @classmethod
+    async def create(
+        cls,
+        tenant_id: int,
+        user: User,
+        name: str,
+        description: str,
+        change_type_id: str,
+        iambic_template_id: str,
+        suggest_to_all: bool,
+        provider_definition_ids: Optional[list[str]] = None,
+        field_values: Optional[dict] = None,
+    ):
+        from common.iambic.templates.models import IambicTemplateProviderDefinition
 
         async with ASYNC_PG_SESSION() as session:
-            stmt = (
-                update(ChangeType)
-                .where(ChangeType.request_type_id == self.id)
-                .values(deleted=False, deleted_at=None)
-            )
-            await session.execute(stmt)
+            async with session.begin():
+                express_access_request = cls(
+                    name=name,
+                    description=description,
+                    change_type_id=change_type_id,
+                    tenant_id=tenant_id,
+                    field_values=field_values or {},
+                    iambic_template_id=iambic_template_id,
+                    suggest_to_all=suggest_to_all,
+                    created_by=user.username,
+                )
+                if provider_definition_ids:
+                    stmt = select(IambicTemplateProviderDefinition).filter(
+                        IambicTemplateProviderDefinition.tenant_id == tenant_id,
+                        IambicTemplateProviderDefinition.iambic_template_id
+                        == iambic_template_id,
+                        IambicTemplateProviderDefinition.id.in_(
+                            provider_definition_ids
+                        ),
+                    )
+                    items = await session.execute(stmt)
+                    template_provider_definitions = items.scalars().unique().all()
+                    for template_pd in template_provider_definitions:
+                        express_access_request.iambic_template_provider_defs.append(
+                            template_pd
+                        )
 
-            self.updated_at = datetime.utcnow()
-            self.updated_by = "Noq"
-            self.deleted_at = None
-            self.deleted = False
-            session.add(self)
-            await session.commit()
+                session.add(express_access_request)
+                await session.commit()
+
+        return express_access_request
 
 
 class ChangeType(SoftDeleteMixin, Base):
@@ -171,8 +371,16 @@ class ChangeType(SoftDeleteMixin, Base):
     template_attribute = Column(String, nullable=True)
     apply_attr_behavior = Column(ApplyAttrBehavior, nullable=True)
     provider_definition_field = Column(ProviderDefinitionField, nullable=True)
-
     tenant = relationship("Tenant")
+    suggest_to_all = Column(Boolean, default=False)
+
+    # This is the full list of templates types that are supported by this request type
+    supported_template_types = Column(ARRAY(String), nullable=False)
+
+    # This is the subset that are actually available to the tenant.
+    # For example, if SSO isn't set up.
+    # Permission sets are supported for the change type but not for the tenant until SSO is configured.
+    template_types = Column(ARRAY(String), nullable=False)
 
     request_type = relationship("RequestType", back_populates="change_types")
     change_fields = relationship(
@@ -189,21 +397,96 @@ class ChangeType(SoftDeleteMixin, Base):
         cascade="all, delete-orphan",
     )
 
+    included_groups = relationship(
+        "Group",
+        secondary=change_type_group_association,
+        back_populates="associated_change_types",
+    )
+    included_users = relationship(
+        "User",
+        secondary=change_type_user_association,
+        back_populates="associated_change_types",
+    )
+    included_iambic_template_provider_definition = relationship(
+        "IambicTemplateProviderDefinition",
+        secondary=change_type_iambic_template_provider_definition_association,
+        back_populates="associated_change_types",
+    )
+    favorited_by = relationship(
+        "User",
+        secondary=user_favorited_change_type_association,
+        back_populates="favorited_change_types",
+    )
+
     __table_args__ = (
         Index("ct_tenant_idx", "id", "tenant_id"),
+        Index(
+            "ct_suggested_change_type_idx", "id", "tenant_id", "name", "suggest_to_all"
+        ),
         Index("ct_request_type_idx", "tenant_id", "request_type_id"),
-        Index("uix_change_type_request_name", "request_type_id", "name", unique=True),
     )
 
     def dict(self):
-        response = {
+        return {
             "id": str(self.id),
             "name": self.name,
             "description": self.description,
             "request_type_id": str(self.request_type_id),
             "provider_definition_field": self.provider_definition_field,
         }
+
+    def self_service_dict(self):
+        response = {
+            "id": str(self.id),
+            "name": self.name,
+            "description": self.description,
+            "request_type_id": str(self.request_type_id),
+            "provider_definition_field": self.provider_definition_field,
+            "template_types": self.template_types,
+        }
+        for conditional_field in {"is_favorite", "is_suggested"}:
+            if hasattr(self, conditional_field):
+                response[conditional_field] = getattr(self, conditional_field)
+
         return response
+
+    async def reinitialize(self):
+        """Un-Delete the change type.
+
+        This can happen when the tenant had no supported template types but now they do.
+        """
+        self.updated_at = datetime.utcnow()
+        self.updated_by = "Noq"
+        self.deleted_at = None
+        self.deleted = False
+        await self.write()
+
+    @classmethod
+    async def update_favorite_status(
+        cls, tenant_id: int, change_type_id: str, user: User
+    ) -> "ChangeType":
+        async with ASYNC_PG_SESSION() as session:
+            async with session.begin():
+                stmt = (
+                    select(cls)
+                    .filter(cls.id == change_type_id, cls.tenant_id == tenant_id)
+                    .options(selectinload(cls.favorited_by))
+                )
+                items = await session.execute(stmt)
+                change_type = items.scalars().unique().one_or_none()
+                if not change_type:
+                    return
+
+                if user.id in [fav.id for fav in change_type.favorited_by]:
+                    change_type.favorited_by = [
+                        fav for fav in change_type.favorited_by if fav.id != user.id
+                    ]
+                else:
+                    change_type.favorited_by.append(user)
+                session.add(change_type)
+                await session.commit()
+
+        return change_type
 
 
 class ChangeField(Base):
