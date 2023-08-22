@@ -331,9 +331,8 @@ def update_iambic_template_with_change(
                     "Merge attribute has not yet been implemented"
                 )
             elif apply_attr_behavior == "Replace":
-                raise NotImplementedError(
-                    "Replace attribute has not yet been implemented"
-                )
+                setattr(iambic_template_instance, attr_name, new_template_val)
+                return iambic_template_instance
             else:
                 raise ValueError(
                     f"Invalid apply_attr_behavior {apply_attr_behavior}. Must be one of: Append, Merge, Replace"

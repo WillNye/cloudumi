@@ -432,11 +432,11 @@ def _get_default_aws_request_permission_request_types(
             AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE
         ]
         change_type.template_attribute = "properties.inline_policy"
-        change_type.apply_attr_behavior = "Append"
+        change_type.apply_attr_behavior = "Replace"
         change_type.provider_definition_field = "Allow None"
         change_type.change_template.template = f"""
         {{
-          "Statement":[{change_type.change_template.template}],
+          "Statement":{change_type.change_template.template},
           "Version": "2012-10-17"
         }}"""
 
