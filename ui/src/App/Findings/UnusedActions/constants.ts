@@ -12,7 +12,7 @@ export const unusedPermissionsColumns = [
   {
     id: 'accounts',
     header: 'ACCOUNTS',
-    accessorKey: 'identity_type'
+    accessorKey: 'accounts'
   },
   {
     id: 'description',

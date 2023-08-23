@@ -5,14 +5,22 @@ import LineChart from './components/LineChart';
 import SectionHeader from 'shared/elements/SectionHeader';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { cleanupProgressMetricsData, unusedMetricsData } from './mockData';
+import { Breadcrumbs } from 'shared/elements/Breadcrumbs';
+import { Button } from 'shared/elements/Button';
+import { Icon } from 'shared/elements/Icon';
 
 const FindingsMenu = () => {
   return (
     <Segment>
       <div className={styles.findings}>
+        <h3>Findings</h3>
+        <LineBreak size="small" />
         <div className={styles.header}>
-          <h3>Findings</h3>
           <div className={styles.lastScan}>Last scan: 07/22/2023 6:45PM</div>
+          <Button variant="text">
+            <Icon size="medium" name="export" />
+            Export
+          </Button>
         </div>
         <SectionHeader
           className={styles.sectionHeader}
