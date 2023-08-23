@@ -107,7 +107,7 @@ async def iambic_template_add_friendly_name():
             .options(
                 joinedload(IambicTemplate.content)
             )  # Adjusted to use class-bound attribute
-            .where(IambicTemplate.friendly_name is None)
+            .where(IambicTemplate.friendly_name.is_(None))
         )
         iambic_templates_without_friendly_name = items.scalars().all()
 
