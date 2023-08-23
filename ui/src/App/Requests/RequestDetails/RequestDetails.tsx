@@ -19,7 +19,7 @@ import ChangeViewer from './components/ChangeViewer';
 import { Divider } from 'shared/elements/Divider';
 import { NoqMarkdown } from 'shared/elements/Markdown/Markdown';
 import { DateTime } from 'luxon';
-import { DATETIME_FORMAT } from 'shared/utils/date/utils';
+import { DATETIME_FORMAT } from 'core/utils/date/utils';
 
 const RequestChangeDetails = () => {
   const { requestId } = useParams<{ requestId: string }>();
@@ -139,17 +139,19 @@ const RequestChangeDetails = () => {
     },
     {
       header: 'Requested At',
-      value:
-        DateTime.fromSeconds(requestData?.data?.created_at).toFormat(
-          DATETIME_FORMAT
-        ) || 'N/A'
+      value: requestData?.data?.created_at
+        ? DateTime.fromSeconds(requestData?.data?.created_at).toFormat(
+            DATETIME_FORMAT
+          )
+        : 'N/A'
     },
     {
       header: 'Last Updated',
-      value:
-        DateTime.fromSeconds(requestData?.data?.updated_at).toFormat(
-          DATETIME_FORMAT
-        ) || 'N/A'
+      value: requestData?.data?.updated_at
+        ? DateTime.fromSeconds(requestData?.data?.updated_at).toFormat(
+            DATETIME_FORMAT
+          )
+        : 'N/A'
     },
     {
       header: 'Repository',
