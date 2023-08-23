@@ -300,7 +300,7 @@ const RequestChangeDetails = () => {
 
         {requestData?.data?.files.map((file, index) => (
           <ChangeViewer
-            file={file}
+            file={{ ...file, repo_name: requestData?.data?.repo_name }}
             handleModifyChange={e => {
               handleModifyChange(e);
             }}

@@ -6,7 +6,10 @@ import { Table } from 'shared/elements/Table';
 import { resourcesColumns } from './constants';
 import { useQuery } from '@tanstack/react-query';
 import { getAllResources } from 'core/API/resources';
-import { extractSortValue } from 'core/utils/helpers';
+import {
+  extractSortValue,
+  getLinkFromResourceTemplate
+} from 'core/utils/helpers';
 import css from './ResourcesTable.module.css';
 
 const defaultSortField = {
@@ -39,16 +42,10 @@ const ResourcesTable = () => {
 
   const tableRows = useMemo(() => {
     return (resourcesData?.data?.data || []).map(item => {
-      const strippedPath = item.file_path.replace(/\.yaml$/, '');
-      const provider = item.provider.toLowerCase();
-      const repoName = item.repo_name.toLowerCase();
+      const filePath = getLinkFromResourceTemplate(item);
       return {
         ...item,
-        file_path: (
-          <Link to={`/resources/iambic/${repoName}/${strippedPath}`}>
-            {item.file_path}
-          </Link>
-        )
+        file_path: <Link to={filePath}>{item.file_path}</Link>
       };
     });
   }, [resourcesData]);
