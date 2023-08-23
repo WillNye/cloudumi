@@ -19,6 +19,7 @@ import ChangeViewer from './components/ChangeViewer';
 import { Divider } from 'shared/elements/Divider';
 import { NoqMarkdown } from 'shared/elements/Markdown/Markdown';
 import { DateTime } from 'luxon';
+import { DATETIME_FORMAT } from 'shared/utils/date/utils';
 
 const RequestChangeDetails = () => {
   const { requestId } = useParams<{ requestId: string }>();
@@ -140,14 +141,14 @@ const RequestChangeDetails = () => {
       header: 'Requested At',
       value:
         DateTime.fromSeconds(requestData?.data?.created_at).toFormat(
-          'MM/dd/yyyy HH:mm ZZZZ'
+          DATETIME_FORMAT
         ) || 'N/A'
     },
     {
       header: 'Last Updated',
       value:
         DateTime.fromSeconds(requestData?.data?.updated_at).toFormat(
-          'MM/dd/yyyy HH:mm ZZZZ'
+          DATETIME_FORMAT
         ) || 'N/A'
     },
     {
@@ -317,7 +318,7 @@ const RequestChangeDetails = () => {
             >
               <strong>{commentData.user || commentData.created_by}</strong>
               <span style={{ color: 'grey', fontSize: '0.8rem' }}>
-                {new Date(commentData.created_at).toLocaleString()}
+                {new DateTime(commentData.created_at).toFormat(DATETIME_FORMAT)}
               </span>
             </div>
             <LineBreak />
