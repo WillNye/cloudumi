@@ -18,6 +18,7 @@ import { Chip, ChipType } from 'shared/elements/Chip';
 import ChangeViewer from './components/ChangeViewer';
 import { Divider } from 'shared/elements/Divider';
 import { NoqMarkdown } from 'shared/elements/Markdown/Markdown';
+import { DateTime } from 'luxon';
 
 const RequestChangeDetails = () => {
   const { requestId } = useParams<{ requestId: string }>();
@@ -137,11 +138,17 @@ const RequestChangeDetails = () => {
     },
     {
       header: 'Requested At',
-      value: requestData?.data?.requested_at || 'N/A'
+      value:
+        DateTime.fromSeconds(requestData?.data?.created_at).toFormat(
+          'MM/dd/yyyy HH:mm ZZZZ'
+        ) || 'N/A'
     },
     {
       header: 'Last Updated',
-      value: requestData?.data?.updated_at || 'N/A'
+      value:
+        DateTime.fromSeconds(requestData?.data?.updated_at).toFormat(
+          'MM/dd/yyyy HH:mm ZZZZ'
+        ) || 'N/A'
     },
     {
       header: 'Repository',
