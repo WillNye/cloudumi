@@ -5,6 +5,8 @@ import { Chip } from 'shared/elements/Chip';
 import styles from './ChangeViewer.module.css';
 import { useMemo, useState } from 'react';
 import { RequestFile } from '../../types';
+import { getLinkFromResourceTemplate } from 'core/utils/helpers';
+import { Link } from 'react-router-dom';
 
 type ChangeViewerProps = {
   file: RequestFile;
@@ -24,10 +26,15 @@ const ChangeViewer = ({
     [modifiedTemplate, file.template_body]
   );
 
+  const link = file.repo_name ? (
+    <Link to={getLinkFromResourceTemplate(file)}>{file.file_path}</Link>
+  ) : (
+    file.file_path
+  );
   return (
     <div className={styles.section}>
       <div className={styles.sectionHeader}>
-        File: {file.file_path} <Chip type="success">{file.additions}+</Chip>
+        File: {link} <Chip type="success">{file.additions}+</Chip>
       </div>
       <DiffEditor
         original={file.previous_body || ''}

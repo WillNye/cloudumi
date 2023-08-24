@@ -18,6 +18,8 @@ import { Chip, ChipType } from 'shared/elements/Chip';
 import ChangeViewer from './components/ChangeViewer';
 import { Divider } from 'shared/elements/Divider';
 import { NoqMarkdown } from 'shared/elements/Markdown/Markdown';
+import { DateTime } from 'luxon';
+import { DATETIME_FORMAT } from 'core/utils/date/utils';
 
 const RequestChangeDetails = () => {
   const { requestId } = useParams<{ requestId: string }>();
@@ -137,11 +139,19 @@ const RequestChangeDetails = () => {
     },
     {
       header: 'Requested At',
-      value: requestData?.data?.requested_at || 'N/A'
+      value: requestData?.data?.created_at
+        ? DateTime.fromSeconds(requestData?.data?.created_at).toFormat(
+            DATETIME_FORMAT
+          )
+        : 'N/A'
     },
     {
       header: 'Last Updated',
-      value: requestData?.data?.updated_at || 'N/A'
+      value: requestData?.data?.updated_at
+        ? DateTime.fromSeconds(requestData?.data?.updated_at).toFormat(
+            DATETIME_FORMAT
+          )
+        : 'N/A'
     },
     {
       header: 'Repository',
@@ -290,7 +300,7 @@ const RequestChangeDetails = () => {
 
         {requestData?.data?.files.map((file, index) => (
           <ChangeViewer
-            file={file}
+            file={{ ...file, repo_name: requestData?.data?.repo_name }}
             handleModifyChange={e => {
               handleModifyChange(e);
             }}
@@ -310,7 +320,7 @@ const RequestChangeDetails = () => {
             >
               <strong>{commentData.user || commentData.created_by}</strong>
               <span style={{ color: 'grey', fontSize: '0.8rem' }}>
-                {new Date(commentData.created_at).toLocaleString()}
+                {new DateTime(commentData.created_at).toFormat(DATETIME_FORMAT)}
               </span>
             </div>
             <LineBreak />

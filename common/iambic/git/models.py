@@ -3,7 +3,7 @@ import os
 import shutil
 import sys
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 import aiofiles
 import aiofiles.os
@@ -308,6 +308,7 @@ class IambicRepo:
         changed_by: str,
         request_notes=Optional[None],
         reset_branch: bool = False,
+        action: Literal["create", "update"] = "create",
     ) -> str:
         log_data = dict(
             tenant=self.tenant,
@@ -408,7 +409,7 @@ class IambicRepo:
                 )
 
         requesting_actor = Actor("Iambic", changed_by)
-        commit_message = f"Noq Request created by: {self.requested_by}"
+        commit_message = f"Noq Request {action+'d'} by: {self.requested_by}"
         await run_command(
             "git",
             "-c",
@@ -463,7 +464,9 @@ class IambicRepo:
         self.requested_by = requested_by
         await self.set_request_branch(reuse_branch_repo=reuse_branch_repo)
         return await self._commit_and_push_changes(
-            files, self.requested_by, request_notes
+            files,
+            self.requested_by,
+            request_notes,
         )
 
     async def update_branch(
@@ -475,7 +478,11 @@ class IambicRepo:
     ) -> str:
         await self.pull_current_branch()
         return await self._commit_and_push_changes(
-            template_changes, updated_by, request_notes, reset_branch=reset_branch
+            template_changes,
+            updated_by,
+            request_notes,
+            reset_branch=reset_branch,
+            action="update",
         )
 
     async def delete_branch(self):

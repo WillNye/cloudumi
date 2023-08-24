@@ -1,6 +1,7 @@
 import re
 from typing import Optional
 
+from iambic.plugins.v0_1_0.aws.models import Description
 from pydantic import BaseModel
 
 from common.handlers.base import BaseHandler
@@ -19,6 +20,8 @@ class IAMbicTemplateInfo(BaseModel):
 
 
 class IambicResourcesHandler(BaseHandler):
+    """Handler for /api/v4/resources/iambic endpoint"""
+
     async def get(self, path):
         match = re.match(r"([^/]+)/([^/]+)/(.+)", path)
 
@@ -60,7 +63,7 @@ class IambicResourcesHandler(BaseHandler):
             last_updated=last_updated,
             external_link=iambic_repo.generate_repo_link(real_file_path),
             template_type=template.template_type,
-            description=getattr(template, "description", None),
+            description=self.get_template_description(template),
             identifier=getattr(template, "identifier", None),
             raw_template_yaml=raw_template_yaml,
             file_path=real_file_path,
@@ -68,3 +71,28 @@ class IambicResourcesHandler(BaseHandler):
 
         self.write(template_info.dict())
         self.set_status(200)
+
+    def get_template_description(self, template):
+        template_description = getattr(template, "description", None)
+
+        if not template_description:
+            properties_description = getattr(
+                template,
+                "description",
+                getattr(getattr(template, "properties"), "description", None),
+            )
+
+            if isinstance(properties_description, str):
+                return properties_description
+
+            if isinstance(properties_description, Description):
+                return properties_description.description
+
+            if isinstance(properties_description, list):
+                return (
+                    properties_description[0].description
+                    if properties_description
+                    else None
+                )
+
+        return template_description
