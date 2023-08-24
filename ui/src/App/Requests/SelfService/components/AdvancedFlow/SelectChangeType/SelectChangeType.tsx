@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Segment } from 'shared/layout/Segment';
 import styles from './SelectChangeType.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
@@ -48,13 +48,16 @@ const SelectChangeType = () => {
     }
   });
 
-  const handleSelectChange = (detail: any) => {
-    const selectedChange = changeTypes?.data.find(
-      changeType => changeType.id === detail.value
-    );
-    setSelectedChangeType(selectedChange);
-    // Do something with the selected option
-  };
+  const handleSelectChange = useCallback(
+    (detail: any) => {
+      const selectedChange = changeTypes?.data.find(
+        changeType => changeType.id === detail.value
+      );
+      setSelectedChangeType(selectedChange);
+      // Do something with the selected option
+    },
+    [changeTypes?.data]
+  );
 
   const options = useMemo(
     () =>
@@ -65,6 +68,13 @@ const SelectChangeType = () => {
       })),
     [changeTypes]
   );
+
+  useEffect(() => {
+    if (options?.length === 1) {
+      // select default change type when tehre is just one option
+      handleSelectChange(options[0]);
+    }
+  }, [handleSelectChange, options]);
 
   return (
     <Segment isLoading={isLoading}>
