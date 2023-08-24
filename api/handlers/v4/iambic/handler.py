@@ -88,4 +88,11 @@ class IambicResourcesHandler(BaseHandler):
             if isinstance(properties_description, Description):
                 return properties_description.description
 
+            if isinstance(properties_description, list):
+                return (
+                    properties_description[0].description
+                    if properties_description
+                    else None
+                )
+
         return template_description
