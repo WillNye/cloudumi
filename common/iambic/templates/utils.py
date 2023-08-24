@@ -80,6 +80,7 @@ async def list_tenant_templates(
                     IambicTemplateProviderDefinition.resource_id.ilike(
                         f"%{resource_id}%"
                     ),
+                    IambicTemplate.friendly_name.ilike(f"{resource_id}%"),
                 )
             )
 
