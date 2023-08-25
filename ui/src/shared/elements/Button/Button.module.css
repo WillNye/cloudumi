@@ -80,7 +80,8 @@
   &.text {
     --btn-background: transparent;
     --btn-border-color: transparent;
-    --btn-color: var(--body-color);
+    --btn-color: var(--btn-background-color);
+    box-shadow: none;
   }
 
   &.fullWidth {

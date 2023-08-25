@@ -14,26 +14,25 @@
   font-weight: 600;
   line-height: 1.2;
   color: var(--gray-100);
-  margin-bottom: 10px;
 }
 
 .titleSmall {
-  font-size: 16px;
+  font-size: var(--font-size-sm);
 }
 
 .titleMedium {
-  font-size: 18px;
+  font-size: var(--font-size-md);
 }
 
 .titleLarge {
-  font-size: 32px;
+  font-size: var(--font-size-lg);
 }
 
 .subtitle {
-  margin: 0;
+  margin-top: var(--spacing-md);
   font-size: 14px;
   font-weight: 400;
-  color: var(--gray-100);
+  color: var(--gray-200);
 }
 
 .sectionHeaderBorder {

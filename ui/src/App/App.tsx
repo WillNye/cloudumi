@@ -10,6 +10,7 @@ import Downloads from './Downloads/Downloads';
 const Login = lazy(() => import('./Login'));
 const Settings = lazy(() => import('./Settings'));
 const Requests = lazy(() => import('./Requests'));
+const Findings = lazy(() => import('./Findings'));
 const Resources = lazy(() => import('./Resources'));
 const NotFound = lazy(() => import('./NotFound'));
 const Access = lazy(() => import('./Access'));
@@ -33,6 +34,7 @@ export const App: FC = () => (
           <Route path="/resources/*" element={<Resources />} />
           <Route path="/settings/*" element={<Settings />} />
           <Route path="/requests/*" element={<Requests />} />
+          <Route path="/findings/*" element={<Findings />} />
           <Route path="/role/*" element={<SignInToRole />} />
           <Route path="/downloads" element={<Downloads />} />
           <Route

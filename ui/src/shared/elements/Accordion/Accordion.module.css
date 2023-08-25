@@ -1,0 +1,28 @@
+.accordion {
+  border: 1px solid var(--gray-500);
+  border-radius: 4px;
+  margin: 8px 0;
+
+  .accordionTitle {
+    background: var(--gray-600);
+    cursor: pointer;
+    padding: 8px 16px;
+    width: 100%;
+    text-align: left;
+    border: none;
+    /* border-bottom: 1px solid #ddd; */
+    transition: background 0.3s;
+  }
+
+  .accordionContent {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
+    background: var(--gray-800);
+  }
+
+  .accordionContent .open {
+    background: var(--gray-500);
+    padding: var(--spacing-md);
+  }
+}
