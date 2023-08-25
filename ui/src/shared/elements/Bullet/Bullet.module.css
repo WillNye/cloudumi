@@ -1,0 +1,31 @@
+.bullet {
+  display: flex;
+  align-items: center;
+
+  .bulletPoint {
+    height: var(--spacing-md);
+    width: var(--spacing-md);
+    border-radius: 50%;
+    margin-right: var(--spacing-md);
+
+    &.primary {
+      background-color: var(--blue-600);
+    }
+
+    &.secondary {
+      background-color: var(--gray-600);
+    }
+
+    &.success {
+      background-color: var(--green-600);
+    }
+
+    &.danger {
+      background-color: var(--red-600);
+    }
+
+    &.warning {
+      background-color: var(--orange-600);
+    }
+  }
+}

@@ -1,0 +1,32 @@
+.tabs {
+  padding: var(--spacing-md);
+  width: 100%;
+
+  .tabHeaders {
+    display: flex;
+    border-bottom: 1px solid var(--gray-500);
+  }
+
+  .tabHeader {
+    padding: var(--spacing-md) var(--spacing-lg);
+    margin-right: var(--spacing-sm);
+    cursor: pointer;
+    border: none;
+    background: none;
+    outline: none;
+    border-bottom: 2px solid transparent;
+    transition: border-bottom 0.3s;
+
+    &.activeTabHeader {
+      border-bottom: 2px solid var(--blue-700);
+    }
+  }
+
+  .tabHeader:hover {
+    border-bottom: 2px solid var(--blue-600);
+  }
+
+  .tabContent {
+    /* padding: var(--spacing-md) */
+  }
+}

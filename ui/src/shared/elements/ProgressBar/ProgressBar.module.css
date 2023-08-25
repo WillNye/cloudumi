@@ -1,0 +1,43 @@
+.progressBar {
+  height: 10px;
+  width: 100%;
+  background-color: var(--gray-500);
+  border-radius: var(--border-radius-md);
+
+  &.small {
+    height: 10px;
+  }
+
+  &.medium {
+    height: 16px;
+  }
+
+  &.large {
+    height: 24px;
+  }
+
+  .progressFill {
+    height: 100%;
+    border-radius: var(--border-radius-md);
+
+    &.primary {
+      background-color: var(--blue-700);
+    }
+
+    &.secondary {
+      background-color: var(--gray-600);
+    }
+
+    &.success {
+      background-color: var(--green-600);
+    }
+
+    &.danger {
+      background-color: var(--red-600);
+    }
+
+    &.warning {
+      background-color: var(--orange-600);
+    }
+  }
+}

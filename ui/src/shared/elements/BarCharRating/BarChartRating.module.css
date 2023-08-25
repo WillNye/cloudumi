@@ -1,0 +1,77 @@
+.barContainer {
+  display: flex;
+  height: 15px;
+  align-items: flex-end;
+  gap: 3px;
+  margin: var(--spacing-sm);
+
+  .bar {
+    width: 4px;
+    background-color: var(--bar-background);
+    transition: background-color 0.3s ease;
+
+    &.default {
+      --bar-background: var(--gray-400);
+    }
+
+    &.primary {
+      --bar-background: var(--blue-600);
+    }
+
+    &.secondary {
+      --bar-background: var(--gray-600);
+    }
+
+    &.success {
+      --bar-background: var(--green-600);
+    }
+
+    &.danger {
+      --bar-background: var(--red-600);
+    }
+
+    &.warning {
+      --bar-background: var(--orange-600);
+    }
+
+    &.active1 {
+      background-color: var(--bar-background);
+    }
+
+    &.active2 {
+      background-color: var(--bar-background);
+    }
+
+    &.active3 {
+      background-color: var(--bar-background);
+    }
+
+    &.active4 {
+      background-color: var(--bar-background);
+    }
+
+    &.active5 {
+      background-color: var(--bar-background);
+    }
+
+    &.bar1 {
+      height: 20%;
+    }
+
+    &.bar2 {
+      height: 40%;
+    }
+
+    &.bar3 {
+      height: 60%;
+    }
+
+    &.bar4 {
+      height: 80%;
+    }
+
+    &.bar5 {
+      height: 100%;
+    }
+  }
+}
