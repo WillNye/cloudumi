@@ -76,6 +76,25 @@ const SelectIdentity = () => {
 
   const isLoading = isLoadingIdentityTypes || isLoadingChangeTypes;
 
+  const supportedIdentityTypes = useMemo(() => {
+    return identityTypes?.data.filter(identityType =>
+      supportedTemplateTypes.includes(identityType.id)
+    ) as Array<any>;
+  }, [identityTypes?.data, supportedTemplateTypes]);
+
+  const selectValue = useMemo(() => {
+    if (supportedIdentityTypes?.length === 1) {
+      handleIdentityTypeSelect(supportedIdentityTypes[0].id);
+      return supportedIdentityTypes[0].id;
+    }
+
+    return selfServiceRequest.identityType || '';
+  }, [
+    supportedIdentityTypes,
+    selfServiceRequest.identityType,
+    handleIdentityTypeSelect
+  ]);
+
   return (
     <Segment isLoading={isLoading}>
       <div className={styles.container}>
@@ -86,19 +105,16 @@ const SelectIdentity = () => {
         <div className={styles.content}>
           {identityTypes?.data && (
             <Select
-              value={selfServiceRequest.identityType || ''}
+              value={selectValue}
               onChange={handleIdentityTypeSelect}
               placeholder="Select identity type"
+              clearable={supportedIdentityTypes?.length !== 1}
             >
-              {identityTypes?.data
-                .filter(identityType =>
-                  supportedTemplateTypes.includes(identityType.id)
-                )
-                .map(identityType => (
-                  <SelectOption key={identityType.id} value={identityType.id}>
-                    {identityType.name}
-                  </SelectOption>
-                ))}
+              {supportedIdentityTypes.map(identityType => (
+                <SelectOption key={identityType.id} value={identityType.id}>
+                  {identityType.name}
+                </SelectOption>
+              ))}
             </Select>
           )}
           {selfServiceRequest.identityType && (

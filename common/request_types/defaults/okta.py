@@ -41,12 +41,13 @@ def _get_default_okta_request_access_request_types(
                 ChangeField(
                     change_element=0,
                     field_key="name",
-                    field_type="TextBox",
+                    field_type="TypeAhead",
                     field_text="User E-Mail",
                     description="The email of the Okta user that requires access.",
                     allow_none=False,
                     allow_multiple=False,
-                )
+                    typeahead_field_helper_id=field_helper_map["Okta User"].id,
+                ),
             ],
             change_template=ChangeTypeTemplate(
                 template="""
@@ -72,12 +73,13 @@ def _get_default_okta_request_access_request_types(
                 ChangeField(
                     change_element=0,
                     field_key="name",
-                    field_type="TextBox",
-                    field_text="User Name",
-                    description="The name of the Okta user that requires access.",
+                    field_type="TypeAhead",
+                    field_text="User E-Mail",
+                    description="The email of the Okta user that requires access.",
                     allow_none=False,
                     allow_multiple=False,
-                )
+                    typeahead_field_helper_id=field_helper_map["Okta User"].id,
+                ),
             ],
             change_template=ChangeTypeTemplate(
                 template="""
