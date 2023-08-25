@@ -420,7 +420,7 @@ humanfriendly==10.0
     # via -r ./common/requirements.in
 humanize==4.6.0
     # via flower
-iambic-core==0.11.56
+iambic-core==0.11.73
     # via -r ./common/iambic/requirements.in
 identify==2.5.24
     # via pre-commit
