@@ -72,8 +72,8 @@ const UnusedActionDetails = () => {
               border="row"
             />
             <LineBreak size="large" />
-            <div className={styles.headerActions}>
-              <div>
+            <div className={styles.unusedListHeader}>
+              <div className={styles.title}>
                 <BarCharRating activeBars={5} color="danger" />
                 <h3>Unused Actions</h3>
               </div>

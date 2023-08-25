@@ -1,8 +1,9 @@
 .barContainer {
   display: flex;
-  height: 30px;
+  height: 15px;
   align-items: flex-end;
   gap: 3px;
+  margin: var(--spacing-sm);
 
   .bar {
     width: 4px;
@@ -50,23 +51,23 @@
     }
 
     &.bar1 {
-      height: 10%;
-    }
-
-    &.bar2 {
       height: 20%;
     }
 
-    &.bar3 {
-      height: 30%;
-    }
-
-    &.bar4 {
+    &.bar2 {
       height: 40%;
     }
 
+    &.bar3 {
+      height: 60%;
+    }
+
+    &.bar4 {
+      height: 80%;
+    }
+
     &.bar5 {
-      height: 50%;
+      height: 100%;
     }
   }
 }

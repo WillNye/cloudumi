@@ -18,6 +18,20 @@
     }
   }
 
+  .unusedListHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    .title {
+      margin: var(--spacing-sm);
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-start;
+    }
+  }
+
   .selectInput {
     min-width: 50%;
   }
