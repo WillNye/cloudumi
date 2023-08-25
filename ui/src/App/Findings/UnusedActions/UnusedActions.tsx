@@ -45,7 +45,6 @@ const UnusedActions = () => {
           <div className={styles.summary}>
             <div>
               <h4>UNUSED CLOUD ACTIONS BY RISK</h4>
-              <LineBreak />
               <div className={styles.progressUnit}>
                 Critical
                 <div className={styles.progressBar}>

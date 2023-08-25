@@ -70,7 +70,6 @@
   },
   "devDependencies": {
     "@babel/core": "^7.19.3",
-    "@faker-js/faker": "^8.0.1",
     "@storybook/addon-actions": "6.5.12",
     "@storybook/addon-docs": "6.5.12",
     "@storybook/addon-essentials": "6.5.12",

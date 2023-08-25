@@ -25,3 +25,18 @@ export const unusedActionsColumns = [
     accessorKey: 'unused_actions'
   }
 ];
+
+export const unusedServicesColumns = [
+  {
+    id: 'resource_identity',
+    accessorKey: 'resource_identity'
+  },
+  {
+    id: 'severity',
+    accessorKey: 'severity'
+  },
+  {
+    id: 'last_accessed',
+    accessorKey: 'last_accessed'
+  }
+];

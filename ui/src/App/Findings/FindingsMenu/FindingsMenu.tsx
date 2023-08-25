@@ -5,7 +5,6 @@ import LineChart from './components/LineChart';
 import SectionHeader from 'shared/elements/SectionHeader';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { cleanupProgressMetricsData, unusedMetricsData } from './mockData';
-import { Breadcrumbs } from 'shared/elements/Breadcrumbs';
 import { Button } from 'shared/elements/Button';
 import { Icon } from 'shared/elements/Icon';
 
