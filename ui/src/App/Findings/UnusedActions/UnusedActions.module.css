@@ -1,17 +1,15 @@
 .unusedActions {
   height: 100%;
 
-  .summary {
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-  }
-
   .content {
     font-size: var(--font-size-md);
-    color: var(--gray-100);
+    color: var(--gray-200);
+
+    table {
+      color: var(--gray-100);
+    }
   }
+
   .actions {
     display: flex;
     align-items: center;
@@ -23,17 +21,7 @@
     }
   }
 
-  .card {
-    border: solid 1px var(--red-600);
-    text-align: center;
-    border-radius: var(--border-radius-md);
-    padding: var(--spacing-lg);
-    background-color: var(--gray-700);
-    margin: var(--spacing-md);
-    min-width: 150px;
-  }
-
-  .cardContainer {
+  .progressUnitWrapper {
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -41,14 +29,22 @@
   }
 
   .progressUnit {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin: var(--spacing-lg) var(--spacing-sm);
+    margin: var(--spacing-lg);
+
+    .progressHeader {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-bottom: var(--spacing-sm);
+    }
 
     .progressBar {
       width: 155px;
-      margin-left: var(--spacing-md);
+      color: var(--gray-100);
+
+      h5 {
+        margin-bottom: var(--spacing-sm);
+      }
     }
   }
 }

@@ -13,10 +13,13 @@ const BarChartRating: React.FC<BarChartRatingProps> = ({
   color = 'secondary'
 }) => {
   const determineBarStyle = (index: number) => {
-    if (index < activeBars) {
-      return styles[`active${activeBars}`];
+    if (index <= activeBars) {
+      return {
+        [styles[`active${activeBars}`]]: true,
+        [styles[color]]: color
+      };
     }
-    return '';
+    return { [styles.default]: true };
   };
 
   return (
@@ -26,8 +29,7 @@ const BarChartRating: React.FC<BarChartRatingProps> = ({
           key={index}
           className={classNames(styles.bar, {
             [styles[`bar${index + 1}`]]: true,
-            [determineBarStyle(index + 1)]: true,
-            [styles[color]]: color
+            ...determineBarStyle(index + 1)
           })}
         ></div>
       ))}

@@ -9,8 +9,29 @@ import { LineBreak } from 'shared/elements/LineBreak';
 import styles from './UnusedActions.module.css';
 import { useMemo } from 'react';
 import Bullet from 'shared/elements/Bullet';
-import { Card } from 'shared/layout/Card';
 import ProgressBar from 'shared/elements/ProgressBar';
+import BarCharRating from 'shared/elements/BarCharRating';
+import Tabs from 'shared/elements/Tabs';
+
+// TODO: Replace content with UnusedActions component
+const tabsData = [
+  {
+    label: 'Open (36)',
+    content: <></>
+  },
+  {
+    label: 'Pending (5)',
+    content: <></>
+  },
+  {
+    label: 'Dismissed (4)',
+    content: <></>
+  },
+  {
+    label: 'Resolved (123)',
+    content: <></>
+  }
+];
 
 const UnusedActions = () => {
   const tableData = useMemo(
@@ -40,62 +61,47 @@ const UnusedActions = () => {
           ]}
         />
         <LineBreak />
-        <Divider />
+        <Tabs tabs={tabsData} />
         <Segment className={styles.content}>
-          <div className={styles.summary}>
-            <div>
-              <h4>UNUSED CLOUD ACTIONS BY RISK</h4>
-              <div className={styles.progressUnit}>
+          <h5>IDENTITIES WITH UNUSED CLOUD ACTIONS</h5>
+          <div className={styles.progressUnitWrapper}>
+            <div className={styles.progressUnit}>
+              <div className={styles.progressHeader}>
+                <BarCharRating color="danger" activeBars={5} />
                 Critical
-                <div className={styles.progressBar}>
-                  <h5>0%</h5>
-                  <ProgressBar color="danger" percentage={0} />
-                </div>
               </div>
-              <div className={styles.progressUnit}>
-                High
-                <div className={styles.progressBar}>
-                  <h5>25.4%</h5>
-                  <ProgressBar percentage={25.4} />
-                </div>
+              <div className={styles.progressBar}>
+                <h5>16.7%</h5>
+                <ProgressBar color="danger" percentage={16.7} />
               </div>
-              <div className={styles.progressUnit}>
-                Medium
-                <div className={styles.progressBar}>
-                  <h5>50%</h5>
-                  <ProgressBar color="warning" percentage={50} />
-                </div>
-              </div>
+              <LineBreak size="small" />
+              <p>6/36</p>
             </div>
-            <Divider orientation="vertical" />
-            <div>
-              <h4>OPEN FINDINGS BY RISK</h4>
-              <LineBreak />
-              <div className={styles.cardContainer}>
-                <div className={styles.card}>
-                  <h2>142</h2>
-                  <LineBreak size="small" />
-                  <p>Critical</p>
-                </div>
-                <div className={styles.card}>
-                  <h2>142</h2>
-                  <LineBreak size="small" />
-                  <p>Critical</p>
-                </div>
-                <div className={styles.card}>
-                  <h2>142</h2>
-                  <LineBreak size="small" />
-                  <p>Critical</p>
-                </div>
-                <div className={styles.card}>
-                  <h2>142</h2>
-                  <LineBreak size="small" />
-                  <p>Critical</p>
-                </div>
+            <div className={styles.progressUnit}>
+              <div className={styles.progressHeader}>
+                <BarCharRating color="danger" activeBars={4} />
+                High
               </div>
+              <div className={styles.progressBar}>
+                <h5>8.3%</h5>
+                <ProgressBar color="danger" percentage={8.3} />
+              </div>
+              <LineBreak size="small" />
+              <p>3/36</p>
+            </div>
+            <div className={styles.progressUnit}>
+              <div className={styles.progressHeader}>
+                <BarCharRating color="warning" activeBars={3} />
+                Medium
+              </div>
+              <div className={styles.progressBar}>
+                <h5>5.6%</h5>
+                <ProgressBar color="warning" percentage={5.6} />
+              </div>
+              <LineBreak size="small" />
+              <p>2/36</p>
             </div>
           </div>
-          <LineBreak size="large" />
           <div className={styles.actions}>
             <h4>Actions:</h4>
             <div>
@@ -103,10 +109,10 @@ const UnusedActions = () => {
                 Dismiss
               </Button>
               <Button variant="text" disableAnimation>
-                Request Remediation
+                Resolve with IAMbic Request
               </Button>
               <Button variant="text" disableAnimation>
-                File JIRA Ticket
+                Create JIRA Ticket
               </Button>
               <Button variant="text" disableAnimation>
                 Open in AWS

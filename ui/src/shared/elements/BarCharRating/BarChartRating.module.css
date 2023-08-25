@@ -10,6 +10,10 @@
     background-color: var(--bar-background);
     transition: background-color 0.3s ease;
 
+    &.default {
+      --bar-background: var(--gray-400);
+    }
+
     &.primary {
       --bar-background: var(--blue-600);
     }
