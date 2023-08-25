@@ -1,8 +1,5 @@
-import asyncio
 from collections import defaultdict
-from copy import deepcopy
 from datetime import datetime
-from itertools import chain
 
 from sqlalchemy import select
 
@@ -15,6 +12,7 @@ from common.request_types.defaults.azure_ad import get_default_azure_ad_request_
 from common.request_types.defaults.google_workspace import (
     get_default_google_workspace_request_types,
 )
+from common.request_types.defaults.okta import get_default_okta_request_types
 from common.request_types.utils import list_tenant_request_types
 from common.tenants.models import Tenant
 
@@ -47,12 +45,12 @@ async def upsert_tenant_request_types(tenant_name: str):
             change fields
             change type templates
     """
-    tenant = await Tenant.get_by_name(tenant_name)
+    tenant = await Tenant.get_by_name_nocache(tenant_name)
     if not tenant:
         return
     updated_at = datetime.utcnow()
 
-    # Ensure tenant.supported_tenant_types is up to date
+    # Ensure tenant.supported_template_types is up to date
     async with ASYNC_PG_SESSION() as session:
         stmt = (
             select(IambicTemplate)
@@ -88,71 +86,37 @@ async def upsert_tenant_request_types(tenant_name: str):
         for change_type in request_type.change_types:
             change_type.tenant_id = tenant.id
             tenant_request_type_change_map[request_type.name][
-                change_type.name
+                change_type.description
             ] = change_type
 
-    default_request_types = await asyncio.gather(get_default_aws_request_types())
-    default_request_types.extend(
-        await asyncio.gather(get_default_google_workspace_request_types())
-    )
-    default_request_types.extend(
-        await asyncio.gather(get_default_azure_ad_request_types())
-    )
-    default_request_types = list(chain.from_iterable(default_request_types))
+    default_request_types = await get_default_aws_request_types()
+    default_request_types.extend(await get_default_google_workspace_request_types())
+    default_request_types.extend(await get_default_azure_ad_request_types())
+    default_request_types.extend(await get_default_okta_request_types())
     default_request_type_map = {rt.name: rt for rt in default_request_types}
     default_request_type_change_map = defaultdict(dict)
     for request_type in default_request_types:
+        request_type.tenant_id = tenant.id
         for change_type in request_type.change_types:
+            change_type.template_types = [
+                tt
+                for tt in change_type.supported_template_types
+                if tt in tenant_template_types
+            ]
+            if not change_type.template_types:
+                change_type.deleted = True
             change_type.tenant_id = tenant.id
             default_request_type_change_map[request_type.name][
-                change_type.name
+                change_type.description
             ] = change_type
 
     if not tenant_request_types:
-        new_request_types = []
-        for request_type in default_request_types:
-            request_type.tenant_id = tenant.id
-            request_type.supported_template_types = [
-                tt for tt in request_type.template_types if tt in tenant_template_types
-            ]
-            if request_type.supported_template_types:
-                new_request_types.append(request_type)
-
-        await bulk_add(new_request_types)
+        await bulk_add(default_request_types)
         return
 
     # Update existing request type and change types
     for request_type in tenant_request_types:
-        write_obj = False
         default_request_type = default_request_type_map.get(request_type.name)
-        init_supported_template_types = sorted(request_type.supported_template_types)
-        request_type.supported_template_types = sorted(
-            [tt for tt in request_type.template_types if tt in tenant_template_types]
-        )
-
-        if not request_type.supported_template_types and not request_type.deleted:
-            # The tenant no longer supports this request type so remove it
-            await tenant_request_types.delete()
-            continue
-        elif not init_supported_template_types and bool(
-            request_type.supported_template_types
-        ):
-            # The tenant now supports this request so un-delete it
-            await request_type.reinitialize()
-            continue
-        elif request_type.deleted:
-            # No change was detected in request type usability so continue
-            continue
-        elif init_supported_template_types != request_type.supported_template_types:
-            # The supported template types have changed so update the request type
-            request_type.updated_at = updated_at
-            request_type.updated_by = "Noq"
-            write_obj = True
-
-        if not request_type.created_by == "Noq":
-            if write_obj:
-                await request_type.write()
-            continue
 
         if request_type.updated_by in ["Noq", None]:
             # A user managed request type can still have Noq managed change types
@@ -163,29 +127,65 @@ async def upsert_tenant_request_types(tenant_name: str):
 
             for attr in [
                 "description",
-                "template_types",
+                "express_request_support",
             ]:
                 if getattr(request_type, attr) != getattr(default_request_type, attr):
                     setattr(request_type, attr, getattr(default_request_type, attr))
                     request_type.updated_at = updated_at
                     request_type.updated_by = "Noq"
-                    write_obj = True
+                    await request_type.write()
 
         for change_type in request_type.change_types:
+            write_change_type = False
+            default_change_type = default_request_type_change_map[
+                request_type.name
+            ].get(change_type.description)
+            init_template_types = sorted(change_type.template_types)
+            init_supported_template_types = sorted(change_type.supported_template_types)
+            if default_change_type:
+                change_type.supported_template_types = sorted(
+                    default_change_type.supported_template_types
+                )
+            change_type.template_types = sorted(
+                [
+                    tt
+                    for tt in change_type.supported_template_types
+                    if tt in tenant_template_types
+                ]
+            )
+
+            if not change_type.template_types and not change_type.deleted:
+                # The tenant no longer supports this request type so remove it
+                change_type.updated_by = "Noq"
+                await change_type.delete()
+                continue
+            elif not init_template_types and bool(change_type.template_types):
+                if change_type.updated_by == "Noq":
+                    await change_type.reinitialize()
+                    # The tenant now supports this request so un-delete it
+                continue
+            elif change_type.deleted:
+                # No change was detected in request type usability so continue
+                continue
+            elif (
+                init_template_types != change_type.template_types
+                or init_supported_template_types != change_type.supported_template_types
+            ):
+                # The supported template types have changed so update the request type
+                change_type.updated_at = updated_at
+                change_type.updated_by = "Noq"
+                await change_type.write()
+                continue
+
             if change_type.created_by != "Noq" or change_type.updated_by not in [
                 "Noq",
                 None,
             ]:
                 # User managed change type so skip
                 continue
-
-            default_change_type = default_request_type_change_map[
-                request_type.name
-            ].get(change_type.name)
-            if not default_change_type:
+            elif not default_change_type:
                 # This change type was managed and removed by Noq so remove it from the tenant
                 await change_type.delete()
-                write_obj = True
                 continue
 
             for attr in [
@@ -198,7 +198,7 @@ async def upsert_tenant_request_types(tenant_name: str):
                     setattr(change_type, attr, getattr(default_change_type, attr))
                     change_type.updated_at = updated_at
                     change_type.updated_by = "Noq"
-                    write_obj = True
+                    write_change_type = True
 
             if (
                 change_type.change_template.template
@@ -209,22 +209,26 @@ async def upsert_tenant_request_types(tenant_name: str):
                 change_type.change_template.template = (
                     default_change_type.change_template.template
                 )
-                write_obj = True
+                write_change_type = True
+
+            if write_change_type:
+                await change_type.write()
 
             default_change_field_map = {
-                cf.change_element: cf for cf in default_change_type.change_fields
+                cf.field_key: cf for cf in default_change_type.change_fields
             }
+
             # Update existing change fields
             for change_field in change_type.change_fields:
+                write_change_field = False
                 default_change_field = default_change_field_map.get(
-                    change_field.change_element
+                    change_field.field_key
                 )
                 if not default_change_field:
-                    await change_field.delete()
                     continue
 
                 for field_attr in [
-                    "field_key",
+                    "change_element",
                     "field_type",
                     "field_text",
                     "description",
@@ -239,48 +243,63 @@ async def upsert_tenant_request_types(tenant_name: str):
                     if getattr(change_field, field_attr) != getattr(
                         default_change_field, field_attr
                     ):
+                        log.info(
+                            "Field update detected",
+                            change_type=change_type.name,
+                            field_name=change_field.field_key,
+                            field_attr=field_attr,
+                            original_value=getattr(change_field, field_attr),
+                            new_value=getattr(default_change_field, field_attr),
+                        )
                         setattr(
                             change_field,
                             field_attr,
                             getattr(default_change_field, field_attr),
                         )
-                        write_obj = True
+                        write_change_field = True
+
+                if write_change_field:
+                    await change_field.write()
 
             # Add new change fields
             if len(default_change_type.change_fields) > len(change_type.change_fields):
-                write_obj = True
                 current_field_count = len(change_type.change_fields)
                 for default_change_field in default_change_type.change_fields:
                     if default_change_field.change_element >= current_field_count:
                         default_change_field.change_type_id = change_type.id
-                        change_type.change_fields.append(default_change_field)
+                        await default_change_field.write()
+
+            # Delete removed change fields
+            for change_field in change_type.change_fields:
+                default_change_field = default_change_field_map.get(
+                    change_field.field_key
+                )
+                if not default_change_field:
+                    await change_field.delete()
 
         # Add new change types
         for default_change_type in default_request_type.change_types:
             if (
-                default_change_type.name
+                default_change_type.description
                 not in tenant_request_type_change_map[request_type.name]
             ):
-                write_obj = True
                 default_change_type.tenant_id = tenant.id
                 default_change_type.request_type_id = request_type.id
                 request_type.change_types.append(default_change_type)
-
-        if write_obj:
-            await request_type.write()
+                await request_type.write()
 
     # Add new request types
     new_request_types = []
     for default_request_type in default_request_types:
         if default_request_type.name not in tenant_request_type_map:
             default_request_type.tenant_id = tenant.id
-            default_request_type.supported_template_types = [
-                tt
-                for tt in default_request_type.template_types
-                if tt in tenant_template_types
-            ]
-            if default_request_type.supported_template_types:
-                new_request_types.append(deepcopy(default_request_type))
+            for change_type in default_request_type.change_types:
+                change_type.template_types = [
+                    tt
+                    for tt in change_type.template_types
+                    if tt in tenant_template_types
+                ]
+            new_request_types.append(default_request_type)
 
     if new_request_types:
         await bulk_add(new_request_types)

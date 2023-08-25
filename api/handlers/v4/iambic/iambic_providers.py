@@ -50,12 +50,7 @@ class IambicProviderDefinitionHandler(BaseHandler):
                 status_code=200,
                 **get_paginated_typeahead_response(
                     [
-                        {
-                            "id": item.id,
-                            "name": item.name,
-                            "provider": item.provider,
-                            "definition": item.definition,
-                        }
+                        item.self_service_dict()
                         for item in (
                             await list_tenant_provider_definitions(
                                 tenant_id, **query_params.dict(exclude_none=True)

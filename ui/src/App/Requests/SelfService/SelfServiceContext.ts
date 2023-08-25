@@ -1,10 +1,21 @@
 import React, { Dispatch } from 'react';
-import { EXPIRATION_TYPE, SELF_SERVICE_STEPS } from './constants';
-import { ChangeTypeDetails, IRequest, RequestType, Identity } from './types';
+import {
+  EXPIRATION_TYPE,
+  REQUEST_FLOW_MODE,
+  SELF_SERVICE_STEPS
+} from './constants';
+import {
+  ChangeTypeDetails,
+  IRequest,
+  RequestType,
+  Identity,
+  ChangeType
+} from './types';
 
 export interface ISelfServiceContext {
   actions: {
     setCurrentStep: Dispatch<SELF_SERVICE_STEPS>;
+    setCurrentMode: Dispatch<REQUEST_FLOW_MODE>;
     setSelectedProvider: Dispatch<string>;
     setSelectedIdentityType: Dispatch<string>;
     setSelectedIdentity: Dispatch<Identity>;
@@ -16,9 +27,13 @@ export interface ISelfServiceContext {
     setDateValue: Dispatch<string>;
     setTimeValue: Dispatch<string>;
     addChange: (change: ChangeTypeDetails) => void;
+    addChangeType: (change: ChangeType) => void;
+    resetChanges: Dispatch<void>;
     removeChange: (index: number) => void;
     setSelfServiceRequest: Dispatch<IRequest>;
     setExpirationDate: Dispatch<string | null>;
+    handleNext: (mode?: REQUEST_FLOW_MODE) => void;
+    setExpressTemplateId: Dispatch<string>;
   };
   store: {
     currentStep: SELF_SERVICE_STEPS;

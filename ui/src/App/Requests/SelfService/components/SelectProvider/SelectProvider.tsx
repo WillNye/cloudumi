@@ -1,7 +1,7 @@
 import { useContext, useMemo } from 'react';
 
 import { Segment } from 'shared/layout/Segment';
-import RequestCard from '../RequestCard';
+import RequestCard from '../common/RequestCard';
 import styles from './SelectProvider.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
 import { Link } from 'react-router-dom';
@@ -14,7 +14,7 @@ import { providerDetails } from './constants';
 
 const SelectProvider = () => {
   const {
-    actions: { setCurrentStep, setSelectedProvider }
+    actions: { setCurrentStep, setSelectedProvider, handleNext }
   } = useContext(SelfServiceContext);
 
   const { data: responseData, isLoading } = useQuery({
@@ -54,7 +54,7 @@ const SelectProvider = () => {
               description={provider.description}
               onClick={() => {
                 setSelectedProvider(provider.provider);
-                setCurrentStep(SELF_SERVICE_STEPS.SELECT_IDENTITY);
+                handleNext();
               }}
             />
           ))}

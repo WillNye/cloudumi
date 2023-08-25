@@ -1,3 +1,4 @@
+import { ChangeTypeItem, RequestItem } from 'App/Requests/SelfService/types';
 import axios from '../Axios';
 import { V4_API_URL } from './constants';
 import { DataTable } from './types';
@@ -10,14 +11,20 @@ export const getProviders = async () => {
 
 export const getProviderDefinitions = async ({ queryKey }) => {
   const [_, query] = queryKey;
-  const url = `${V4_API_URL}/providers/definitions?provider=${query.provider}&iambic_template_id=${query.template_id}`;
+  const url = `${V4_API_URL}/providers/definitions?provider=${query.provider}&iambic_template_id=${query.template_id}&template_type=${query.template_type}`;
   const response = await axios.get(url);
   return response.data;
 };
 
 export const getChangeRequestType = async ({ queryKey }) => {
-  const [_, id] = queryKey;
-  const url = `${V4_API_URL}/self-service/request-types/${id}/change-types/`;
+  const [_, id, iambic_templates_specified, template_type] = queryKey;
+
+  let url = `${V4_API_URL}/self-service/request-types/${id}/change-types/?iambic_templates_specified=${iambic_templates_specified}`;
+
+  if (template_type !== null) {
+    url += `&template_type=${template_type}`;
+  }
+
   const response = await axios.get<{ data: ChangeTypeItem[] }>(url);
   return response.data;
 };
@@ -51,7 +58,10 @@ export const getRequestChangeDetails = async ({ queryKey }) => {
 export const getAllRequests = async ({ queryKey }) => {
   const [_, query] = queryKey;
   const url = `${V4_API_URL}/self-service/requests/datatable`;
-  const response = await axios.post<{ data: DataTable<Request> }>(url, query);
+  const response = await axios.post<{ data: DataTable<RequestItem> }>(
+    url,
+    query
+  );
   return response.data;
 };
 
@@ -68,95 +78,16 @@ export const createIambicRequest = async data => {
   return response.data;
 };
 
-// TODO: these requests types should be here or in a separate file?
-export type ChangeTypeItem = {
-  id: string;
-  name: string;
-  description: string;
-  request_type_id: string;
-  provider_definition_field?: ProviderDefinitionField;
-  fields: {
-    id: string;
-    change_type_id: string;
-    change_element: number;
-    field_key: string;
-    field_type: string;
-    field_text: string;
-    description: string;
-    allow_none: boolean;
-    allow_multiple: boolean;
-    options?: string[];
-    typeahead: {
-      endpoint: string;
-      query_param_key: string;
-    };
-    default_value?: any;
-    max_char?: number;
-    validation_regex?: string;
-  };
-  included_providers?: any[];
+export const getExpressAccessRequests = async ({ queryKey }) => {
+  const [_, provider] = queryKey;
+  const url = `${V4_API_URL}/self-service/express-access-requests?provider=${provider}`;
+  const response = await axios.get(url);
+  return response.data;
 };
 
-export type ProviderDefinitionField =
-  | 'Allow Multiple'
-  | 'Allow One'
-  | 'Allow None';
-
-export type RequestStatus =
-  | 'Pending'
-  | 'Approved'
-  | 'Rejected'
-  | 'Expired'
-  | 'Running'
-  | 'Failed'
-  | 'Applied'
-  | 'Pending in Git';
-
-export type ChangeTypeFieldType =
-  | 'TypeAheadTemplateRef'
-  | 'TypeAhead'
-  | 'TextBox'
-  | 'Choice';
-
-export interface Request {
-  id: string;
-  repo_name: string;
-  pull_request_id: number;
-  status: RequestStatus;
-  allowed_approvers?: string[] | null;
-  created_at: number;
-  created_by: string;
-  pull_request_url: string;
-  updated_at: string;
-}
-
-export interface RequestItem {
-  pull_request_id: number;
-  pull_request_url: string;
-  request_id: string;
-  requested_by: string;
-  title: string;
-  description: string;
-  comments?: any[];
-  files?: FilesEntity[];
-  mergeable: boolean;
-  merge_on_approval: boolean;
-  merged_at?: null;
-  closed_at?: null;
-  tenant: string;
-  repo_name: string;
-  justification?: null;
-  status: RequestStatus;
-  approved_by?: any[];
-  rejected_by?: any;
-  allowed_approvers?: string[];
-  requested_at?: string;
-  updated_at?: string;
-}
-export interface FilesEntity {
-  file_path: string;
-  status: string;
-  additions: number;
-  template_body: string;
-  previous_body: string;
-}
+export const getExpressAccessChangeType = async ({ queryKey }) => {
+  const [_, express_access_request_id] = queryKey;
+  const url = `${V4_API_URL}/self-service/express-access-requests/${express_access_request_id}/`;
+  const response = await axios.get(url);
+  return response.data;
+};

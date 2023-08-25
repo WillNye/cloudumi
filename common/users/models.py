@@ -35,6 +35,11 @@ from common.pg_core.filters import (
     determine_page_from_offset,
 )
 from common.pg_core.models import Base, SoftDeleteMixin
+from common.request_types.models import (
+    change_type_user_association,
+    user_favorited_change_type_association,
+    user_favorited_express_access_request_association,
+)
 from common.templates import (
     generic_email_template,
     new_user_with_password_email_template,
@@ -94,6 +99,25 @@ class User(SoftDeleteMixin, Base):
         back_populates="users",
         lazy="joined",
         foreign_keys=[GroupMembership.user_id, GroupMembership.group_id],
+    )
+
+    associated_change_types = relationship(
+        "ChangeType",
+        secondary=change_type_user_association,
+        back_populates="included_users",
+        uselist=True,
+    )
+    favorited_change_types = relationship(
+        "ChangeType",
+        secondary=user_favorited_change_type_association,
+        back_populates="favorited_by",
+        uselist=True,
+    )
+    favorited_access_requests = relationship(
+        "ExpressAccessRequest",
+        secondary=user_favorited_express_access_request_association,
+        back_populates="favorited_by",
+        uselist=True,
     )
 
     __table_args__ = (
@@ -357,7 +381,7 @@ class User(SoftDeleteMixin, Base):
         async with ASYNC_PG_SESSION() as session:
             async with session.begin():
                 stmt = select(User).where(
-                    User.tenant == tenant, User.deleted == False  # noqa
+                    and_(User.tenant == tenant, User.deleted == False)  # noqa
                 )
                 stmt = create_filter_from_url_params(stmt, page, count, **filters)
                 if get_groups:

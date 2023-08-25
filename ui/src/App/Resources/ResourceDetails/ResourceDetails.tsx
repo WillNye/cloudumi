@@ -154,10 +154,12 @@ const ResourceDetails = () => {
                 <td>Identifier</td>
                 <td>{data?.identifier}</td>
               </tr>
-              <tr>
-                <td>Description</td>
-                <td>{data?.description}</td>
-              </tr>
+              {data?.description && (
+                <tr>
+                  <td>Description</td>
+                  <td>{data?.description}</td>
+                </tr>
+              )}
               <tr>
                 <td>File path</td>
                 <td>{data?.file_path}</td>

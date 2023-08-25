@@ -1,7 +1,12 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
+  ADVANCED_MODE_NEXT_STEP_MAP,
+  ADVANCED_MODE_PREVIOUS_STEP_MAP,
   DEFAULT_REQUEST,
   EXPIRATION_TYPE,
+  EXPRESS_MODE_NEXT_STEP_MAP,
+  EXPRESS_MODE_PREVIOUS_STEP_MAP,
+  REQUEST_FLOW_MODE,
   SELF_SERVICE_STEPS
 } from './constants';
 import RequestViewer from './components/RequestViewer';
@@ -9,14 +14,24 @@ import SelfServiceContext from './SelfServiceContext';
 import { Button } from 'shared/elements/Button';
 
 import styles from './SelfService.module.css';
-import { ChangeTypeDetails, IRequest, Identity, RequestType } from './types';
+import {
+  ChangeType,
+  ChangeTypeDetails,
+  IRequest,
+  Identity,
+  RequestType
+} from './types';
 import { Divider } from 'shared/elements/Divider';
 import { DateTime } from 'luxon';
 import classNames from 'classnames';
+import SidePanel from './components/SidePanel';
 
 const SelfService = () => {
   const [currentStep, setCurrentStep] = useState(
     SELF_SERVICE_STEPS.SELECT_PROVIDER
+  );
+  const [currentMode, setCurrentMode] = useState(
+    REQUEST_FLOW_MODE.EXPRESS_MODE
   );
   const [expirationType, setExpirationType] = useState(EXPIRATION_TYPE.NEVER);
   const [relativeValue, setRelativeValue] = useState('4');
@@ -28,54 +43,54 @@ const SelfService = () => {
   const [selfServiceRequest, setSelfServiceRequest] =
     useState<IRequest>(DEFAULT_REQUEST);
 
-  const setJustification = (justification: string) => {
-    setSelfServiceRequest(prev => {
-      const newRequest = { ...prev, justification };
-      return newRequest;
-    });
-  };
+  const setJustification = useCallback((justification: string) => {
+    setSelfServiceRequest(prev => ({ ...prev, justification }));
+  }, []);
 
-  const setSelectedProvider = (provider: string) => {
-    setSelfServiceRequest(prev => {
-      const newRequest = { ...prev, provider };
-      return newRequest;
-    });
-  };
+  const setSelectedProvider = useCallback((provider: string) => {
+    setSelfServiceRequest(prev => ({ ...prev, provider }));
+  }, []);
 
-  const setSelectedIdentityType = (identityType: string) => {
-    setSelfServiceRequest(prev => {
-      const newRequest = { ...prev, identityType };
-      return newRequest;
-    });
-  };
+  const setSelectedIdentityType = useCallback((identityType: string) => {
+    setSelfServiceRequest(prev => ({ ...prev, identityType }));
+  }, []);
 
-  const setSelectedIdentity = (identity: Identity) => {
-    setSelfServiceRequest(prev => {
-      const newRequest = { ...prev, identity };
-      return newRequest;
-    });
-  };
+  const setSelectedIdentity = useCallback((identity: Identity) => {
+    setSelfServiceRequest(prev => ({ ...prev, identity }));
+  }, []);
 
-  const setSelectedRequestType = (requestType: RequestType) => {
-    setSelfServiceRequest(prev => {
-      const newRequest = { ...prev, requestType };
-      return newRequest;
-    });
-  };
+  const setSelectedRequestType = useCallback((requestType: RequestType) => {
+    setSelfServiceRequest(prev => ({ ...prev, requestType }));
+  }, []);
 
-  const addChange = (change: ChangeTypeDetails) => {
+  const addChange = useCallback((change: ChangeTypeDetails) => {
     setSelfServiceRequest(prev => {
       const requestedChanges = [...prev.requestedChanges, change];
       const newRequest = { ...prev, requestedChanges };
       return newRequest;
     });
-  };
+  }, []);
 
-  const setExpirationDate = (date: string | null) => {
+  const addChangeType = useCallback((changeType: ChangeType) => {
+    setSelfServiceRequest(prev => ({ ...prev, changeType }));
+  }, []);
+
+  const resetChanges = useCallback(() => {
+    setSelfServiceRequest(prev => ({ ...prev, requestedChanges: [] }));
+  }, []);
+
+  const setExpressTemplateId = useCallback(template_id => {
+    setSelfServiceRequest(prev => ({
+      ...prev,
+      express_template_id: template_id
+    }));
+  }, []);
+
+  const setExpirationDate = useCallback((date: string | null) => {
     setSelfServiceRequest(prev => ({ ...prev, expirationDate: date }));
-  };
+  }, []);
 
-  const removeChange = index => {
+  const removeChange = useCallback(index => {
     setSelfServiceRequest(prev => {
       const requestedChanges = prev.requestedChanges.filter(
         (_, i) => i !== index
@@ -83,7 +98,7 @@ const SelfService = () => {
       const newRequest = { ...prev, requestedChanges };
       return newRequest;
     });
-  };
+  }, []);
 
   const canClickBack = useMemo(
     () => currentStep !== SELF_SERVICE_STEPS.SELECT_PROVIDER,
@@ -92,8 +107,12 @@ const SelfService = () => {
 
   const canClickNext = useMemo(
     () =>
-      currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE ||
-      currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY,
+      [
+        SELF_SERVICE_STEPS.CHANGE_TYPE,
+        SELF_SERVICE_STEPS.SELECT_IDENTITY,
+        SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES,
+        SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS
+      ].includes(currentStep),
     [currentStep]
   );
 
@@ -102,48 +121,54 @@ const SelfService = () => {
     [canClickNext, canClickBack]
   );
 
+  const hideSidePanel = useMemo(
+    () =>
+      [
+        SELF_SERVICE_STEPS.SELECT_PROVIDER,
+        SELF_SERVICE_STEPS.REQUEST_PREVIEW
+      ].includes(currentStep),
+    [currentStep]
+  );
+
   const wrapperClasses = useMemo(
     () =>
       classNames(styles.wrapper, {
-        [styles.fullWidth]: currentStep === SELF_SERVICE_STEPS.COMPLETION_FORM
+        [styles.defaultWidth]: [SELF_SERVICE_STEPS.SELECT_PROVIDER].includes(
+          currentStep
+        )
       }),
     [currentStep]
   );
 
-  const handleNext = useCallback(() => {
-    if (currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE) {
-      setCurrentStep(SELF_SERVICE_STEPS.COMPLETION_FORM);
-    } else if (currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY) {
-      setCurrentStep(SELF_SERVICE_STEPS.REQUEST_TYPE);
-    }
-  }, [currentStep]);
+  const handleNext = useCallback(
+    (newMode?: REQUEST_FLOW_MODE) => {
+      const mode = newMode || currentMode;
+      const stepMapper =
+        mode === REQUEST_FLOW_MODE.EXPRESS_MODE
+          ? EXPRESS_MODE_NEXT_STEP_MAP
+          : ADVANCED_MODE_NEXT_STEP_MAP;
+      const newCurrentStep = stepMapper[currentStep];
+      setCurrentStep(newCurrentStep);
+
+      if (newMode) {
+        setCurrentMode(newMode);
+      }
+    },
+    [currentStep, currentMode]
+  );
 
   const handleBack = useCallback(() => {
-    switch (currentStep) {
-      case SELF_SERVICE_STEPS.SELECT_IDENTITY:
-        setSelectedIdentityType('');
-        setSelectedIdentity(null);
-        setCurrentStep(SELF_SERVICE_STEPS.SELECT_PROVIDER);
-        break;
-      case SELF_SERVICE_STEPS.REQUEST_TYPE:
-        setSelectedRequestType(null);
-        setCurrentStep(SELF_SERVICE_STEPS.SELECT_IDENTITY);
-        break;
-      case SELF_SERVICE_STEPS.CHANGE_TYPE:
-        setCurrentStep(SELF_SERVICE_STEPS.REQUEST_TYPE);
-        break;
-      case SELF_SERVICE_STEPS.COMPLETION_FORM:
-        // setSelectedChangeType(null);
-        setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
-        break;
-      // case SELF_SERVICE_STEPS.COMPLETION_FORM:
-      //   setSelectedChangeType(null);
-      //   setCurrentStep(SELF_SERVICE_STEPS.CHANGE_TYPE);
-      //   break;
-      default:
-        break;
+    const stepMapper =
+      currentMode === REQUEST_FLOW_MODE.EXPRESS_MODE
+        ? EXPRESS_MODE_PREVIOUS_STEP_MAP
+        : ADVANCED_MODE_PREVIOUS_STEP_MAP;
+    const newCurrentStep = stepMapper[currentStep];
+    setCurrentStep(newCurrentStep);
+
+    if (newCurrentStep === SELF_SERVICE_STEPS.SELECT_PROVIDER) {
+      setSelfServiceRequest(DEFAULT_REQUEST);
     }
-  }, [currentStep]);
+  }, [currentMode, currentStep]);
 
   return (
     <SelfServiceContext.Provider
@@ -165,14 +190,19 @@ const SelfService = () => {
           setSelectedRequestType,
           setJustification,
           setSelfServiceRequest,
+          setExpressTemplateId,
           addChange,
+          addChangeType,
           removeChange,
+          resetChanges,
           setExpirationType,
           setRelativeValue,
           setRelativeUnit,
           setDateValue,
           setTimeValue,
-          setExpirationDate
+          setCurrentMode,
+          setExpirationDate,
+          handleNext
         }
       }}
     >
@@ -180,6 +210,7 @@ const SelfService = () => {
         <div className={styles.content}>
           <div className={wrapperClasses}>
             <RequestViewer />
+            {!hideSidePanel && <SidePanel />}
           </div>
         </div>
         {showFooter && (
@@ -191,30 +222,52 @@ const SelfService = () => {
                   Back
                 </Button>
               )}
-              {canClickNext && currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE && (
-                <Button
-                  size="small"
-                  disabled={
-                    !(
-                      selfServiceRequest.requestedChanges.length &&
-                      selfServiceRequest.justification
-                    )
-                  }
-                  onClick={handleNext}
-                >
-                  Next
-                </Button>
+              {canClickNext && (
+                <>
+                  {currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES && (
+                    <Button
+                      size="small"
+                      disabled={!selfServiceRequest.changeType}
+                      onClick={() => handleNext()}
+                    >
+                      Next
+                    </Button>
+                  )}
+                  {currentStep ===
+                    SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS && (
+                    <Button
+                      size="small"
+                      disabled={!selfServiceRequest.requestedChanges}
+                      onClick={() => handleNext()}
+                    >
+                      Next
+                    </Button>
+                  )}
+                  {currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE && (
+                    <Button
+                      size="small"
+                      disabled={
+                        !(
+                          selfServiceRequest.requestedChanges.length &&
+                          selfServiceRequest.justification
+                        )
+                      }
+                      onClick={() => handleNext()}
+                    >
+                      Next
+                    </Button>
+                  )}
+                  {currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY && (
+                    <Button
+                      size="small"
+                      disabled={!selfServiceRequest.identity}
+                      onClick={() => handleNext()}
+                    >
+                      Next
+                    </Button>
+                  )}
+                </>
               )}
-              {canClickNext &&
-                currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY && (
-                  <Button
-                    size="small"
-                    disabled={!selfServiceRequest.identity}
-                    onClick={handleNext}
-                  >
-                    Next
-                  </Button>
-                )}
             </div>
           </div>
         )}

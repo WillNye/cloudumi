@@ -180,7 +180,7 @@ const IntegrationSettings = () => {
           /> */}
           <IntegrationCard
             description={GITHUB_CARD_DESCRIPTION}
-            title="Connect to Github"
+            title="Connect to IAMbic"
             icon={githubIcon}
             buttonText="Connect"
             handleConnect={() => setShowGithubModal(true)}

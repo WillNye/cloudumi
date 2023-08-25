@@ -13,6 +13,7 @@ ENV BUILD_PATH=./frontend/build
 ENV DISABLE_ESLINT_PLUGIN=true
 ENV VIRTUAL_ENV=/app/env
 ENV NODE_OPTIONS=--openssl-legacy-provider
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN mkdir /app
 WORKDIR /app
@@ -61,8 +62,11 @@ RUN npm install yarn -g && \
     yarn --cwd ui
 
 # Clean Up
-RUN apt-get clean && \
+RUN apt-get update && \
+    apt-get clean && \
+    apt-get update && \
     apt-get -y autoremove && \
+    apt-get update && \
     apt-get dist-upgrade -y
 
 # Install AWS CLI

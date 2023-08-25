@@ -1,12 +1,16 @@
 import asyncio
+import functools
 import random
 from datetime import datetime
 from typing import Optional
 
+from iambic.plugins.v0_1_0.aws.iam.role.models import AWS_IAM_ROLE_TEMPLATE_TYPE
 from sqlalchemy import delete, select
 from sqlalchemy.orm import contains_eager, joinedload
 
 from common.config.globals import ASYNC_PG_SESSION
+from common.iambic.templates.models import IambicTemplate
+from common.iambic.templates.utils import list_tenant_templates
 from common.pg_core.utils import bulk_delete
 from common.request_types.models import (
     ChangeField,
@@ -15,9 +19,13 @@ from common.request_types.models import (
     RequestType,
 )
 from common.request_types.tasks import upsert_tenant_request_types
-from common.request_types.utils import list_tenant_request_types
+from common.request_types.utils import (
+    get_tenant_change_type,
+    list_tenant_change_types,
+    list_tenant_request_types,
+)
 from qa import TENANT_SUMMARY
-from qa.utils import generic_api_get_request
+from qa.utils import generic_api_create_or_update_request, generic_api_get_request
 
 """Example script
 import asyncio
@@ -28,7 +36,7 @@ async def run_all_tests():
         add_new_request_type,
         add_change_field,
         add_new_change_type_to_request_type,
-        reinitialize_request_type,
+        reinitialize_change_type,
         update_change_type,
         update_request_type,
         update_change_type_template,
@@ -43,7 +51,7 @@ async def run_all_tests():
     await add_new_request_type()
     await add_change_field()
     await add_new_change_type_to_request_type()
-    await reinitialize_request_type()
+    await reinitialize_change_type()
     await update_change_type()
     await update_request_type()
     await update_change_type_template()
@@ -56,6 +64,19 @@ async def run_all_tests():
 
 asyncio.run(run_all_tests())
 """
+
+
+async def get_iambic_template(template_type, resource_id):
+    async with ASYNC_PG_SESSION() as session:
+        stmt = (
+            select(IambicTemplate)
+            .filter(IambicTemplate.template_type == template_type)
+            .filter(IambicTemplate.resource_id == resource_id)
+        )
+
+        items = await session.execute(stmt)
+
+        return items.scalars().unique().one_or_none()
 
 
 async def get_request_type_by_id(request_type_id):
@@ -232,27 +253,27 @@ async def delete_request_type():
     assert updated_rt.deleted
 
 
-async def reinitialize_request_type():
+async def reinitialize_change_type():
     tenant = TENANT_SUMMARY.tenant
     await reset_request_type_tables()
 
-    tenant_request_types = await list_tenant_request_types(tenant.id)
-    init_active_count = len(tenant_request_types)
-    rt = tenant_request_types[0]
-    rt.deleted = True
-    rt.deleted_at = datetime.utcnow()
-    rt.supported_template_types = []
-    await rt.write()
+    tenant_change_types = await list_tenant_change_types(tenant.id)
+    init_active_count = len(tenant_change_types)
+    ct = random.choice(tenant_change_types)
+    ct.deleted = True
+    ct.deleted_at = datetime.utcnow()
+    ct.template_types = []
+    await ct.write()
 
-    tenant_request_types = await list_tenant_request_types(tenant.id)
-    assert len(tenant_request_types) == init_active_count - 1
+    tenant_change_types = await list_tenant_change_types(tenant.id)
+    assert len(tenant_change_types) == init_active_count - 1
 
     await upsert_tenant_request_types(tenant.name)
 
-    tenant_request_types = await list_tenant_request_types(tenant.id)
-    assert len(tenant_request_types) == init_active_count
+    tenant_change_types = await list_tenant_change_types(tenant.id)
+    assert len(tenant_change_types) == init_active_count
 
-    updated_rt = await get_request_type_by_id(rt.id)
+    updated_rt = await get_tenant_change_type(tenant.id, ct.id)
     assert not updated_rt.deleted
 
 
@@ -489,13 +510,25 @@ async def delete_change_field():
     assert len(updated_change_type.change_fields) == original_change_field_count
 
 
+async def api_typeahead_list_groups(name: Optional[str] = None):
+    request_params = {} if not name else {"name": name}
+    generic_api_get_request("v4/self-service/typeahead/noq/groups", **request_params)
+
+
+async def api_typeahead_list_users(email: Optional[str] = None):
+    request_params = {} if not email else {"email": email}
+    generic_api_get_request("v4/self-service/typeahead/noq/users", **request_params)
+
+
 async def api_list_providers():
     base_url = "v4/self-service/request-types"
 
     generic_api_get_request(base_url, provider="aws")
 
 
-async def api_list_change_types(request_type_id: Optional[str] = None):
+async def api_self_service_change_types_list(
+    request_type_id: Optional[str] = None, iambic_templates_specified: bool = None
+):
     if not request_type_id:
         tenant = TENANT_SUMMARY.tenant
         all_request_types = await list_tenant_request_types(tenant.id)
@@ -504,13 +537,42 @@ async def api_list_change_types(request_type_id: Optional[str] = None):
 
     base_url = "v4/self-service/request-types"
     change_type_url = f"{base_url}/{request_type_id}/change-types/"
+    return generic_api_get_request(
+        change_type_url, iambic_templates_specified=iambic_templates_specified
+    )
 
-    generic_api_get_request(change_type_url)
+
+def default_change_type_setter():
+    def wrapper(func):
+        @functools.wraps(func)
+        async def inner(*args, **kwargs):
+            if not kwargs.get("change_type_id"):
+                change_types = (
+                    await api_self_service_change_types_list(
+                        request_type_id=kwargs.get("request_type_id")
+                    )
+                ).get("data", [])
+                if not change_types:
+                    raise Exception(
+                        "No Change Types found. "
+                        "Please run run_all_iambic_tasks_for_tenant."
+                    )
+                change_type = random.choice(change_types)
+                kwargs["change_type_id"] = change_type["id"]
+                kwargs["request_type_id"] = change_type["request_type_id"]
+
+            return await func(*args, **kwargs)
+
+        return inner
+
+    return wrapper
 
 
-async def api_get_change_type(
-    request_type_id: Optional[str] = None,
-    change_type_id: Optional[str] = None,
+@default_change_type_setter()
+async def api_self_service_change_type_get(
+    *_,
+    request_type_id: Optional[str],
+    change_type_id: Optional[str],
 ):
     if change_type_id:
         assert request_type_id
@@ -535,20 +597,145 @@ async def api_get_change_type(
 
     base_url = "v4/self-service/request-types"
     change_type_url = f"{base_url}/{request_type_id}/change-types/{change_type_id}"
-
     generic_api_get_request(change_type_url)
 
 
-async def api_typeahead_list_groups(name: Optional[str] = None):
-    request_params = {} if not name else {"name": name}
-    generic_api_get_request("v4/self-service/typeahead/noq/groups", **request_params)
+@default_change_type_setter()
+async def api_editor_change_type_update(
+    *_, change_type_id: Optional[str], suggest_to_all: bool, **kwargs
+):
+    return generic_api_create_or_update_request(
+        "patch",
+        f"v4/editor/change-types/{change_type_id}",
+        suggest_to_all=suggest_to_all,
+    )
 
 
-async def api_typeahead_list_users(email: Optional[str] = None):
-    request_params = {} if not email else {"email": email}
-    generic_api_get_request("v4/self-service/typeahead/noq/users", **request_params)
+@default_change_type_setter()
+async def api_editor_change_type_favorite(*_, change_type_id: Optional[str], **kwargs):
+    return generic_api_create_or_update_request(
+        "post", f"v4/editor/change-types/{change_type_id}/favorite"
+    )
+
+
+async def api_self_service_express_access_request_list(provider: Optional[str] = None):
+    request_params = {} if not provider else {"provider": provider}
+    return generic_api_get_request(
+        "v4/self-service/express-access-requests", **request_params
+    )
+
+
+def default_aws_express_access_request_setter():
+    def wrapper(func):
+        @functools.wraps(func)
+        async def inner(*args, **kwargs):
+            if not kwargs.get("express_access_request_id") and not any(
+                isinstance(arg, str) for arg in args
+            ):
+                access_requests_req = (
+                    await api_self_service_express_access_request_list("aws")
+                )
+                access_requests = access_requests_req.get("data", [])
+                if not access_requests:
+                    raise Exception(
+                        "No AWS express access requests found. "
+                        "Please create one using api_editor_express_access_request_create."
+                    )
+                access_request = random.choice(access_requests)
+                kwargs["express_access_request_id"] = access_request["id"]
+
+            return await func(*args, **kwargs)
+
+        return inner
+
+    return wrapper
+
+
+@default_aws_express_access_request_setter()
+async def api_self_service_express_access_request_get(
+    express_access_request_id: Optional[str],
+):
+    return generic_api_get_request(
+        f"v4/self-service/express-access-requests/{express_access_request_id}"
+    )
+
+
+async def api_editor_express_access_request_create(
+    name: str,
+    description: str,
+    suggest_to_all: bool,
+    use_user_change_type: Optional[bool] = True,
+    field_values: Optional[dict[str, any]] = None,
+    include_provider_definition_id: Optional[bool] = True,
+):
+
+    # Get the role template id
+    all_roles = await list_tenant_templates(
+        TENANT_SUMMARY.tenant.id,
+        template_type=AWS_IAM_ROLE_TEMPLATE_TYPE,
+        exclude_template_provider_def=False,
+    )
+    matching_roles = [
+        role for role in all_roles if len(role.provider_definition_refs) > 1
+    ]
+    selected_role = random.choice(matching_roles)
+    iambic_template_id = str(selected_role.id)
+
+    # Get the change type
+    all_change_types = await list_tenant_change_types(TENANT_SUMMARY.tenant.id)
+    target = "User" if use_user_change_type else "Group"
+    change_type = next(
+        ct for ct in all_change_types if ct.name == f"Noq {target} access request"
+    )
+    change_type_id = str(change_type.id)
+
+    if include_provider_definition_id:
+        target_pd = random.choice(selected_role.provider_definition_refs)
+        provider_definition_ids = [str(target_pd.tenant_provider_definition_id)]
+    else:
+        provider_definition_ids = []
+
+    return generic_api_create_or_update_request(
+        "post",
+        "v4/editor/express-access-requests",
+        name=name,
+        description=description,
+        change_type_id=change_type_id,
+        iambic_template_id=iambic_template_id,
+        suggest_to_all=suggest_to_all,
+        field_values=field_values,
+        provider_definition_ids=provider_definition_ids,
+    )
+
+
+@default_aws_express_access_request_setter()
+async def api_editor_express_access_request_update(
+    express_access_request_id: Optional[str], suggest_to_all: bool
+):
+    return generic_api_create_or_update_request(
+        "patch",
+        f"v4/editor/express-access-requests/{express_access_request_id}",
+        suggest_to_all=suggest_to_all,
+    )
+
+
+@default_aws_express_access_request_setter()
+async def api_editor_express_access_request_favorite(
+    express_access_request_id: Optional[str],
+):
+    return generic_api_create_or_update_request(
+        "post",
+        f"v4/editor/express-access-requests/{express_access_request_id}/favorite",
+    )
 
 
 if __name__ == "__main__":
     asyncio.run(TENANT_SUMMARY.setup())
-    asyncio.run(reset_request_type_tables())
+    asyncio.run(
+        api_editor_express_access_request_create(
+            name="Sample AWS Express Access Request",
+            description="Sample AWS Express Access Request",
+            suggest_to_all=True,
+        )
+    )
+    asyncio.run(api_self_service_express_access_request_get())

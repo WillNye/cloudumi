@@ -92,8 +92,42 @@ async def typeahead_upgrade():
             await session.flush()
 
 
+async def iambic_template_add_friendly_name():
+    from iambic.plugins.v0_1_0.okta.app.models import OKTA_APP_TEMPLATE_TYPE
+    from iambic.plugins.v0_1_0.okta.group.models import OKTA_GROUP_TEMPLATE_TYPE
+    from sqlalchemy import select
+    from sqlalchemy.orm import joinedload
+
+    from common.config.globals import ASYNC_PG_SESSION
+    from common.iambic.templates.models import IambicTemplate
+
+    async with ASYNC_PG_SESSION() as session:
+        items = await session.execute(
+            select(IambicTemplate)
+            .options(
+                joinedload(IambicTemplate.content)
+            )  # Adjusted to use class-bound attribute
+            .where(IambicTemplate.friendly_name.is_(None))
+        )
+        iambic_templates_without_friendly_name = items.scalars().all()
+
+    for iambic_template in iambic_templates_without_friendly_name:
+        iambic_template.friendly_name = iambic_template.resource_id
+        if iambic_template.template_type in [
+            OKTA_GROUP_TEMPLATE_TYPE,
+            OKTA_APP_TEMPLATE_TYPE,
+        ]:
+            iambic_template_content = iambic_template.content.content
+            friendly_name = iambic_template_content.get("properties", {}).get(
+                "name", iambic_template.resource_id
+            )
+            iambic_template.friendly_name = friendly_name
+        await iambic_template.write()
+
+
 def run_data_migrations():
     asyncio.run(typeahead_upgrade())
+    asyncio.run(iambic_template_add_friendly_name())
 
 
 if __name__ == "__main__":
