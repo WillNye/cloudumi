@@ -60,7 +60,7 @@ export const Navbar = () => {
             </div>
           </Tooltip>
         </Link>
-        <Link to="/findings">
+        {/* <Link to="/findings">
           <Tooltip text="Findings" alignment="right">
             <div
               className={classNames({
@@ -70,7 +70,7 @@ export const Navbar = () => {
               <Icon width="26px" height="26px" name="asterisk" />
             </div>
           </Tooltip>
-        </Link>
+        </Link> */}
         <Divider />
         <Link to="/settings">
           <Tooltip text="Settings" alignment="right">
