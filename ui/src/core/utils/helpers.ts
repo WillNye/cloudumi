@@ -25,3 +25,10 @@ export const extractSortValue = (defaultValue, newValue?: SortingState) => {
   }
   return defaultValue;
 };
+
+export const getLinkFromResourceTemplate = resourceTemplate => {
+  const strippedPath = resourceTemplate.file_path.replace(/\.yaml$/, '');
+  // const provider = resourceTemplate.provider.toLowerCase();
+  const repoName = resourceTemplate.repo_name.toLowerCase();
+  return `/resources/iambic/${repoName}/${strippedPath}`;
+};

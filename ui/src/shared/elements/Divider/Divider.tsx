@@ -19,8 +19,7 @@ export const Divider: FC<DividerProps> = ({
     {...rest}
     className={classNames(css.divider, className, {
       [css.disableMargins]: disableMargins,
-      [css.vertical]: orientation === 'vertical',
-      [css.horizontal]: orientation === 'horizontal'
+      [css[orientation]]: orientation
     })}
   />
 );

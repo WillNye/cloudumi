@@ -4,4 +4,5 @@ export interface RequestFile {
   previous_body: string;
   status: string;
   template_body: string;
+  repo_name?: string;
 }

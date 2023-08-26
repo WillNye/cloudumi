@@ -2,7 +2,7 @@ import asyncio
 import os
 import sys
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Union
 
 from cryptography.hazmat.primitives import serialization
@@ -639,7 +639,7 @@ class Request(SoftDeleteMixin, Base):
             if isinstance(self.status, str)
             else self.status.value,
             "allowed_approvers": self.allowed_approvers,
-            "created_at": self.created_at.timestamp(),
+            "created_at": self.created_at.replace(tzinfo=timezone.utc).timestamp(),
             "created_by": self.created_by,
         }
 
@@ -668,7 +668,7 @@ class Request(SoftDeleteMixin, Base):
         ):
             if val := getattr(self, conditional_key):
                 if isinstance(val, datetime):
-                    val = val.timestamp()
+                    val = val.replace(tzinfo=timezone.utc).timestamp()
                 response[conditional_key] = val
 
         return response

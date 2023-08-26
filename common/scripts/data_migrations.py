@@ -1,5 +1,8 @@
 import asyncio
 
+from iambic.plugins.v0_1_0.okta.user.models import OKTA_USER_TEMPLATE_TYPE
+from sqlalchemy import or_
+
 
 async def typeahead_upgrade():
     from sqlalchemy.dialects import postgresql
@@ -79,7 +82,21 @@ async def typeahead_upgrade():
             provider="aws",
         ),
     ]
-    default_typeahead_field_helpers = aws_typeahead_field_helpers
+
+    okta_typeahead_field_helpers = [
+        dict(
+            name="Okta User",
+            description="Returns a list of Okta User E-Mail addresses",
+            endpoint="api/v4/self-service/typeahead/okta/users",
+            query_param_key="email",
+            provider="okta",
+        )
+    ]
+
+    default_typeahead_field_helpers = [
+        *aws_typeahead_field_helpers,
+        *okta_typeahead_field_helpers,
+    ]
 
     async with ASYNC_PG_SESSION() as session:
         async with session.begin():
@@ -107,12 +124,17 @@ async def iambic_template_add_friendly_name():
             .options(
                 joinedload(IambicTemplate.content)
             )  # Adjusted to use class-bound attribute
-            .where(IambicTemplate.friendly_name is None)
+            .where(
+                or_(
+                    IambicTemplate.friendly_name.is_(None),
+                    IambicTemplate.friendly_name == IambicTemplate.resource_id,
+                )
+            )
         )
         iambic_templates_without_friendly_name = items.scalars().all()
 
     for iambic_template in iambic_templates_without_friendly_name:
-        iambic_template.friendly_name = iambic_template.resource_id
+        # TODO: duplicated logic
         if iambic_template.template_type in [
             OKTA_GROUP_TEMPLATE_TYPE,
             OKTA_APP_TEMPLATE_TYPE,
@@ -122,6 +144,17 @@ async def iambic_template_add_friendly_name():
                 "name", iambic_template.resource_id
             )
             iambic_template.friendly_name = friendly_name
+        elif iambic_template.template_type in [OKTA_USER_TEMPLATE_TYPE]:
+            iambic_template_content = iambic_template.content.content
+            friendly_name = iambic_template_content.get("properties", {}).get(
+                "username", iambic_template.resource_id
+            )
+            iambic_template.friendly_name = friendly_name
+        elif iambic_template.friendly_name != iambic_template.resource_id:
+            iambic_template.friendly_name = iambic_template.resource_id
+        else:
+            continue
+
         await iambic_template.write()
 
 

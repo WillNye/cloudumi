@@ -10,6 +10,7 @@ from git import Repo
 from iambic.core.models import BaseTemplate as IambicBaseTemplate
 from iambic.plugins.v0_1_0.okta.app.models import OKTA_APP_TEMPLATE_TYPE
 from iambic.plugins.v0_1_0.okta.group.models import OKTA_GROUP_TEMPLATE_TYPE
+from iambic.plugins.v0_1_0.okta.user.models import OKTA_USER_TEMPLATE_TYPE
 from sqlalchemy import and_, cast, delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import contains_eager
@@ -135,6 +136,8 @@ async def create_tenant_templates_and_definitions(
             OKTA_APP_TEMPLATE_TYPE,
         ]:
             iambic_template.friendly_name = raw_iambic_template.properties.name
+        elif iambic_template.template_type == OKTA_USER_TEMPLATE_TYPE:  # type: ignore
+            iambic_template.friendly_name = raw_iambic_template.properties.username
 
         iambic_templates.append(iambic_template)
 
@@ -325,13 +328,17 @@ async def update_tenant_template(
         await iambic_template.write()
 
     if not iambic_template.friendly_name:
-        iambic_template.friendly_name = iambic_template.resource_id
         # TODO: duplicated logic
         if iambic_template.template_type in [
             OKTA_GROUP_TEMPLATE_TYPE,
             OKTA_APP_TEMPLATE_TYPE,
         ]:
             iambic_template.friendly_name = raw_iambic_template.properties.name
+        elif iambic_template.template_type == OKTA_USER_TEMPLATE_TYPE:  # type: ignore
+            iambic_template.friendly_name = raw_iambic_template.properties.username
+        else:
+            iambic_template.friendly_name = iambic_template.resource_id
+
         await iambic_template.write()
 
     async with ASYNC_PG_SESSION() as session:

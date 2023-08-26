@@ -1,0 +1,50 @@
+.unusedActions {
+  height: 100%;
+
+  .content {
+    font-size: var(--font-size-md);
+    color: var(--gray-200);
+
+    table {
+      color: var(--gray-100);
+    }
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+
+    button {
+      margin: var(--spacing-sm);
+    }
+  }
+
+  .progressUnitWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .progressUnit {
+    margin: var(--spacing-lg);
+
+    .progressHeader {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .progressBar {
+      width: 155px;
+      color: var(--gray-100);
+
+      h5 {
+        margin-bottom: var(--spacing-sm);
+      }
+    }
+  }
+}

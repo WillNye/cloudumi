@@ -1,0 +1,20 @@
+.donutChart {
+  margin: var(--spacing-md);
+
+  .title {
+    text-align: center;
+    margin-bottom: var(--spacing-md);
+    color: var(--gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .wrapper {
+    width: 250px;
+    height: 280px;
+    position: relative;
+    border: 1px solid var(--gray-400);
+    border-radius: var(--border-radius-lg);
+    padding-bottom: var(--spacing-lg);
+  }
+}
