@@ -90,7 +90,14 @@ async def typeahead_upgrade():
             endpoint="api/v4/self-service/typeahead/okta/users",
             query_param_key="email",
             provider="okta",
-        )
+        ),
+        dict(
+            name="Okta Group",
+            description="Returns a list of Okta Groups",
+            endpoint="api/v4/self-service/typeahead/okta/groups",
+            query_param_key="name",
+            provider="okta",
+        ),
     ]
 
     default_typeahead_field_helpers = [
