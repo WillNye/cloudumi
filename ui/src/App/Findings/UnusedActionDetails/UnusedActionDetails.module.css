@@ -56,3 +56,25 @@
     color: var(--gray-100);
   }
 }
+
+.modalActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+
+  button {
+    margin: var(--spacing-sm);
+  }
+}
+
+.alignContent {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-direction: row;
+}
+
+.padLeft {
+  margin-left: var(--spacing-md);
+}

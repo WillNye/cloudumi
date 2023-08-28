@@ -18,6 +18,7 @@ interface DialogProps {
   showDialog: boolean;
   setShowDialog: Dispatch<boolean>;
   header?: ReactNode;
+  subHeader?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
   size?: 'small' | 'medium' | 'large' | 'fullWidth';
@@ -33,6 +34,7 @@ export const Dialog = forwardRef(
       showDialog,
       setShowDialog,
       header = <Fragment />,
+      subHeader,
       children,
       footer,
       size = 'fullWidth',
@@ -70,13 +72,18 @@ export const Dialog = forwardRef(
               <div className={dialogClasses} ref={resolvedRef}>
                 <div className={styles.dialog}>
                   <div className={styles.header}>
-                    <div>{header}</div>
-                    <div
-                      className={styles.pointer}
-                      onClick={() => setShowDialog(false)}
-                    >
-                      {showCloseIcon && <Icon name="close" size="large" />}
+                    <div className={styles.title}>
+                      <div>{header}</div>
+                      <div
+                        className={styles.pointer}
+                        onClick={() => setShowDialog(false)}
+                      >
+                        {showCloseIcon && <Icon name="close" size="large" />}
+                      </div>
                     </div>
+                    {subHeader && (
+                      <h4 className={styles.subTitle}>{subHeader}</h4>
+                    )}
                   </div>
                   {isLoading ? (
                     <div className={styles.loader}>
