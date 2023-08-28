@@ -102,11 +102,12 @@ def _get_default_okta_request_access_request_types(
                 ChangeField(
                     change_element=0,
                     field_key="name",
-                    field_type="TextBox",
+                    field_type="TypeAhead",
                     field_text="Group Name",
                     description="The name of the Group user that requires access.",
                     allow_none=False,
                     allow_multiple=False,
+                    typeahead_field_helper_id=field_helper_map["Okta Group"].id,
                 )
             ],
             change_template=ChangeTypeTemplate(

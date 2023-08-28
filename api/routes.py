@@ -63,7 +63,10 @@ from api.handlers.v4.self_service.type_ahead.noq import (
     NoqGroupTypeAheadHandler,
     NoqUserTypeAheadHandler,
 )
-from api.handlers.v4.self_service.type_ahead.okta import OktaUserTypeAheadHandler
+from api.handlers.v4.self_service.type_ahead.okta import (
+    OktaGroupTypeAheadHandler,
+    OktaUserTypeAheadHandler,
+)
 from api.handlers.v4.services.aws.account import OrgAccountBackgroundTasksHandler
 from api.handlers.v4.users.login import LoginHandler, MfaHandler
 from api.handlers.v4.users.manage_users import (
@@ -586,6 +589,7 @@ def make_app(jwt_validator=None):
         (r"/api/v4/self-service/typeahead/noq/users/?", NoqUserTypeAheadHandler),
         (r"/api/v4/self-service/typeahead/noq/groups/?", NoqGroupTypeAheadHandler),
         (r"/api/v4/self-service/typeahead/okta/users/?", OktaUserTypeAheadHandler),
+        (r"/api/v4/self-service/typeahead/okta/groups/?", OktaGroupTypeAheadHandler),
         (r"/api/v4/groups/?", ManageGroupsHandler),
         (r"/api/v4/groups_can_admin/?", GroupsCanAdminConfigurationCrudHandler),
         (r"/api/v4/list_groups/?", ManageListGroupsHandler),
