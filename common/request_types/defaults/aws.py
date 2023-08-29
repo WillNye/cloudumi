@@ -431,15 +431,9 @@ def _get_default_aws_request_permission_request_types(
         change_type.supported_template_types = [
             AWS_IDENTITY_CENTER_PERMISSION_SET_TEMPLATE_TYPE
         ]
-        change_type.template_attribute = "properties.inline_policy"
+        change_type.template_attribute = "properties.inline_policy.statement"
         change_type.apply_attr_behavior = "Append"
         change_type.provider_definition_field = "Allow None"
-        change_type.change_template.template = f"""
-        {{
-          "Statement":[{change_type.change_template.template}],
-          "Version": "2012-10-17"
-        }}"""
-
         permission_set_change_types[elem] = change_type
     add_permission_to_identity_request.change_types.extend(permission_set_change_types)
 
@@ -451,11 +445,6 @@ def _get_default_aws_request_permission_request_types(
         change_type.template_attribute = "properties.policy_document.statement"
         change_type.apply_attr_behavior = "Append"
         change_type.provider_definition_field = "Allow Multiple"
-        change_type.change_template.template = f"""
-        {{
-          "Statement":[{change_type.change_template.template}],
-          "Version": "2012-10-17"
-        }}"""
         mp_change_types[elem] = change_type
     add_permission_to_identity_request.change_types.extend(mp_change_types)
 
