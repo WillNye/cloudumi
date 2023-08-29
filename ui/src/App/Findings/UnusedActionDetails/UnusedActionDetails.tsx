@@ -15,12 +15,19 @@ import {
 import { DiffEditor } from 'shared/form/DiffEditor';
 import { Chip } from 'shared/elements/Chip';
 import Bullet from 'shared/elements/Bullet';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Icon } from 'shared/elements/Icon';
 import { Select, SelectOption } from 'shared/form/Select';
 import BarCharRating from 'shared/elements/BarCharRating';
+import CreateJiraTicket from './components/CreateJiraTicket';
+import CreateRequest from './components/CreateRequest';
+import DismissAction from './components/DismissAction';
 
 const UnusedActionDetails = () => {
+  const [isDismissOpen, setIsDismissOpen] = useState(false);
+  const [isCreateRequestOpen, setIsCreateRequestOpen] = useState(false);
+  const [isCreateJiraOpen, setIsCreateJiraOpen] = useState(false);
+
   const unusedActionData = useMemo(() => {
     return unusedActionsList.map(unusedAction => {
       return {
@@ -55,11 +62,19 @@ const UnusedActionDetails = () => {
             <Bullet color="danger" label={<h4>MonitoringServiceRole</h4>} />
           </div>
           <div className={styles.headerActions}>
-            <Button size="small" variant="outline">
+            <Button
+              size="small"
+              variant="outline"
+              onClick={() => setIsDismissOpen(true)}
+            >
               Dismiss
             </Button>
-            <Button size="small">Create Request to Resolve Finding</Button>
-            <Button size="small">Create JIRA Ticket</Button>
+            <Button size="small" onClick={() => setIsCreateRequestOpen(true)}>
+              Create Request to Resolve Finding
+            </Button>
+            <Button size="small" onClick={() => setIsCreateJiraOpen(true)}>
+              Create JIRA Ticket
+            </Button>
           </div>
         </div>
         <Divider />
@@ -86,7 +101,7 @@ const UnusedActionDetails = () => {
             <div className={styles.headerActions}>
               <h4 className={styles.lastScan}>SERVICE</h4>
               <div className={styles.selectInput}>
-                <Select value="prod">
+                <Select id="action-account" value="prod">
                   <SelectOption value="prod">Prod</SelectOption>
                 </Select>
               </div>
@@ -104,7 +119,7 @@ const UnusedActionDetails = () => {
           <div className={styles.codeEditor}>
             <p>
               You can override any findings in Code Editor before creating the
-              request{' '}
+              request
             </p>
             <DiffEditor
               original={oldTemplate}
@@ -114,6 +129,18 @@ const UnusedActionDetails = () => {
           </div>
         </div>
       </div>
+      <CreateJiraTicket
+        setShowDialog={setIsCreateJiraOpen}
+        showDialog={isCreateJiraOpen}
+      />
+      <CreateRequest
+        setShowDialog={setIsCreateRequestOpen}
+        showDialog={isCreateRequestOpen}
+      />
+      <DismissAction
+        setShowDialog={setIsDismissOpen}
+        showDialog={isDismissOpen}
+      />
     </Segment>
   );
 };

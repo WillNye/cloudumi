@@ -42,19 +42,27 @@
   }
 
   .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-direction: row;
-    width: 100%;
-    font-size: 20px;
-    font-weight: bolder;
-    padding: 20px;
+    padding: var(--spacing-lg);
     background-color: var(--dialog-background);
     border-radius: var(--border-radius-lg);
     z-index: 12;
     position: sticky;
     top: 0px;
+
+    .title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-direction: row;
+      width: 100%;
+      font-size: 20px;
+      font-weight: bolder;
+    }
+
+    .subTitle {
+      margin-top: var(--spacing-md);
+      color: var(--gray-200);
+    }
   }
 
   .pointer {

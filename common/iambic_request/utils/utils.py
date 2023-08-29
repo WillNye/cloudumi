@@ -306,8 +306,13 @@ def update_iambic_template_with_change(
         if len(split_property_attr) > 1:
             # Handle nested attributes like `ManagedPolicy.policy_document.statement`
             # TODO: Handle forked attribute. Example ManagedPolicy.policy_document can be list or object
+            attr_val = getattr(iambic_template_instance, attr_name)
+            if not attr_val:
+                attr_val = template_attr()
+                setattr(iambic_template_instance, attr_name, attr_val)
+
             return update_iambic_template_with_change(
-                getattr(iambic_template_instance, attr_name),
+                attr_val,
                 ".".join(split_property_attr[1:]),
                 rendered_change_type_template,
                 apply_attr_behavior,
