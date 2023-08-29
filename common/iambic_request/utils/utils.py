@@ -358,17 +358,21 @@ def append_attr_behavior(
     return iambic_template_instance
 
 
-def merge_attr_behavior(
+def replace_attr_behavior(
     iambic_template_instance: Any,
     new_template_val: Any,
     rendered_change_type_template: dict,
     attr_name: str,
     **kwargs,
 ):
-    raise NotImplementedError("Merge attribute has not yet been implemented")
+    if expires_at := rendered_change_type_template.get("expires_at"):
+        # Reset it to the original value
+        new_template_val.expires_at = expires_at
+    setattr(iambic_template_instance, attr_name, new_template_val)
+    return iambic_template_instance
 
 
-def replace_attr_behavior(
+def merge_attr_behavior(
     iambic_template_instance: Any,
     new_template_val: Any,
     rendered_change_type_template: dict,
