@@ -436,7 +436,7 @@ def _get_default_aws_request_permission_request_types(
         change_type.provider_definition_field = "Allow None"
         change_type.change_template.template = f"""
         {{
-          "Statement":{change_type.change_template.template},
+          "Statement":[{change_type.change_template.template}],
           "Version": "2012-10-17"
         }}"""
 

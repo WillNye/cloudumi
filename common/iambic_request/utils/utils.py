@@ -315,23 +315,21 @@ def update_iambic_template_with_change(
         else:
             # This is the final attribute
             new_template_val = template_attr(**rendered_change_type_template)
-            if expires_at := rendered_change_type_template.get("expires_at"):
-                # Reset it to the original value
-                new_template_val.expires_at = expires_at
+
+            ATTR_BEHAVIORS = {
+                "Append": append_attr_behavior,
+                "Merge": merge_attr_behavior,
+                "Replace": replace_attr_behavior,
+            }
 
             # Set the attribute on the iambic template instance based on the apply_attr_behavior
-            if apply_attr_behavior == "Append":
-                new_template_val = [new_template_val]
-                if cur_val := getattr(iambic_template_instance, attr_name, []):
-                    new_template_val = cur_val + new_template_val
-                setattr(iambic_template_instance, attr_name, new_template_val)
-                return iambic_template_instance
-            elif apply_attr_behavior == "Merge":
-                raise NotImplementedError(
-                    "Merge attribute has not yet been implemented"
+            if apply_attr_behavior in ATTR_BEHAVIORS.keys():
+                iambic_template_instance = ATTR_BEHAVIORS[apply_attr_behavior](
+                    iambic_template_instance,
+                    new_template_val,
+                    rendered_change_type_template,
+                    attr_name,
                 )
-            elif apply_attr_behavior == "Replace":
-                setattr(iambic_template_instance, attr_name, new_template_val)
                 return iambic_template_instance
             else:
                 raise ValueError(
@@ -339,6 +337,85 @@ def update_iambic_template_with_change(
                 )
     else:
         raise AttributeError(f"Template property {template_property} does not exist")
+
+
+def append_attr_behavior(
+    iambic_template_instance: Any,
+    new_template_val: Any,
+    rendered_change_type_template: dict,
+    attr_name: str,
+    **kwargs,
+):
+    if expires_at := rendered_change_type_template.get("expires_at"):
+        # Reset it to the original value
+        new_template_val.expires_at = expires_at
+
+    new_template_val = [new_template_val]
+    if cur_val := getattr(iambic_template_instance, attr_name, []):
+        new_template_val = cur_val + new_template_val
+    setattr(iambic_template_instance, attr_name, new_template_val)
+
+    return iambic_template_instance
+
+
+def merge_attr_behavior(
+    iambic_template_instance: Any,
+    new_template_val: Any,
+    rendered_change_type_template: dict,
+    attr_name: str,
+    **kwargs,
+):
+    raise NotImplementedError("Merge attribute has not yet been implemented")
+
+
+def replace_attr_behavior(
+    iambic_template_instance: Any,
+    new_template_val: Any,
+    rendered_change_type_template: dict,
+    attr_name: str,
+    **kwargs,
+):
+    if (template_field := getattr(iambic_template_instance, attr_name)) is not None:
+        # if inline template exists, merge the new template with the existing template
+        for key in template_field.__fields_set__:
+            field_type = type(getattr(template_field, key))
+            if field_type == set or field_type == dict:
+                setattr(
+                    template_field,
+                    key,
+                    getattr(template_field, key) | getattr(new_template_val, key),
+                )
+            elif field_type == list:
+                # if the key is statement, we need to update the expires_at for the statement
+                if rendered_change_type_template.get("expires_at"):
+                    for action in getattr(new_template_val, key):
+                        if hasattr(action, "expires_at"):
+                            action.expires_at = rendered_change_type_template.get(
+                                "expires_at"
+                            )
+
+                setattr(
+                    template_field,
+                    key,
+                    getattr(template_field, key) + getattr(new_template_val, key),
+                )
+            elif field_type == str:
+                setattr(
+                    template_field,
+                    key,
+                    getattr(new_template_val, key),
+                )
+    else:
+        # validates if change type has expiration date, and if so, sets it to each statement
+        if hasattr(new_template_val, "statement") and rendered_change_type_template.get(
+            "expires_at"
+        ):
+            for action in getattr(new_template_val, "statement"):
+                if hasattr(action, "expires_at"):
+                    action.expires_at = rendered_change_type_template.get("expires_at")
+        setattr(iambic_template_instance, attr_name, new_template_val)
+
+    return iambic_template_instance
 
 
 def templatize_form_val(form_val: Any) -> Any:
