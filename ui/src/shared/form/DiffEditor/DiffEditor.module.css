@@ -1,45 +1,8 @@
 .editorBlock {
   width: 100%;
-  padding: 0px 20px;
-}
-
-.doubleViewHeader {
-  display: flex;
-  align-items: center;
-  flex-direction: row;
-  border: #cccccc solid 1px;
-  background-color: #e6e6e6;
-  width: 100%;
-}
-
-.associatedBlockHeader {
-  padding: 10px;
-  min-height: 85px;
-  width: 100%;
-}
-
-.associatedBlockHeaderText {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  font-size: 14px;
-}
-
-.blockHeader {
-  width: 48%;
-  padding: 10px;
-  min-height: 85px;
-}
-
-.blockHeaderText {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
-}
-
-.blockHeader:last-child {
-  border-left: #cccccc solid 1px;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--gray-600);
+  /* background-color: var(--gray-900); */
 }
 
 .renderStyle {
@@ -47,7 +10,6 @@
   align-items: center;
   flex-direction: row;
   justify-content: flex-end;
-  margin-bottom: var(--spacing-md);
 
   button {
     padding: var(--spacing-sm) !important;
@@ -62,9 +24,13 @@
   }
 }
 
+.header {
+  border-radius: var(--border-radius-md);
+  border-bottom: 1px solid var(--gray-600);
+}
+
 .editor {
   height: 100%;
   width: 100%;
-  border-radius: var(--border-radius-md);
-  border: 1px solid var(--gray-500);
+  padding: var(--spacing-md);
 }

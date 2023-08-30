@@ -39,3 +39,7 @@
     width: 100%;
   }
 }
+
+.summary {
+  color: var(--gray-200);
+}

@@ -76,21 +76,20 @@ export const DiffEditor: FC<DiffEditorProps> = ({
 
   return (
     <div className={styles.editorBlock}>
-      <div className={styles.renderStyle}>
-        <Button
-          onClick={() => setRenderSideBySide(false)}
-          icon="column"
-          color={renderSideBySide ? 'secondary' : 'primary'}
-          size="small"
-        />
-        <Button
-          onClick={() => setRenderSideBySide(true)}
-          icon="columns"
-          color={renderSideBySide ? 'primary' : 'secondary'}
-          size="small"
-        />
+      <div className={styles.header}>
+        <div className={styles.renderStyle}>
+          <Button
+            onClick={() => setRenderSideBySide(false)}
+            icon="column"
+            color={renderSideBySide ? 'secondary' : 'primary'}
+          />
+          <Button
+            onClick={() => setRenderSideBySide(true)}
+            icon="columns"
+            color={renderSideBySide ? 'primary' : 'secondary'}
+          />
+        </div>
       </div>
-
       {modified && (
         <MonacoDiffEditor
           language={language}

@@ -5,13 +5,15 @@ import styles from './RequestPreview.module.css';
 import SelfServiceContext from '../../SelfServiceContext';
 import { SubmittableRequest, TemplatePreview } from '../../types';
 import axios from 'core/Axios/Axios';
-import { DiffEditor } from 'shared/form/DiffEditor';
 import { Link } from 'react-router-dom';
 import { convertToSubmittableRequest } from './utils';
 import { Segment } from 'shared/layout/Segment';
 import { Icon } from 'shared/elements/Icon';
 import { extractErrorMessage } from 'core/API/utils';
 import errorImg from '../../../../../assets/illustrations/empty.svg';
+import Tabs from 'shared/elements/Tabs';
+import CodeEditorPreview from './CodeEditorPreview';
+import RequestSummary from './RequestSummary';
 
 const RequestPreview = () => {
   const [createdRequest, setCreatedRequest] = useState(null);
@@ -108,25 +110,35 @@ const RequestPreview = () => {
             </Link>
           </div>
         ) : (
-          <div className={styles.content}>
-            <DiffEditor
-              original={templateResponse?.current_template_body || ''}
-              modified={revisedTemplateBody || ''}
-              onChange={onChange}
-            />
-            <LineBreak size="large" />
-            <Button
-              size="small"
-              color="primary"
-              fullWidth
-              onClick={handleSubmit}
-              disabled={isLoading}
-            >
-              Submit Request
-            </Button>
-          </div>
+          <Tabs
+            tabs={[
+              {
+                label: 'Summary',
+                content: <RequestSummary />
+              },
+              {
+                label: 'Code Editor',
+                content: (
+                  <CodeEditorPreview
+                    templateResponse={templateResponse}
+                    revisedTemplateBody={revisedTemplateBody}
+                    onChange={onChange}
+                  />
+                )
+              }
+            ]}
+          />
         )}
       </div>
+      <Button
+        size="small"
+        color="primary"
+        fullWidth
+        onClick={handleSubmit}
+        disabled={isLoading}
+      >
+        Submit Request
+      </Button>
     </Segment>
   );
 };
