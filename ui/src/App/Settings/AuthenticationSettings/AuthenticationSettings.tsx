@@ -80,12 +80,12 @@ const AuthenticationSettings = () => {
   }, [currentTab, isLoading, authSettings]);
 
   useEffect(() => {
-    if (authSettings?.get_user_by_saml) {
+    if (authSettings?.scim_enabled) {
+      setCurrentTab(AUTH_SETTINGS_TABS.SCIM);
+    } else if (authSettings?.get_user_by_saml) {
       setCurrentTab(AUTH_SETTINGS_TABS.SAML);
     } else if (authSettings?.get_user_by_oidc) {
       setCurrentTab(AUTH_SETTINGS_TABS.OIDC);
-    } else if (authSettings?.scim_enabled) {
-      setCurrentTab(AUTH_SETTINGS_TABS.SCIM);
     }
   }, [authSettings]);
 
