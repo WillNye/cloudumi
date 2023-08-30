@@ -2,6 +2,9 @@ from typing import Optional, Union
 
 from iambic.core.utils import sanitize_string
 from iambic.plugins.v0_1_0.aws.models import AWSAccount
+from iambic.plugins.v0_1_0.okta.app.models import OKTA_APP_TEMPLATE_TYPE
+from iambic.plugins.v0_1_0.okta.group.models import OKTA_GROUP_TEMPLATE_TYPE
+from iambic.plugins.v0_1_0.okta.user.models import OKTA_USER_TEMPLATE_TYPE
 from jinja2 import BaseLoader
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 from sqlalchemy import or_, select
@@ -74,15 +77,18 @@ async def list_tenant_templates(
             )
 
         if resource_id:
-            stmt = stmt.filter(
-                or_(
-                    IambicTemplate.resource_id.ilike(f"%{resource_id}%"),
-                    IambicTemplateProviderDefinition.resource_id.ilike(
-                        f"%{resource_id}%"
-                    ),
-                    IambicTemplate.friendly_name.ilike(f"{resource_id}%"),
-                )
-            )
+            or_filters = [
+                IambicTemplate.resource_id.ilike(f"%{resource_id}%"),
+                IambicTemplateProviderDefinition.resource_id.ilike(f"%{resource_id}%"),
+            ]
+
+            if template_type in [
+                OKTA_GROUP_TEMPLATE_TYPE,
+                OKTA_APP_TEMPLATE_TYPE,
+                OKTA_USER_TEMPLATE_TYPE,
+            ]:
+                or_filters.append(IambicTemplate.friendly_name.ilike(f"{resource_id}%"))
+            stmt = stmt.filter(or_(*or_filters))
 
         if not exclude_template_provider_def:
             options.append(contains_eager(IambicTemplate.provider_definition_refs))
