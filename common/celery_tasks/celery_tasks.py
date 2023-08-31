@@ -56,7 +56,7 @@ from common.aws.organizations.utils import (
     onboard_new_accounts_from_orgs,
     sync_account_names_from_orgs,
 )
-from common.aws.role_access.celery_tasks import sync_all_iambic_data_for_tenant
+from common.aws.role_access.celery_tasks import sync_aws_role_access_for_tenant
 from common.aws.service_config.utils import execute_query
 from common.config import config
 from common.config import globals as config_globals
@@ -3014,7 +3014,7 @@ def update_self_service_state(
 
 
 @app.task(soft_time_limit=600, **default_celery_task_kwargs)
-def cache_iambic_data_for_tenant(tenant: str) -> dict[str, Any]:
+def cache_aws_role_access_for_tenant(tenant: str) -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
@@ -3022,12 +3022,12 @@ def cache_iambic_data_for_tenant(tenant: str) -> dict[str, Any]:
         "tenant": tenant,
     }
     log.debug(log_data)
-    async_to_sync(sync_all_iambic_data_for_tenant)(tenant)
+    async_to_sync(sync_aws_role_access_for_tenant)(tenant)
     return log_data
 
 
 @app.task(soft_time_limit=600, **default_celery_task_kwargs)
-def cache_iambic_data_for_all_tenants() -> dict[str, Any]:
+def cache_aws_role_access_for_all_tenants() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
         "function": function,
@@ -3038,7 +3038,7 @@ def cache_iambic_data_for_all_tenants() -> dict[str, Any]:
         TenantDetails.get_cached_all_active_tenant_names_for_cluster()
     )
     for tenant in tenants:
-        cache_iambic_data_for_tenant.delay(tenant)
+        cache_aws_role_access_for_tenant.delay(tenant)
 
     return log_data
 
@@ -3269,17 +3269,17 @@ schedule = {
     "sync_iambic_templates_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.sync_iambic_templates_all_tenants",
         "options": {"expires": 180},
-        "schedule": get_schedule(60),
+        "schedule": get_schedule(5),
     },
     "upsert_tenant_request_types_for_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.upsert_tenant_request_types_for_all_tenants",
         "options": {"expires": 180},
-        "schedule": get_schedule(60),
-    },
-    "cache_iambic_data_for_all_tenants": {
-        "task": "common.celery_tasks.celery_tasks.cache_iambic_data_for_all_tenants",
-        "options": {"expires": 180},
         "schedule": get_schedule(60 * 6),
+    },
+    "cache_aws_role_access_for_all_tenants": {
+        "task": "common.celery_tasks.celery_tasks.cache_aws_role_access_for_all_tenants",
+        "options": {"expires": 180},
+        "schedule": get_schedule(30),
     },
     "update_providers_and_provider_definitions_all_tenants": {
         "task": "common.celery_tasks.celery_tasks.update_providers_and_provider_definitions_all_tenants",
@@ -3333,7 +3333,7 @@ app.conf.timezone = "UTC"
 #         templates = asyncio.run(iambic.gather_templates_for_tenant())
 # print("here")
 
-# cache_iambic_data_for_all_tenants()
+# cache_aws_role_access_for_all_tenants()
 
 # TODO: Message user with information about this being reviewed
 # TODO: Determine how to map IdP groups to Slack channels

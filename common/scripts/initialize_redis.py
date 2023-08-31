@@ -77,7 +77,6 @@ if args.use_celery:
         celery.cache_managed_policies_across_accounts_for_all_tenants,
         celery.cache_resources_from_aws_config_across_accounts_for_all_tenants,
         celery.sync_iambic_templates_all_tenants,
-        celery.cache_iambic_data_for_all_tenants,
         celery.update_providers_and_provider_definitions_all_tenants,
         celery.upsert_tenant_request_types_for_all_tenants,
     ]
@@ -172,7 +171,7 @@ else:
             celery.cache_organization_structure,
             celery.cache_scps_across_organizations,
             celery.sync_iambic_templates_for_tenant,
-            celery.cache_iambic_data_for_tenant,
+            celery.sync_aws_role_access_for_tenant,
             celery.update_providers_and_provider_definitions_for_tenant,
             celery.upsert_tenant_request_types_for_tenant,
         ]
