@@ -122,6 +122,8 @@ else:
                         fn_args["account_id"] = account_id
                     if "tenant" in sig.parameters:
                         fn_args["tenant"] = tenant
+                    if "tenant_name" in sig.parameters:
+                        fn_args["tenant_name"] = tenant
                     log_start(f"{task.__name__} for account {account_id}")
                     futures.append(executor.submit(task, **fn_args))
             for future in concurrent.futures.as_completed(futures):
@@ -186,6 +188,8 @@ else:
             fn_args = {}
             if "tenant" in sig.parameters:
                 fn_args["tenant"] = tenant
+            if "tenant_name" in sig.parameters:
+                fn_args["tenant_name"] = tenant
             post_task(**fn_args)
             log_end(
                 post_task.func.__name__
