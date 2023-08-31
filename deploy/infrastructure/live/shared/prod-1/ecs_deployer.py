@@ -38,7 +38,12 @@ service_task_definition_map = [
     },
 ]
 
-preflight_task_definition_map = []
+preflight_task_definition_map = [
+    {
+        "task": "preflight_migrations",
+        "task_definition": f"{current_path}/task_definition_preflight_migrations.yaml",
+    },
+]
 
 cluster_name = "noq-dev-shared-prod-1"
 subnets = ["subnet-0335e107c814d63f5", "subnet-06b4ff38d90fa1b9b"]
