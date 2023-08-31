@@ -22,6 +22,7 @@ from typing import Any, Optional, Tuple, Union
 import celery
 import certifi
 import sentry_sdk
+import structlog
 from asgiref.sync import async_to_sync
 from billiard.exceptions import SoftTimeLimitExceeded
 from botocore.exceptions import ClientError
@@ -30,6 +31,7 @@ from celery.app.task import Context
 from celery.concurrency import asynpool
 from celery.schedules import crontab
 from celery.signals import (
+    setup_logging,
     task_failure,
     task_prerun,
     task_received,
@@ -314,6 +316,15 @@ def refresh_tenant_config_in_worker(**kwargs):
         return
     config.CONFIG.copy_tenant_config_dynamo_to_redis(tenant)
     config.CONFIG.tenant_configs[tenant]["last_updated"] = 0
+    structlog.contextvars.bind_contextvars(
+        task_id=kwargs.get("task_id", None), task_name=kwargs.get("task").name
+    )
+
+
+@setup_logging.connect
+def on_setup_logging(**kwargs):
+    # TODO: check this issue (https://github.com/hynek/structlog/issues/287) to see if we can add the config to celery
+    pass
 
 
 @task_received.connect
@@ -2809,6 +2820,19 @@ def handle_tenant_aws_integration_queue() -> dict[str, Any]:
 
 
 @app.task(soft_time_limit=600, **default_celery_task_kwargs)
+def healthcheck() -> dict[str, Any]:
+    # from celery.utils.log import get_task_logger
+    # log = structlog.wrap_logger(get_task_logger(__name__))
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    log_data = {
+        "function": function,
+        "message": "Handling Healthcheck",
+    }
+    log.debug(log_data)
+    return log_data
+
+
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def handle_github_webhook_integration_queue() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
@@ -3303,7 +3327,13 @@ if internal_celery_tasks and isinstance(internal_celery_tasks, dict):
     schedule = {**schedule, **internal_celery_tasks}
 
 if config.get("_global_.celery.clear_tasks_for_development", False):
-    schedule = {}
+    schedule = {
+        "healthcheck": {
+            "task": "common.celery_tasks.celery_tasks.healthcheck",
+            "options": {"expires": 1800, "queue": "high_priority"},
+            "schedule": timedelta(seconds=15),
+        },
+    }
 
 app.autodiscover_tasks(
     [

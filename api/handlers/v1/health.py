@@ -17,6 +17,11 @@ class HealthHandler(TornadoRequestHandler):
                     description: Simple endpoint that returns 200 and a string to signify that the server is up.
         """
         self.write("OK")
+        # from common.celery_tasks.celery_tasks import app as celery_app
+
+        # celery_app.send_task(
+        #     "common.celery_tasks.celery_tasks.healthcheck",
+        # )
 
 
 class HealthVanillaHandler(tornado.web.RequestHandler):
