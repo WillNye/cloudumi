@@ -1,6 +1,6 @@
 from typing import Optional
 
-from iambic.plugins.v0_1_0.okta.app.models import OKTA_APP_TEMPLATE_TYPE
+from iambic.plugins.v0_1_0.okta.group.models import OKTA_GROUP_TEMPLATE_TYPE
 from iambic.plugins.v0_1_0.okta.user.models import OKTA_USER_TEMPLATE_TYPE
 
 from api.handlers.utils import get_paginated_typeahead_response
@@ -112,7 +112,7 @@ async def list_tenant_okta_groups(
     page: Optional[int] = 1,
     **kwargs,
 ) -> list:
-    template_type = OKTA_APP_TEMPLATE_TYPE
+    template_type = OKTA_GROUP_TEMPLATE_TYPE
 
     templates = await list_tenant_templates(
         tenant_id=tenant,

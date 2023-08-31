@@ -7,7 +7,7 @@ from iambic.plugins.v0_1_0.okta.group.models import OKTA_GROUP_TEMPLATE_TYPE
 from iambic.plugins.v0_1_0.okta.user.models import OKTA_USER_TEMPLATE_TYPE
 from jinja2 import BaseLoader
 from jinja2.sandbox import ImmutableSandboxedEnvironment
-from sqlalchemy import or_, select
+from sqlalchemy import String, or_, select
 from sqlalchemy.orm import contains_eager, joinedload
 
 from common.config.globals import ASYNC_PG_SESSION
@@ -54,7 +54,10 @@ async def list_tenant_templates(
     exclude_template_content: Optional[bool] = True,
     page_size: Optional[int] = None,
     page: Optional[int] = 1,
+    **kwargs,
 ) -> list[IambicTemplate]:
+    include_import_only: bool = kwargs.get("include_import_only", False)
+
     if resource_id:
         assert (
             template_type
@@ -100,11 +103,18 @@ async def list_tenant_templates(
                 )
             )
 
-        if not exclude_template_content:
-            stmt = stmt.join(
-                IambicTemplateContent,
-                IambicTemplateContent.iambic_template_id == IambicTemplate.id,
+        stmt = stmt.join(
+            IambicTemplateContent,
+            IambicTemplateContent.iambic_template_id == IambicTemplate.id,
+        )
+
+        if not include_import_only:
+            stmt = stmt.filter(
+                IambicTemplateContent.content.op("->>")("iambic_managed").cast(String)
+                != "import_only"
             )
+
+        if not exclude_template_content:
             options.append(contains_eager(IambicTemplate.content))
 
         if options:
