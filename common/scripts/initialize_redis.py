@@ -77,7 +77,6 @@ if args.use_celery:
         celery.cache_managed_policies_across_accounts_for_all_tenants,
         celery.cache_resources_from_aws_config_across_accounts_for_all_tenants,
         celery.sync_iambic_templates_all_tenants,
-        celery.cache_iambic_data_for_all_tenants,
         celery.update_providers_and_provider_definitions_all_tenants,
         celery.upsert_tenant_request_types_for_all_tenants,
     ]
@@ -123,6 +122,8 @@ else:
                         fn_args["account_id"] = account_id
                     if "tenant" in sig.parameters:
                         fn_args["tenant"] = tenant
+                    if "tenant_name" in sig.parameters:
+                        fn_args["tenant_name"] = tenant
                     log_start(f"{task.__name__} for account {account_id}")
                     futures.append(executor.submit(task, **fn_args))
             for future in concurrent.futures.as_completed(futures):
@@ -172,7 +173,7 @@ else:
             celery.cache_organization_structure,
             celery.cache_scps_across_organizations,
             celery.sync_iambic_templates_for_tenant,
-            celery.cache_iambic_data_for_tenant,
+            celery.sync_aws_role_access_for_tenant,
             celery.update_providers_and_provider_definitions_for_tenant,
             celery.upsert_tenant_request_types_for_tenant,
         ]
@@ -187,6 +188,8 @@ else:
             fn_args = {}
             if "tenant" in sig.parameters:
                 fn_args["tenant"] = tenant
+            if "tenant_name" in sig.parameters:
+                fn_args["tenant_name"] = tenant
             post_task(**fn_args)
             log_end(
                 post_task.func.__name__
