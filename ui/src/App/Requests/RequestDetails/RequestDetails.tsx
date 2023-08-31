@@ -33,7 +33,8 @@ const RequestChangeDetails = () => {
     isLoading
   } = useQuery({
     queryFn: getIambicRequest,
-    queryKey: ['getIambicRequest', requestId]
+    queryKey: ['getIambicRequest', requestId],
+    refetchInterval: 10000
   });
 
   useEffect(() => {
@@ -57,7 +58,7 @@ const RequestChangeDetails = () => {
     }
   }, [comment, requestId, refetchData]);
 
-  const handleApprove = async () => {
+  const handleApprove = useCallback(async () => {
     setIsSubmitting(true);
     try {
       await axios.patch(`/api/v4/self-service/requests/${requestId}`, {
@@ -69,9 +70,9 @@ const RequestChangeDetails = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [refetchData, requestId]);
 
-  const handleReject = async () => {
+  const handleReject = useCallback(async () => {
     setIsSubmitting(true);
     try {
       await axios.patch(`/api/v4/self-service/requests/${requestId}`, {
@@ -83,9 +84,9 @@ const RequestChangeDetails = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [refetchData, requestId]);
 
-  const handleApply = async () => {
+  const handleApply = useCallback(async () => {
     setIsSubmitting(true);
     try {
       await axios.patch(`/api/v4/self-service/requests/${requestId}`, {
@@ -97,9 +98,9 @@ const RequestChangeDetails = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [refetchData, requestId]);
 
-  const handleRevert = async () => {
+  const handleRevert = useCallback(async () => {
     setIsSubmitting(true);
     try {
       await axios.patch(`/api/v4/self-service/requests/${requestId}`, {
@@ -111,7 +112,7 @@ const RequestChangeDetails = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [refetchData, requestId]);
 
   const handleModifyChange = useCallback(
     async e => {
