@@ -40,7 +40,7 @@ service_task_definition_map = [
 
 preflight_task_definition_map = [
     {
-        "task": "preflight_functional_tests",
+        "task": "preflight_migrations",
         "task_definition": f"{current_path}/task_definition_preflight_migrations.yaml",
     },
 ]
