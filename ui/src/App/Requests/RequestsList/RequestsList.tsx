@@ -1,13 +1,11 @@
 import { LineBreak } from 'shared/elements/LineBreak';
 import { Table } from 'shared/elements/Table';
 import { Segment } from 'shared/layout/Segment';
-import { requestsColumns } from './constants';
+import { REQUEST_PROPERTY_SEARCH_FILTER, requestsColumns } from './constants';
 import { Button } from 'shared/elements/Button';
-import { Divider } from 'shared/elements/Divider';
 import { PropertyFilter, PropertyFilterProps } from '@noqdev/cloudscape';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Icon } from 'shared/elements/Icon';
-import { Menu } from 'shared/layers/Menu';
 import { Link, useNavigate } from 'react-router-dom';
 import { DateTime } from 'luxon';
 import { useQuery } from '@tanstack/react-query';
@@ -26,11 +24,8 @@ const defaultSortField = {
 };
 
 const RequestsList = () => {
-  const statusRef = useRef();
-
   const navigate = useNavigate();
 
-  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
   const [filter, setFilter] = useState<PropertyFilterProps.Query>({
     tokens: [],
     operation: 'and'
@@ -105,7 +100,7 @@ const RequestsList = () => {
     <Segment>
       <div className={styles.wrapper}>
         <h3>All Requests</h3>
-        <LineBreak />
+        <LineBreak size="large" />
         <div>
           <PropertyFilter
             expandToViewport
@@ -114,7 +109,7 @@ const RequestsList = () => {
             i18nStrings={{
               filteringAriaLabel: 'your choice',
               dismissAriaLabel: 'Dismiss',
-              // filteringPlaceholder: ROLE_PROPERTY_SEARCH_FILTER,
+              filteringPlaceholder: REQUEST_PROPERTY_SEARCH_FILTER,
               groupValuesText: 'Values',
               groupPropertiesText: 'Properties',
               operatorsText: 'Operators',
@@ -150,48 +145,24 @@ const RequestsList = () => {
               groupValuesLabel: column.header + ' values'
             }))}
           />
-          <LineBreak size="large" />
           <div className={styles.actionsBar}>
-            <div>
-              <Button
-                size="small"
-                color="secondary"
-                variant="text"
-                ref={statusRef}
-                onClick={() => setIsStatusMenuOpen(statusValue => !statusValue)}
-              >
-                Status <Icon name="chevron-down" size="large" />
-              </Button>
-              <Menu
-                open={isStatusMenuOpen}
-                onClose={() => setIsStatusMenuOpen(false)}
-                reference={statusRef}
-              >
-                <div>Approved</div>
-                <div>Expired</div>
-                <div>Pending</div>
-                <div>Closed</div>
-              </Menu>
-            </div>
             <div className={styles.exportActions}>
               <Button
                 size="small"
                 onClick={() => navigate('/requests/create/')}
               >
-                <Icon name="add" /> Create Request
+                <Icon name="add" /> Create Self-Service Request
               </Button>
-              <Divider orientation="vertical"></Divider>
-              <Button size="small" color="secondary">
+              {/* <Button size="small" color="secondary">
                 Export JSON
               </Button>
-              <Divider orientation="vertical"></Divider>
               <Button size="small" color="secondary">
                 Export CSV
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>
-        <LineBreak size="large" />
+        <LineBreak />
         <Table
           data={tableRows}
           columns={requestsColumns}

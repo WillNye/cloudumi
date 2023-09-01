@@ -1,3 +1,5 @@
+export const REQUEST_PROPERTY_SEARCH_FILTER =
+  'Filter Request by Repo Name, Pull Request ID or Status';
 export const requestsColumns = [
   {
     id: 'repo_name',

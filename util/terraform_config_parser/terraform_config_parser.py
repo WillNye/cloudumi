@@ -345,8 +345,8 @@ if __name__ == "__main__":
         config_output_path,
     )
     write_file(
-        "task_definition_preflight_functional_tests.yaml.jinja2",
-        "task_definition_preflight_functional_tests.yaml",
+        "task_definition_preflight_migrations.yaml.jinja2",
+        "task_definition_preflight_migrations.yaml",
         terraform_config,
         config_output_path,
     )
