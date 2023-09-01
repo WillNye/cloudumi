@@ -84,6 +84,11 @@ variable "system_bucket" {
   type        = string
 }
 
+variable "lb_bucket" {
+  description = "The bucket used for CloudUmi load balancer logs"
+  type        = string
+}
+
 variable "tags" {
   description = "The tag to assign to resources"
   type        = map(any)

@@ -8,7 +8,8 @@ resource "aws_lb" "noq_api_load_balancer" {
   enable_deletion_protection = false
 
   access_logs {
-    bucket = var.system_bucket
+    bucket  = var.lb_bucket
+    enabled = true
   }
 
   tags = merge(

@@ -108,6 +108,59 @@ resource "aws_s3_bucket" "cloudumi_files_bucket" {
   }
 }
 
+resource "aws_s3_bucket_public_access_block" "cloudumi_lb_bucket" {
+  bucket = aws_s3_bucket.cloudumi_lb_bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  restrict_public_buckets = true
+  ignore_public_acls      = true
+}
+
+resource "aws_s3_bucket" "cloudumi_lb_bucket" {
+  bucket = "${lower(var.lb_bucket_name_prefix)}.${var.cluster_id}"
+  acl    = "private"
+
+  versioning {
+    enabled = true
+  }
+
+  policy = <<POLICY
+  {
+    "Id": "Policy",
+    "Version": "2012-10-17",
+    "Statement":
+    [
+      {
+        "Action": [
+          "s3:PutObject"
+        ],
+        "Effect": "Allow",
+        "Resource": [
+          "arn:aws:s3:::${lower(var.lb_bucket_name_prefix)}.${var.cluster_id}/AWSLogs/*"
+        ],
+        "Principal": {
+          "AWS": [
+            "${data.aws_elb_service_account.main.arn}"
+          ]
+        }
+      }
+    ]
+  }
+  POLICY
+
+  force_destroy = true
+
+  tags = merge(
+    var.tags,
+    {}
+  )
+
+  logging {
+    target_bucket = aws_s3_bucket.cloudumi_log_bucket.id
+  }
+}
+
 resource "aws_s3_bucket_public_access_block" "tenant_configuration_store" {
   bucket = aws_s3_bucket.tenant_configuration_store.id
 
@@ -193,6 +246,17 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "cloudumi_files_bu
     apply_server_side_encryption_by_default {
       kms_master_key_id = var.bucket_encryption_key
       sse_algorithm     = "aws:kms"
+    }
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "cloudumi_lb_bucket_sse" {
+  # The bucket uses an unsupported server-side encryption option. The bucket must use Amazon S3-managed keys (SSE-S3).
+  bucket = aws_s3_bucket.cloudumi_lb_bucket.bucket
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
     }
   }
 }

@@ -48,6 +48,7 @@ module "tenant_networking" {
   stage                       = var.stage
   subnet_azs                  = var.subnet_azs
   system_bucket               = module.tenant_s3_service.cloudumi_bucket_name
+  lb_bucket                   = module.tenant_s3_service.cloudumi_lb_bucket_name
   tags                        = var.tags
   timeout                     = var.timeout
   zone                        = var.zone
