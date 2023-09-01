@@ -278,7 +278,7 @@ async def sync_role_access(
     log.debug("sync_role_access results", **log_data)
 
 
-async def sync_all_iambic_data_for_tenant(tenant_name: str):
+async def sync_aws_role_access_for_tenant(tenant_name: str):
     fnc = f"{__name__}.{sys._getframe().f_code.co_name}"
     tenant = await Tenant.get_by_name_nocache(tenant_name)
     if not tenant:

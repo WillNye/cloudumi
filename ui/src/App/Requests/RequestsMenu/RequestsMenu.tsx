@@ -14,9 +14,7 @@ import { useAuth } from 'core/Auth';
 import { Breadcrumbs } from 'shared/elements/Breadcrumbs';
 
 const RequestsMenu = () => {
-  const [currentTab, setCurrentTab] = useState(
-    REQUESTS_SECTIONS.RECENT_REQUESTS
-  );
+  const [currentTab, setCurrentTab] = useState(REQUESTS_SECTIONS.MY_REQUESTS);
 
   const { user } = useAuth();
 
@@ -31,11 +29,11 @@ const RequestsMenu = () => {
       sorting: {
         sortingColumn: {
           id: 'id',
-          sortingField: 'repo_name',
-          header: 'Repo Name',
+          sortingField: 'created_at',
+          header: 'Created At',
           minWidth: 180
         },
-        sortingDescending: false
+        sortingDescending: true
       },
       filtering: {
         tokens: [

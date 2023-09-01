@@ -1,3 +1,4 @@
+import asyncio
 from collections import defaultdict
 from datetime import datetime
 
@@ -89,10 +90,21 @@ async def upsert_tenant_request_types(tenant_name: str):
                 change_type.description
             ] = change_type
 
-    default_request_types = await get_default_aws_request_types()
-    default_request_types.extend(await get_default_google_workspace_request_types())
-    default_request_types.extend(await get_default_azure_ad_request_types())
-    default_request_types.extend(await get_default_okta_request_types())
+    # defensive coding to guard against cascade failure.
+    default_request_types = []
+    request_type_futures = [
+        get_default_aws_request_types(),
+        get_default_google_workspace_request_types(),
+        get_default_azure_ad_request_types(),
+        get_default_okta_request_types(),
+    ]
+    maybe_results = await asyncio.gather(*request_type_futures, return_exceptions=True)
+    for maybe_result in maybe_results:
+        if isinstance(maybe_result, Exception):
+            log.exception("upsert_tenant_request_types", exc_info=maybe_result)
+        else:
+            default_request_types.extend(maybe_result)
+
     default_request_type_map = {rt.name: rt for rt in default_request_types}
     default_request_type_change_map = defaultdict(dict)
     for request_type in default_request_types:

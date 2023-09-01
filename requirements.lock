@@ -1044,7 +1044,7 @@ toml==0.10.2
     # via cyclonedx-python-lib
 tomlkit==0.11.8
     # via iambic-core
-tornado==6.3.2
+tornado==6.3.3
     # via
     #   -r ./api/requirements.in
     #   -r ./util/tests/requirements.in

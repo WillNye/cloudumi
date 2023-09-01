@@ -1,5 +1,8 @@
 from typing import Optional
 
+from iambic.plugins.v0_1_0.okta.app.models import OKTA_APP_TEMPLATE_TYPE
+from iambic.plugins.v0_1_0.okta.group.models import OKTA_GROUP_TEMPLATE_TYPE
+from iambic.plugins.v0_1_0.okta.user.models import OKTA_USER_TEMPLATE_TYPE
 from pydantic import ValidationError
 
 from api.handlers.utils import get_paginated_typeahead_response
@@ -39,7 +42,15 @@ class IambicTemplateHandler(BaseHandler):
                     tpd.resource_id for tpd in item.provider_definition_refs
                 )
                 for resource_id in resource_ids:
-                    resource_friendly_name = item.friendly_name or resource_id
+                    if query_params.template_type in [
+                        OKTA_GROUP_TEMPLATE_TYPE,
+                        OKTA_APP_TEMPLATE_TYPE,
+                        OKTA_USER_TEMPLATE_TYPE,
+                    ]:
+                        resource_friendly_name = item.friendly_name or resource_id
+                    else:
+                        resource_friendly_name = resource_id
+
                     data.append(
                         {
                             "id": item.id,
