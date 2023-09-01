@@ -9,7 +9,7 @@ export const CodeEditorPreview = ({
 }) => {
   return (
     <Segment>
-      <LineBreak size="large" />
+      <LineBreak />
       <DiffEditor
         original={templateResponse?.current_template_body || ''}
         modified={revisedTemplateBody || ''}

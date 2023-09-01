@@ -1,4 +1,4 @@
-import _, { debounce } from 'lodash';
+import debounce from 'lodash/debounce';
 import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { Search } from '../Search';
 import { Chip } from 'shared/elements/Chip';
@@ -184,7 +184,7 @@ export const TypeaheadBlock = ({
       <Search
         isLoading={isLoading}
         onResultSelect={handleResultSelect}
-        onChange={_.debounce(handleSearchChange, 500, {
+        onChange={debounce(handleSearchChange, 500, {
           leading: true
         })}
         resultRenderer={resultsFormatter}

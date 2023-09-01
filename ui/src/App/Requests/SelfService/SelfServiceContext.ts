@@ -9,7 +9,8 @@ import {
   IRequest,
   RequestType,
   Identity,
-  ChangeType
+  ChangeType,
+  SubmittableRequest
 } from './types';
 
 export interface ISelfServiceContext {
@@ -34,6 +35,8 @@ export interface ISelfServiceContext {
     setExpirationDate: Dispatch<string | null>;
     handleNext: (mode?: REQUEST_FLOW_MODE) => void;
     setExpressTemplateId: Dispatch<string>;
+    setSubmittableRequest: Dispatch<SubmittableRequest | null>;
+    setRevisedTemplateBody: Dispatch<string | null>;
   };
   store: {
     currentStep: SELF_SERVICE_STEPS;
@@ -43,6 +46,8 @@ export interface ISelfServiceContext {
     relativeUnit: string;
     dateValue: string;
     timeValue: string;
+    revisedTemplateBody: string | null;
+    submittableRequest: SubmittableRequest | null;
   };
 }
 

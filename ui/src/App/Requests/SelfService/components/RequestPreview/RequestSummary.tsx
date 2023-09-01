@@ -1,7 +1,5 @@
-import { DiffEditor } from 'shared/form/DiffEditor';
 import styles from './RequestPreview.module.css';
 import { LineBreak } from 'shared/elements/LineBreak';
-import { Button } from 'shared/elements/Button';
 import { useContext } from 'react';
 import SelfServiceContext from '../../SelfServiceContext';
 import { Table } from 'shared/elements/Table';
@@ -36,22 +34,24 @@ const RequestSummary = () => {
           {
             key: 'Changes',
             value: (
-              <Table
-                data={selfServiceRequest.requestedChanges}
-                hideTableHeader
-                columns={[
-                  {
-                    header: 'Change Name',
-                    accessorKey: 'name'
-                  },
-                  {
-                    header: 'Description',
-                    accessorKey: 'description'
-                  }
-                ]}
-                border="column"
-                spacing="compact"
-              />
+              <div>
+                <Table
+                  data={selfServiceRequest.requestedChanges}
+                  hideTableHeader
+                  columns={[
+                    {
+                      header: 'Change Name',
+                      accessorKey: 'name'
+                    },
+                    {
+                      header: 'Description',
+                      accessorKey: 'description'
+                    }
+                  ]}
+                  border="column"
+                  spacing="compact"
+                />
+              </div>
             )
           },
           {
