@@ -33,6 +33,15 @@ def _get_default_okta_request_access_request_types(
         "Request access to an Okta App for 1 or more users or groups"
     )
 
+    # defensive coding to handle database driven data
+    # https://noqdev.atlassian.net/browse/EN-2425
+    okta_user_field_helper_id = None
+    okta_group_field_helper_id = None
+    if "Okta User" in field_helper_map:
+        okta_user_field_helper_id = field_helper_map["Okta User"].id
+    if "Okta Group" in field_helper_map:
+        okta_group_field_helper_id = field_helper_map["Okta Group"].id
+
     access_to_group_request.change_types = [
         ChangeType(
             name="Okta User Access Request to Group",
@@ -46,7 +55,7 @@ def _get_default_okta_request_access_request_types(
                     description="The email of the Okta user that requires access.",
                     allow_none=False,
                     allow_multiple=False,
-                    typeahead_field_helper_id=field_helper_map["Okta User"].id,
+                    typeahead_field_helper_id=okta_user_field_helper_id,
                 ),
             ],
             change_template=ChangeTypeTemplate(
@@ -78,7 +87,7 @@ def _get_default_okta_request_access_request_types(
                     description="The email of the Okta user that requires access.",
                     allow_none=False,
                     allow_multiple=False,
-                    typeahead_field_helper_id=field_helper_map["Okta User"].id,
+                    typeahead_field_helper_id=okta_user_field_helper_id,
                 ),
             ],
             change_template=ChangeTypeTemplate(
@@ -107,7 +116,7 @@ def _get_default_okta_request_access_request_types(
                     description="The name of the Group user that requires access.",
                     allow_none=False,
                     allow_multiple=False,
-                    typeahead_field_helper_id=field_helper_map["Okta Group"].id,
+                    typeahead_field_helper_id=okta_group_field_helper_id,
                 )
             ],
             change_template=ChangeTypeTemplate(
