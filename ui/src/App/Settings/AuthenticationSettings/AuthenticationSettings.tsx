@@ -20,9 +20,7 @@ import { Icon } from 'shared/elements/Icon';
 
 const AuthenticationSettings = () => {
   const [showDialog, setShowDialog] = useState(false);
-  const [currentTab, setCurrentTab] = useState<AUTH_SETTINGS_TABS>(
-    AUTH_SETTINGS_TABS.SAML
-  );
+  const [currentTab, setCurrentTab] = useState<AUTH_SETTINGS_TABS | null>(null);
   const queryClient = useQueryClient();
 
   const { isLoading: isLoadingAuth, data: authSettings } = useQuery({
@@ -30,6 +28,21 @@ const AuthenticationSettings = () => {
     queryFn: fetchAuthSettings,
     select: data => data.data
   });
+
+  useEffect(() => {
+    // ejecute only if current tab doesn't be set
+    if (currentTab != null) {
+      return;
+    }
+
+    if (authSettings?.scim_enabled) {
+      setCurrentTab(AUTH_SETTINGS_TABS.SCIM);
+    } else if (authSettings?.get_user_by_saml) {
+      setCurrentTab(AUTH_SETTINGS_TABS.SAML);
+    } else if (authSettings?.get_user_by_oidc) {
+      setCurrentTab(AUTH_SETTINGS_TABS.OIDC);
+    }
+  }, [authSettings, currentTab]);
 
   const { isLoading: isLoadingMutation, mutateAsync: saveMutation } =
     useMutation({
@@ -78,16 +91,6 @@ const AuthenticationSettings = () => {
 
     return <Fragment />;
   }, [currentTab, isLoading, authSettings]);
-
-  useEffect(() => {
-    if (authSettings?.scim_enabled) {
-      setCurrentTab(AUTH_SETTINGS_TABS.SCIM);
-    } else if (authSettings?.get_user_by_saml) {
-      setCurrentTab(AUTH_SETTINGS_TABS.SAML);
-    } else if (authSettings?.get_user_by_oidc) {
-      setCurrentTab(AUTH_SETTINGS_TABS.OIDC);
-    }
-  }, [authSettings]);
 
   return (
     <div className={styles.container}>
