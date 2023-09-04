@@ -1,3 +1,4 @@
+import re
 from typing import Optional
 
 from iambic.plugins.v0_1_0.okta.app.models import OKTA_APP_TEMPLATE_TYPE
@@ -88,6 +89,19 @@ class IambicTemplateTypeHandler(BaseHandler):
         GET /api/v4/template-types - Provide a summary of all IAMbic templates for the tenant.
         """
 
+        def parse_template_type(template_type: str, template_type_prefix: str) -> str:
+            tmp_template_type = (
+                template_type.replace(template_type_prefix, "")
+                .replace("::", " ")
+                .strip()
+            )
+
+            tmp_template_type = re.split("(?<=.)(?=[A-Z])(?<=[a-z])", tmp_template_type)
+
+            tmp_template_type = " ".join(tmp_template_type)
+
+            return tmp_template_type
+
         def get_template_type_data(provider_template_classes: list) -> list[dict]:
             provider_template_types = [
                 template_type.__fields__["template_type"].default
@@ -96,11 +110,10 @@ class IambicTemplateTypeHandler(BaseHandler):
             return [
                 {
                     "id": template_type,
-                    "name": template_type.replace(
-                        trusted_provider.template_type_prefix, ""
-                    )
-                    .replace("::", " ")
-                    .strip(),
+                    "name": parse_template_type(
+                        template_type,
+                        trusted_provider.template_type_prefix,
+                    ),
                 }
                 for template_type in provider_template_types
             ]
