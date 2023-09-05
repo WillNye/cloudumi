@@ -67,7 +67,7 @@ export const Dialog = forwardRef(
       <>
         {showDialog &&
           createPortal(
-            <>
+            <div className={styles.wrapper}>
               <div className={styles.overlay} onClick={handleCloseDialog} />
               <div className={dialogClasses} ref={resolvedRef}>
                 <div className={styles.dialog}>
@@ -97,7 +97,7 @@ export const Dialog = forwardRef(
                   <span>{footer}</span>
                 </div>
               </div>
-            </>,
+            </div>,
             document.body
           )}
       </>

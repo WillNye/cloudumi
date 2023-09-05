@@ -36,3 +36,9 @@ export const deleteNoqGithubApp = async () => {
   const response = await axios.delete(url);
   return response.data;
 };
+
+export const getGithubRepos = async () => {
+  const url = `${V3_API_URL}/github/repos/`;
+  const response = await axios.get(url);
+  return response.data;
+};
