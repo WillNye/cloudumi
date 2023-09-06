@@ -20,7 +20,7 @@ timestamp=$(date +%Y%m%d-%H%M%S)
 bucket_path="${timestamp}-cypress"
 
 send_to_slack() {
-  webhook_url="A_SECRET"
+  webhook_url="https://hooks.slack.com/services/..."  # Replace with your test Slack webhook URL
   message=$1
   payload_file="payload.json"
 

@@ -20,7 +20,7 @@ fi
 
 # Function to send messages to Slack webhook
 send_to_slack() {
-  webhook_url="A_SECRET"
+  webhook_url="https://hooks.slack.com/services/..."  # Replace with your webhook URL
   message=$1
   payload_file="payload.json"
 

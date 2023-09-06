@@ -44,7 +44,7 @@ if loc is None:
 
 # #alerts slack channel
 SLACK_WEBHOOK_URL = (
-    "A_SECRET"
+    "https://hooks.slack.com/services/..."  # Replace with your Slack webhook URL
 )
 
 

@@ -59,7 +59,7 @@ _global_:
   s3_buckets:
     legal_docs: noq-global-prod-legal-docs
     temp_files: cloudumi-temp-files-noq-dev-shared-prod-1
-  slack_webhook_url: "A_SECRET"
+  slack_webhook_url: "https://hooks.slack.com/services/..." # Replace with your Slack webhook URL
   deployment:
     domain_name: "*.noq.dev"
     namespace: shared
