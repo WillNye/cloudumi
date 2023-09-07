@@ -53,7 +53,7 @@ _global_:
   s3_buckets:
     legal_docs: noq-global-staging-legal-docs
     temp_files: cloudumi-temp-files-staging-noq-dev-shared-staging-1
-  slack_webhook_url: "A_SECRET"
+  #slack_webhook_url: "https://hooks.slack.com/services/..." # Replace with your Slack webhook URL
   deployment:
     domain_name: "*.staging.noq.dev"
     namespace: shared

@@ -19,7 +19,6 @@ from common.github.webhook_event_buffer import (
     get_developer_queue_name,
 )
 from common.iambic.tasks import run_all_iambic_tasks_for_tenant
-from common.lib.aws.aws_secret_manager import get_aws_secret
 from common.lib.yaml import yaml
 from common.scripts.data_migrations import run_data_migrations
 from common.tenants.models import Tenant
@@ -36,8 +35,29 @@ from common.lib.dynamo import RestrictedDynamoHandler  # noqa: F401, E402
 # We store sensitive secrets in AWS Secrets Manager. For example,
 # Iambic repo configuration.
 # We fetch these secrets and merge them into Tenant configuration
-tenant_secrets_arn = "arn:aws:secretsmanager:us-west-2:759357822767:secret:dev/tenant_secrets_configuration-HcMJCi"
-tenant_secrets = yaml.load(get_aws_secret(tenant_secrets_arn))
+"""Must set the following
+
+secrets:
+  scim:
+    enabled: bool
+    bearer_token: str
+  auth:
+    oidc:
+      client_id: ...
+      client_secret: ...
+  cognito:
+    config:
+      user_pool_id: ...
+      user_pool_region: us-east-1
+      user_pool_client_id: ...
+      user_pool_client_secret: ...
+    jwt_auth:
+      user_pool_id: ...
+      user_pool_region: us-east-1
+      user_pool_client_id: ...
+"""
+with open("tenant_secrets.yaml") as f:
+    tenant_secrets = yaml.load(f)
 
 
 GITHUB_APP_ID_FOR_DEFAULT_LOCAL_DEV = config.get(
@@ -175,23 +195,6 @@ application_admin:
   - curtis@noq.dev
 secrets:
   jwt_secret: {token_urlsafe(32)}
-  scim:
-    enabled: true
-    bearer_token: local_secret_scim_bearer_token
-  auth:
-    oidc:
-      client_id: j14h62of81s6s5f2ivfkdfe3v
-      client_secret: 1l4g523pb7rb3iicm9jod80nlst3r92f4oitg2dijna45pegj4dh
-  cognito:
-    config:
-      user_pool_id: us-east-1_CNoZribID
-      user_pool_region: us-east-1
-      user_pool_client_id: j14h62of81s6s5f2ivfkdfe3v
-      user_pool_client_secret: 1l4g523pb7rb3iicm9jod80nlst3r92f4oitg2dijna45pegj4dh
-    jwt_auth:
-      user_pool_id: us-east-1_CNoZribID
-      user_pool_region: us-east-1
-      user_pool_client_id: 6f44pcgu8dk978njp3frkt9p1k
 account_ids_to_name:
   "759357822767": "development"
 celery:
@@ -352,18 +355,7 @@ application_admin:
   - engineering@noq.dev
   - noq_admins@noq.dev
 secrets:
-  scim:
-    enabled: true
-    bearer_token: local_secret_scim_bearer_token
   jwt_secret: {token_urlsafe(32)}
-  auth:
-    oidc:
-      client_id: '6f44pcgu8dk978njp3frkt9p1k'
-  cognito:
-    config:
-      user_pool_id: 'us-east-1_CNoZribID'
-      user_pool_client_id: '6f44pcgu8dk978njp3frkt9p1k'
-      user_pool_region: 'us-east-1'
 account_ids_to_name:
   "759357822767": "development"
 auth:
@@ -553,16 +545,6 @@ url: https://cloudumisamldev.com:3000
 application_admin: engineering@noq.dev
 secrets:
   jwt_secret: {token_urlsafe(32)}
-  auth:
-    oidc:
-      client_id: '3vqhl3rfcfoqhl88g47norqick'
-      client_secret: 'u6k40gpgkjkltcsk03040e3n848gppp0h066nh55f1k1ftltmjp'
-  cognito:
-    config:
-      user_pool_id: 'us-west-2_EQ5XHIluC'
-      user_pool_client_id: '3vqhl3rfcfoqhl88g47norqick'
-      user_pool_client_secret: 'u6k40gpgkjkltcsk03040e3n848gppp0h066nh55f1k1ftltmjp'
-      user_pool_region: 'us-west-2'
 account_ids_to_name:
   "759357822767": "development"
 auth:

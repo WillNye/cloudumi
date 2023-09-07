@@ -17,6 +17,9 @@ stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metric
 
 
 def send_slack_notification_sync(log_data, payload, slack_webhook_url):
+    if not slack_webhook_url:
+        return
+
     headers = {"Content-Type": "application/json"}
     try:
         response = requests.post(

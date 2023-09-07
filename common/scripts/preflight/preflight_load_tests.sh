@@ -20,18 +20,22 @@ fi
 
 # Function to send messages to Slack webhook
 send_to_slack() {
-  webhook_url="A_SECRET"
+  webhook_url=""  #"https://hooks.slack.com/services/..."  # Replace with your webhook URL
   message=$1
   payload_file="payload.json"
 
-  # Create a payload file
-  echo "${message}" > "${payload_file}"
+  if ! test -z "$webhook_url"
+  then
 
-  # Send the payload using curl
-  curl -X POST -H 'Content-type: application/json' --data "@${payload_file}" ${webhook_url}
+    # Create a payload file
+    echo "${message}" > "${payload_file}"
 
-  # Remove the payload file
-  rm "${payload_file}"
+    # Send the payload using curl
+    curl -X POST -H 'Content-type: application/json' --data "@${payload_file}" ${webhook_url}
+
+    # Remove the payload file
+    rm "${payload_file}"
+  fi
 }
 
 # Function to generate a presigned URL for a file in S3

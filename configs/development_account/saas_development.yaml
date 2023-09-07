@@ -151,7 +151,7 @@ _global_:
     database: "noq"
   tenant_storage:
     base_path: ~/.config/noq/tenant_storage_dev/
-  slack_webhook_url: A_SECRET
+  #slack_webhook_url: https://hooks.slack.com/services/... # Replace with your test Slack webhook URL
 # Localhost configuration
 #  redis:
 #    cluster_mode:

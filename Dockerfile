@@ -33,8 +33,8 @@ RUN mkdir -p /var/run/sshd && \
 # Install pip, node and fluent-bit
 RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 && \
     curl -sL https://deb.nodesource.com/setup_18.x | bash && \
-    apt-get install -y nodejs && \
-    curl https://raw.githubusercontent.com/fluent/fluent-bit/master/install.sh | bash
+    apt-get install -y nodejs #  && \
+#    curl https://raw.githubusercontent.com/fluent/fluent-bit/master/install.sh | bash
 
 # Add user
 RUN addgroup --gid 1111 appgroup && \
@@ -82,7 +82,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; then \
     sudo ./aws/install && \
     rm -rf awscliv2.zip aws
 
-COPY configs/fluent-bit/fluent-bit.conf /etc/fluent-bit/fluent-bit.conf
+#COPY configs/fluent-bit/fluent-bit.conf /etc/fluent-bit/fluent-bit.conf
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 ENV PYTHONPATH="/app:$PYTHONPATH"
 
