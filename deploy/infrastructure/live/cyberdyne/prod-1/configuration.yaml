@@ -39,11 +39,6 @@ _global_:
       role_arn: arn:aws:iam::615395543222:role/NoqServiceConnRole
       external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
       region: us-west-2
-    zelkova:
-      name: ZelkovaAnalysisRole
-      account_id: "894599878328"
-      account_name: "zelkova"
-      role_arn: arn:aws:iam::894599878328:role/ZelkovaAnalysisRole
   s3_buckets:
     legal_docs: noq-global-staging-legal-docs
   deployment:
@@ -103,7 +98,7 @@ _global_:
         global:
           - host: master.cyberdyne-noq-dev-cyberdyne-prod-1.thejre.usw2.cache.amazonaws.com
             port: 6379
-  sentry:
-    dsn: https://f446f0f25a74440db6e211ebe73c05f9@o1134078.ingest.sentry.io/6188334
+  # sentry:
+  #   dsn: https://replaceme@replaceme.ingest.sentry.io/replaceme
   google_analytics:
-    tracking_id: G-P5K1SQF3P6
+    tracking_id: replaceme

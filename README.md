@@ -1,4 +1,6 @@
-# Welcome to NOQ
+# CloudUmi
+
+Disclaimer: This code is provided as-is. The instructions are unclear and all-over the place. Good luck, and God Speed.
 
 > Quick Start
 

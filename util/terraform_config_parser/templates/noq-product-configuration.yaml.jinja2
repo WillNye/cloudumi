@@ -52,11 +52,6 @@ _global_:
       role_arn: arn:aws:iam::{{ global_tenant_data_account_id }}:role/{{ global_tenant_data_role_name }}
       external_id: 018e23e8-9b41-4d66-85f2-3d60cb2b3c43
       region: us-west-2
-    zelkova:
-      name: ZelkovaAnalysisRole
-      account_id: "894599878328"
-      account_name: "zelkova"
-      role_arn: arn:aws:iam::894599878328:role/ZelkovaAnalysisRole
   s3_buckets:
     legal_docs: {{ legal_docs_bucket_name }}
     temp_files: {{ temp_files_bucket_name }}

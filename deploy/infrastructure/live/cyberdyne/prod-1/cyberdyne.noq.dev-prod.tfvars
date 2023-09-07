@@ -48,12 +48,12 @@ redis_node_type            = "cache.t3.micro"
 secret_manager_secret_name = "cyberdyne-prod-noq_secrets"
 
 # Sentry
-sentry_dsn                    = "https://f446f0f25a74440db6e211ebe73c05f9@o1134078.ingest.sentry.io/6188334"
+# sentry_dsn                    = "https://replaceme@replaceme.ingest.sentry.io/replaceme"
 notifications_sender_identity = "notifications@noq.dev"
 
 s3_access_log_bucket         = "s3-access-logs.775726381634.us-west-2"
 elasticache_node_type        = "cache.t3.micro"
-google_analytics_tracking_id = "G-P5K1SQF3P6"
+google_analytics_tracking_id = "replaceme"
 
 global_tenant_data_account_id = "615395543222"
 legal_docs_bucket_name        = "noq-global-staging-legal-docs"
