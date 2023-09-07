@@ -16,12 +16,14 @@ import sys
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
+from logging.config import dictConfig
 from random import randint
 from typing import Any, Optional, Tuple, Union
 
 import celery
 import certifi
 import sentry_sdk
+import structlog
 from asgiref.sync import async_to_sync
 from billiard.exceptions import SoftTimeLimitExceeded
 from botocore.exceptions import ClientError
@@ -30,7 +32,9 @@ from celery.app.task import Context
 from celery.concurrency import asynpool
 from celery.schedules import crontab
 from celery.signals import (
+    setup_logging,
     task_failure,
+    task_postrun,
     task_prerun,
     task_received,
     task_rejected,
@@ -182,8 +186,11 @@ def get_celery_app():
             config.get("_global_.celery.backend.global", "redis://127.0.0.1:6379/2"),
         ).format(password=redis_password, ssl_ca_certs=ssl_ca_certs),
         redis_backend_use_ssl=use_ssl_dict,
+        # broker_connection_retry_on_startup=True,
     )
 
+
+log = config.get_logger(__name__)
 
 app = get_celery_app()
 
@@ -202,7 +209,6 @@ if config.get("_global_.celery.purge"):
     with Timeout(seconds=5, error_message="Timeout: Are you sure Redis is running?"):
         app.control.purge()
 
-log = config.get_logger(__name__)
 
 internal_celery_tasks = get_plugin_by_name(
     config.get("_global_.plugins.internal_celery_tasks", "cmsaas_celery_tasks")
@@ -210,6 +216,37 @@ internal_celery_tasks = get_plugin_by_name(
 stats = get_plugin_by_name(config.get("_global_.plugins.metrics", "cmsaas_metrics"))()
 
 REDIS_IAM_COUNT = 1000
+
+
+@setup_logging.connect
+def on_setup_logging(**kwargs):
+    # INFO: check this issue (https://github.com/hynek/structlog/issues/287)
+    level = config.get("_global_.logging.level", "debug").upper()
+    dict_config = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "console": {
+                "()": structlog.stdlib.ProcessorFormatter,
+                "processors": config.get_logger_processors(),
+            },
+        },
+        "handlers": {
+            "celery": {
+                "class": "logging.StreamHandler",
+                "formatter": "console",
+            },
+        },
+        "loggers": {
+            "celery": {
+                "level": level,
+                "handlers": ["celery"],
+                "propagate": False,
+            },
+        },
+    }
+
+    dictConfig(dict_config)
 
 
 @app.task(soft_time_limit=20, **default_celery_task_kwargs)
@@ -309,11 +346,21 @@ def get_celery_request_tags(**kwargs):
 
 @task_prerun.connect
 def refresh_tenant_config_in_worker(**kwargs):
+    structlog.contextvars.bind_contextvars(
+        task_id=kwargs.get("task_id", None),
+        task_name=kwargs.get("task").name,
+    )
     tenant = kwargs.get("kwargs", {}).get("tenant")
     if not tenant:
         return
+    structlog.contextvars.bind_contextvars(tenant=tenant)
     config.CONFIG.copy_tenant_config_dynamo_to_redis(tenant)
     config.CONFIG.tenant_configs[tenant]["last_updated"] = 0
+
+
+@task_postrun.connect
+def on_task_postrun(sender, task_id, task, args, kwargs, retval, state, **_kwargs):
+    structlog.contextvars.unbind_contextvars("task_id", "task_name", "tenant")
 
 
 @task_received.connect
@@ -2809,6 +2856,18 @@ def handle_tenant_aws_integration_queue() -> dict[str, Any]:
 
 
 @app.task(soft_time_limit=600, **default_celery_task_kwargs)
+def healthcheck(**kwargs) -> dict[str, Any]:
+    function = f"{__name__}.{sys._getframe().f_code.co_name}"
+    log_data = {
+        "function": function,
+        "message": "Handling Healthcheck",
+        **kwargs,
+    }
+    log.info(log_data)
+    return log_data
+
+
+@app.task(soft_time_limit=600, **default_celery_task_kwargs)
 def handle_github_webhook_integration_queue() -> dict[str, Any]:
     function = f"{__name__}.{sys._getframe().f_code.co_name}"
     log_data = {
@@ -3303,7 +3362,13 @@ if internal_celery_tasks and isinstance(internal_celery_tasks, dict):
     schedule = {**schedule, **internal_celery_tasks}
 
 if config.get("_global_.celery.clear_tasks_for_development", False):
-    schedule = {}
+    schedule = {
+        # "healthcheck": {
+        #     "task": "common.celery_tasks.celery_tasks.healthcheck",
+        #     "options": {"expires": 1800, "queue": "high_priority"},
+        #     "schedule": timedelta(seconds=15),
+        # },
+    }
 
 app.autodiscover_tasks(
     [

@@ -70,7 +70,6 @@ def dict_merge(dct: dict, merge_dct: dict):
     """Recursively merge two dictionaries, including nested dicts"""
 
     for k, v in merge_dct.items():
-
         if k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], Mapping):
             dict_merge(dct[k], merge_dct[k])
         else:
@@ -548,26 +547,8 @@ class Configuration(metaclass=Singleton):
         root_logger.setLevel(level)
         root_logger.addHandler(logging.StreamHandler())
 
-        # Env var will take precedence, but if not set, use the config value
-        stage = os.getenv("STAGE", self.get("_global_.environment", "dev"))
-        renderer = (
-            StructlogConsoleRenderer()
-            if stage == "dev"
-            else StructlogJSONRenderer(serializer=json.dumps)
-        )
         structlog.configure(
-            processors=[
-                self.positional_to_keyword_processor,
-                structlog.stdlib.add_logger_name,
-                self.event_augmentor,
-                structlog.stdlib.add_log_level,
-                structlog.contextvars.merge_contextvars,
-                structlog.stdlib.PositionalArgumentsFormatter(),
-                structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M.%S"),
-                structlog.processors.StackInfoRenderer(),
-                structlog.dev.set_exc_info,
-                renderer,
-            ],
+            processors=self.get_logger_processors(),
             wrapper_class=structlog.make_filtering_bound_logger(level),
             context_class=dict,
             logger_factory=structlog.stdlib.LoggerFactory(),
@@ -577,6 +558,28 @@ class Configuration(metaclass=Singleton):
         logger = structlog.get_logger(name)
         self.log = logger
         return self.log
+
+    def get_logger_processors(self):
+        # Env var will take precedence, but if not set, use the config value
+        stage = os.getenv("STAGE", self.get("_global_.environment", "dev"))
+
+        renderer = (
+            StructlogConsoleRenderer()
+            if stage == "dev"
+            else StructlogJSONRenderer(serializer=json.dumps)
+        )
+        return [
+            self.positional_to_keyword_processor,
+            structlog.stdlib.add_logger_name,
+            self.event_augmentor,
+            structlog.stdlib.add_log_level,
+            structlog.contextvars.merge_contextvars,
+            structlog.stdlib.PositionalArgumentsFormatter(),
+            structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M.%S"),
+            structlog.processors.StackInfoRenderer(),
+            structlog.dev.set_exc_info,
+            renderer,
+        ]
 
     def set_logging_levels(self):
         default_logging_levels = {
@@ -627,6 +630,7 @@ class Configuration(metaclass=Singleton):
             "httpcore.http11": "WARNING",
             "httpcore.connection": "WARNING",
             "git.util": "WARNING",
+            "celery": "WARNING",
         }
         logging.getLogger().setLevel("WARNING")  # For the root logger
         for logger, level in self.get(
@@ -680,6 +684,7 @@ CONFIG.load_config()
 
 get = CONFIG.get
 get_logger = CONFIG.get_logger
+get_logger_processors = CONFIG.get_logger_processors
 get_tenant_specific_key = CONFIG.get_tenant_specific_key
 get_employee_photo_url = CONFIG.get_employee_photo_url
 get_employee_info_url = CONFIG.get_employee_info_url
