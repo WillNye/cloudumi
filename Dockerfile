@@ -31,9 +31,9 @@ RUN mkdir -p /var/run/sshd && \
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
 # Install pip, node and fluent-bit
-#RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 && \
-#    curl -sL https://deb.nodesource.com/setup_18.x | bash && \
-#    apt-get install -y nodejs && \
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 && \
+    curl -sL https://deb.nodesource.com/setup_18.x | bash && \
+    apt-get install -y nodejs #  && \
 #    curl https://raw.githubusercontent.com/fluent/fluent-bit/master/install.sh | bash
 
 # Add user
