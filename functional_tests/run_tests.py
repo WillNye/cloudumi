@@ -43,14 +43,13 @@ if loc is None:
     loc = pathlib.Path(__file__).parent.absolute()
 
 # #alerts slack channel
-SLACK_WEBHOOK_URL = (
-    "https://hooks.slack.com/services/..."  # Replace with your Slack webhook URL
-)
+SLACK_WEBHOOK_URL = None  # Replace with your Slack webhook URL
 
 
 def send_to_slack(message):
-    payload = {"text": message}
-    requests.post(SLACK_WEBHOOK_URL, json=payload)
+    if SLACK_WEBHOOK_URL:
+        payload = {"text": message}
+        requests.post(SLACK_WEBHOOK_URL, json=payload)
 
 
 def generate_presigned_url(filepath):
