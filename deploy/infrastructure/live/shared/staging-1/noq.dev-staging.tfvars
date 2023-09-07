@@ -55,12 +55,12 @@ secret_manager_secret_name = "shared-staging-noq_secrets"
 noq_db_database_name = "noq"
 noq_db_instance_type = "db.t4g.medium"
 
-# Sentry
-sentry_dsn = "https://7113898274d641d3923e0b163a74e6fe@o1134078.ingest.sentry.io/6625267"
+# # Sentry
+# sentry_dsn = "https://replaceme@replaceme.ingest.sentry.io/replaceme"
 
 s3_access_log_bucket         = "s3-access-logs.259868150464.us-west-2"
 elasticache_node_type        = "cache.t3.micro"
-google_analytics_tracking_id = "G-P5K1SQF3P6"
+google_analytics_tracking_id = "replaceme"
 
 # Global info
 global_tenant_data_account_id = "615395543222"

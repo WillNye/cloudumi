@@ -53,12 +53,12 @@ secret_manager_secret_name = "shared-prod-noq_secrets"
 noq_db_database_name = "noq"
 noq_db_instance_type = "db.t4g.medium"
 
-# Sentry
-sentry_dsn = "https://50b9f954977449db94bf4d1a8b9a8084@o1134078.ingest.sentry.io/6625264"
+# # Sentry
+# sentry_dsn = "https://replaceme@replaceme.ingest.sentry.io/replaceme"
 
 s3_access_log_bucket         = "s3-access-logs.940552945933.us-west-2"
 elasticache_node_type        = "cache.t2.medium"
-google_analytics_tracking_id = "G-P5K1SQF3P6"
+google_analytics_tracking_id = "replaceme"
 
 # Global info
 global_tenant_data_account_id = "306086318698"
