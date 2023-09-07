@@ -7,14 +7,13 @@ import { LineBreak } from 'shared/elements/LineBreak';
 import { Link } from 'react-router-dom';
 
 import SelfServiceContext from '../../SelfServiceContext';
-import { SELF_SERVICE_STEPS } from '../../constants';
 import { useQuery } from '@tanstack/react-query';
 import { getProviders } from 'core/API/iambicRequest';
 import { providerDetails } from './constants';
 
 const SelectProvider = () => {
   const {
-    actions: { setCurrentStep, setSelectedProvider, handleNext }
+    actions: { setSelectedProvider, handleNext }
   } = useContext(SelfServiceContext);
 
   const { data: responseData, isLoading } = useQuery({

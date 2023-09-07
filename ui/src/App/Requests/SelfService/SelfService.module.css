@@ -38,6 +38,21 @@
     width: 100%;
     max-width: 1100px;
     padding: var(--spacing-lg);
+
+    button {
+      margin: var(--spacing-sm);
+    }
+  }
+
+  .notificationAlert {
+    text-align: center;
+    line-height: 1.5rem;
+    padding: var(--spacing-lg) 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 480px;
+    color: var(--gray-100);
   }
 
   .actionsWrapper {

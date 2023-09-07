@@ -1,6 +1,5 @@
 import { useContext } from 'react';
 import SelfServiceContext from '../SelfServiceContext';
-import { Segment } from 'shared/layout/Segment';
 import { SELF_SERVICE_STEPS } from '../constants';
 import SelectIdentity from './AdvancedFlow/SelectIdentity';
 import SelectProvider from './SelectProvider';
@@ -26,11 +25,7 @@ const RequestViewer = () => {
   } = useContext(SelfServiceContext);
   const ViewerComponent = STEP_COMPONENTS[currentStep];
 
-  return (
-    <Segment>
-      <ViewerComponent />
-    </Segment>
-  );
+  return <ViewerComponent />;
 };
 
 export default RequestViewer;

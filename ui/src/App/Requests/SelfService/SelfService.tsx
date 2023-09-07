@@ -17,14 +17,22 @@ import styles from './SelfService.module.css';
 import {
   ChangeType,
   ChangeTypeDetails,
+  CreateIambicRequest,
   IRequest,
   Identity,
-  RequestType
+  RequestType,
+  SubmittableRequest
 } from './types';
 import { Divider } from 'shared/elements/Divider';
 import { DateTime } from 'luxon';
 import classNames from 'classnames';
 import SidePanel from './components/SidePanel';
+import { useMutation } from '@tanstack/react-query';
+import { createIambicRequest } from 'core/API/iambicRequest';
+import { Link, useNavigate } from 'react-router-dom';
+import { Icon } from 'shared/elements/Icon';
+import { Segment } from 'shared/layout/Segment';
+import { LineBreak } from 'shared/elements/LineBreak';
 
 const SelfService = () => {
   const [currentStep, setCurrentStep] = useState(
@@ -42,6 +50,22 @@ const SelfService = () => {
   const [timeValue, setTimeValue] = useState('00:00:00');
   const [selfServiceRequest, setSelfServiceRequest] =
     useState<IRequest>(DEFAULT_REQUEST);
+  const [submittableRequest, setSubmittableRequest] =
+    useState<SubmittableRequest | null>(null);
+  const [revisedTemplateBody, setRevisedTemplateBody] = useState<string | null>(
+    null
+  );
+  const [createdRequest, setCreatedRequest] = useState(null);
+
+  const navigate = useNavigate();
+
+  const {
+    mutateAsync: createIambicRequestMutation,
+    isLoading: isRequestSubmitting
+  } = useMutation({
+    mutationFn: (payload: CreateIambicRequest) => createIambicRequest(payload),
+    mutationKey: ['createIambicRequest']
+  });
 
   const setJustification = useCallback((justification: string) => {
     setSelfServiceRequest(prev => ({ ...prev, justification }));
@@ -116,10 +140,12 @@ const SelfService = () => {
     [currentStep]
   );
 
-  const showFooter = useMemo(
-    () => canClickNext || canClickBack,
-    [canClickNext, canClickBack]
-  );
+  const showFooter = useMemo(() => {
+    if (createdRequest?.request_id) {
+      return false;
+    }
+    return canClickNext || canClickBack;
+  }, [canClickNext, canClickBack, createdRequest]);
 
   const hideSidePanel = useMemo(
     () =>
@@ -170,6 +196,23 @@ const SelfService = () => {
     }
   }, [currentMode, currentStep]);
 
+  const handleSubmit = useCallback(async () => {
+    if (revisedTemplateBody && submittableRequest) {
+      const payload = {
+        iambic_template_id: submittableRequest.iambic_template_id,
+        justification: submittableRequest.justification,
+        template_body: revisedTemplateBody
+      };
+      try {
+        const data = await createIambicRequestMutation(payload);
+        console.log(data);
+        setCreatedRequest(data?.data);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }, [createIambicRequestMutation, revisedTemplateBody, submittableRequest]);
+
   return (
     <SelfServiceContext.Provider
       value={{
@@ -180,7 +223,9 @@ const SelfService = () => {
           relativeValue,
           relativeUnit,
           dateValue,
-          timeValue
+          timeValue,
+          revisedTemplateBody,
+          submittableRequest
         },
         actions: {
           setCurrentStep,
@@ -202,14 +247,35 @@ const SelfService = () => {
           setTimeValue,
           setCurrentMode,
           setExpirationDate,
-          handleNext
+          handleNext,
+          setSubmittableRequest,
+          setRevisedTemplateBody
         }
       }}
     >
       <div className={styles.container}>
         <div className={styles.content}>
           <div className={wrapperClasses}>
-            <RequestViewer />
+            <Segment isLoading={isRequestSubmitting}>
+              {createdRequest?.request_id ? (
+                <div className={styles.notificationAlert}>
+                  <div>
+                    <Icon name="notification-success" size="large" />
+                    <LineBreak size="small" />
+                    <p className={styles.text}>
+                      Request successfully submitted. Click on the link below to
+                      view it
+                    </p>
+                    <LineBreak size="small" />
+                    <Link to={`/requests/${createdRequest.request_id}`}>
+                      View Request
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <RequestViewer />
+              )}
+            </Segment>
             {!hideSidePanel && <SidePanel />}
           </div>
         </div>
@@ -222,52 +288,69 @@ const SelfService = () => {
                   Back
                 </Button>
               )}
-              {canClickNext && (
-                <>
-                  {currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES && (
-                    <Button
-                      size="small"
-                      disabled={!selfServiceRequest.changeType}
-                      onClick={() => handleNext()}
-                    >
-                      Next
-                    </Button>
-                  )}
-                  {currentStep ===
-                    SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS && (
-                    <Button
-                      size="small"
-                      disabled={!selfServiceRequest.requestedChanges}
-                      onClick={() => handleNext()}
-                    >
-                      Next
-                    </Button>
-                  )}
-                  {currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE && (
-                    <Button
-                      size="small"
-                      disabled={
-                        !(
-                          selfServiceRequest.requestedChanges.length &&
-                          selfServiceRequest.justification
-                        )
-                      }
-                      onClick={() => handleNext()}
-                    >
-                      Next
-                    </Button>
-                  )}
-                  {currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY && (
-                    <Button
-                      size="small"
-                      disabled={!selfServiceRequest.identity}
-                      onClick={() => handleNext()}
-                    >
-                      Next
-                    </Button>
-                  )}
-                </>
-              )}
+              <div>
+                <Button
+                  size="small"
+                  variant="outline"
+                  onClick={() => navigate('/requests')}
+                >
+                  Cancel
+                </Button>
+                {currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_TYPES && (
+                  <Button
+                    size="small"
+                    disabled={!selfServiceRequest.changeType}
+                    onClick={() => handleNext()}
+                  >
+                    Next
+                  </Button>
+                )}
+                {currentStep === SELF_SERVICE_STEPS.EXPRESS_CHANGE_DETAILS && (
+                  <Button
+                    size="small"
+                    disabled={!selfServiceRequest.requestedChanges}
+                    onClick={() => handleNext()}
+                  >
+                    Next
+                  </Button>
+                )}
+                {currentStep === SELF_SERVICE_STEPS.CHANGE_TYPE && (
+                  <Button
+                    size="small"
+                    disabled={
+                      !(
+                        selfServiceRequest.requestedChanges.length &&
+                        selfServiceRequest.justification
+                      )
+                    }
+                    onClick={() => handleNext()}
+                  >
+                    Next
+                  </Button>
+                )}
+                {currentStep === SELF_SERVICE_STEPS.SELECT_IDENTITY && (
+                  <Button
+                    size="small"
+                    disabled={!selfServiceRequest.identity}
+                    onClick={() => handleNext()}
+                  >
+                    Next
+                  </Button>
+                )}
+                {currentStep === SELF_SERVICE_STEPS.REQUEST_PREVIEW && (
+                  <Button
+                    size="small"
+                    disabled={
+                      !revisedTemplateBody ||
+                      !submittableRequest ||
+                      isRequestSubmitting
+                    }
+                    onClick={handleSubmit}
+                  >
+                    Submit Request
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         )}

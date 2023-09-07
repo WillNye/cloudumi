@@ -11,7 +11,6 @@ export const SidePanel = () => {
       <h4>Details</h4>
       <Divider orientation="horizontal" />
       <LineBreak />
-
       <div>
         <p className={styles.header}>Cloud Provider</p>
         <p>{selfServiceRequest.provider}</p>
@@ -27,7 +26,6 @@ export const SidePanel = () => {
       {selfServiceRequest?.identity && (
         <>
           <LineBreak />
-
           <p className={styles.header}>Identity</p>
           <p>{selfServiceRequest?.identity?.template_type}</p>
         </>
@@ -36,7 +34,6 @@ export const SidePanel = () => {
       {selfServiceRequest?.changeType && (
         <>
           <LineBreak />
-
           <p className={styles.header}>Need</p>
           <p>{selfServiceRequest?.changeType?.name}</p>
         </>

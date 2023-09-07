@@ -210,3 +210,9 @@ export interface FilesEntity {
 export interface SelectedOptions {
   [key: string]: string;
 }
+
+export type CreateIambicRequest = {
+  justification: string;
+  template_body: string;
+  file_path?: string;
+};
