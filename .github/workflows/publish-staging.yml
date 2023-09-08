@@ -8,7 +8,7 @@ on: workflow_dispatch
 #      - "*"
 jobs:
   deploy_to_staging:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     name: Deploy to Staging
     if: github.repository == 'noqdev/cloudumi'
     steps:
